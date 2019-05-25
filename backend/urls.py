@@ -31,7 +31,14 @@ urlpatterns = [
     path('policy/privacy', PolicyViews.privacy, name='privacy'),
     path('policy/refund', PolicyViews.refund, name='refund'),
 
-    # 회솨관리
+    #회사관리 API
+    path('api_company_edit1', CompanyViews.api_company_edit1, name='api_company_edit1'),
+    path('api_company_edit2', CompanyViews.api_company_edit2, name='api_company_edit2'),
+    path('api_company_edit3', CompanyViews.api_company_edit3, name='api_company_edit3'),
+    path('api_company_edit4', CompanyViews.api_company_edit4, name='api_company_edit4'),
+
+
+    # 회사관리
     path('company/about', CompanyViews.about, name='about'),
 
 ]

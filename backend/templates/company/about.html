@@ -47,19 +47,19 @@
         </div>
 
         <div class="flex-item">
-          <input type="radio" name="sum" value="2" checked>
+          <input type="radio" name="sum" value="2">
           <img class="country-logo" src='/static/image/korea.png'>
           <span>한국어</span>
         </div>
 
         <div class="flex-item">
-          <input type="radio" name="sum" value="3" checked>
+          <input type="radio" name="sum" value="3">
           <img class="country-logo" src='/static/image/japan.png'>
           <span>일본어</span>
         </div>
 
         <div class="flex-item">
-          <input type="radio" name="sum" value="4" checked>
+          <input type="radio" name="sum" value="4">
           <img class="country-logo" src='/static/image/china.png'>
           <span>중국어</span>
         </div>
@@ -192,7 +192,7 @@ function click_edit(){
     Swal.fire({
         title: '알림',
         html:
-            '<div style="font-size: 14px;">개인정보보호정책의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
+            '<div style="font-size: 14px;">회사소개의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
             '<div style="font-size: 14px;">정말로 저장하시겠습니까?</div>',
         type: 'error',
         confirmButtonColor: "#ea2e49",
@@ -202,7 +202,7 @@ function click_edit(){
     }).then((result) => {
         if (result.value) {
             if(chkValue == '1') {
-                $.post("/api_privacy_edit1", {
+                $.post("/api_company_edit1", {
                     csrfmiddlewaretoken: csrf_token,
                     enSum: enSum
                 })
@@ -210,19 +210,19 @@ function click_edit(){
                         if (data.result == '200') {
                             Swal.fire({
                                 title: '알림',
-                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
                                 confirmButtonColor: "#22b66e"
                             }).then((ok) => {
                                 if (ok) {
-                                    window.location.href = '/policy/privacy'
+                                    window.location.href = '/company/about'
                                 }
                             })
                         }
                     })
             }
             else if(chkValue == '2') {
-                $.post("/api_privacy_edit2", {
+                $.post("/api_company_edit2", {
                     csrfmiddlewaretoken: csrf_token,
                     koSum: koSum
                 })
@@ -230,19 +230,19 @@ function click_edit(){
                         if (data.result == '200') {
                             Swal.fire({
                                 title: '알림',
-                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
                                 confirmButtonColor: "#22b66e"
                             }).then((ok) => {
                                 if (ok) {
-                                    window.location.href = '/policy/privacy'
+                                    window.location.href = '/company/about'
                                 }
                             })
                         }
                     })
             }
             else if(chkValue == '3') {
-                $.post("/api_privacy_edit3", {
+                $.post("/api_company_edit3", {
                     csrfmiddlewaretoken: csrf_token,
                     jaSum: jaSum
                 })
@@ -250,19 +250,19 @@ function click_edit(){
                         if (data.result == '200') {
                             Swal.fire({
                                 title: '알림',
-                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
                                 confirmButtonColor: "#22b66e"
                             }).then((ok) => {
                                 if (ok) {
-                                    window.location.href = '/policy/privacy'
+                                    window.location.href = '/company/about'
                                 }
                             })
                         }
                     })
             }
             else if(chkValue == '4') {
-                $.post("/api_privacy_edit4", {
+                $.post("/api_company_edit4", {
                     csrfmiddlewaretoken: csrf_token,
                     zhSum: zhSum
                 })
@@ -270,12 +270,12 @@ function click_edit(){
                         if (data.result == '200') {
                             Swal.fire({
                                 title: '알림',
-                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
                                 confirmButtonColor: "#22b66e"
                             }).then((ok) => {
                                 if (ok) {
-                                    window.location.href = '/policy/privacy'
+                                    window.location.href = '/company/about'
                                 }
                             })
                         }

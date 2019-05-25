@@ -13,8 +13,8 @@ def about(request):
     with connections['default'].cursor() as cur:
         query = '''
             select en, ko, ja, zh
-            from tbl_policy_manage
-            where type = 'S';
+            from tbl_company_manage
+            where type = 'M';
         '''
         cur.execute(query)
         row = cur.fetchall()
@@ -31,3 +31,64 @@ def about(request):
         }
 
     return render(request, 'company/about.html', context)
+
+
+def api_company_edit1(request):
+    enSum = request.POST.get('enSum')
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            update tbl_company_manage
+            set en = '{enSum}', en_modify_date = now()
+            where type = 'M';
+            )
+        '''.format(
+            enSum = enSum
+        )
+        cur.execute(query)
+    return JsonResponse({'result': '200'})
+
+def api_company_edit2(request):
+    koSum = request.POST.get('koSum')
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            update tbl_company_manage
+            set ko = '{koSum}', ko_modify_date = now()
+            where type = 'M';
+            )
+        '''.format(
+            koSum = koSum
+        )
+        cur.execute(query)
+    return JsonResponse({'result': '200'})
+
+def api_company_edit3(request):
+    jaSum = request.POST.get('jaSum')
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            update tbl_company_manage
+            set ja = '{jaSum}', ja_modify_date = now()
+            where type = 'M';
+            )
+        '''.format(
+            jaSum = jaSum
+        )
+        cur.execute(query)
+    return JsonResponse({'result': '200'})
+
+def api_company_edit4(request):
+    zhSum = request.POST.get('zhSum')
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            update tbl_company_manage
+            set zh = '{zhSum}', zh_modify_date = now()
+            where type = 'M';
+            )
+        '''.format(
+            zhSum = zhSum
+        )
+        cur.execute(query)
+    return JsonResponse({'result': '200'})
