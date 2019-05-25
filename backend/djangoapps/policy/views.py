@@ -9,8 +9,24 @@ from backend.models import *
 
 
 def service(request):
-
-    context = {}
+    with connections['default'].cursor() as cur:
+        query = '''
+            select en, ko, ja, zh
+            from tbl_policy_manage
+            where type = 'S';
+        '''
+        cur.execute(query)
+        row = cur.fetchall()
+        en = row[0][0]
+        ko = row[0][1]
+        ja = row[0][2]
+        zh = row[0][3]
+        context = {
+            'en': en,
+            'ko': ko,
+            'ja': ja,
+            'zh': zh
+        }
     return render(request, 'policy/service.html', context)
 
 
