@@ -6,21 +6,22 @@
     text-align: right;
   }
   .input-margin input {
-    margin-left: 20px;
+    margin-left: 10px;
   }
   .input-margin {
-    font-size: 20px;
+    font-size: 15px;
   }
-  #summernote_content{
+  #summernote_content1, #summernote_content2, #summernote_content3, #summernote_content4{
     border: solid 1px #cccccc;
+    margin-top: 10px;
     margin-bottom: 10px;
   }
   .note-codable { background-color: white !important; color: black !important; }
 </style>
 </%block>
 
-<%block name="title">이용약관</%block>
-<%block name="subtitle">사용자에게 제공되는 이용약관을 수정할 수 있습니다.</%block>
+<%block name="title">정책관리</%block>
+<%block name="subtitle">개인정보보호정책</%block>
 
 <%block name="content">
 <div class="box-container">
@@ -35,16 +36,16 @@
       </div>
 
       <div id="summernote_content1">
-        <div class="summernote" id="summernote1">1111</div>
+        <div class="summernote" id="summernote1"></div>
       </div>
       <div id="summernote_content2" style="display: none">
-        <div class="summernote" id="summernote2">2222</div>
+        <div class="summernote" id="summernote2"></div>
       </div>
       <div id="summernote_content3" style="display: none">
-        <div class="summernote" id="summernote3">3333</div>
+        <div class="summernote" id="summernote3"></div>
       </div>
       <div id="summernote_content4" style="display: none">
-        <div class="summernote" id="summernote4">4444</div>
+        <div class="summernote" id="summernote4"></div>
       </div>
 
 
@@ -64,34 +65,47 @@ $(document).ready(function() {
     $('.summernote').on('summernote.init', function () {
         //$('.summernote').summernote('codeview.activate');
     }).summernote({
-        height: 550,
-        lang: 'ko-KR'
-    });
+        height: 250,
+        lang: 'ko-KR',
+        popover: {         //팝오버 설정
 
+    	        image: [], //이미지 삭제
+
+    	        link: [],  //링크 삭제
+
+    	        air: []
+
+    	  }
+    });
+    $('#summernote1').summernote('code', '${en}');
 });
 
 $('input[type=radio][name=sum]').on('click', function () {
 var chkValue = $('input[type=radio][name=sum]:checked').val();
   console.log(chkValue)
   if(chkValue == '1') {
+      $('#summernote1').summernote('code', '${en}');
       $('#summernote_content1').css('display', 'block');
       $('#summernote_content2').css('display', 'none');
       $('#summernote_content3').css('display', 'none');
       $('#summernote_content4').css('display', 'none');
   }
   else if(chkValue == '2') {
+      $('#summernote2').summernote('code', '${ko}');
       $('#summernote_content1').css('display', 'none');
       $('#summernote_content2').css('display', 'block');
       $('#summernote_content3').css('display', 'none');
       $('#summernote_content4').css('display', 'none');
   }
   else if(chkValue == '3') {
+      $('#summernote3').summernote('code', '${ja}');
       $('#summernote_content1').css('display', 'none');
       $('#summernote_content2').css('display', 'none');
       $('#summernote_content3').css('display', 'block');
       $('#summernote_content4').css('display', 'none');
   }
   else if(chkValue == '4') {
+      $('#summernote4').summernote('code', '${zh}');
       $('#summernote_content1').css('display', 'none');
       $('#summernote_content2').css('display', 'none');
       $('#summernote_content3').css('display', 'none');
@@ -99,15 +113,43 @@ var chkValue = $('input[type=radio][name=sum]:checked').val();
   }
 });
 
-
-
-
-
 function click_edit(){
-  var cont = $('#summernote').summernote('code');
+  var enSum = $('#summernote1').summernote('code');
+  var koSum = $('#summernote2').summernote('code');
+  var jaSum = $('#summernote3').summernote('code');
+  var zhSum = $('#summernote4').summernote('code');
+  var chkValue = $('input[type=radio][name=sum]:checked').val();
+
   var csrf_token = $('#csrf_token').html();
 
-  if(cont == ''){
+  if(enSum == ''){
+      Swal.fire({
+          title: '알림',
+          text: '내용 입력 없이 저장할 수 없습니다',
+          type: 'error',
+          confirmButtonColor: "#dc3545"
+      })
+    return 1;
+  }
+  else if(koSum == ''){
+      Swal.fire({
+          title: '알림',
+          text: '내용 입력 없이 저장할 수 없습니다',
+          type: 'error',
+          confirmButtonColor: "#dc3545"
+      })
+    return 1;
+  }
+  else if(jaSum == ''){
+      Swal.fire({
+          title: '알림',
+          text: '내용 입력 없이 저장할 수 없습니다',
+          type: 'error',
+          confirmButtonColor: "#dc3545"
+      })
+    return 1;
+  }
+  else if(zhSum == ''){
       Swal.fire({
           title: '알림',
           text: '내용 입력 없이 저장할 수 없습니다',
@@ -119,7 +161,7 @@ function click_edit(){
     Swal.fire({
         title: '알림',
         html:
-            '<div style="font-size: 14px;">이용약관의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
+            '<div style="font-size: 14px;">개인정보보호정책의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
             '<div style="font-size: 14px;">정말로 저장하시겠습니까?</div>',
         type: 'error',
         confirmButtonColor: "#ea2e49",
@@ -128,24 +170,86 @@ function click_edit(){
         cancelButtonText: "취소"
     }).then((result) => {
         if (result.value) {
-            $.post("/api_info_edit", {
-                csrfmiddlewaretoken: csrf_token,
-                cont: cont
-            })
-                .done(function (data) {
-                    if (data.result == '200') {
-                        Swal.fire({
-                            title: '알림',
-                            text: '이용약관이 성공적으로 변경되었습니다.',
-                            type: 'success',
-                            confirmButtonColor: "#22b66e"
-                        }).then((ok) => {
-                            if (ok) {
-                                window.location.href = '/manage_info'
-                            }
-                        })
-                    }
+            if(chkValue == '1') {
+                $.post("/api_privacy_edit1", {
+                    csrfmiddlewaretoken: csrf_token,
+                    enSum: enSum
                 })
+                    .done(function (data) {
+                        if (data.result == '200') {
+                            Swal.fire({
+                                title: '알림',
+                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                type: 'success',
+                                confirmButtonColor: "#22b66e"
+                            }).then((ok) => {
+                                if (ok) {
+                                    window.location.href = '/policy/privacy'
+                                }
+                            })
+                        }
+                    })
+            }
+            else if(chkValue == '2') {
+                $.post("/api_privacy_edit2", {
+                    csrfmiddlewaretoken: csrf_token,
+                    koSum: koSum
+                })
+                    .done(function (data) {
+                        if (data.result == '200') {
+                            Swal.fire({
+                                title: '알림',
+                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                type: 'success',
+                                confirmButtonColor: "#22b66e"
+                            }).then((ok) => {
+                                if (ok) {
+                                    window.location.href = '/policy/privacy'
+                                }
+                            })
+                        }
+                    })
+            }
+            else if(chkValue == '3') {
+                $.post("/api_privacy_edit3", {
+                    csrfmiddlewaretoken: csrf_token,
+                    jaSum: jaSum
+                })
+                    .done(function (data) {
+                        if (data.result == '200') {
+                            Swal.fire({
+                                title: '알림',
+                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                type: 'success',
+                                confirmButtonColor: "#22b66e"
+                            }).then((ok) => {
+                                if (ok) {
+                                    window.location.href = '/policy/privacy'
+                                }
+                            })
+                        }
+                    })
+            }
+            else if(chkValue == '4') {
+                $.post("/api_privacy_edit4", {
+                    csrfmiddlewaretoken: csrf_token,
+                    zhSum: zhSum
+                })
+                    .done(function (data) {
+                        if (data.result == '200') {
+                            Swal.fire({
+                                title: '알림',
+                                text: '개인정보보호정책이 성공적으로 변경되었습니다.',
+                                type: 'success',
+                                confirmButtonColor: "#22b66e"
+                            }).then((ok) => {
+                                if (ok) {
+                                    window.location.href = '/policy/privacy'
+                                }
+                            })
+                        }
+                    })
+            }
         }
     })
 }
