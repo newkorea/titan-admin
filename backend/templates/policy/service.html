@@ -10,6 +10,7 @@
   }
   .input-margin {
     font-size: 15px;
+    display: flex;
   }
   #summernote_content1, #summernote_content2, #summernote_content3, #summernote_content4{
     border: solid 1px #cccccc;
@@ -17,6 +18,15 @@
     margin-bottom: 10px;
   }
   .note-codable { background-color: white !important; color: black !important; }
+
+  .country-logo{
+      width: 20px;
+      margin-left: 5px;
+      margin-top: -5px;
+  }
+  .flex-item{
+    flex: 1;
+  }
 </style>
 </%block>
 
@@ -29,10 +39,31 @@
   <div class="box">
     <div class="box-body">
       <div class="box-body-input input-margin">
-        <input type="radio" name="sum" value="1" checked>영어
-        <input type="radio" name="sum" value="2">한국어
-        <input type="radio" name="sum" value="3">일본어
-        <input type="radio" name="sum" value="4">중국어
+
+        <div class="flex-item">
+          <input type="radio" name="sum" value="1" checked>
+          <img class="country-logo" src='/static/image/usa.png'>
+          <span>영어</span>
+        </div>
+
+        <div class="flex-item">
+          <input type="radio" name="sum" value="2" checked>
+          <img class="country-logo" src='/static/image/korea.png'>
+          <span>한국어</span>
+        </div>
+
+        <div class="flex-item">
+          <input type="radio" name="sum" value="3" checked>
+          <img class="country-logo" src='/static/image/japan.png'>
+          <span>일본어</span>
+        </div>
+
+        <div class="flex-item">
+          <input type="radio" name="sum" value="4" checked>
+          <img class="country-logo" src='/static/image/china.png'>
+          <span>중국어</span>
+        </div>
+
       </div>
 
       <div id="summernote_content1">
@@ -65,7 +96,7 @@ $(document).ready(function() {
     $('.summernote').on('summernote.init', function () {
         //$('.summernote').summernote('codeview.activate');
     }).summernote({
-        height: 250,
+        height: 500,
         lang: 'ko-KR',
         popover: {         //팝오버 설정
 
