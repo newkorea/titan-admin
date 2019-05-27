@@ -17,7 +17,7 @@ def service(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        print(row)
+        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -99,7 +99,7 @@ def privacy(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        print(row)
+        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -182,7 +182,7 @@ def refund(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        print(row)
+        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -254,4 +254,3 @@ def api_refund_edit4(request):
         )
         cur.execute(query)
     return JsonResponse({'result': '200'})
-

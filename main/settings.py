@@ -104,3 +104,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR + '/backend/static/'
 ]
+
+UPLOAD_ROOT = BASE_DIR + '/upload/'

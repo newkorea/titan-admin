@@ -1,0 +1,293 @@
+<%inherit file="../common/frame.html"/>
+
+<%block name="css">
+<style>
+  .download-title{
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  .download-card{
+    border: solid 1px #dddddd;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-top: 15px;
+    margin-bottom: 15px;
+  }
+  .bt-container{
+    text-align: right;
+    margin-bottom: 15px;
+  }
+  .current{
+    font-weight: bold;
+    color: #8f66da;
+  }
+</style>
+</%block>
+
+<%block name="title">다운로드 관리</%block>
+<%block name="subtitle">파일 다운로드 링크 및 설명 이미지를 등록할 수 있습니다</%block>
+
+<%block name="content">
+
+<div class='download-set'>
+  <div class="download-title">
+    Windows
+  </div>
+  <div class="download-card">
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Agent File</label>
+      <div class="col-sm-8">
+        <div>${windows_top}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Explain Image</label>
+      <div class="col-sm-8">
+        <div>${windows_bot}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Agent File</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="w_top">
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Explain Image</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="w_bot">
+      </div>
+    </div>
+    <div class="bt-container">
+      <button class="btn btn-fw warn" onclick='agent_save_windows()'>Save</button>
+    </div>
+  </div>
+</div>
+
+<div class='download-set'>
+  <div class="download-title">
+    MacOS
+  </div>
+  <div class="download-card">
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Agent File</label>
+      <div class="col-sm-8">
+        <div>${mac_top}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Explain Image</label>
+      <div class="col-sm-8">
+        <div>${mac_bot}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Agent File</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="m_top">
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Explain Image</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="m_bot">
+      </div>
+    </div>
+    <div class="bt-container">
+      <button class="btn btn-fw warn" onclick='agent_save_mac()'>Save</button>
+    </div>
+  </div>
+</div>
+
+<div class='download-set'>
+  <div class="download-title">
+    Android
+  </div>
+  <div class="download-card">
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Agent Link</label>
+      <div class="col-sm-8">
+        <div>${android_top}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Explain Image</label>
+      <div class="col-sm-8">
+        <div>${android_bot}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Agent Link</label>
+      <div class="col-sm-8">
+        <input type="text" class="form-control" id="a_top">
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Explain Image</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="a_bot">
+      </div>
+    </div>
+    <div class="bt-container">
+      <button class="btn btn-fw warn" onclick='agent_save_android()'>Save</button>
+    </div>
+  </div>
+</div>
+
+<div class='download-set'>
+  <div class="download-title">
+    IOS
+  </div>
+  <div class="download-card">
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Agent Link</label>
+      <div class="col-sm-8">
+        <div>${ios_top}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="current col-sm-4 col-form-label">Current Explain Image</label>
+      <div class="col-sm-8">
+        <div>${ios_bot}</div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Agent Link</label>
+      <div class="col-sm-8">
+        <input type="text" class="form-control" id="i_top">
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="inputEmail3" class="col-sm-4 col-form-label">Explain Image</label>
+      <div class="col-sm-8">
+        <input type="file" class="form-control" id="i_bot">
+      </div>
+    </div>
+    <div class="bt-container">
+      <button class="btn btn-fw warn" onclick='agent_save_ios()'>Save</button>
+    </div>
+  </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+  function agent_save_windows(){
+    var w_top = $("#w_top")[0].files[0];
+    var w_bot = $("#w_bot")[0].files[0];
+
+    console.log('w_top -> ', w_top);
+    console.log('w_bot -> ', w_bot);
+
+    var formData = new FormData();
+    formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
+    formData.append("w_top", w_top);
+    formData.append("w_bot", w_bot);
+
+    $.ajax({
+      url: '/api_download',
+      processData: false,
+      contentType: false,
+      data: formData,
+      type: 'POST',
+      success: function(data){
+        if(data.result == 200){
+          window.location.reload();
+        }
+        else{
+          alert('서버오류 - 관리자에게 문의하세요');
+        }
+      }
+    });
+  }
+
+  function agent_save_mac(){
+    var m_top = $("#m_top")[0].files[0];
+    var m_bot = $("#m_bot")[0].files[0];
+
+    console.log('m_top -> ', m_top);
+    console.log('m_bot -> ', m_bot);
+
+    var formData = new FormData();
+    formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
+    formData.append("m_top", m_top);
+    formData.append("m_bot", m_bot);
+
+    $.ajax({
+      url: '/api_download',
+      processData: false,
+      contentType: false,
+      data: formData,
+      type: 'POST',
+      success: function(data){
+        if(data.result == 200){
+          window.location.reload();
+        }
+        else{
+          alert('서버오류 - 관리자에게 문의하세요');
+        }
+      }
+    });
+  }
+
+  function agent_save_android(){
+    var a_top = $("#a_top").val();
+    var a_bot = $("#a_bot")[0].files[0];
+
+    console.log('a_top -> ', a_top);
+    console.log('a_bot -> ', a_bot);
+
+    var formData = new FormData();
+    formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
+    formData.append("a_top", a_top);
+    formData.append("a_bot", a_bot);
+
+    $.ajax({
+      url: '/api_download',
+      processData: false,
+      contentType: false,
+      data: formData,
+      type: 'POST',
+      success: function(data){
+        if(data.result == 200){
+          window.location.reload();
+        }
+        else{
+          alert('서버오류 - 관리자에게 문의하세요');
+        }
+      }
+    });
+  }
+
+  function agent_save_ios(){
+    var i_top = $("#i_top").val();
+    var i_bot = $("#i_bot")[0].files[0];
+
+    console.log('i_top -> ', i_top);
+    console.log('i_bot -> ', i_bot);
+
+    var formData = new FormData();
+    formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
+    formData.append("i_top", i_top);
+    formData.append("i_bot", i_bot);
+
+    $.ajax({
+      url: '/api_download',
+      processData: false,
+      contentType: false,
+      data: formData,
+      type: 'POST',
+      success: function(data){
+        if(data.result == 200){
+          window.location.reload();
+        }
+        else{
+          alert('서버오류 - 관리자에게 문의하세요');
+        }
+      }
+    });
+  }
+</script>
+</%block>
