@@ -21,16 +21,41 @@
 		                <span class="text-xs hidden-folded top-menu-deco">메뉴</span>
 		              </li>
 
-									<!-- 단일 메뉴 시작 -->
+									<!-- 펼침 메뉴 시작 -->
 									<li>
-										<a href="#" onclick="location.href='/download/main'">
+										<a>
+											<span class="nav-caret">
+												<i class="fa fa-caret-down"></i>
+											</span>
 											<span class="nav-icon">
 												<i class="fa fa-cubes"></i>
 											</span>
 											<span class="nav-text">다운로드 관리</span>
 										</a>
+										<ul class="nav-sub">
+											<li>
+												<a href="#" onclick="location.href='/download/windows'">
+													<span class="nav-text">Windows</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/mac'">
+													<span class="nav-text">Mac</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/android'">
+													<span class="nav-text">Android</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/ios'">
+													<span class="nav-text">IOS</span>
+												</a>
+											</li>
+										</ul>
 									</li>
-									<!-- 단일 메뉴 끝 -->
+									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
 		              <li>

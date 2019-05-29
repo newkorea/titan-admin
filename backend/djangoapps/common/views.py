@@ -74,3 +74,58 @@ def file_upload(file, gname, gid):
         delete_date = None
     )
     file.save()
+
+
+def download_upload(file, flag):
+
+    upload_root = settings.UPLOAD_ROOT + 'download/'
+    real_name = file.name
+    real_size = file.size
+    save_size = sizeof_fmt(file.size)
+    save_path = upload_root + real_name
+
+    print('upload_root -> ', upload_root)
+    print('real_name -> ', real_name)
+    print('real_size -> ', real_size)
+    print('save_size -> ', save_size)
+    print('save_path -> ', save_path)
+
+    if not os.path.exists(upload_root):
+        os.makedirs(upload_root)
+
+    fs = FileSystemStorage()
+    filename = fs.save(save_path, file)
+
+    if flag == 'ko_win_clt' or flag == 'ko_win_img':
+        tdm = TblDownloadManage.objects.get(type='windows', language='ko')
+    if flag == 'en_win_clt' or flag == 'en_win_img':
+        tdm = TblDownloadManage.objects.get(type='windows', language='en')
+    if flag == 'zh_win_clt' or flag == 'zh_win_img':
+        tdm = TblDownloadManage.objects.get(type='windows', language='zh')
+    if flag == 'ja_win_clt' or flag == 'ja_win_img':
+        tdm = TblDownloadManage.objects.get(type='windows', language='ja')
+
+    if flag == 'ko_mac_clt' or flag == 'ko_mac_img':
+        tdm = TblDownloadManage.objects.get(type='mac', language='ko')
+    if flag == 'en_mac_clt' or flag == 'en_mac_img':
+        tdm = TblDownloadManage.objects.get(type='mac', language='en')
+    if flag == 'zh_mac_clt' or flag == 'zh_mac_img':
+        tdm = TblDownloadManage.objects.get(type='mac', language='zh')
+    if flag == 'ja_mac_clt' or flag == 'ja_mac_img':
+        tdm = TblDownloadManage.objects.get(type='mac', language='ja')
+
+    if flag.find('clt') != -1:
+        tdm.client_name = real_name
+        tdm.client_real_size = real_size
+        tdm.client_save_size = save_size
+        tdm.client_save_path = save_path
+        tdm.client_modify_date = datetime.datetime.now()
+        tdm.save()
+
+    if flag.find('img') != -1:
+        tdm.image_name = real_name
+        tdm.image_real_size = real_size
+        tdm.image_save_size = save_size
+        tdm.image_save_path = save_path
+        tdm.image_modify_date = datetime.datetime.now()
+        tdm.save()
