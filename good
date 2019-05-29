@@ -163,9 +163,18 @@ class TblCompanyManage(models.Model):
 
 
 class TblDownloadManage(models.Model):
-    type = models.CharField(primary_key=True, max_length=100)
-    link = models.CharField(max_length=500, blank=True, null=True)
-    modify_date = models.DateTimeField(blank=True, null=True)
+    type = models.CharField(max_length=100)
+    language = models.CharField(max_length=100)
+    client_name = models.CharField(max_length=300, blank=True, null=True)
+    image_name = models.CharField(max_length=300, blank=True, null=True)
+    client_real_size = models.IntegerField(blank=True, null=True)
+    client_save_size = models.CharField(max_length=300, blank=True, null=True)
+    client_save_path = models.CharField(max_length=300, blank=True, null=True)
+    client_modify_date = models.DateTimeField(blank=True, null=True)
+    image_real_size = models.IntegerField(blank=True, null=True)
+    image_save_size = models.CharField(max_length=300, blank=True, null=True)
+    image_save_path = models.CharField(max_length=300, blank=True, null=True)
+    image_modify_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -209,7 +218,8 @@ class TblPolicyManage(models.Model):
 
 class TblSupport(models.Model):
     email = models.CharField(max_length=255, blank=True, null=True)
-    type = models.CharField(max_length=10, blank=True, null=True)
+    main_type = models.CharField(max_length=30, blank=True, null=True)
+    sub_type = models.CharField(max_length=10, blank=True, null=True)
     title = models.CharField(max_length=1000, blank=True, null=True)
     content = models.TextField(blank=True, null=True)
     regist_ip = models.CharField(max_length=255, blank=True, null=True)

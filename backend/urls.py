@@ -42,6 +42,10 @@ urlpatterns = [
     path('company/about', CompanyViews.about, name='about'),
 
     # 다운로드 관리
-    path('download/main', DownloadViews.main, name='main'),
+    path('download/windows', DownloadViews.windows, name='windows'),
+    path('download/mac', DownloadViews.mac, name='mac'),
+    path('download/android', DownloadViews.android, name='android'),
+    path('download/ios', DownloadViews.ios, name='ios'),
+
     path('api_download', DownloadViews.api_download, name='api_download'),
 ]
