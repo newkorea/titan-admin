@@ -1,10 +1,10 @@
-<%inherit file="../admin_common/frame.html"/>
+<%inherit file="../admin_common/admin_frame.html"/>
 
 <%block name="css">
 <link rel="stylesheet" href="/static/download/download.css" type="text/css" />
 </%block>
 
-<%block name="title">IOS 파일 관리</%block>
+<%block name="title">Mac 파일 관리</%block>
 <%block name="subtitle">파일 다운로드 링크 및 설명 이미지를 등록할 수 있습니다</%block>
 
 <%block name="content">
@@ -103,43 +103,43 @@
     <div class="client-status">
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
-          클라이언트 링크
+          클라이언트 파일
           <img class="country_img" src='/static/image/korea.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="text" class="form-control" id="ko_ios_link">
+          <input type="file" class="form-control" id="ko_mac_clt">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("ko_ios_link")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("ko_mac_clt")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
-          클라이언트 링크
+          클라이언트 파일
           <img class="country_img" src='/static/image/usa.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="text" class="form-control" id="en_ios_link">
+          <input type="file" class="form-control" id="en_mac_clt">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("en_ios_link")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("en_mac_clt")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
-          클라이언트 링크
+          클라이언트 파일
           <img class="country_img" src='/static/image/china.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="text" class="form-control" id="zh_ios_link">
+          <input type="file" class="form-control" id="zh_mac_clt">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("zh_ios_link")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("zh_mac_clt")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
-          클라이언트 링크
+          클라이언트 파일
           <img class="country_img" src='/static/image/japan.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="text" class="form-control" id="ja_ios_link">
+          <input type="file" class="form-control" id="ja_mac_clt">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("ja_ios_link")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("ja_mac_clt")'>Save</button>
       </div>
     </div>
 
@@ -150,9 +150,9 @@
           <img class="country_img" src='/static/image/korea.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="file" class="form-control" id="ko_ios_img">
+          <input type="file" class="form-control" id="ko_mac_img">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("ko_ios_img")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("ko_mac_img")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
@@ -160,9 +160,9 @@
           <img class="country_img" src='/static/image/usa.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="file" class="form-control" id="en_ios_img">
+          <input type="file" class="form-control" id="en_mac_img">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("en_ios_img")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("en_mac_img")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
@@ -170,9 +170,9 @@
           <img class="country_img" src='/static/image/china.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="file" class="form-control" id="zh_ios_img">
+          <input type="file" class="form-control" id="zh_mac_img">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("zh_ios_img")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("zh_mac_img")'>Save</button>
       </div>
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
@@ -180,9 +180,9 @@
           <img class="country_img" src='/static/image/japan.png'>
         </div>
         <div class="download-flex-item-right">
-          <input type="file" class="form-control" id="ja_ios_img">
+          <input type="file" class="form-control" id="ja_mac_img">
         </div>
-        <button class="btn btn-fw success" onclick='common_save("ja_ios_img")'>Save</button>
+        <button class="btn btn-fw success" onclick='common_save("ja_mac_img")'>Save</button>
       </div>
     </div>
   </div>

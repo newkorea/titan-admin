@@ -30,7 +30,7 @@ def about(request):
             'zh': zh
         }
 
-    return render(request, 'company/about.html', context)
+    return render(request, 'company/admin_about.html', context)
 
 
 def api_company_edit1(request):

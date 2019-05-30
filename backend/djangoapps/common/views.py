@@ -142,7 +142,7 @@ def download_upload(file, flag):
         tdm = TblDownloadManage.objects.get(type='ios', language='zh')
     if flag == 'ja_ios_link' or flag == 'ja_ios_img':
         tdm = TblDownloadManage.objects.get(type='ios', language='ja')
-        
+
     if flag.find('clt') != -1 or flag.find('link') != -1:
         tdm.client_name = real_name
         tdm.client_real_size = real_size

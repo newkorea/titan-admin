@@ -7,4 +7,4 @@ from django.db import connections
 
 def index(request):
     context = {}
-    return render(request, 'index/index.html', context)
+    return render(request, 'index/admin_index.html', context)

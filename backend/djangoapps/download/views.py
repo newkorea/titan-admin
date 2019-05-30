@@ -12,28 +12,28 @@ def android(request):
 
     context = {}
     context['version'] = 'android'
-    return render(request, 'download/android.html', context)
+    return render(request, 'download/admin_android.html', context)
 
 
 def ios(request):
 
     context = {}
     context['version'] = 'ios'
-    return render(request, 'download/ios.html', context)
+    return render(request, 'download/admin_ios.html', context)
 
 
 def mac(request):
 
     context = {}
     context['version'] = 'mac'
-    return render(request, 'download/mac.html', context)
+    return render(request, 'download/admin_mac.html', context)
 
 
 def windows(request):
 
     context = {}
     context['version'] = 'windows'
-    return render(request, 'download/windows.html', context)
+    return render(request, 'download/admin_windows.html', context)
 
 
 def api_download(request):

@@ -28,5 +28,5 @@ def sample(request):
     print(settings.TIME_ZONE)
     print("-------------------------> DEBUG [e]")
 
-    return render(request, 'sample/sample.html', context)
+    return render(request, 'sample/admin_sample.html', context)
     #return JsonResponse({'a':'b'})

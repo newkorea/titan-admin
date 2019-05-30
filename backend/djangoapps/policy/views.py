@@ -30,46 +30,8 @@ def service(request):
             'zh': zh,
             'kind': kind
         }
-    return render(request, 'policy/service.html', context)
+    return render(request, 'policy/admin_service.html', context)
 
-def api_policy_edit(request):
-    sum = request.POST.get('sum')
-    kind = request.POST.get('kind')
-    lang = request.POST.get('lang')
-
-    t1 = TblPolicyManage.objects.get(type=kind)
-
-    if lang == 'en':
-        t1.en = sum
-        t1.save()
-    elif lang == 'ko':
-        t1.ko = sum
-        t1.save()
-    elif lang == 'ja':
-        t1.ja = sum
-        t1.save()
-    elif lang == 'zh':
-        t1.zh = sum
-        t1.save()
-    return JsonResponse({'result': '200'})
-
-def api_policy_load(request):
-    kind = request.POST.get('kind')
-
-    rows = TblPolicyManage.objects.filter(type=kind)
-
-    list = []
-    for t in rows:
-        print(t)
-        sd = {}
-        sd['en'] = t.en
-        sd['ko'] = t.ko
-        sd['ja'] = t.ja
-        sd['zh'] = t.zh
-        list.append(sd)
-
-    print(list)
-    return JsonResponse({'result': list})
 
 def privacy(request):
     with connections['default'].cursor() as cur:
@@ -94,7 +56,7 @@ def privacy(request):
             'kind': kind
         }
 
-    return render(request, 'policy/privacy.html', context)
+    return render(request, 'policy/admin_privacy.html', context)
 
 
 def refund(request):
@@ -119,4 +81,45 @@ def refund(request):
             'zh': zh,
             'kind': kind
         }
-    return render(request, 'policy/refund.html', context)
+    return render(request, 'policy/admin_refund.html', context)
+
+
+def api_policy_edit(request):
+    sum = request.POST.get('sum')
+    kind = request.POST.get('kind')
+    lang = request.POST.get('lang')
+
+    t1 = TblPolicyManage.objects.get(type=kind)
+
+    if lang == 'en':
+        t1.en = sum
+        t1.save()
+    elif lang == 'ko':
+        t1.ko = sum
+        t1.save()
+    elif lang == 'ja':
+        t1.ja = sum
+        t1.save()
+    elif lang == 'zh':
+        t1.zh = sum
+        t1.save()
+    return JsonResponse({'result': '200'})
+
+
+def api_policy_load(request):
+    kind = request.POST.get('kind')
+
+    rows = TblPolicyManage.objects.filter(type=kind)
+
+    list = []
+    for t in rows:
+        print(t)
+        sd = {}
+        sd['en'] = t.en
+        sd['ko'] = t.ko
+        sd['ja'] = t.ja
+        sd['zh'] = t.zh
+        list.append(sd)
+
+    print(list)
+    return JsonResponse({'result': list})
