@@ -14,18 +14,8 @@ urlpatterns = [
     path('', IndexViews.index, name='index'),
 
     # 정책관리 API
-    path('api_privacy_edit1', PolicyViews.api_privacy_edit1, name='api_privacy_edit1'),
-    path('api_privacy_edit2', PolicyViews.api_privacy_edit2, name='api_privacy_edit2'),
-    path('api_privacy_edit3', PolicyViews.api_privacy_edit3, name='api_privacy_edit3'),
-    path('api_privacy_edit4', PolicyViews.api_privacy_edit4, name='api_privacy_edit4'),
-    path('api_refund_edit1', PolicyViews.api_refund_edit1, name='api_refund_edit1'),
-    path('api_refund_edit2', PolicyViews.api_refund_edit2, name='api_refund_edit2'),
-    path('api_refund_edit3', PolicyViews.api_refund_edit3, name='api_refund_edit3'),
-    path('api_refund_edit4', PolicyViews.api_refund_edit4, name='api_refund_edit4'),
-    path('api_service_edit1', PolicyViews.api_service_edit1, name='api_service_edit1'),
-    path('api_service_edit2', PolicyViews.api_service_edit2, name='api_service_edit2'),
-    path('api_service_edit3', PolicyViews.api_service_edit3, name='api_service_edit3'),
-    path('api_service_edit4', PolicyViews.api_service_edit4, name='api_service_edit4'),
+    path('api_policy_edit', PolicyViews.api_policy_edit, name='api_policy_edit'),
+    path('api_policy_load', PolicyViews.api_policy_load, name='api_policy_load'),
 
     # 정책관리
     path('policy/service', PolicyViews.service, name='service'),

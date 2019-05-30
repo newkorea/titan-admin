@@ -16,6 +16,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'backend',
+     # 써드파티 앱 
+     'django_extensions',
 ]
 
 MIDDLEWARE = [

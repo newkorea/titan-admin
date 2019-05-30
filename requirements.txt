@@ -2,3 +2,5 @@ Django
 djangomako==1.1.1
 mysqlclient
 pycrypto
+django_extensions
+ipython
