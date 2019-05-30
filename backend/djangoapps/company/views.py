@@ -23,64 +23,55 @@ def about(request):
         ko = row[0][1]
         ja = row[0][2]
         zh = row[0][3]
+        kind = 'M'
         context = {
             'en': en,
             'ko': ko,
             'ja': ja,
-            'zh': zh
+            'zh': zh,
+            'kind': kind
         }
 
     return render(request, 'company/admin_about.html', context)
 
 
-def api_company_edit1(request):
-    enSum = request.POST.get('enSum')
+def api_company_edit(request):
+    sum = request.POST.get('sum')
+    kind = request.POST.get('kind')
+    lang = request.POST.get('lang')
 
-    with connections['default'].cursor() as cur:
-        query = '''
-            update tbl_company_manage
-            set en = '{enSum}', en_modify_date = now()
-            where type = 'M';
-            )
-        '''.format(
-            enSum = enSum
-        )
-        cur.execute(query)
+    t1 = TblCompanyManage.objects.get(type=kind)
+
+    if lang == 'en':
+        t1.en = sum
+        t1.save()
+    elif lang == 'ko':
+        t1.ko = sum
+        t1.save()
+    elif lang == 'ja':
+        t1.ja = sum
+        t1.save()
+    elif lang == 'zh':
+        t1.zh = sum
+        t1.save()
     return JsonResponse({'result': '200'})
 
-def api_company_edit2(request):
-    koSum = request.POST.get('koSum')
+def api_company_load(request):
+    kind = request.POST.get('kind')
 
-    with connections['default'].cursor() as cur:
-        query = '''
-            update tbl_company_manage
-            set ko = '{koSum}', ko_modify_date = now()
-            where type = 'M';
-            )
-        '''.format(
-            koSum = koSum
-        )
-        cur.execute(query)
-    return JsonResponse({'result': '200'})
+    rows = TblCompanyManage.objects.filter(type=kind)
 
-def api_company_edit3(request):
-    jaSum = request.POST.get('jaSum')
+    list = []
+    for t in rows:
+        print(t)
+        sd = {}
+        sd['en'] = t.en
+        sd['ko'] = t.ko
+        sd['ja'] = t.ja
+        sd['zh'] = t.zh
+        list.append(sd)
 
-    with connections['default'].cursor() as cur:
-        query = '''
-            update tbl_company_manage
-            set ja = '{jaSum}', ja_modify_date = now()
-            where type = 'M';
-            )
-        '''.format(
-            jaSum = jaSum
-        )
-        cur.execute(query)
-    return JsonResponse({'result': '200'})
-
-def api_company_edit4(request):
-    zhSum = request.POST.get('zhSum')
-
+<<<<<<< HEAD
     with connections['default'].cursor() as cur:
         query = '''
             update tbl_company_manage
@@ -92,3 +83,7 @@ def api_company_edit4(request):
         )
         cur.execute(query)
     return JsonResponse({'result': '200'})
+=======
+    print(list)
+    return JsonResponse({'result': list})
+>>>>>>> 0f7e6bfb780a35dc4dc7d6c1b71d57f0c8af66ec
