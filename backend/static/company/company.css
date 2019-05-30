@@ -1,0 +1,25 @@
+ .notification-write-btn-container{
+    text-align: right;
+  }
+  .input-margin input {
+    margin-left: 10px;
+  }
+  .input-margin {
+    font-size: 15px;
+    display: flex;
+  }
+  #summernote_content1, #summernote_content2, #summernote_content3, #summernote_content4{
+    border: solid 1px #cccccc;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  .note-codable { background-color: white !important; color: black !important; }
+
+  .country-logo{
+      width: 20px;
+      margin-left: 5px;
+      margin-top: -5px;
+  }
+  .flex-item{
+    flex: 1;
+  }
