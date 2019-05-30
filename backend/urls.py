@@ -48,4 +48,5 @@ urlpatterns = [
     path('download/ios', DownloadViews.ios, name='ios'),
 
     path('api_download', DownloadViews.api_download, name='api_download'),
+    path('api_load_download_data', DownloadViews.api_load_download_data, name='api_load_download_data'),
 ]

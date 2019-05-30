@@ -1,51 +1,7 @@
 <%inherit file="../admin_common/frame.html"/>
 
 <%block name="css">
-<style>
-.download-title{
-  font-size: 15px;
-  margin-bottom: 10px;
-  text-align: center;
-}
-.download-flex{
-  display: flex;
-  margin-bottom: 2px;
-}
-.download-flex-item-left{
-  padding: 10px;
-  text-align: center;
-  border: solid 1px #cccccc;
-  width: 250px;
-}
-.download-flex-item-right{
-  padding: 10px;
-  text-align: center;
-  border: solid 1px #cccccc;
-  flex: 1;
-}
-.image-status{
-  margin-top: 10px;
-}
-.regist-title{
-  margin-top: 20px;
-}
-.indigo{
-  background-color: #846eed;
-  color: rgba(255, 255, 255, 0.85);
-}
-.btn-fw{
-  height: 38px;
-  margin-top: 10px;
-  margin-left: 10px;
-}
-.pt20{
-  padding-top: 20px;
-}
-.country_img{
-  width: 20px;
-  margin-top: -2px;
-}
-</style>
+<link rel="stylesheet" href="/static/download/download.css" type="text/css" />
 </%block>
 
 <%block name="title">Mac 파일 관리</%block>
@@ -53,89 +9,91 @@
 
 <%block name="content">
 
+<input type='text' id='version_check' value='${version}' hidden>
+
 <div class='download-set'>
   <div class="box-header indigo">
     <h3>상태관리</h3>
   </div>
 
-    <div class="client-status">
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          클라이언트 파일
-          <img class="country_img" src='/static/image/korea.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${ko_mac_clt}
-        </div>
+  <div class="client-status">
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        클라이언트 파일
+        <img class="country_img" src='/static/image/korea.png'>
       </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          클라이언트 파일
-          <img class="country_img" src='/static/image/usa.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${en_mac_clt}
-        </div>
-      </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          클라이언트 파일
-          <img class="country_img" src='/static/image/china.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${zh_mac_clt}
-        </div>
-      </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          클라이언트 파일
-          <img class="country_img" src='/static/image/japan.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${ja_mac_clt}
-        </div>
+      <div class="download-flex-item-right" id='top_ko'>
+        ...
       </div>
     </div>
-
-    <div class="image-status">
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          이미지 파일
-          <img class="country_img" src='/static/image/korea.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${ko_mac_img}
-        </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        클라이언트 파일
+        <img class="country_img" src='/static/image/usa.png'>
       </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          이미지 파일
-          <img class="country_img" src='/static/image/usa.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${en_mac_img}
-        </div>
+      <div class="download-flex-item-right" id='top_en'>
+        ...
       </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          이미지 파일
-          <img class="country_img" src='/static/image/china.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${zh_mac_img}
-        </div>
+    </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        클라이언트 파일
+        <img class="country_img" src='/static/image/china.png'>
       </div>
-      <div class="download-flex">
-        <div class="download-flex-item-left">
-          이미지 파일
-          <img class="country_img" src='/static/image/japan.png'>
-        </div>
-        <div class="download-flex-item-right">
-          ${ja_mac_img}
-        </div>
+      <div class="download-flex-item-right" id='top_zh'>
+        ...
+      </div>
+    </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        클라이언트 파일
+        <img class="country_img" src='/static/image/japan.png'>
+      </div>
+      <div class="download-flex-item-right" id='top_ja'>
+        ...
       </div>
     </div>
   </div>
+
+  <div class="image-status">
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        이미지 파일
+        <img class="country_img" src='/static/image/korea.png'>
+      </div>
+      <div class="download-flex-item-right" id='bot_ko'>
+        ...
+      </div>
+    </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        이미지 파일
+        <img class="country_img" src='/static/image/usa.png'>
+      </div>
+      <div class="download-flex-item-right" id='bot_en'>
+        ...
+      </div>
+    </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        이미지 파일
+        <img class="country_img" src='/static/image/china.png'>
+      </div>
+      <div class="download-flex-item-right" id='bot_zh'>
+        ...
+      </div>
+    </div>
+    <div class="download-flex">
+      <div class="download-flex-item-left">
+        이미지 파일
+        <img class="country_img" src='/static/image/japan.png'>
+      </div>
+      <div class="download-flex-item-right" id='bot_ja'>
+        ...
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class='download-set'>
     <div class="box-header indigo" style="margin-top: 15px;">
@@ -232,35 +190,5 @@
 </%block>
 
 <%block name="js">
-<script>
-  function common_save(flag){
-
-    console.log('flag -> ', flag);
-
-    var upload_file = $("#" + flag)[0].files[0];
-
-    console.log('upload_file -> ', upload_file);
-
-    var formData = new FormData();
-    formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
-    formData.append("upload_file", upload_file);
-    formData.append("flag", flag);
-
-    $.ajax({
-      url: '/api_download',
-      processData: false,
-      contentType: false,
-      data: formData,
-      type: 'POST',
-      success: function(data){
-        if(data.result == 200){
-          window.location.reload();
-        }
-        else{
-          alert('서버오류 - 관리자에게 문의하세요');
-        }
-      }
-    });
-  }
-</script>
+<script src="/static/download/download.js"></script>
 </%block>

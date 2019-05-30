@@ -78,23 +78,34 @@ def file_upload(file, gname, gid):
 
 def download_upload(file, flag):
 
-    upload_root = settings.UPLOAD_ROOT + 'download/'
-    real_name = file.name
-    real_size = file.size
-    save_size = sizeof_fmt(file.size)
-    save_path = upload_root + real_name
+    if flag.find('link') != -1:
+        real_name = file
+        real_size = 0
+        save_size = ''
+        save_path = ''
 
-    print('upload_root -> ', upload_root)
-    print('real_name -> ', real_name)
-    print('real_size -> ', real_size)
-    print('save_size -> ', save_size)
-    print('save_path -> ', save_path)
+        print('real_name -> ', real_name)
+        print('real_size -> ', real_size)
+        print('save_size -> ', save_size)
+        print('save_path -> ', save_path)
+    else:
+        upload_root = settings.UPLOAD_ROOT + 'download/'
+        real_name = file.name
+        real_size = file.size
+        save_size = sizeof_fmt(file.size)
+        save_path = upload_root + real_name
 
-    if not os.path.exists(upload_root):
-        os.makedirs(upload_root)
+        print('upload_root -> ', upload_root)
+        print('real_name -> ', real_name)
+        print('real_size -> ', real_size)
+        print('save_size -> ', save_size)
+        print('save_path -> ', save_path)
 
-    fs = FileSystemStorage()
-    filename = fs.save(save_path, file)
+        if not os.path.exists(upload_root):
+            os.makedirs(upload_root)
+
+        fs = FileSystemStorage()
+        filename = fs.save(save_path, file)
 
     if flag == 'ko_win_clt' or flag == 'ko_win_img':
         tdm = TblDownloadManage.objects.get(type='windows', language='ko')
@@ -114,7 +125,25 @@ def download_upload(file, flag):
     if flag == 'ja_mac_clt' or flag == 'ja_mac_img':
         tdm = TblDownloadManage.objects.get(type='mac', language='ja')
 
-    if flag.find('clt') != -1:
+    if flag == 'ko_and_link' or flag == 'ko_and_img':
+        tdm = TblDownloadManage.objects.get(type='android', language='ko')
+    if flag == 'en_and_link' or flag == 'en_and_img':
+        tdm = TblDownloadManage.objects.get(type='android', language='en')
+    if flag == 'zh_and_link' or flag == 'zh_and_img':
+        tdm = TblDownloadManage.objects.get(type='android', language='zh')
+    if flag == 'ja_and_link' or flag == 'ja_and_img':
+        tdm = TblDownloadManage.objects.get(type='android', language='ja')
+
+    if flag == 'ko_ios_link' or flag == 'ko_ios_img':
+        tdm = TblDownloadManage.objects.get(type='ios', language='ko')
+    if flag == 'en_ios_link' or flag == 'en_ios_img':
+        tdm = TblDownloadManage.objects.get(type='ios', language='en')
+    if flag == 'zh_ios_link' or flag == 'zh_ios_img':
+        tdm = TblDownloadManage.objects.get(type='ios', language='zh')
+    if flag == 'ja_ios_link' or flag == 'ja_ios_img':
+        tdm = TblDownloadManage.objects.get(type='ios', language='ja')
+        
+    if flag.find('clt') != -1 or flag.find('link') != -1:
         tdm.client_name = real_name
         tdm.client_real_size = real_size
         tdm.client_save_size = save_size

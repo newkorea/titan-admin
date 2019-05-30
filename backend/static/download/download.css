@@ -1,0 +1,43 @@
+.download-title{
+  font-size: 15px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.download-flex{
+  display: flex;
+  margin-bottom: 2px;
+}
+.download-flex-item-left{
+  padding: 10px;
+  text-align: center;
+  border: solid 1px #cccccc;
+  width: 250px;
+}
+.download-flex-item-right{
+  padding: 10px;
+  text-align: center;
+  border: solid 1px #cccccc;
+  flex: 1;
+}
+.image-status{
+  margin-top: 10px;
+}
+.regist-title{
+  margin-top: 20px;
+}
+.indigo{
+  background-color: #846eed;
+  color: rgba(255, 255, 255, 0.85);
+}
+.btn-fw{
+  height: 38px;
+  margin-top: 10px;
+  margin-left: 10px;
+}
+.pt20{
+  padding-top: 20px;
+}
+.country_img{
+  width: 20px;
+  margin-top: -2px;
+}
