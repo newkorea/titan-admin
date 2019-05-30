@@ -71,7 +71,6 @@ def api_company_load(request):
         sd['zh'] = t.zh
         list.append(sd)
 
-<<<<<<< HEAD
     with connections['default'].cursor() as cur:
         query = '''
             update tbl_company_manage
@@ -82,8 +81,6 @@ def api_company_load(request):
             zhSum = zhSum
         )
         cur.execute(query)
-    return JsonResponse({'result': '200'})
-=======
+
     print(list)
     return JsonResponse({'result': list})
->>>>>>> 0f7e6bfb780a35dc4dc7d6c1b71d57f0c8af66ec
