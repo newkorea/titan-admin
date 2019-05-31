@@ -20,6 +20,7 @@ function click_edit(){
     var chkValue = $('input[type=radio][name=sum]:checked').val();
     var sum;
     var lang;
+    var kind = $('#kind').html();
     if(chkValue == '1') {
         sum = $('#summernote1').summernote('code');
         lang = 'en';
@@ -37,7 +38,6 @@ function click_edit(){
         lang = 'zh';
     }
   var csrf_token = $('#csrf_token').html();
-  var kind = '${kind}';
   console.log(lang);
 
   if(sum == ''){
