@@ -1,0 +1,71 @@
+<%inherit file="../admin_common/admin_frame.html"/>
+
+<%block name="css">
+<style>
+
+  .notification-write-btn-container{
+    text-align: right;
+  }
+  .input-margin input {
+    margin-left: 10px;
+  }
+  .input-margin {
+    font-size: 15px;
+    display: flex;
+  }
+  .country-logo{
+    width: 20px;
+    margin-left: 5px;
+    margin-top: -5px;
+  }
+  .flex-item{
+    flex: 1;
+  }
+  .country-box{
+    padding-top: 0px;
+  }
+  .padding {
+    padding-bottom: 10px;
+  }
+
+</style>
+</%block>
+
+<%block name="title">리뷰관리</%block>
+<%block name="subtitle">사용자 메인페이지에 보이는 리뷰를 관리할 수 있습니다.</%block>
+
+<%block name="content">
+내용
+</%block>
+<%block name="content2">
+<div class="box-body-input input-margin">
+
+  <div class="flex-item">
+    <input type="radio" name="sum" value="1" checked>
+    <img class="country-logo" src='/static/image/usa.png'>
+    <span>영어</span>
+  </div>
+
+  <div class="flex-item">
+    <input type="radio" name="sum" value="2">
+    <img class="country-logo" src='/static/image/korea.png'>
+    <span>한국어</span>
+  </div>
+
+  <div class="flex-item">
+    <input type="radio" name="sum" value="3">
+    <img class="country-logo" src='/static/image/japan.png'>
+    <span>일본어</span>
+  </div>
+
+  <div class="flex-item">
+    <input type="radio" name="sum" value="4">
+    <img class="country-logo" src='/static/image/china.png'>
+    <span>중국어</span>
+  </div>
+</div>
+</%block>
+
+
+<%block name="js">
+</%block>

@@ -7,6 +7,7 @@ from .djangoapps.index import views as IndexViews
 from .djangoapps.policy import views as PolicyViews
 from .djangoapps.company import views as CompanyViews
 from .djangoapps.download import views as DownloadViews
+from .djangoapps.review import views as ReviewViews
 
 urlpatterns = [
     path('sample', SampleViews.sample, name='sample'),
@@ -37,4 +38,7 @@ urlpatterns = [
 
     path('api_download', DownloadViews.api_download, name='api_download'),
     path('api_load_download_data', DownloadViews.api_load_download_data, name='api_load_download_data'),
+
+    # 리뷰 관리
+    path('review', ReviewViews.review, name='review'),
 ]
