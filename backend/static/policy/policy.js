@@ -3,15 +3,19 @@ var chkValue = $('input[type=radio][name=sum]:checked').val();
 
   console.log(chkValue)
   if(chkValue == '1') {
+      note_disable();
       load_content();
   }
   else if(chkValue == '2') {
+      note_disable();
       load_content();
   }
   else if(chkValue == '3') {
+      note_disable();
       load_content();
   }
   else if(chkValue == '4') {
+      note_disable();
       load_content();
   }
 });
@@ -129,5 +133,18 @@ $(document).ready(function() {
 
     	  }
     });
+    note_disable();
     $('#summernote1').summernote('code', load_content());
 });
+
+function note_disable() {
+    $('#summernote1').summernote('disable');
+    $('.note-editable').attr('style', 'background-color: #e2e2e2 !important; height: 500px');
+
+    setTimeout(note_enable, 1000);
+}
+
+function note_enable() {
+    $('#summernote1').summernote('enable');
+    $('.note-editable').attr('style', 'background-color: #ffffff !important; height: 500px');
+}
