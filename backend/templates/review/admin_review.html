@@ -2,32 +2,51 @@
 
 <%block name="css">
 <style>
-
-  .notification-write-btn-container{
-    text-align: right;
-  }
-  .input-margin input {
-    margin-left: 10px;
-  }
-  .input-margin {
-    font-size: 15px;
-    display: flex;
-  }
-  .country-logo{
+  .flex-item {
+    flex: 1;
+}
+  .country-logo {
     width: 20px;
     margin-left: 5px;
     margin-top: -5px;
+}
+.input-margin {
+  font-size: 15px;
+  display: flex;
+}
+.btn-store{
+      text-align: right;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.item-store{
+  border: solid 0px yellow;
+  display: flex;
+  margin-top: 12px;
+}
+  .review-section{
+    padding: 12px;
+    border: solid 1px #e3e0e6;
+    width: 300px;
+    border-radius: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
   }
-  .flex-item{
-    flex: 1;
+  .review-col2{
+    margin-top: 10px;
   }
-  .country-box{
-    padding-top: 0px;
+  .review-col3{
+    margin-top: 10px;
   }
-  .padding {
-    padding-bottom: 10px;
+  .review-col4{
+    margin-top: 10px;
   }
-
+  .review-col5{
+    margin-top: 3px;
+  }
+  .w100p{
+    width: 100%;
+  }
 </style>
 </%block>
 
@@ -35,37 +54,302 @@
 <%block name="subtitle">사용자 메인페이지에 보이는 리뷰를 관리할 수 있습니다.</%block>
 
 <%block name="content">
-내용
-</%block>
-<%block name="content2">
-<div class="box-body-input input-margin">
 
-  <div class="flex-item">
-    <input type="radio" name="sum" value="1" checked>
-    <img class="country-logo" src='/static/image/usa.png'>
-    <span>영어</span>
+  <div class="box-body-input input-margin">
+
+    <div class="flex-item">
+      <input type="radio" name="sum" value="1" checked>
+      <img class="country-logo" src='/static/image/usa.png'>
+      <span>영어</span>
+    </div>
+
+    <div class="flex-item">
+      <input type="radio" name="sum" value="2">
+      <img class="country-logo" src='/static/image/korea.png'>
+      <span>한국어</span>
+    </div>
+
+    <div class="flex-item">
+      <input type="radio" name="sum" value="3">
+      <img class="country-logo" src='/static/image/japan.png'>
+      <span>일본어</span>
+    </div>
+
+    <div class="flex-item">
+      <input type="radio" name="sum" value="4">
+      <img class="country-logo" src='/static/image/china.png'>
+      <span>중국어</span>
+    </div>
+
+  </div>
+<div id="vue">
+  <div class="btn-store">
+    <button class="btn btn-fw success" v-on:click="addItem()">리뷰추가</button>
   </div>
 
-  <div class="flex-item">
-    <input type="radio" name="sum" value="2">
-    <img class="country-logo" src='/static/image/korea.png'>
-    <span>한국어</span>
+  <div class="item-store">
+    <!--template start-->
+    <div class="review-section" v-for="item in items" v-if="item.idx == 1 || item.idx == 2 || item.idx == 3" :id="item.idx">
+      <div class="review-col1">
+        <label>평점</label>
+        <select class="form-control" id="starbox" :name="item.id">
+          <option v-if="item.star == '1'" value="1" selected>★☆☆☆☆</option>
+          <option v-if="item.star != '1'">★☆☆☆☆</option>
+
+          <option v-if="item.star == '2'" value="2" selected>★★☆☆☆</option>
+          <option v-if="item.star != '2'">★★☆☆☆</option>
+
+          <option v-if="item.star == '3'" value="3" selected>★★★☆☆</option>
+          <option v-if="item.star != '3'">★★★☆☆</option>
+
+          <option v-if="item.star == '4'" value="4" selected>★★★★☆</option>
+          <option v-if="item.star != '4'">★★★★☆</option>
+
+          <option v-if="item.star == '5'" value="5" selected>★★★★★</option>
+          <option v-if="item.star != '5'">★★★★★</option>
+        </select>
+      </div>
+
+      <div class="review-col2">
+        <label>이름</label>
+        <input type="text" class="form-control" id="input_name" name="username" placeholder="" :value="[[item.username]]">
+      </div>
+      <div class="review-col3">
+        <label>내용</label>
+         <textarea class="form-control" id="input_content" name="content" rows="3">[[item.content]]</textarea>
+      </div>
+      <div class="review-col4">
+        <button class="w100p btn btn-fw warn" v-on:click="saveItem([[item.id]], [[item.idx]])">저장</button>
+      </div>
+      <div class="review-col5">
+        <button class="w100p btn btn-fw white" v-on:click="deleteItem([[item.id]])">삭제</button>
+      </div>
+    </div>
+    <!--template end-->
   </div>
 
-  <div class="flex-item">
-    <input type="radio" name="sum" value="3">
-    <img class="country-logo" src='/static/image/japan.png'>
-    <span>일본어</span>
+  <div class="item-store">
+    <!--template start-->
+    <div class="review-section" v-for="item in items" v-if="item.idx == 4 || item.idx == 5 || item.idx == 6" :id="item.idx">
+      <div class="review-col1">
+        <label>평점</label>
+        <select class="form-control" id="starbox" :name="item.id">
+          <option v-if="item.star == '1'" value="1" selected>★☆☆☆☆</option>
+          <option v-if="item.star != '1'">★☆☆☆☆</option>
+
+          <option v-if="item.star == '2'" value="2" selected>★★☆☆☆</option>
+          <option v-if="item.star != '2'">★★☆☆☆</option>
+
+          <option v-if="item.star == '3'" value="3" selected>★★★☆☆</option>
+          <option v-if="item.star != '3'">★★★☆☆</option>
+
+          <option v-if="item.star == '4'" value="4" selected>★★★★☆</option>
+          <option v-if="item.star != '4'">★★★★☆</option>
+
+          <option v-if="item.star == '5'" value="5" selected>★★★★★</option>
+          <option v-if="item.star != '5'">★★★★★</option>
+        </select>
+      </div>
+      <div class="review-col2">
+        <label>이름</label>
+        <input type="text" class="form-control" id="name" name="username" placeholder="" :value="[[item.username]]">
+      </div>
+      <div class="review-col3">
+        <label>내용</label>
+         <textarea class="form-control" id="content" name="content" rows="3">[[item.content]]</textarea>
+      </div>
+      <div class="review-col4">
+        <button class="w100p btn btn-fw warn" v-on:click="saveItem([[item.id]], [[item.idx]])">저장</button>
+      </div>
+      <div class="review-col5">
+        <button class="w100p btn btn-fw white" v-on:click="deleteItem([[item.id]])">삭제</button>
+      </div>
+    </div>
+    <!--template end-->
   </div>
 
-  <div class="flex-item">
-    <input type="radio" name="sum" value="4">
-    <img class="country-logo" src='/static/image/china.png'>
-    <span>중국어</span>
-  </div>
 </div>
 </%block>
 
-
 <%block name="js">
+<script>
+
+  var csrf_token = $('#csrf_token').html();
+  var app = new Vue({
+    el: '#vue',
+    delimiters: ['[[', ']]'],
+    created () {
+    var language = 'en';
+        $.post( "/api_review_read", {
+            csrfmiddlewaretoken: csrf_token,
+            language: language,
+        })
+            .done(function( data ) {
+                console.log(data.result);
+                app.items = data.result;
+                console.log("app.items->>", app.items);
+            });
+
+    $('input[type=radio][name=sum]').on('click', function () {
+        var chkValue = $('input[type=radio][name=sum]:checked').val();
+
+        if(chkValue == '1') {
+            language = 'en'
+        }
+        else if(chkValue == '2') {
+            language = 'ko'
+        }
+        else if(chkValue == '3') {
+            language = 'ja'
+        }
+        else if(chkValue == '4') {
+            language = 'zh'
+        }
+        $.post( "/api_review_read", {
+            csrfmiddlewaretoken: csrf_token,
+            language: language,
+        })
+            .done(function( data ) {
+                console.log(data.result);
+                app.items = data.result;
+                console.log("app.items->>", app.items);
+            });
+        console.log(chkValue);
+        console.log(language);
+    });
+
+
+    },
+    data: {
+      items: [],
+    },
+    methods: {
+      loadItem: function(){
+        $.post( "/api_review_read", {
+            csrfmiddlewaretoken: csrf_token,
+            language: language
+        })
+        .done(function( data ) {
+          console.log(data.result);
+          app.items = data.result;
+        });
+      },
+      deleteItem: function(seq){
+        var seq = seq[0][0];
+        console.log('seq -> ', seq);
+        $.post( "/api_review_del", {
+            csrfmiddlewaretoken: csrf_token,
+            seq: seq,
+        })
+        .done(function( data ) {
+            if (data.result == '200') {
+                Swal.fire({
+                    title: '삭제완료',
+                    text: '정상적으로 삭제되었습니다.',
+                    type: 'success',
+                    confirmButtonColor: "#22b66e"
+                })
+                app.loadItem();
+            }
+        });
+      },
+      addItem: function(){
+        var chkValue = $('input[type=radio][name=sum]:checked').val();
+        if(chkValue == '1') {
+            language = 'en'
+        }
+        else if(chkValue == '2') {
+            language = 'ko'
+        }
+        else if(chkValue == '3') {
+            language = 'ja'
+        }
+        else if(chkValue == '4') {
+            language = 'zh'
+        }
+
+          var sLast = $(".review-section:last").attr('id');
+
+          Number(sLast)
+          if(sLast == 6) {
+              console.log(sLast);
+              Swal.fire({
+                  title: '오류',
+                  text: '리뷰는 6개까지만 등록이 가능합니다.',
+                  type: 'warning',
+                  confirmButtonColor: "#FF0103"
+              })
+              return 1;
+          }
+          var cloneElement = $('.review-section:last').clone();
+          var sNext = Number(sLast)+1
+          cloneElement.attr('id', sNext)
+          cloneElement.appendTo('.item-store:last');
+          $('#'+sNext).find('input[name=username]').val('');
+          $('#'+sNext).find('textarea[name=content]').val('');
+          console.log(language)
+          $.post( "/api_review_add", {
+              csrfmiddlewaretoken: csrf_token,
+              language: language
+          })
+              .done(function( data ) {
+                  app.loadItem();
+              });
+
+      },
+      saveItem: function(seq, idx){
+        var seq = seq[0][0];
+        var chkValue = $('input[type=radio][name=sum]:checked').val();
+        if(chkValue == '1') {
+            language = 'en'
+        }
+        else if(chkValue == '2') {
+            language = 'ko'
+        }
+        else if(chkValue == '3') {
+            language = 'ja'
+        }
+        else if(chkValue == '4') {
+            language = 'zh'
+        }
+
+        var starbox = $('#'+idx).find('#starbox option:selected').val();
+        if(starbox == '★☆☆☆☆')
+            starbox = '1';
+        else if(starbox == '★★☆☆☆')
+            starbox = '2';
+        else if(starbox == '★★★☆☆')
+            starbox = '3';
+        else if(starbox == '★★★★☆')
+            starbox = '4';
+        else if(starbox == '★★★★★')
+            starbox = '5';
+
+        var username = $('#'+idx).find('input[name=username]').val();
+        var content = $('#'+idx).find('textarea[name=content]').val();
+
+        console.log('seq -> ', seq);
+        $.post( "/api_review_save", {
+            csrfmiddlewaretoken: csrf_token,
+            seq: seq,
+            username: username,
+            content: content,
+            starbox: starbox,
+            language: language,
+        })
+        .done(function( data ) {
+            if (data.result == '200') {
+                Swal.fire({
+                    title: '저장완료',
+                    text: '정상적으로 저장되었습니다.',
+                    type: 'success',
+                    confirmButtonColor: "#22b66e"
+                })
+            }
+            app.loadItem();
+        });
+      },
+    }
+  })
+</script>
 </%block>

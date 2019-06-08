@@ -216,6 +216,23 @@ class TblPolicyManage(models.Model):
         db_table = 'tbl_policy_manage'
 
 
+class TblReview(models.Model):
+    language = models.CharField(max_length=10)
+    star = models.IntegerField()
+    content = models.CharField(max_length=1000)
+    username = models.CharField(max_length=200)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    regist_id = models.IntegerField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    modify_id = models.IntegerField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_review'
+
+
 class TblSupport(models.Model):
     email = models.CharField(max_length=255, blank=True, null=True)
     main_type = models.CharField(max_length=30, blank=True, null=True)

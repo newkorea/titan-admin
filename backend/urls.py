@@ -41,4 +41,8 @@ urlpatterns = [
 
     # 리뷰 관리
     path('review', ReviewViews.review, name='review'),
+    path('api_review_read', ReviewViews.api_review_read, name='api_review_read'),
+    path('api_review_save', ReviewViews.api_review_save, name='api_review_save'),
+    path('api_review_add', ReviewViews.api_review_add, name='api_review_add'),
+    path('api_review_del', ReviewViews.api_review_del, name='api_review_del'),
 ]
