@@ -242,7 +242,10 @@ class TblSupport(models.Model):
     regist_ip = models.CharField(max_length=255, blank=True, null=True)
     regist_date = models.DateTimeField(blank=True, null=True)
     view_date = models.DateTimeField(blank=True, null=True)
+    send_content = models.TextField(blank=True, null=True)
     send_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False

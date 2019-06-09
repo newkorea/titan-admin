@@ -124,14 +124,10 @@ $(document).ready(function() {
         height: 500,
         lang: 'ko-KR',
         popover: {         //팝오버 설정
-
-    	        image: [], //이미지 삭제
-
-    	        link: [],  //링크 삭제
-
-    	        air: []
-
-    	  }
+            image: [], //이미지 삭제
+            link: [],  //링크 삭제
+            air: []
+        }
     });
     note_disable();
     $('#summernote1').summernote('code', load_content());

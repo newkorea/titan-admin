@@ -1,0 +1,257 @@
+<%inherit file="../admin_common/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .su-filter{
+        display: flex;
+    }
+    .su-filter-item{
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+    .su-con{
+        display: flex;
+        margin-top: 20px;
+    }
+    .su-con-l{
+        border: solid 1px #f1eafd;
+        flex: 1;
+        margin-right: 5px;
+    }
+    .su-con-r{
+        border: solid 2px #ffc7c7;
+        flex: 1;
+        margin-left: 5px;
+    }
+    .su-select{
+        width: 150px;
+    }
+    .su-tr{
+        transition: 0.3s;
+        cursor: pointer;
+    }
+    .su-tr:hover{
+        background-color: #f7f1ff;
+    }
+    .su-r-box{
+        border: solid 1px red;
+        display: flex;
+    }
+    .su-r-code{
+        border: solid 1px red;
+    }
+    .su-r-name{
+        border: solid 1px red;
+    }
+    .su-img{
+        width: 150px;
+        height: 100px;
+        cursor: pointer;
+    }
+    .note-editable{
+        border: solid 1px #dddddd !important;
+        border-radius: 5px;
+    }
+</style>
+</%block>
+
+<%block name="title">문의 관리</%block>
+<%block name="subtitle">1:1문의 / 버그문의 / 개선요청에 관한 요청을 처리할 수 있습니다</%block>
+
+<%block name="content">
+<div class='su-filter'>
+    <div class='su-filter-item'>
+        <div class="form-group">
+            <label>메인구분</label>
+            <select class="su-select form-control" id="main_sel">
+                % for code in code_group:
+                    <option value='${code.code}'>${code.name}</option>
+                % endfor
+            </select>   
+        </div>
+    </div>
+    <div class='su-filter-item'>
+        <div class="form-group">
+            <label>서브구분</label>
+            <select class="su-select form-control" id="sub_sel">
+            </select>   
+        </div>
+    </div>
+    <div class='su-filter-item'>
+        <div class="form-group">
+            <label>처리여부</label>
+            <select class="su-select form-control" id="exampleFormControlSelect1">
+                <option value='N'>미처리</option>
+                <option value='Y'>처리</option>
+            </select>   
+        </div>
+    </div>
+    <div class='su-filter-item'>
+        <div class="form-group">
+            <label>문의시점</label>
+            <input id='target_date' type="text" class="form-control datetimepicker-input js-datetimepicker" id="datetimepicker2" data-toggle="datetimepicker" data-target="#datetimepicker2">
+        </div>
+    </div>
+</div>
+<div class='su-con'>
+    <div class='su-con-l'>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <td class='tac'>
+                        제목
+                    </td>
+                    <td class='tac'>
+                        등록시간
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                % for n in range(0, 20):
+                <tr class='su-tr'>
+                    <td>
+                        결제 했는데 시간은 그대로에요...
+                    </td>
+                    <td class='w50'>
+                        2019-06-09 11:28   
+                    </td>
+                </tr>
+                % endfor
+            </tbody>
+        </table>
+    </div>
+    <div class='su-con-r'>
+        <table class="table table-bordered">
+            <tr>
+                <td class='tac w20p'>메인구분</td>
+                <td>버그 문의</td>
+            </tr>
+            <tr>
+                <td class='tac w20p'>서브구분</td>
+                <td>소프트웨어 취약점</td>
+            </tr>
+            <tr>
+                <td class='tac w20p'>이메일</td>
+                <td>93immm@naver.com</td>
+            </tr>
+            <tr>
+                <td class='tac w20p'>제목</td>
+                <td>결제 했는데 시간은 그대로에요...</td>
+            </tr>
+            <tr>
+               <td colspan='2'>
+                   <div class='pd10 mh300'>
+                        asdasdasd<br>
+                        awgejawengkjawengj<br>
+                        awengjkawnejkgnajwkeg<br>
+                        njkawengjkanwejkg<br>
+                   </div>
+               </td>
+            </tr>
+            <tr>
+                <td class='tac w20p '>첨부파일(1)</td>
+                <td class='tac'>
+                    <img class='su-img' src='https://i.ytimg.com/vi/RD1pth7cSv8/maxresdefault.jpg'>
+                </td>
+            </tr>
+            <tr>
+                <td class='tac w20p'>첨부파일(2)</td>
+                <td class='tac'>
+                    <img class='su-img' src='https://i.ytimg.com/vi/Ln3HoVSPhcA/maxresdefault.jpg'>
+                </td>
+            </tr>
+            <tr>
+                <td class='tac fwbold' colspan='2'>
+                    답장 하기
+                </td>
+            </tr>
+            <tr>
+                <td colspan='2'>
+                    <div class="summernote" id="summernote"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class='tac' colspan='2'>
+                    <button class="btn btn-fw success">답장</button>
+                </td>
+            </tr>
+            
+        </table>
+    </div>
+</div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+    $( function() {
+        $( "#datetimepicker2" ).datepicker({
+            dateFormat: 'yy-mm-dd',
+            yearSuffix: "년",
+            monthNamesShort: ['1','2','3','4','5','6','7','8','9','10','11','12'],
+            monthNames: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+            dayNamesMin: ['일','월','화','수','목','금','토'],
+            dayNames: ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'],
+            showMonthAfterYear: true
+        });
+    } );
+
+    function makeSubOption(group_code){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api_support_getSubOption", {
+             csrfmiddlewaretoken: csrf_token, 
+             group_code: group_code
+        })
+        .done(function( data ) {
+            var r = data.result;
+
+            $('#sub_sel').empty();
+
+            console.log('r.length -> ', r.length);
+
+            op_txt = "<option value='0'>전체</option>";
+            $('#sub_sel').append(op_txt);
+            for(var i=0; i<r.length; i++){
+                op_txt = "<option value='"+r[i]['code']+"'>"+ r[i]['name'] +"</option>";
+                $('#sub_sel').append(op_txt);
+            }
+            
+        });
+    }
+
+    $( document ).ready(function() {
+        var value = $('#main_sel').val();
+        makeSubOption(value);
+
+        Date.prototype.yyyymmdd = function() {
+        var mm = this.getMonth() + 1; 
+        var dd = this.getDate();
+
+        return [this.getFullYear(), '-', (mm>9 ? '' : '0') + mm, '-', (dd>9 ? '' : '0') + dd].join('');
+        };
+
+        var date = new Date();
+        var now = date.yyyymmdd()
+        console.log('now -> ', now);
+        $('#target_date').val(now);
+
+        $('.summernote').summernote({
+            height: 300,
+            lang: 'ko-KR',
+            popover: {         //팝오버 설정
+                image: [], //이미지 삭제
+                link: [],  //링크 삭제
+                air: []
+            }
+        });
+    });
+
+    $('#main_sel').change(function() {
+        var value = $(this).val();
+        console.log('hello -> ', value);
+
+        makeSubOption(value);
+    });
+</script>
+</%block>
