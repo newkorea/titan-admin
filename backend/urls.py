@@ -9,6 +9,7 @@ from .djangoapps.company import views as CompanyViews
 from .djangoapps.download import views as DownloadViews
 from .djangoapps.review import views as ReviewViews
 from .djangoapps.support import views as SupportViews
+from .djangoapps.dashboard import views as DashboardViews
 
 urlpatterns = [
 
@@ -66,4 +67,8 @@ urlpatterns = [
 
     # 문의 관리 APi
     path('api_support_getSubOption', SupportViews.api_support_getSubOption, name='api_support_getSubOption'),
+
+
+    # 대쉬보드
+    path('dashboard', DashboardViews.dashboard, name='dashboard'),
 ]
