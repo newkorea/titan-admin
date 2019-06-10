@@ -119,19 +119,14 @@ function load_content(){
 }
 $(document).ready(function() {
     $('.summernote').on('summernote.init', function () {
-        //$('.summernote').summernote('codeview.activate');
     }).summernote({
         height: 500,
         lang: 'ko-KR',
-        popover: {         //팝오버 설정
-
-    	        image: [], //이미지 삭제
-
-    	        link: [],  //링크 삭제
-
-    	        air: []
-
-    	  }
+        popover: {        
+            image: [], 
+            link: [],  
+            air: []
+        },
     });
     note_disable();
     $('#summernote1').summernote('code', load_content());

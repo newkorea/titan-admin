@@ -67,6 +67,8 @@ urlpatterns = [
 
     # 문의 관리 APi
     path('api_support_getSubOption', SupportViews.api_support_getSubOption, name='api_support_getSubOption'),
+    path('api_support_getContent', SupportViews.api_support_getContent, name='api_support_getContent'),
+    path('api_support_getSelectContent', SupportViews.api_support_getSelectContent, name='api_support_getSelectContent'),
 
 
     # 대쉬보드
