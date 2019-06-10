@@ -55,34 +55,35 @@
 
 <%block name="content">
 
-  <div class="box-body-input input-margin">
+<div id="vue">
+  language -> [[language]]
 
+  <div class="box-body-input input-margin">
     <div class="flex-item">
-      <input type="radio" name="sum" value="1" checked>
+      <input type="radio" name="sum" value="en" checked v-on:click='selectLanguage($event)'>
       <img class="country-logo" src='/static/image/usa.png'>
       <span>영어</span>
     </div>
 
     <div class="flex-item">
-      <input type="radio" name="sum" value="2">
+      <input type="radio" name="sum" value="ko" v-on:click='selectLanguage($event)'>
       <img class="country-logo" src='/static/image/korea.png'>
       <span>한국어</span>
     </div>
 
     <div class="flex-item">
-      <input type="radio" name="sum" value="3">
+      <input type="radio" name="sum" value="ja" v-on:click='selectLanguage($event)'>
       <img class="country-logo" src='/static/image/japan.png'>
       <span>일본어</span>
     </div>
 
     <div class="flex-item">
-      <input type="radio" name="sum" value="4">
+      <input type="radio" name="sum" value="zh" v-on:click='selectLanguage($event)'>
       <img class="country-logo" src='/static/image/china.png'>
       <span>중국어</span>
     </div>
-
   </div>
-<div id="vue">
+
   <div class="btn-store">
     <button class="btn btn-fw success" v-on:click="addItem()">리뷰추가</button>
   </div>
@@ -179,61 +180,40 @@
     el: '#vue',
     delimiters: ['[[', ']]'],
     created () {
-    var language = 'en';
-        $.post( "/api_review_read", {
+      $.post( "/api_review_read", {
             csrfmiddlewaretoken: csrf_token,
-            language: language,
+            language: this.language,
         })
-            .done(function( data ) {
-                console.log(data.result);
-                app.items = data.result;
-                console.log("app.items->>", app.items);
-            });
-
-    $('input[type=radio][name=sum]').on('click', function () {
-        var chkValue = $('input[type=radio][name=sum]:checked').val();
-
-        if(chkValue == '1') {
-            language = 'en'
-        }
-        else if(chkValue == '2') {
-            language = 'ko'
-        }
-        else if(chkValue == '3') {
-            language = 'ja'
-        }
-        else if(chkValue == '4') {
-            language = 'zh'
-        }
-        $.post( "/api_review_read", {
-            csrfmiddlewaretoken: csrf_token,
-            language: language,
-        })
-            .done(function( data ) {
-                console.log(data.result);
-                app.items = data.result;
-                console.log("app.items->>", app.items);
-            });
-        console.log(chkValue);
-        console.log(language);
-    });
-
-
+        .done(function( data ) {
+            console.log(data.result);
+            app.items = data.result;
+            console.log("app.items->>", app.items);
+        });
     },
     data: {
       items: [],
+      language: 'en'
     },
     methods: {
+      // 언어 선택(state update) 및 내용 로드(based state)
+      selectLanguage: function(e){
+        var language = e.currentTarget.value;
+        this.language = language;
+
+        this.loadItem();
+      },
+      // 내용 로드(based state)
       loadItem: function(){
         $.post( "/api_review_read", {
             csrfmiddlewaretoken: csrf_token,
-            language: language
+            language: this.language
         })
         .done(function( data ) {
           console.log(data.result);
           app.items = data.result;
         });
       },
+      // 아이템 삭제 후 내용 로드(based state)
       deleteItem: function(seq){
         var seq = seq[0][0];
         console.log('seq -> ', seq);
@@ -254,65 +234,29 @@
         });
       },
       addItem: function(){
-        var chkValue = $('input[type=radio][name=sum]:checked').val();
-        if(chkValue == '1') {
-            language = 'en'
-        }
-        else if(chkValue == '2') {
-            language = 'ko'
-        }
-        else if(chkValue == '3') {
-            language = 'ja'
-        }
-        else if(chkValue == '4') {
-            language = 'zh'
+        console.log('this.items -> ', this.items);
+        console.log('this.items -> ', this.items.length);
+
+        if(this.items.length == 6){
+          console.log('item pool is full');
+          return false;
         }
 
-          var sLast = $(".review-section:last").attr('id');
+        var tmp = {
+          content: '',
+          id: 0,
+          idx: this.items.length + 1,
+          star: 1,
+          username: ''
+        }
 
-          Number(sLast)
-          if(sLast == 6) {
-              console.log(sLast);
-              Swal.fire({
-                  title: '오류',
-                  text: '리뷰는 6개까지만 등록이 가능합니다.',
-                  type: 'warning',
-                  confirmButtonColor: "#FF0103"
-              })
-              return 1;
-          }
-          var cloneElement = $('.review-section:last').clone();
-          var sNext = Number(sLast)+1
-          cloneElement.attr('id', sNext)
-          cloneElement.appendTo('.item-store:last');
-          $('#'+sNext).find('input[name=username]').val('');
-          $('#'+sNext).find('textarea[name=content]').val('');
-          console.log(language)
-          $.post( "/api_review_add", {
-              csrfmiddlewaretoken: csrf_token,
-              language: language
-          })
-              .done(function( data ) {
-                  app.loadItem();
-              });
+        this.items.push(tmp);
 
       },
+      // 내용 업데이트 및 삽입
       saveItem: function(seq, idx){
         var seq = seq[0][0];
-        var chkValue = $('input[type=radio][name=sum]:checked').val();
-        if(chkValue == '1') {
-            language = 'en'
-        }
-        else if(chkValue == '2') {
-            language = 'ko'
-        }
-        else if(chkValue == '3') {
-            language = 'ja'
-        }
-        else if(chkValue == '4') {
-            language = 'zh'
-        }
-
+        var language = this.language;
         var starbox = $('#'+idx).find('#starbox option:selected').val();
         if(starbox == '★☆☆☆☆')
             starbox = '1';
@@ -328,7 +272,14 @@
         var username = $('#'+idx).find('input[name=username]').val();
         var content = $('#'+idx).find('textarea[name=content]').val();
 
+        console.log('--------------------------------');
         console.log('seq -> ', seq);
+        console.log('language -> ', language);
+        console.log('starbox -> ', starbox);
+        console.log('username -> ', username);
+        console.log('content -> ', content);
+        console.log('--------------------------------');
+
         $.post( "/api_review_save", {
             csrfmiddlewaretoken: csrf_token,
             seq: seq,
@@ -348,6 +299,7 @@
             }
             app.loadItem();
         });
+
       },
     }
   })

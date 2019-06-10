@@ -1,4 +1,5 @@
 import json
+import datetime
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -6,17 +7,15 @@ from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
-from datetime import datetime
 
 def review(request):
 
-
-    return render(request, 'review/admin_review.html', {})
+    context = {}
+    return render(request, 'review/admin_review.html', context)
 
 
 def api_review_read(request):
     language = request.POST.get('language')
-    print('call api_review_read')
     rows = TblReview.objects.filter(language=language, delete_yn='N')
 
     res = []
@@ -36,44 +35,52 @@ def api_review_read(request):
 
 
 def api_review_save(request):
-    print("api_review_save call")
+
     seq = request.POST.get('seq')
     starbox = request.POST.get('starbox')
     username = request.POST.get('username')
     content = request.POST.get('content')
     language = request.POST.get('language')
 
-    tbl = TblReview.objects.filter(id=seq, language=language)
+    print('seq -> ', seq)
+    print('starbox -> ', starbox)
+    print('username -> ', username)
+    print('content -> ', content)
+    print('language -> ', language)
 
-    if tbl:
-        print('true')
-        tr1 = TblReview.objects.get(id=seq, language=language)
-        tr1.language = language
-        tr1.star = starbox
-        tr1.content = content
-        tr1.username = username
-        tr1.modify_date = datetime.now()
-        tr1.save()
+    if seq == '0':
+        print('insert')
+        tr = TblReview(
+            language=language,
+            star=starbox,
+            username=username,
+            content=content,
+            regist_date=datetime.datetime.now(),
+            regist_id='999',
+            delete_yn='N'
+        )
+        tr.save()
     else:
-        print('false')
-        TblReview.objects.create(language=language, star=starbox, content=content, username=username, regist_date=datetime.now(), delete_yn='N')
-
-    return JsonResponse({'result': 200})
-
-
-def api_review_add(request):
-    language = request.POST.get('language')
-    TblReview.objects.create(language=language, star = 5, delete_yn='N')
+        print('update')
+        tr = TblReview.objects.get(id=seq)
+        tr.language = language
+        tr.star = starbox
+        tr.content = content
+        tr.username = username
+        tr.modify_date = datetime.datetime.now()
+        tr.modify_id = '999'
+        tr.save()
 
     return JsonResponse({'result': 200})
 
 
 def api_review_del(request):
-    print('call api_review_del')
+
     seq = request.POST.get('seq')
 
-    tbl = TblReview.objects.get(id=seq)
-    tbl.delete_yn = 'Y'
-    tbl.save()
+    tr = TblReview.objects.get(id=seq)
+    tr.delete_yn = 'Y'
+    tr.delete_date = datetime.datetime.now()
+    tr.save()
 
     return JsonResponse({'result': 200})
