@@ -81,7 +81,7 @@
         <div class='su-filter-item'>
             <div class="form-group">
                 <label>메인구분</label>
-                <select class="su-select form-control" id="main_sel">
+                <select @change="onChange()" class="su-select form-control" id="main_sel">
                     % for code in code_group:
                         <option value='${code.code}'>${code.name}</option>
                     % endfor
@@ -91,14 +91,14 @@
         <div class='su-filter-item'>
             <div class="form-group">
                 <label>서브구분</label>
-                <select class="su-select form-control" id="sub_sel">
+                <select @change="onChange()" class="su-select form-control" id="sub_sel">
                 </select>   
             </div>
         </div>
         <div class='su-filter-item'>
             <div class="form-group">
                 <label>처리여부</label>
-                <select class="su-select form-control" id="send_yn">
+                <select @change="onChange()" class="su-select form-control" id="send_yn">
                     <option value='N'>미처리</option>
                     <option value='Y'>처리</option>
                 </select>   
@@ -107,7 +107,7 @@
         <div class='su-filter-item'>
             <div class="form-group">
                 <label>문의시점</label>
-                <input id='target_date' type="text" class="form-control" placeholder="yyyy-mm-dd">
+                <input v-on:blur="onChange()" id='target_date' type="text" class="form-control" placeholder="yyyy-mm-dd">
             </div>
         </div>
     </div>
@@ -193,7 +193,7 @@
                 </tr>
                 <tr>
                     <td colspan='2'>
-                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="8"></textarea>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="8"></textarea>
                     </td>
                 </tr>
                 <tr>
@@ -220,29 +220,40 @@
         el: '#vue',
         delimiters: ['[[', ']]'],
         created () {
-            setTimeout(function(){
-                var main_sel = $('#main_sel').val();
-                var sub_sel = $('#sub_sel').val();
-                var send_yn = $('#send_yn').val();
-                var target_date = $('#target_date').val();
+            var main_sel = $('#main_sel').val();
+            var sub_sel = $('#sub_sel').val();
+            var send_yn = $('#send_yn').val();
+            var target_date = $('#target_date').val();
 
-                console.log('main_sel -> ', main_sel);
-                console.log('sub_sel -> ', sub_sel);
-                console.log('send_yn -> ', send_yn);
-                console.log('target_date -> ', target_date);
+            // inject now
+            Date.prototype.yyyymmdd = function() {
+            var mm = this.getMonth() + 1; 
+            var dd = this.getDate();
+            return [this.getFullYear(), '-', (mm>9 ? '' : '0') + mm, '-', (dd>9 ? '' : '0') + dd].join('');
+            };
+            var date = new Date();
+            var now = date.yyyymmdd()
+            console.log('now -> ', now);
+            var target_date = now;
+            
+            console.log('--------------------------')
+            console.log('main_sel -> ', main_sel);
+            console.log('sub_sel -> ', sub_sel);
+            console.log('send_yn -> ', send_yn);
+            console.log('target_date -> ', target_date);
+            console.log('--------------------------')
 
-                $.post( "/api_support_getContent", {
-                    csrfmiddlewaretoken: csrf_token, 
-                    main_sel: main_sel,
-                    sub_sel: sub_sel,
-                    send_yn: send_yn,
-                    target_date: target_date
-                })
-                .done(function( data ) {
-                    console.log('data.result -> ', data.result);
-                    app.items = data.result;
-                })
-            }, 1000); 
+            $.post( "/api_support_getContent", {
+                csrfmiddlewaretoken: csrf_token, 
+                main_sel: main_sel,
+                sub_sel: sub_sel,
+                send_yn: send_yn,
+                target_date: target_date
+            })
+            .done(function( data ) {
+                console.log('data.result -> ', data.result);
+                app.items = data.result;
+            })
         },
         data: {
             items: [],
@@ -266,10 +277,39 @@
                     console.log('data.result -> ', data.result);
                     app.select_store = data.result;
                 })
+            },
+            onChange: function(){
+                app.loadItem();
+            },
+            loadItem: function(){
+                var main_sel = $('#main_sel').val();
+                var sub_sel = $('#sub_sel').val();
+                var send_yn = $('#send_yn').val();
+                var target_date = $('#target_date').val();
+                
+                console.log('--------------------------')
+                console.log('main_sel -> ', main_sel);
+                console.log('sub_sel -> ', sub_sel);
+                console.log('send_yn -> ', send_yn);
+                console.log('target_date -> ', target_date);
+                console.log('--------------------------')
+
+                $.post( "/api_support_getContent", {
+                    csrfmiddlewaretoken: csrf_token, 
+                    main_sel: main_sel,
+                    sub_sel: sub_sel,
+                    send_yn: send_yn,
+                    target_date: target_date
+                })
+                .done(function( data ) {
+                    console.log('data.result -> ', data.result);
+                    app.items = data.result;
+                })
             }
         }
     })
 
+    /*
     $( function() {
         $( "#datetimepicker2" ).datepicker({
             dateFormat: 'yy-mm-dd',
@@ -281,6 +321,7 @@
             showMonthAfterYear: true
         });
     } );
+    */
 
     function makeSubOption(group_code){
         var csrf_token = $('#csrf_token').html();
@@ -306,20 +347,19 @@
     }
 
     $( document ).ready(function() {
-        var value = $('#main_sel').val();
-        makeSubOption(value);
-
+        // inject now
         Date.prototype.yyyymmdd = function() {
         var mm = this.getMonth() + 1; 
         var dd = this.getDate();
-
         return [this.getFullYear(), '-', (mm>9 ? '' : '0') + mm, '-', (dd>9 ? '' : '0') + dd].join('');
         };
-
         var date = new Date();
         var now = date.yyyymmdd()
         console.log('now -> ', now);
         $('#target_date').val(now);
+
+        var value = $('#main_sel').val();
+        makeSubOption(value);
 
         /*
         $('.summernote').summernote({

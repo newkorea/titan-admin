@@ -32,28 +32,68 @@ def api_support_getSubOption(request):
     return JsonResponse({'result': rr})
 
 
+# parameter : yyyy-mm-dd
+def convertStrToDatetime(strTypedate):
+
+    tmp = strTypedate.split('-')
+    yyyy = int(tmp[0])
+    mm = int(tmp[1])
+    dd = int(tmp[2])
+    return datetime.datetime(yyyy, mm, dd)
+
+
 def api_support_getContent(request):
 
     main_sel = request.POST.get('main_sel')
     sub_sel = request.POST.get('sub_sel')
     send_yn = request.POST.get('send_yn')
     target_date = request.POST.get('target_date')
+    
+    # life cycle bug fix
+    if sub_sel == '':
+        sub_sel = '0'
 
+    print('----------------------------')
     print('main_sel -> ', main_sel)
     print('sub_sel -> ', sub_sel)
+    print('sub_sel -> ', type(sub_sel))
     print('send_yn -> ', send_yn)
     print('target_date -> ', target_date)
+    print('----------------------------')
 
-    ts = TblSupport.objects.filter(
-        main_type=main_sel
-    )
+    with connections['default'].cursor() as cur:
+        if sub_sel == '0':
+            query = '''
+                select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
+                from tbl_support
+                where main_type='{main_sel}'
+                and date(regist_date) = date('{target_date}')
+                and send_yn='{send_yn}';
+            '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
+            print(query)
+            cur.execute(query)
+            rows = cur.fetchall()
+        else:
+            query = '''
+                select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
+                from tbl_support
+                where main_type='{main_sel}'
+                and sub_type='{sub_sel}'
+                and date(regist_date) = date('{target_date}')
+                and send_yn='{send_yn}';
+            '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
+            print(query)
+            cur.execute(query)
+            rows = cur.fetchall()   
+
+    print('len(rows) -> ', len(rows))
 
     rr = []
-    for t in ts:
+    for row in rows:
         tmp = {}
-        tmp['id'] = t.id
-        tmp['title'] = t.title
-        tmp['regist_date'] = t.regist_date.strftime("%Y-%m-%d %H:%M")
+        tmp['id'] = row[0]
+        tmp['title'] = row[1]
+        tmp['regist_date'] = row[2]
         rr.append(tmp)
 
     return JsonResponse({'result': rr})
