@@ -200,6 +200,16 @@ class TblFile(models.Model):
         db_table = 'tbl_file'
 
 
+class TblMenuManage(models.Model):
+    type = models.CharField(max_length=100)
+    use_yn = models.CharField(max_length=10)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_menu_manage'
+
+
 class TblPolicyManage(models.Model):
     type = models.CharField(primary_key=True, max_length=10)
     en = models.TextField(blank=True, null=True)
@@ -261,6 +271,8 @@ class TblUser(models.Model):
     phone_country = models.CharField(max_length=100)
     gender = models.CharField(max_length=1, blank=True, null=True)
     birth_date = models.CharField(max_length=8, blank=True, null=True)
+    sns_code = models.CharField(max_length=100, blank=True, null=True)
+    sns_name = models.CharField(max_length=100, blank=True, null=True)
     rec = models.CharField(max_length=100, blank=True, null=True)
     regist_rec = models.CharField(max_length=100, blank=True, null=True)
     regist_ip = models.CharField(max_length=100, blank=True, null=True)

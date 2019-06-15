@@ -41,3 +41,16 @@
   width: 20px;
   margin-top: -2px;
 }
+.meun-con{
+  text-align: center;
+  padding: 20px; 
+}
+.mbt{
+  margin-left: 30px;
+  margin-right: 30px;
+}
+.menu-txt{
+  text-align: center;
+  margin-bottom: 20px;
+  color: red;
+}

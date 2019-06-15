@@ -1,3 +1,18 @@
+function menuChange(flag, version){
+  $.post( "/api_menuControl", {
+    flag: flag,
+    version: version,
+    csrfmiddlewaretoken: $('#csrf_token').html()
+  })
+ .done(function( data ) {
+   console.log('data.result -> ', data.result);
+   if(data.result==200){
+    window.location.reload()
+   }
+ })
+}
+
+
 function common_save(flag){
 
   console.log('flag -> ', flag);

@@ -48,6 +48,7 @@ urlpatterns = [
     path('download/ios', DownloadViews.ios, name='ios'),
 
     # 다운로드 관리 API
+    path('api_menuControl', DownloadViews.api_menuControl, name='api_menuControl'),
     path('api_download', DownloadViews.api_download, name='api_download'),
     path('api_load_download_data', DownloadViews.api_load_download_data, name='api_load_download_data'),
 

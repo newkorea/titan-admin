@@ -10,30 +10,61 @@ from backend.models import *
 
 def android(request):
 
+    use_yn = TblMenuManage.objects.get(type='android').use_yn
+    print('use_yn -> ', use_yn)
+
     context = {}
     context['version'] = 'android'
+    context['use_yn'] = use_yn
     return render(request, 'download/admin_android.html', context)
 
 
 def ios(request):
 
+    use_yn = TblMenuManage.objects.get(type='ios').use_yn
+    print('use_yn -> ', use_yn)
+
     context = {}
     context['version'] = 'ios'
+    context['use_yn'] = use_yn
     return render(request, 'download/admin_ios.html', context)
 
 
 def mac(request):
 
+    use_yn = TblMenuManage.objects.get(type='mac').use_yn
+    print('use_yn -> ', use_yn)
+
     context = {}
     context['version'] = 'mac'
+    context['use_yn'] = use_yn
     return render(request, 'download/admin_mac.html', context)
 
 
 def windows(request):
 
+    use_yn = TblMenuManage.objects.get(type='windows').use_yn
+    print('use_yn -> ', use_yn)
+
     context = {}
     context['version'] = 'windows'
+    context['use_yn'] = use_yn
     return render(request, 'download/admin_windows.html', context)
+
+
+def api_menuControl(request):
+
+    flag = request.POST.get('flag')
+    version = request.POST.get('version')
+    
+    print('flag -> ', flag)
+    print('version -> ', version)
+
+    tmm = TblMenuManage.objects.get(type=version)
+    tmm.use_yn = flag
+    tmm.save()
+
+    return JsonResponse({'result': 200})
 
 
 def api_download(request):
