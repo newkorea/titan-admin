@@ -18,6 +18,8 @@ urlpatterns = [
 
     # 로그인
     path('login', LoginViews.login, name='login'),
+    path('api_login', LoginViews.api_login, name='api_login'),
+    path('api_logout', LoginViews.api_logout, name='api_logout'),
 
     # 인덱스 리다이렉트 관리
     path('', IndexViews.index, name='index'),

@@ -8,6 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+@login_check
 def android(request):
 
     use_yn = TblMenuManage.objects.get(type='android').use_yn
@@ -19,6 +20,7 @@ def android(request):
     return render(request, 'download/admin_android.html', context)
 
 
+@login_check
 def ios(request):
 
     use_yn = TblMenuManage.objects.get(type='ios').use_yn
@@ -30,6 +32,7 @@ def ios(request):
     return render(request, 'download/admin_ios.html', context)
 
 
+@login_check
 def mac(request):
 
     use_yn = TblMenuManage.objects.get(type='mac').use_yn
@@ -41,6 +44,7 @@ def mac(request):
     return render(request, 'download/admin_mac.html', context)
 
 
+@login_check
 def windows(request):
 
     use_yn = TblMenuManage.objects.get(type='windows').use_yn
@@ -52,6 +56,7 @@ def windows(request):
     return render(request, 'download/admin_windows.html', context)
 
 
+@login_check
 def api_menuControl(request):
 
     flag = request.POST.get('flag')
@@ -67,6 +72,7 @@ def api_menuControl(request):
     return JsonResponse({'result': 200})
 
 
+@login_check
 def api_download(request):
 
     flag = request.POST.get('flag')
@@ -83,6 +89,7 @@ def api_download(request):
     return JsonResponse({'result':200})
 
 
+@login_check
 def api_load_download_data(request):
 
     version = request.POST.get('version')

@@ -7,6 +7,8 @@ from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
 
+
+@login_check
 def sample(request):
 
     """

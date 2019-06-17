@@ -20,6 +20,33 @@ def common_sample():
     print("hello world")
 
 
+class AESCipher(object):
+
+    def __init__(self):
+        key = settings.ACTIVE_AES_KEY
+        self.bs = 32
+        self.key = hashlib.sha256(key.encode()).digest()
+
+    def encrypt(self, raw):
+        raw = self._pad(raw)
+        iv = Random.new().read(AES.block_size)
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return base64.b64encode(iv + cipher.encrypt(raw))
+
+    def decrypt(self, enc):
+        enc = base64.b64decode(enc)
+        iv = enc[:AES.block_size]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv)
+        return self._unpad(cipher.decrypt(enc[AES.block_size:])).decode('utf-8')
+
+    def _pad(self, s):
+        return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
+
+    @staticmethod
+    def _unpad(s):
+        return s[:-ord(s[len(s)-1:])]
+
+
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"
     desc = cursor.description
@@ -27,6 +54,39 @@ def dictfetchall(cursor):
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
+
+
+def login_check(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'id' in request.session:
+            pass
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+def hashText(text):
+    salt = uuid.uuid4().hex
+    return hashlib.sha256(salt.encode() + text.encode()).hexdigest() + ':' + salt
+
+
+def matchHashedText(hashedText, providedText):
+    _hashedText, salt = hashedText.split(':')
+    return _hashedText == hashlib.sha256(salt.encode() + providedText.encode()).hexdigest()
 
 
 def sizeof_fmt(num, suffix='b'):

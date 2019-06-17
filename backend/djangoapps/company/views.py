@@ -8,6 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+@login_check
 def about(request):
 
     with connections['default'].cursor() as cur:
@@ -35,6 +36,7 @@ def about(request):
     return render(request, 'company/admin_about.html', context)
 
 
+@login_check
 def api_company_edit(request):
     sum = request.POST.get('sum')
     kind = request.POST.get('kind')
@@ -56,6 +58,8 @@ def api_company_edit(request):
         t1.save()
     return JsonResponse({'result': '200'})
 
+
+@login_check
 def api_company_load(request):
     kind = request.POST.get('kind')
 

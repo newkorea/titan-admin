@@ -22,3 +22,19 @@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.1/summernote.js"></script>
 
 <script src="/static/common/vendor/vue.js"></script>
+
+<script>
+    function callLogout(){
+
+        var csrf_token = $('#csrf_token').html();
+
+        $.post( "/api_logout", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                window.location.href = "/login";
+            }
+        });
+    }
+</script>

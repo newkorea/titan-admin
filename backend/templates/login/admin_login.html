@@ -1,4 +1,4 @@
-<%inherit file="../admin_common/admin_frame.html"/>
+<%include file="../admin_common/admin_head.html"/>
 
 <%block name="css">
 <style>
@@ -50,8 +50,57 @@
   </div>
 
   <div class="button">
-    <button id="btn-Yes" class="btn btn-lg btn-block btn-login">로 그 인</button>
+    <button id="btn-Yes" class="btn btn-lg btn-block btn-login" onclick='adminLogin()'>로 그 인</button>
   </div>
 </div>
+<%include file="../admin_common/admin_jquery.html"/>
+<%block name="js">
+<script>
+  
+  function adminLogin(){
 
-<%block name="js"></%block>
+    var csrf_token = $('#csrf_token').html();
+    var login_id = $('#login_id').val();
+    var login_pw = $('#login_pw').val();
+
+    console.log('csrf_token -> ', csrf_token);
+    console.log('login_id -> ', login_id);
+    console.log('login_pw -> ', login_pw);
+
+    if(login_id == ''){
+      $('#login_id').focus();
+      return false;
+    }
+    if(login_pw == ''){
+      $('#login_pw').focus();
+      return false;
+    }
+
+    $.post( "/api_login", {
+       csrfmiddlewaretoken: csrf_token, 
+       input_id: login_id,
+       input_pw: login_pw
+    })
+    .done(function( data ) {
+      if(data.result == 200){
+        window.location.href = '/';
+      }
+      else if(data.result == 300){
+        alert('계정 잠김');
+      }
+      else if(data.result == 400){
+        alert('해킹 시도 감지 - 법적으로 처벌 받을 수 있습니다');
+      }
+      else if(data.result == 600){
+        alert('아이디 존재 X or 비번 틀림');
+      }
+      else if(data.result == 700){
+        alert('접근 권한 없음 -> 불법 접근으로 인해 계정잠금 처리');
+      }
+      else{
+        alert('알 수 없는 오류 - 관리자에게 문의하세요');
+      }
+    });
+  }
+</script>
+</%block>

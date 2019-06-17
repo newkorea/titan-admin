@@ -8,6 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+@login_check
 def service(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -33,6 +34,7 @@ def service(request):
     return render(request, 'policy/admin_service.html', context)
 
 
+@login_check
 def privacy(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -59,6 +61,7 @@ def privacy(request):
     return render(request, 'policy/admin_privacy.html', context)
 
 
+@login_check
 def refund(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -84,6 +87,7 @@ def refund(request):
     return render(request, 'policy/admin_refund.html', context)
 
 
+@login_check
 def api_policy_edit(request):
     sum = request.POST.get('sum')
     kind = request.POST.get('kind')
@@ -106,6 +110,7 @@ def api_policy_edit(request):
     return JsonResponse({'result': '200'})
 
 
+@login_check
 def api_policy_load(request):
     kind = request.POST.get('kind')
 

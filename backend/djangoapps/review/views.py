@@ -8,12 +8,15 @@ from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
 
+
+@login_check
 def review(request):
 
     context = {}
     return render(request, 'review/admin_review.html', context)
 
 
+@login_check
 def api_review_read(request):
     language = request.POST.get('language')
     rows = TblReview.objects.filter(language=language, delete_yn='N')
@@ -34,6 +37,7 @@ def api_review_read(request):
     return JsonResponse({'result': res})
 
 
+@login_check
 def api_review_save(request):
 
     seq = request.POST.get('seq')
@@ -74,6 +78,7 @@ def api_review_save(request):
     return JsonResponse({'result': 200})
 
 
+@login_check
 def api_review_del(request):
 
     seq = request.POST.get('seq')

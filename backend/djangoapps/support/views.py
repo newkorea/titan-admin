@@ -8,6 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+@login_check
 def support(request):
 
     tcg = TblCodeGroup.objects.filter(memo='support')
@@ -16,6 +17,7 @@ def support(request):
     return render(request, 'support/support.html', context)
 
 
+@login_check
 def api_support_getSubOption(request):
 
     group_code = request.POST.get('group_code')
@@ -42,6 +44,7 @@ def convertStrToDatetime(strTypedate):
     return datetime.datetime(yyyy, mm, dd)
 
 
+@login_check
 def api_support_getContent(request):
 
     main_sel = request.POST.get('main_sel')
@@ -99,6 +102,7 @@ def api_support_getContent(request):
     return JsonResponse({'result': rr})
 
 
+@login_check
 def api_support_getSelectContent(request):
 
     id = request.POST.get('id')
