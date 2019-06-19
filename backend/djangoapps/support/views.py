@@ -95,7 +95,16 @@ def api_support_getContent(request):
     for row in rows:
         tmp = {}
         tmp['id'] = row[0]
-        tmp['title'] = row[1]
+
+        print('row[1] -> ', row[1])
+        print('len(row[1]) -> ', len(row[1]))
+
+        # text overflow detect
+        title = row[1]
+        if len(title) > 20:
+            title = title[0:20] + '...'
+
+        tmp['title'] = title
         tmp['regist_date'] = row[2]
         rr.append(tmp)
 
@@ -128,11 +137,13 @@ def api_support_getSelectContent(request):
     rr['sub_type'] = tcd.memo
     rr['email'] = ts.email
     rr['title'] = ts.title
-    rr['content'] = ts.content
 
-    print('-----------------------')
-    print('len(tf) -> ', len(tf))
-    print('-----------------------')
+    # xss protect
+    parser = XssHtml()
+    parser.feed(ts.content)
+    parser.close()
+    ts.content = parser.getHtml()
+    rr['content'] = ts.content
 
     if len(tf) == 0:
         rr['file1'] = ''
