@@ -49,7 +49,7 @@ function click_edit(){
           title: '알림',
           text: '내용 입력 없이 저장할 수 없습니다',
           type: 'error',
-          confirmButtonColor: "#dc3545"
+          confirmButtonColor: swalColor('error')
       })
     return 1;
   }
@@ -77,7 +77,7 @@ function click_edit(){
                                 title: '알림',
                                 text: '정책이 성공적으로 변경되었습니다.',
                                 type: 'success',
-                                confirmButtonColor: "#22b66e"
+                                confirmButtonColor: swalColor('success')
                             }).then((ok) => {
                                 if (ok) {
                                     load_content();

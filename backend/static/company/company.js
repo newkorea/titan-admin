@@ -59,7 +59,7 @@ function click_edit(){
             '<div style="font-size: 14px;">회사소개의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
             '<div style="font-size: 14px;">정말로 저장하시겠습니까?</div>',
         type: 'error',
-        confirmButtonColor: "#ea2e49",
+        confirmButtonColor: swalColor('error'),
         showCancelButton: true,
         confirmButtonText: '저장',
         cancelButtonText: "취소"
@@ -77,7 +77,7 @@ function click_edit(){
                                 title: '알림',
                                 text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
-                                confirmButtonColor: "#22b66e"
+                                confirmButtonColor: swalColor('success'),
                             }).then((ok) => {
                                 if (ok) {
                                     load_content();
