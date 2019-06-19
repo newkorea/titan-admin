@@ -137,14 +137,14 @@ def api_support_getSelectContent(request):
     rr['sub_type'] = tcd.memo
     rr['email'] = ts.email
     rr['title'] = ts.title
+    rr['content'] = xssProtect(ts.content) # xss protext
 
-    # xss protect
-    parser = XssHtml()
-    parser.feed(ts.content)
-    parser.close()
-    ts.content = parser.getHtml()
-    rr['content'] = ts.content
-
+    # xss protect (as-is)
+    #parser = XssHtml()
+    #parser.feed(ts.content)
+    #parser.close()
+    #ts.content = parser.getHtml()
+    
     if len(tf) == 0:
         rr['file1'] = ''
         rr['file2'] = ''

@@ -25,6 +25,16 @@ def common_sample():
     print("hello world")
 
 
+def xssProtect(text):
+    if '<'  in text:
+        text = text.replace('<', '&lt')
+    if '>' in text:
+        text = text.replace('>', '&gt')
+    if '&ltbr&gt' in text:
+        text = text.replace('&ltbr&gt', '<br>')
+    return text
+
+
 class XssHtml(HTMLParser):
     """
     allow_tags = ['a', 'img', 'br', 'strong', 'b', 'code', 'pre',
