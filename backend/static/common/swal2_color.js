@@ -3,7 +3,7 @@ function swalColor(type){
         return '#3fa556';
     }
     else if(type == 'error'){
-        return '#3fa556';
+        return '#F27474';
     }
     else if(type == 'warning'){
         return '#facea8';
