@@ -198,7 +198,10 @@
                 </tr>
                 <tr>
                     <td class='tac' colspan='2'>
-                        <button class="btn btn-fw success">
+                      <button class="btn btn-fw danger" v-on:click='deleteItem([[select_id]])'>
+                        <i class="fa fa-close mr5"></i>삭제
+                      </button>
+                        <button class="btn btn-fw success" v-on:click='sendItem([[select_id]])'>
                             <i class="fa fa-send mr5"></i>답장
                         </button>
                     </td>
@@ -280,6 +283,68 @@
             },
             onChange: function(){
                 app.loadItem();
+            },
+            deleteItem: function(e){
+                console.log('delete select -> ', e[0][0]);
+                var id = e[0][0];
+                Swal.fire({
+                    title: '알림',
+                    text: '정말로 삭제하시겠습니까?.',
+                    type: 'warning',
+                    confirmButtonColor: swalColor('error'),
+                    showCancelButton: true,
+                    confirmButtonText: '삭제',
+                    cancelButtonText: "취소"
+                }).then((result) => {
+                    if (result.value) {
+                        $.post("/api_support_deleteItem", {
+                            csrfmiddlewaretoken: csrf_token,
+                            id: id,
+                        })
+                            .done(function (data) {
+                                if (data.result == '200') {
+                                    Swal.fire({
+                                        title: '알림',
+                                        text: '성공적으로 삭제되었습니다.',
+                                        type: 'success',
+                                        confirmButtonColor: swalColor('success')
+                                    })
+                                }
+                            })
+
+                    }
+                })
+            },
+            sendItem: function(e){
+                console.log('sendItem select -> ', e[0][0]);
+                var id = e[0][0];
+                Swal.fire({
+                    title: '알림',
+                    text: '문의를 처리하시겠습니까?',
+                    type: 'warning',
+                    confirmButtonColor: swalColor('error'),
+                    showCancelButton: true,
+                    confirmButtonText: '삭제',
+                    cancelButtonText: "취소"
+                }).then((result) => {
+                    if (result.value) {
+                        $.post("/api_support_sendItem", {
+                            csrfmiddlewaretoken: csrf_token,
+                            id: id,
+                        })
+                            .done(function (data) {
+                                if (data.result == '200') {
+                                    Swal.fire({
+                                        title: '알림',
+                                        text: '성공적으로 문의가 처리되었습니다.',
+                                        type: 'success',
+                                        confirmButtonColor: swalColor('success')
+                                    })
+                                }
+                            })
+
+                    }
+                })
             },
             loadItem: function(){
                 var main_sel = $('#main_sel').val();

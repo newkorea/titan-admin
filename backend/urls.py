@@ -71,7 +71,8 @@ urlpatterns = [
     path('api_support_getSubOption', SupportViews.api_support_getSubOption, name='api_support_getSubOption'),
     path('api_support_getContent', SupportViews.api_support_getContent, name='api_support_getContent'),
     path('api_support_getSelectContent', SupportViews.api_support_getSelectContent, name='api_support_getSelectContent'),
-
+    path('api_support_deleteItem', SupportViews.api_support_deleteItem, name='api_support_deleteItem'),
+    path('api_support_sendItem', SupportViews.api_support_sendItem, name='api_support_sendItem'),
 
     # 대쉬보드
     path('dashboard', DashboardViews.dashboard, name='dashboard'),

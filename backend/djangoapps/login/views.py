@@ -99,7 +99,7 @@ def api_login(request):
 
                 u1.login_ip = login_ip
                 u2.attempt = 0
-                u2.login_date = datetime.datetime.now()
+                u2.login_date = datetime.now()
                 u1.save()
                 u2.save()
 
@@ -121,7 +121,7 @@ def api_login(request):
             with transaction.atomic():
                 u1.login_ip = login_ip
                 u2.attempt = u2.attempt + 1
-                u2.login_date = datetime.datetime.now()
+                u2.login_date = datetime.now()
                 u1.save()
                 u2.save()
                 return JsonResponse({'result': 600}) # 비밀번호 틀림

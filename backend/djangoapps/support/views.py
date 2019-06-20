@@ -156,3 +156,26 @@ def api_support_getSelectContent(request):
         print('tf[1].save_path -> ', tf[1].save_path)
         rr['file2'] = tf[1].save_path
     return JsonResponse({'result': rr})
+
+
+def api_support_deleteItem(request):
+    id = request.POST.get('id')
+
+    ts = TblSupport.objects.get(id=id)
+
+    ts.delete_yn = 'Y'
+    ts.delete_date = datetime.now()
+    ts.save()
+
+    return JsonResponse({'result': 200})
+
+def api_support_sendItem(request):
+    id = request.POST.get('id')
+
+    ts = TblSupport.objects.get(id=id)
+
+    ts.send_yn = 'Y'
+    ts.send_date = datetime.now()
+    ts.save()
+
+    return JsonResponse({'result': 200})
