@@ -8,6 +8,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+SMTP_HOST = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_ID = 'titanvpndev@gmail.com'
+SMTP_PW = 'dhlwn12!'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

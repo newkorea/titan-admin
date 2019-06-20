@@ -193,7 +193,7 @@
                 </tr>
                 <tr>
                     <td colspan='2'>
-                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="8"></textarea>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="8" name="support_content"></textarea>
                     </td>
                 </tr>
                 <tr>
@@ -201,7 +201,7 @@
                       <button class="btn btn-fw danger" v-on:click='deleteItem([[select_id]])'>
                         <i class="fa fa-close mr5"></i>삭제
                       </button>
-                        <button class="btn btn-fw success" v-on:click='sendItem([[select_id]])'>
+                        <button class="btn btn-fw success" v-on:click='sendItem([[select_id, select_store.email]])'>
                             <i class="fa fa-send mr5"></i>답장
                         </button>
                     </td>
@@ -316,21 +316,38 @@
                 })
             },
             sendItem: function(e){
-                console.log('sendItem select -> ', e[0][0]);
+                var content = $('.su-con-r').find('textarea[name=support_content]').val();
                 var id = e[0][0];
+                var email = e[0][1];
+
+                if(content == ''){
+                    Swal.fire({
+                        title: '알림',
+                        text: '내용을 입력해주세요.',
+                        type: 'error',
+                        confirmButtonColor: swalColor('error')
+                    })
+                    return 0;
+                }
+                console.log('sendItem select -> ', e[0][0]);
+                console.log('sendItem email -> ', email);
+                console.log('content -> ', content);
+
                 Swal.fire({
                     title: '알림',
                     text: '문의를 처리하시겠습니까?',
                     type: 'warning',
                     confirmButtonColor: swalColor('error'),
                     showCancelButton: true,
-                    confirmButtonText: '삭제',
+                    confirmButtonText: '처리',
                     cancelButtonText: "취소"
                 }).then((result) => {
                     if (result.value) {
                         $.post("/api_support_sendItem", {
                             csrfmiddlewaretoken: csrf_token,
                             id: id,
+                            email: email,
+                            content: content,
                         })
                             .done(function (data) {
                                 if (data.result == '200') {
@@ -339,6 +356,14 @@
                                         text: '성공적으로 문의가 처리되었습니다.',
                                         type: 'success',
                                         confirmButtonColor: swalColor('success')
+                                    })
+                                }
+                                else {
+                                    Swal.fire({
+                                        title: '알림',
+                                        text: '알 수 없는 오류발생 관리자에게 문의하세요.',
+                                        type: 'error',
+                                        confirmButtonColor: swalColor('error')
                                     })
                                 }
                             })

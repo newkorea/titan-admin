@@ -6,6 +6,9 @@ from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 @login_check
@@ -171,10 +174,37 @@ def api_support_deleteItem(request):
 
 def api_support_sendItem(request):
     id = request.POST.get('id')
+    to_email = request.POST.get('email')
+    content = request.POST.get('content')
+    subject = '[Titan] 문의하신 내용에 대한 답장입니다.'
+
+    print(type(content))
+    print('content------------->', content)
+
+    smtp_host = settings.SMTP_HOST
+    smtp_port = settings.SMTP_PORT
+    smtp_id = settings.SMTP_ID
+    smtp_pw = settings.SMTP_PW
+    smtp_to = to_email
+
+    smtp = smtplib.SMTP(smtp_host, smtp_port)
+    smtp.ehlo()      # say Hello
+    smtp.starttls()  # TLS 사용시 필요
+    smtp.ehlo()
+    smtp.login(smtp_id, smtp_pw)
+
+    msg = MIMEText(content)
+    msg['Subject'] = subject
+    msg['From'] = smtp_id
+    msg['To'] = smtp_to
+    smtp.sendmail(smtp_id, smtp_to, msg.as_string())
+
+    smtp.quit()
 
     ts = TblSupport.objects.get(id=id)
 
     ts.send_yn = 'Y'
+    ts.send_content = content
     ts.send_date = datetime.now()
     ts.save()
 
