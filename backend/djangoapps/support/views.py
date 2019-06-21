@@ -175,8 +175,8 @@ def api_support_deleteItem(request):
 def api_support_sendItem(request):
     id = request.POST.get('id')
     to_email = request.POST.get('email')
+    subject = request.POST.get('subject')
     content = request.POST.get('content')
-    subject = '[Titan] 문의하신 내용에 대한 답장입니다.'
 
     print(type(content))
     print('content------------->', content)
