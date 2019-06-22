@@ -96,7 +96,7 @@
       else if(data.result == 300){
         Swal.fire({
           title: '알림',
-          text: '계정 잠김',
+          text: '계정이 잠겨있습니다.',
           type: 'error',
           confirmButtonColor: swalColor('error')
         })
@@ -112,7 +112,7 @@
       else if(data.result == 600){
         Swal.fire({
           title: '알림',
-          text: '아이디 존재 X or 비번 틀림',
+          text: '아이디 또는 비밀번호가 일치하지 않습니다',
           type: 'error',
           confirmButtonColor: swalColor('error')
         })
@@ -120,7 +120,7 @@
       else if(data.result == 700){
         Swal.fire({
           title: '알림',
-          text: '접근 권한 없음 -> 불법 접근으로 인해 계정잠금 처리',
+          text: '접근 권한 없음 (불법 접근으로 인해 계정잠금 처리)',
           type: 'error',
           confirmButtonColor: swalColor('error')
         })

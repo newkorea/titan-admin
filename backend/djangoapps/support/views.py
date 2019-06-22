@@ -68,29 +68,54 @@ def api_support_getContent(request):
     print('----------------------------')
 
     with connections['default'].cursor() as cur:
-        if sub_sel == '0':
+        if sub_sel == '0' and send_yn != 'D':
             query = '''
                 select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
                 from tbl_support
                 where main_type='{main_sel}'
                 and date(regist_date) = date('{target_date}')
-                and send_yn='{send_yn}';
+                and send_yn='{send_yn}'
+                and delete_yn = 'N';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
             print(query)
             cur.execute(query)
             rows = cur.fetchall()
-        else:
+        elif sub_sel != '0' and send_yn != 'D':
             query = '''
                 select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
                 from tbl_support
                 where main_type='{main_sel}'
                 and sub_type='{sub_sel}'
                 and date(regist_date) = date('{target_date}')
-                and send_yn='{send_yn}';
+                and send_yn='{send_yn}'
+                and delete_yn = 'N';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
             print(query)
             cur.execute(query)
-            rows = cur.fetchall()   
+            rows = cur.fetchall()
+        elif sub_sel == '0' and send_yn == 'D':
+            query = '''
+                select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
+                from tbl_support
+                where main_type='{main_sel}'
+                and date(regist_date) = date('{target_date}')
+                and delete_yn='Y';
+            '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
+            print(query)
+            cur.execute(query)
+            rows = cur.fetchall()
+        elif sub_sel != '0' and send_yn == 'D':
+            query = '''
+                select id, title, DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i") AS regist_date
+                from tbl_support
+                where main_type='{main_sel}'
+                and sub_type='{sub_sel}'
+                and date(regist_date) = date('{target_date}')
+                and delete_yn='Y';
+            '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
+            print(query)
+            cur.execute(query)
+            rows = cur.fetchall()      
 
     print('len(rows) -> ', len(rows))
 
@@ -140,13 +165,10 @@ def api_support_getSelectContent(request):
     rr['sub_type'] = tcd.memo
     rr['email'] = ts.email
     rr['title'] = ts.title
+    rr['send_title'] = ts.send_title
+    rr['send_content'] = ts.send_content
+    rr['send_date'] = ts.send_date
     rr['content'] = xssProtect(ts.content) # xss protext
-
-    # xss protect (as-is)
-    #parser = XssHtml()
-    #parser.feed(ts.content)
-    #parser.close()
-    #ts.content = parser.getHtml()
     
     if len(tf) == 0:
         rr['file1'] = ''
@@ -203,7 +225,11 @@ def api_support_sendItem(request):
 
     ts = TblSupport.objects.get(id=id)
 
+    # 띄어쓰기 픽스 txt -> html
+    content = content.replace('\n', '<br>')
+
     ts.send_yn = 'Y'
+    ts.send_title = subject
     ts.send_content = content
     ts.send_date = datetime.now()
     ts.save()

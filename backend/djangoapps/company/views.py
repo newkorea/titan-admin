@@ -1,4 +1,5 @@
 import json
+import datetime
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -43,7 +44,7 @@ def api_company_edit(request):
     lang = request.POST.get('lang')
 
     t1 = TblCompanyManage.objects.get(type=kind)
-
+    
     if lang == 'en':
         t1.en = sum
         t1.en_modify_date = datetime.now()

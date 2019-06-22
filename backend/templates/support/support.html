@@ -69,12 +69,21 @@
         width: 100px;
         margin-bottom: 10px;
     }
-  label {
-    font-size: 14px;
-  }
-  #exampleFormControlTextarea2 {
-    margin-bottom: 10px;
-  }
+    label {
+        font-size: 14px;
+    }
+    #exampleFormControlTextarea2 {
+        margin-bottom: 10px;
+    }
+    .mb10 {
+        margin-bottom: 10px;
+    }
+    .complete-box{
+        font-size: 14px;
+        border: solid 1px #dddddd;
+        padding: 10px;
+        border-radius: 5px;
+    }
 </style>
 </%block>
 
@@ -107,6 +116,7 @@
                 <select @change="onChange()" class="su-select form-control" id="send_yn">
                     <option value='N'>미처리</option>
                     <option value='Y'>처리</option>
+                    <option value='D'>삭제</option>
                 </select>   
             </div>
         </div>
@@ -114,6 +124,15 @@
             <div class="form-group">
                 <label>문의시점</label>
                 <input v-on:blur="onChange()" id='target_date' type="text" class="form-control" placeholder="yyyy-mm-dd">
+            </div>
+        </div>
+        <div class='su-filter-item'>
+            <div class="form-group">
+                <label>동기화</label>
+                <button class="btn btn-fw primary" v-on:click="allReset()">
+                        <i class="fa fa-repeat mr5"></i>
+                        새로고침
+                </button>
             </div>
         </div>
     </div>
@@ -182,37 +201,56 @@
                     <td class='tac w20p fs12 headcolor'>첨부파일(1)</td>
                     <td class='tac'>
                         <div class='null-file' v-if="select_store.file1 == ''">등록된 파일이 없습니다</div>
-                        <img v-if="select_store.file1 != ''" class='su-img' :src='[[select_store.file1]]'>
+                        <img v-if="select_store.file1 != ''" class='su-img' :src='[[select_store.file1]]' onclick="imgViewer(this.src)">
                     </td>
                 </tr>
                 <tr>
                     <td class='tac w20p fs12 headcolor'>첨부파일(2)</td>
                     <td class='tac'>
                         <div class='null-file' v-if="select_store.file2 == ''">등록된 파일이 없습니다</div>
-                        <img v-if="select_store.file2 != ''" class='su-img' :src='[[select_store.file2]]'>
+                        <img v-if="select_store.file2 != ''" class='su-img' :src='[[select_store.file2]]' onclick="imgViewer(this.src)">
                     </td>
                 </tr>
-                <tr>
+                <tr v-if="send_yn == 'D'">
+                    <td class='tac fwbold fs12 pb0' colspan='2' style='padding: 50px;'>
+                        이미 처리된 문의는 답장할 수 없습니다
+                    </td>
+                </tr>
+                <tr v-if="send_yn == 'N'">
                     <td class='tac fwbold fs12 pb0' colspan='2'>
                         <i class="fa fa-envelope mr5"></i>답장 하기
                     </td>
                 </tr>
-                <tr>
+                <tr v-if="send_yn == 'N'">
                     <td colspan='2'>
                       <label for="support_subject">제목</label>
-                      <input class="form-control" id="support_subject" name="support_subject">
+                      <input class="form-control mb10" id="support_subject" name="support_subject">
+
                       <label for="support_content">내용</label>
                         <textarea class="form-control" id="support_content" rows="8" name="support_content"></textarea>
                     </td>
                 </tr>
-                <tr>
+                <tr v-if="send_yn == 'N'">
                     <td class='tac' colspan='2'>
                       <button class="btn btn-fw danger" v-on:click='deleteItem([[select_id]])'>
                         <i class="fa fa-close mr5"></i>삭제
                       </button>
-                        <button class="btn btn-fw success" v-on:click='sendItem([[select_id, select_store.email]])'>
+                        <button id='btn_send' class="btn btn-fw success" v-on:click='sendItem([[select_id, select_store.email]])'>
                             <i class="fa fa-send mr5"></i>답장
                         </button>
+                    </td>
+                </tr>
+                <tr v-if="send_yn == 'Y'">
+                    <td colspan='2'>
+                        <label for="support_subject">제목</label>
+                        <div class='complete-box mb10'>
+                            [[select_store.send_title]]
+                        </div>
+
+                        <label for="support_content">내용</label>
+                        <div class='complete-box' v-html='select_store.send_content'>
+                            [[select_store.send_content]]
+                        </div>
                     </td>
                 </tr>
                 
@@ -270,11 +308,13 @@
         data: {
             items: [],
             select_id: 0,
-            select_store: {
-
-            }
+            select_store: {},
+            send_yn: 'N'
         },
         methods: {
+            allReset: function(){
+                app.onChange();
+            },
             selectItem: function(e){
                 id = e.currentTarget.id;
                 console.log('id -> ', id);
@@ -291,6 +331,9 @@
                 })
             },
             onChange: function(){
+                var send_yn = $('#send_yn').val();
+                this.send_yn = send_yn;
+                this.select_id = 0;
                 app.loadItem();
             },
             deleteItem: function(e){
@@ -300,11 +343,11 @@
                     title: '알림',
                     text: '정말로 삭제하시겠습니까?.',
                     type: 'warning',
-                    confirmButtonColor: swalColor('error'),
+                    confirmButtonColor: swalColor('warning'),
                     showCancelButton: true,
                     confirmButtonText: '삭제',
                     cancelButtonText: "취소"
-                }).then((result) => {
+                }).then(function (result){
                     if (result.value) {
                         $.post("/api_support_deleteItem", {
                             csrfmiddlewaretoken: csrf_token,
@@ -348,12 +391,15 @@
                     title: '알림',
                     text: '문의를 처리하시겠습니까?',
                     type: 'warning',
-                    confirmButtonColor: swalColor('error'),
+                    confirmButtonColor: swalColor('warning'),
                     showCancelButton: true,
                     confirmButtonText: '처리',
                     cancelButtonText: "취소"
-                }).then((result) => {
+                }).then(function (result) {
                     if (result.value) {
+
+                        $('#btn_send').hide();
+
                         $.post("/api_support_sendItem", {
                             csrfmiddlewaretoken: csrf_token,
                             id: id,
@@ -361,24 +407,26 @@
                             subject: subject,
                             content: content,
                         })
-                            .done(function (data) {
-                                if (data.result == '200') {
-                                    Swal.fire({
-                                        title: '알림',
-                                        text: '성공적으로 문의가 처리되었습니다.',
-                                        type: 'success',
-                                        confirmButtonColor: swalColor('success')
-                                    })
-                                }
-                                else {
-                                    Swal.fire({
-                                        title: '알림',
-                                        text: '알 수 없는 오류발생 관리자에게 문의하세요.',
-                                        type: 'error',
-                                        confirmButtonColor: swalColor('error')
-                                    })
-                                }
-                            })
+                        .done(function (data) {
+                            if (data.result == '200') {
+                                Swal.fire({
+                                    title: '알림',
+                                    text: '성공적으로 문의가 처리되었습니다.',
+                                    type: 'success',
+                                    confirmButtonColor: swalColor('success')
+                                })
+                                app.select_id = 0;
+                                app.loadItem();
+                            }
+                            else {
+                                Swal.fire({
+                                    title: '알림',
+                                    text: '알 수 없는 오류발생 관리자에게 문의하세요.',
+                                    type: 'error',
+                                    confirmButtonColor: swalColor('error')
+                                })
+                            }
+                        })
 
                     }
                 })
@@ -482,5 +530,32 @@
 
         makeSubOption(value);
     });
+
+    function imgViewer(img){
+        console.log('img -> ', img);
+        img1= new Image();
+        img1.src=(img);
+        imgControll(img);
+    }
+    function imgControll(img){
+        if((img1.width!=0)&&(img1.height!=0)){
+        viewImage(img);
+        }
+        else{
+        controller="imgControll('"+img+"')";
+        intervalID=setTimeout(controller,20);
+        }
+    }
+    function viewImage(img){
+        W=img1.width;
+        H=img1.height;
+        O="width="+W+",height="+H+",scrollbars=yes";
+        imgWin=window.open("","",O);
+        imgWin.document.write("<html><head><title>kmooc image viewer</title></head>");
+        imgWin.document.write("<body topmargin=0 leftmargin=0>");
+        imgWin.document.write("<img src="+img+" onclick='self.close()' style='cursor:pointer;' title='클릭 시 창이 닫힙니다.'>");
+        imgWin.document.close();
+    }
+
 </script>
 </%block>

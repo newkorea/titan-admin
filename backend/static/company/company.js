@@ -63,7 +63,7 @@ function click_edit(){
         showCancelButton: true,
         confirmButtonText: '저장',
         cancelButtonText: "취소"
-    }).then((result) => {
+    }).then(function (result) {
         if (result.value) {
                 $.post("/api_company_edit", {
                     csrfmiddlewaretoken: csrf_token,
@@ -78,7 +78,7 @@ function click_edit(){
                                 text: '회사소개가 성공적으로 변경되었습니다.',
                                 type: 'success',
                                 confirmButtonColor: swalColor('success'),
-                            }).then((ok) => {
+                            }).then(function (ok) {
                                 if (ok) {
                                     load_content();
                                 }
