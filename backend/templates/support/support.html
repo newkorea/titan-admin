@@ -353,16 +353,18 @@
                             csrfmiddlewaretoken: csrf_token,
                             id: id,
                         })
-                            .done(function (data) {
-                                if (data.result == '200') {
-                                    Swal.fire({
-                                        title: '알림',
-                                        text: '성공적으로 삭제되었습니다.',
-                                        type: 'success',
-                                        confirmButtonColor: swalColor('success')
-                                    })
-                                }
-                            })
+                        .done(function (data) {
+                            if (data.result == '200') {
+                                Swal.fire({
+                                    title: '알림',
+                                    text: '성공적으로 삭제되었습니다.',
+                                    type: 'success',
+                                    confirmButtonColor: swalColor('success')
+                                })
+                                app.select_id = 0;
+                                app.loadItem();
+                            }
+                        })
 
                     }
                 })
