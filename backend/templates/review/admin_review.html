@@ -235,10 +235,15 @@
         console.log('this.items -> ', this.items);
         console.log('this.items -> ', this.items.length);
 
-        if(this.items.length == 6){
-          console.log('item pool is full');
-          return false;
-        }
+          if(this.items.length == 6){
+              Swal.fire({
+                  title: '알림',
+                  text: '리뷰추가는 6개까지 가능합니다.',
+                  type: 'error',
+                  confirmButtonColor: swalColor('error')
+              })
+              return 0;
+          }
 
         var tmp = {
           content: '',
@@ -295,7 +300,7 @@
                     confirmButtonColor: "#22b66e"
                 })
             }
-            app.loadItem();
+
         });
 
       },

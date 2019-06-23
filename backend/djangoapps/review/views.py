@@ -1,5 +1,4 @@
 import json
-import datetime
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -59,7 +58,7 @@ def api_review_save(request):
             star=starbox,
             username=username,
             content=content,
-            regist_date=datetime.datetime.now(),
+            regist_date=datetime.now(),
             regist_id='999',
             delete_yn='N'
         )
@@ -71,7 +70,7 @@ def api_review_save(request):
         tr.star = starbox
         tr.content = content
         tr.username = username
-        tr.modify_date = datetime.datetime.now()
+        tr.modify_date = datetime.now()
         tr.modify_id = '999'
         tr.save()
 
@@ -85,7 +84,7 @@ def api_review_del(request):
 
     tr = TblReview.objects.get(id=seq)
     tr.delete_yn = 'Y'
-    tr.delete_date = datetime.datetime.now()
+    tr.delete_date = datetime.now()
     tr.save()
 
     return JsonResponse({'result': 200})
