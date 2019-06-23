@@ -62,6 +62,7 @@ urlpatterns = [
     path('api_review_read', ReviewViews.api_review_read, name='api_review_read'),
     path('api_review_save', ReviewViews.api_review_save, name='api_review_save'),
     path('api_review_del', ReviewViews.api_review_del, name='api_review_del'),
+    path('api_review_count', ReviewViews.api_review_count, name='api_review_count'),
 
 
     # 문의 관리

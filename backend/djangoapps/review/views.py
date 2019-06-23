@@ -35,6 +35,16 @@ def api_review_read(request):
 
     return JsonResponse({'result': res})
 
+@login_check
+def api_review_count(request):
+    language = request.POST.get('language')
+
+    length = len(TblReview.objects.filter(language=language, delete_yn='N'))
+    print(length)
+
+
+    return JsonResponse({'result': length})
+
 
 @login_check
 def api_review_save(request):

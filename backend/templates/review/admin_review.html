@@ -232,16 +232,40 @@
         });
       },
       addItem: function(){
-        console.log('this.items -> ', this.items);
-        console.log('this.items -> ', this.items.length);
-
           if(this.items.length == 6){
               Swal.fire({
                   title: '알림',
                   text: '리뷰추가는 6개까지 가능합니다.',
                   type: 'error',
                   confirmButtonColor: swalColor('error')
-              })
+              });
+              return 0;
+          }
+          $.ajax({
+              url: "/api_review_count",
+              type: "POST",
+              async: false, // ture: 비동기, false: 동기
+              data: {
+                  csrfmiddlewaretoken: csrf_token,
+                  language: this.language,
+              },
+              dataType: "json",
+              success: function(data){
+                  console.log(data.result);
+                  length = data.result;
+              }
+          });
+
+          console.log('this.items -> ', this.items.length);
+          console.log('length -> ', length);
+
+          if(length < this.items.length){
+              Swal.fire({
+                  title: '알림',
+                  text: '기존에 작성하던 리뷰를 저장 후에 추가해주세요.',
+                  type: 'error',
+                  confirmButtonColor: swalColor('error')
+              });
               return 0;
           }
 
@@ -274,6 +298,14 @@
 
         var username = $('#'+idx).find('input[name=username]').val();
         var content = $('#'+idx).find('textarea[name=content]').val();
+        if(username == ''){
+            $('#'+idx).find('input[name=username]').focus();
+            return 0;
+          }
+       if(content == ''){
+           $('#'+idx).find('textarea[name=content]').focus();
+           return 0;
+       }
 
         console.log('--------------------------------');
         console.log('seq -> ', seq);
