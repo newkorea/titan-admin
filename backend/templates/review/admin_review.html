@@ -91,21 +91,8 @@
     <div class="review-section" v-for="item in items" v-if="item.idx == 1 || item.idx == 2 || item.idx == 3" :id="item.idx">
       <div class="review-col1">
         <label>평점</label>
-        <select class="form-control" id="starbox" :name="item.id">
-          <option v-if="item.star == '1'" value="1" selected>★☆☆☆☆</option>
-          <option v-if="item.star != '1'">★☆☆☆☆</option>
-
-          <option v-if="item.star == '2'" value="2" selected>★★☆☆☆</option>
-          <option v-if="item.star != '2'">★★☆☆☆</option>
-
-          <option v-if="item.star == '3'" value="3" selected>★★★☆☆</option>
-          <option v-if="item.star != '3'">★★★☆☆</option>
-
-          <option v-if="item.star == '4'" value="4" selected>★★★★☆</option>
-          <option v-if="item.star != '4'">★★★★☆</option>
-
-          <option v-if="item.star == '5'" value="5" selected>★★★★★</option>
-          <option v-if="item.star != '5'">★★★★★</option>
+        <select v-model="item.star" class="form-control" id="starbox" :name="item.id">
+          <option v-for="test in tests" :value="test.value" >[[test.text]]</option>
         </select>
       </div>
 
@@ -132,21 +119,8 @@
     <div class="review-section" v-for="item in items" v-if="item.idx == 4 || item.idx == 5 || item.idx == 6" :id="item.idx">
       <div class="review-col1">
         <label>평점</label>
-        <select class="form-control" id="starbox" :name="item.id">
-          <option v-if="item.star == '1'" value="1" selected>★☆☆☆☆</option>
-          <option v-if="item.star != '1'">★☆☆☆☆</option>
-
-          <option v-if="item.star == '2'" value="2" selected>★★☆☆☆</option>
-          <option v-if="item.star != '2'">★★☆☆☆</option>
-
-          <option v-if="item.star == '3'" value="3" selected>★★★☆☆</option>
-          <option v-if="item.star != '3'">★★★☆☆</option>
-
-          <option v-if="item.star == '4'" value="4" selected>★★★★☆</option>
-          <option v-if="item.star != '4'">★★★★☆</option>
-
-          <option v-if="item.star == '5'" value="5" selected>★★★★★</option>
-          <option v-if="item.star != '5'">★★★★★</option>
+        <select v-model="item.star" class="form-control" id="starbox" :name="item.id">
+          <option v-for="test in tests" :value="test.value" >[[test.text]]</option>
         </select>
       </div>
       <div class="review-col2">
@@ -186,9 +160,17 @@
             console.log(data.result);
             app.items = data.result;
             console.log("app.items->>", app.items);
+            app.loadItem();
         });
     },
     data: {
+      tests : [
+          { value: 1, text: '★☆☆☆☆' },
+          { value: 2, text: '★★☆☆☆' },
+          { value: 3, text: '★★★☆☆' },
+          { value: 4, text: '★★★★☆' },
+          { value: 5, text: '★★★★★' },
+      ],
       items: [],
       language: 'en'
     },
@@ -202,14 +184,33 @@
       },
       // 내용 로드(based state)
       loadItem: function(){
-        $.post( "/api_review_read", {
-            csrfmiddlewaretoken: csrf_token,
-            language: this.language
-        })
-        .done(function( data ) {
-          console.log(data.result);
-          app.items = data.result;
-        });
+          vStar = new Array();
+          var nId = 0;
+          console.log('this->', this);
+          console.log('items->', this.items);
+
+          $.ajax({
+              url: "/api_review_read",
+              type: "POST",
+              async: false, // ture: 비동기, false: 동기
+              data: {
+                  csrfmiddlewaretoken: csrf_token,
+                  language: this.language,
+              },
+              dataType: "json",
+              success: function(data){
+                  console.log('data.result -> ', data.result);
+                  app.items = data.result;
+                  console.log('varvar', data.result[0].star);
+                  for(var i = 0; i<data.result.length; i++){
+                      nId++;
+                      console.log(nId);
+                      vStar[i] = data.result[i].star;
+                      $('#'+nId).find('select[id=starbox]').val(vStar[i]).prop("selected", "selected");
+                  }
+                  console.log('vStar ->', vStar);
+              }
+          });
       },
       // 아이템 삭제 후 내용 로드(based state)
       deleteItem: function(seq){
@@ -225,7 +226,7 @@
                     title: '삭제완료',
                     text: '정상적으로 삭제되었습니다.',
                     type: 'success',
-                    confirmButtonColor: "#22b66e"
+                    confirmButtonColor: swalColor('error')
                 })
                 app.loadItem();
             }
@@ -330,9 +331,13 @@
                     text: '정상적으로 저장되었습니다.',
                     type: 'success',
                     confirmButtonColor: "#22b66e"
-                })
+                }).then(function (result) {
+                        if (result.value) {
+                            app.loadItem();
+                        }
+                    }
+                )
             }
-
         });
 
       },
