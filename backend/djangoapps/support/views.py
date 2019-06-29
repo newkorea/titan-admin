@@ -175,11 +175,11 @@ def api_support_getSelectContent(request):
         rr['file2'] = ''
     if len(tf) == 1 or len(tf) == 2:
         print('tf[0].save_path -> ', tf[0].save_path)
-        rr['file1'] = tf[0].save_path
+        rr['file1'] = tf[0].save_path.replace('/home/vagrant/project/titan', '')
         rr['file2'] = ''
     if len(tf) == 2:
         print('tf[1].save_path -> ', tf[1].save_path)
-        rr['file2'] = tf[1].save_path
+        rr['file2'] = tf[1].save_path.replace('/home/vagrant/project/titan', '')
     return JsonResponse({'result': rr})
 
 
