@@ -10,6 +10,7 @@ from .djangoapps.download import views as DownloadViews
 from .djangoapps.review import views as ReviewViews
 from .djangoapps.support import views as SupportViews
 from .djangoapps.dashboard import views as DashboardViews
+from .djangoapps.user import views as UserViews
 
 urlpatterns = [
 
@@ -34,6 +35,9 @@ urlpatterns = [
     path('api_policy_edit', PolicyViews.api_policy_edit, name='api_policy_edit'),
     path('api_policy_load', PolicyViews.api_policy_load, name='api_policy_load'),
 
+    # 회원관리
+    path('user', UserViews.user, name='user'),
+    path('api_user_read', UserViews.api_user_read, name='api_user_read'),
 
     # 회사관리
     path('company/about', CompanyViews.about, name='about'),

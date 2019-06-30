@@ -1,0 +1,198 @@
+<%inherit file="../admin_common/admin_frame.html"/>
+
+<%block name="css">
+<style>
+  .user-container {
+    height: 800px;
+  }
+  .user-filter {
+    height: 75px;
+    display: flex;
+  }
+  .user-table {
+    margin-top: 10px;
+    border: 1px solid #e3e0e6;
+    border-radius: 5px;
+    height: 500px;
+  }
+  .form-group {
+    margin-right: 20px;
+  }
+  .id-form {
+    width: 8%;
+  }
+  .email-form {
+    width: 15%;
+  }
+  .name-form {
+    width: 10%;
+  }
+  .select-box {
+    width: 10%;
+  }
+  .user-search-button {
+    width: 120px;
+    height: 100%;
+    right: 0;
+  }
+  .user-search-button > button {
+    min-width: 8rem;
+    margin-top: 27px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+
+</style>
+</%block>
+
+<%block name="title">회원 관리</%block>
+<%block name="subtitle">타이탄 VPN에 가입한 회원들의 정보를 한눈에 볼 수 있습니다.</%block>
+
+<%block name="content">
+<div class="user-container">
+  <div class="user-filter">
+    <div class="form-group id-form">
+      <label>아이디</label>
+      <input class="form-control" id="user_id">
+    </div>
+    <div class="form-group email-form">
+      <label>이메일</label>
+      <input class="form-control" id="user_email">
+    </div>
+    <div class="form-group name-form">
+      <label>사용자명</label>
+      <input class="form-control" id="user_name">
+    </div>
+    <div class="form-group select-box">
+      <label>성별</label>
+      <select class="form-control">
+    </div>
+    <div class="form-group select-box">
+      <label>삭제여부</label>
+      <select class="form-control"></select>
+    </div>
+    <div class="form-group select-box">
+      <label>차단여부</label>
+      <select class="form-control"></select>
+    </div>
+    <div class="form-group select-box">
+      <label>활성여부</label>
+      <select class="form-control"></select>
+    </div>
+    <div class="form-group select-box">
+      <label>권한</label>
+      <select class="form-control"></select>
+    </div>
+    <div class="user-search-button">
+      <button class="btn btn-fw primary" onclick="click_search()"><i class="fa fa-search mr5"></i>검색하기</button>
+    </div>
+  </div>
+  <div class="user-table">
+    <table id="user-inform" class="display" style="width:100%; height: 100%">
+      <thead>
+      <tr>
+        <th>아이디</th>
+        <th>이메일</th>
+        <th>사용자명</th>
+        <th>성별</th>
+        <th>생년월일</th>
+        <th>SNS</th>
+        <th>연락처</th>
+        <th>삭제여부</th>
+        <th>차단여부</th>
+        <th>활성여부</th>
+        <th>권한</th>
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+    var csrf_token = $('#csrf_token').html();
+    var datatable = $('#user-inform').DataTable(
+        {
+            dom: '<"top"Blf>rt<"bottom"ip>',
+            paging: true,
+            ordering: true,
+            info: false,
+            filter: false,
+            lengthChange: false,
+            order: [[0, "desc"]],
+            stateSave: false,
+            pagingType: "full_numbers", // numbers simple simple_numbers full full_numbers first_last_numbers
+
+            scrollX: false,
+            scrollCollapse: false,
+            //scrollY: "200px",
+
+            processing: true,
+            serverSide: true,
+
+            drawCallback: function () {
+
+            },
+
+            ajax: {
+                url: "/api_user_read",
+                type: "POST",
+                dataType: "json",
+                data: {
+                    csrfmiddlewaretoken: csrf_token,
+                    id: function() { return 1 },
+                    email: function() { return $('#user_email').val() },
+                    username: function() { return $('#user_name').val() },
+                },
+                columns: [
+                    {data: 'id'},
+                    {data: "email"},
+                    {data: "username"},
+                    {data: "gender"},
+                    {data: "birth_date"},
+                    {data: "sns"},
+                    {data: "phone"},
+                    {data: "delete_yn"},
+                    {data: "black_yn"},
+                    {data: "is_active"},
+                    {data: "is_staff"}
+                ],
+                columnDefs: [
+                    {targets: 0, visible: true},
+                    {targets: 1, visible: true},
+                    {targets: 2, visible: true},
+                    {targets: 3, visible: true},
+                    {targets: 4, visible: true},
+                    {targets: 5, visible: true},
+                    {targets: 6, visible: true},
+                    {targets: 7, visible: true},
+                    {targets: 8, visible: true},
+                    {targets: 9, visible: true},
+                    {targets: 10, visible: true},
+                ],
+
+                language: {
+                    lengthMenu: "Display _MENU_ records per page",
+                    zeroRecords: "데이터가 존재하지 않습니다",
+                    info: "Showing page _PAGE_ of _PAGES_",
+                    infoEmpty: "No records available",
+                    infoFiltered: "(filtered from _MAX_ total records)",
+                    paginate: {
+                        first: '처음',
+                        last: '끝',
+                        previous: "이전",
+                        next: "다음"
+                    }
+                },
+            }
+        });
+    console.log(datatable)
+    function click_search(){
+        datatable.ajax.reload();
+    }
+</script>
+</%block>
