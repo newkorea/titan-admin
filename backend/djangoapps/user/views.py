@@ -48,7 +48,10 @@ def api_user_read(request):
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
-        print("total -> ", total)
+
+    print('---------------------------------')
+    print("total -> ", total)
+    print('---------------------------------')
 
 
     with connections['default'].cursor() as cur:
@@ -73,7 +76,10 @@ def api_user_read(request):
         cur.execute(query)
         rows = dictfetchall(cur)
 
-        print(rows)
+    print('---------------------------------')
+    for r in rows:
+        print(r)
+    print('---------------------------------')
 
     test = {
         "draw": draw,

@@ -3,45 +3,43 @@
 <%block name="css">
 <style>
   .user-container {
-    height: 800px;
+    min-height: 800px;
   }
   .user-filter {
-    height: 75px;
     display: flex;
   }
-  .user-table {
-    margin-top: 10px;
-    border: 1px solid #e3e0e6;
-    border-radius: 5px;
-    height: 500px;
+  table > thead > tr {
+    font-size: 12px;
+    text-align: center;
   }
-  .form-group {
-    margin-right: 20px;
+  table > tbody > tr {
+    font-size: 12px;
+    text-align: center;
   }
-  .id-form {
-    width: 8%;
+  .flex1{
+    flex: 1;
+    margin-left: 10px;
+    margin-right: 10px;
   }
-  .email-form {
-    width: 15%;
+  .btn-store{
+    text-align: right;
+    margin-bottom: 12px;
   }
-  .name-form {
-    width: 10%;
+  .dataTables_paginate{
+    width: 100% !important;
+    text-align: center !important;
+    margin-top: 10px !important;
   }
-  .select-box {
-    width: 10%;
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
   }
-  .user-search-button {
-    width: 120px;
-    height: 100%;
-    right: 0;
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
   }
-  .user-search-button > button {
-    min-width: 8rem;
-    margin-top: 27px;
-    height: 35px;
-    font-size: 16px;
-  }
-
 
 </style>
 </%block>
@@ -51,59 +49,65 @@
 
 <%block name="content">
 <div class="user-container">
+
   <div class="user-filter">
-    <div class="form-group id-form">
+    <div class="form-group id-form flex1">
       <label>아이디</label>
       <input class="form-control" id="user_id">
     </div>
-    <div class="form-group email-form">
+    <div class="form-group email-form flex1">
       <label>이메일</label>
       <input class="form-control" id="user_email">
     </div>
-    <div class="form-group name-form">
+    <div class="form-group name-form flex1">
       <label>사용자명</label>
       <input class="form-control" id="user_name">
     </div>
-    <div class="form-group select-box">
+    <div class="form-group flex1">
       <label>성별</label>
       <select class="form-control">
     </div>
-    <div class="form-group select-box">
+    <div class="form-group flex1">
       <label>삭제여부</label>
       <select class="form-control"></select>
     </div>
-    <div class="form-group select-box">
+    <div class="form-group flex1">
       <label>차단여부</label>
       <select class="form-control"></select>
     </div>
-    <div class="form-group select-box">
+    <div class="form-group flex1">
       <label>활성여부</label>
       <select class="form-control"></select>
     </div>
-    <div class="form-group select-box">
+    <div class="form-group flex1">
       <label>권한</label>
       <select class="form-control"></select>
     </div>
-    <div class="user-search-button">
-      <button class="btn btn-fw primary" onclick="click_search()"><i class="fa fa-search mr5"></i>검색하기</button>
-    </div>
   </div>
+
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="click_search()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
   <div class="user-table">
-    <table id="user-inform" class="display" style="width:100%; height: 100%">
+    <table id="user-inform" class="display">
       <thead>
-      <tr>
-        <th>아이디</th>
-        <th>이메일</th>
-        <th>사용자명</th>
-        <th>성별</th>
-        <th>생년월일</th>
-        <th>SNS</th>
-        <th>연락처</th>
-        <th>삭제여부</th>
-        <th>차단여부</th>
-        <th>활성여부</th>
-        <th>권한</th>
-      </tr>
+        <tr>
+          <th>아이디</th>
+          <th>이메일</th>
+          <th>사용자명</th>
+          <th>성별</th>
+          <th>생년월일</th>
+          <th>SNS</th>
+          <th>연락처</th>
+          <th>삭제여부</th>
+          <th>차단여부</th>
+          <th>활성여부</th>
+          <th>권한</th>
+        </tr>
       </thead>
       <tbody>
       </tbody>
@@ -117,7 +121,7 @@
     var csrf_token = $('#csrf_token').html();
     var datatable = $('#user-inform').DataTable(
         {
-            dom: '<"top"Blf>rt<"bottom"ip>',
+            dom: '<"top"Blf>rtp<"bottom"i>',
             paging: true,
             ordering: true,
             info: false,
@@ -148,49 +152,113 @@
                     email: function() { return $('#user_email').val() },
                     username: function() { return $('#user_name').val() },
                 },
-                columns: [
-                    {data: 'id'},
-                    {data: "email"},
-                    {data: "username"},
-                    {data: "gender"},
-                    {data: "birth_date"},
-                    {data: "sns"},
-                    {data: "phone"},
-                    {data: "delete_yn"},
-                    {data: "black_yn"},
-                    {data: "is_active"},
-                    {data: "is_staff"}
-                ],
-                columnDefs: [
-                    {targets: 0, visible: true},
-                    {targets: 1, visible: true},
-                    {targets: 2, visible: true},
-                    {targets: 3, visible: true},
-                    {targets: 4, visible: true},
-                    {targets: 5, visible: true},
-                    {targets: 6, visible: true},
-                    {targets: 7, visible: true},
-                    {targets: 8, visible: true},
-                    {targets: 9, visible: true},
-                    {targets: 10, visible: true},
-                ],
-
-                language: {
-                    lengthMenu: "Display _MENU_ records per page",
-                    zeroRecords: "데이터가 존재하지 않습니다",
-                    info: "Showing page _PAGE_ of _PAGES_",
-                    infoEmpty: "No records available",
-                    infoFiltered: "(filtered from _MAX_ total records)",
-                    paginate: {
-                        first: '처음',
-                        last: '끝',
-                        previous: "이전",
-                        next: "다음"
-                    }
+            },
+            columns: [
+                {data: "id"},
+                {data: "email"},
+                {data: "username"},
+                {data: "gender"},
+                {data: "birth_date"},
+                {data: "sns"},
+                {data: "phone"},
+                {data: "delete_yn"},
+                {data: "black_yn"},
+                {data: "is_active"},
+                {data: "is_staff"}
+            ],
+            columnDefs: [
+                {
+                  targets: 0,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
                 },
-            }
+                {
+                  targets: 1,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 2,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 3,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 4,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 5,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 6,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 7,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 8,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 9,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 10,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                }
+            ],
+            language: {
+                lengthMenu: "Display _MENU_ records per page",
+                zeroRecords: "데이터가 존재하지 않습니다",
+                info: "Showing page _PAGE_ of _PAGES_",
+                infoEmpty: "No records available",
+                infoFiltered: "(filtered from _MAX_ total records)",
+                paginate: {
+                    first: '처음',
+                    last: '끝',
+                    previous: "이전",
+                    next: "다음"
+                }
+            },
         });
-    console.log(datatable)
     function click_search(){
         datatable.ajax.reload();
     }
