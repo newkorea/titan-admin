@@ -40,7 +40,19 @@
     border: solid 1px #ab6cff !important;
     color: #ffffff !important;
   }
-
+  .inner-view{
+    border: solid 2px #bc90ff;
+    display: none;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .inner-title{
+    text-align: center;
+    font-size: 20px;
+  }
+  .tar{
+    text-align: right;
+  }
 </style>
 </%block>
 
@@ -50,6 +62,7 @@
 <%block name="content">
 <div class="user-container">
 
+  <!-- 검색필터 -->
   <div class="user-filter">
     <div class="form-group id-form flex1">
       <label>아이디</label>
@@ -85,6 +98,7 @@
     </div>
   </div>
 
+  <!-- 버튼 -->
   <div class='btn-store'>
     <button class="btn btn-fw primary" onclick="click_search()">
       <i class="fa fa-search mr5"></i>
@@ -92,6 +106,7 @@
     </button>
   </div>
 
+  <!-- 데이터테이블즈 -->
   <div class="user-table">
     <table id="user-inform" class="display">
       <thead>
@@ -114,162 +129,175 @@
       </tbody>
     </table>
   </div>
+
+  <!-- 상세영역 -->
+  <div class='inner-view'>
+    <div class='inner-title'>
+      사용자 관리
+    </div>
+    <div class='tar'>
+      <button onclick='returnView()' class="btn btn-fw white">목록</button>
+    </div>
+  </div>
+
 </div>
 </%block>
 
 <%block name="js">
 <script>
     var csrf_token = $('#csrf_token').html();
-    var datatable = $('#user-inform').DataTable(
-        {
-            dom: '<"top"Blf>rtp<"bottom"i>',
-            paging: true,
-            ordering: true,
-            info: false,
-            filter: false,
-            lengthChange: false,
-            order: [[0, "desc"]],
-            stateSave: false,
-            pagingType: "full_numbers", // numbers simple simple_numbers full full_numbers first_last_numbers
+    var datatable = $('#user-inform').DataTable({
+      dom: '<"top"Blf>rtp<"bottom"i>',
+      paging: true,
+      ordering: true,
+      info: false,
+      filter: false,
+      lengthChange: false,
+      order: [[0, "desc"]],
+      stateSave: false,
+      pagingType: "full_numbers",
+      scrollX: false,
+      scrollCollapse: false,
+      processing: true,
+      serverSide: true,
+      drawCallback: function () {},
+      ajax: {
+          url: "/api_user_read",
+          type: "POST",
+          dataType: "json",
+          data: {
+              csrfmiddlewaretoken: csrf_token,
+              id: function() { return 1 },
+              email: function() { return $('#user_email').val() },
+              username: function() { return $('#user_name').val() },
+          },
+      },
+      columns: [
+          {data: "id"},
+          {data: "email"},
+          {data: "username"},
+          {data: "gender"},
+          {data: "birth_date"},
+          {data: "sns"},
+          {data: "phone"},
+          {data: "delete_yn"},
+          {data: "black_yn"},
+          {data: "is_active"},
+          {data: "is_staff"},
+          {data: "id"},
+      ],
+      columnDefs: [
+          {
+            targets: 0,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 1,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 2,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 3,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 4,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 5,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 6,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 7,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 8,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 9,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 10,
+            visible: true,
+            render: function (data) {
+              return data;
+            }
+          },
+          {
+            targets: 11,
+            visible: true,
+            render: function (data) {
+              return '<button onclick="callInnerView('+ data +')" class="btn btn-fw warn">상세</button>';
+            }
+          }
+      ],
+      language: {
+          lengthMenu: "Display _MENU_ records per page",
+          zeroRecords: "데이터가 존재하지 않습니다",
+          info: "Showing page _PAGE_ of _PAGES_",
+          infoEmpty: "No records available",
+          infoFiltered: "(filtered from _MAX_ total records)",
+          paginate: {
+              first: '처음',
+              last: '끝',
+              previous: "이전",
+              next: "다음"
+          }
+      },
+    });
 
-            scrollX: false,
-            scrollCollapse: false,
-            //scrollY: "200px",
-
-            processing: true,
-            serverSide: true,
-
-            drawCallback: function () {
-
-            },
-
-            ajax: {
-                url: "/api_user_read",
-                type: "POST",
-                dataType: "json",
-                data: {
-                    csrfmiddlewaretoken: csrf_token,
-                    id: function() { return 1 },
-                    email: function() { return $('#user_email').val() },
-                    username: function() { return $('#user_name').val() },
-                },
-            },
-            columns: [
-                {data: "id"},
-                {data: "email"},
-                {data: "username"},
-                {data: "gender"},
-                {data: "birth_date"},
-                {data: "sns"},
-                {data: "phone"},
-                {data: "delete_yn"},
-                {data: "black_yn"},
-                {data: "is_active"},
-                {data: "is_staff"},
-                {data: "id"},
-            ],
-            columnDefs: [
-                {
-                  targets: 0,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 1,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 2,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 3,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 4,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 5,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 6,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 7,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 8,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 9,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 10,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                },
-                {
-                  targets: 11,
-                  visible: true,
-                  render: function (data) {
-                    return data;
-                  }
-                }
-            ],
-            language: {
-                lengthMenu: "Display _MENU_ records per page",
-                zeroRecords: "데이터가 존재하지 않습니다",
-                info: "Showing page _PAGE_ of _PAGES_",
-                infoEmpty: "No records available",
-                infoFiltered: "(filtered from _MAX_ total records)",
-                paginate: {
-                    first: '처음',
-                    last: '끝',
-                    previous: "이전",
-                    next: "다음"
-                }
-            },
-        });
     function click_search(){
         datatable.ajax.reload();
+    }
+
+    function callInnerView(seq){
+      $('.user-table').hide();
+      $('.inner-view').fadeIn();
+    }
+    function returnView(seq){
+      $('.user-table').fadeIn();
+      $('.inner-view').hide();
     }
 </script>
 </%block>
