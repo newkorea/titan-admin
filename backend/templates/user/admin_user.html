@@ -107,6 +107,7 @@
           <th>차단여부</th>
           <th>활성여부</th>
           <th>권한</th>
+          <th>상세</th>
         </tr>
       </thead>
       <tbody>
@@ -164,7 +165,8 @@
                 {data: "delete_yn"},
                 {data: "black_yn"},
                 {data: "is_active"},
-                {data: "is_staff"}
+                {data: "is_staff"},
+                {data: "id"},
             ],
             columnDefs: [
                 {
@@ -239,6 +241,13 @@
                 },
                 {
                   targets: 10,
+                  visible: true,
+                  render: function (data) {
+                    return data;
+                  }
+                },
+                {
+                  targets: 11,
                   visible: true,
                   render: function (data) {
                     return data;
