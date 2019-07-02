@@ -38,6 +38,8 @@ urlpatterns = [
     # 회원관리
     path('user', UserViews.user, name='user'),
     path('api_user_read', UserViews.api_user_read, name='api_user_read'),
+    path('api_user_detail', UserViews.api_user_detail, name='api_user_detail'),
+    path('api_user_edit', UserViews.api_user_edit, name='api_user_edit'),
 
     # 회사관리
     path('company/about', CompanyViews.about, name='about'),

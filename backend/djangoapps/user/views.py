@@ -15,12 +15,132 @@ def user(request):
     return render(request, 'user/admin_user.html', context)
 
 @login_check
+def api_user_detail(request):
+    seq = int(request.POST.get('seq'))
+
+    u1 = TblUser.objects.get(id = seq)
+    ul1 = TblUserLogin.objects.get(user_id = seq)
+    p_code = u1.phone_country
+    p_number = u1.phone
+    phone = '+' + p_code + ' ' + p_number
+
+    s_code = u1.sns_code
+    s_name = u1.sns_name
+    print(s_code, s_name)
+    if s_code == None and s_name == None:
+        sns = ''
+    else:
+        sns = '(' + s_code + ')' + s_name
+
+    list = []
+    sd = {}
+    sd['id'] = u1.id
+    sd['email'] = u1.email
+    sd['username'] = u1.username
+    sd['phone'] = phone
+    sd['gender'] = u1.gender
+    sd['birth_date'] = u1.birth_date
+    sd['sns'] = sns
+    sd['rec'] = u1.rec
+    sd['regist_rec'] = u1.regist_rec
+    sd['regist_ip'] = u1.regist_ip
+    sd['regist_date'] = u1.regist_date
+    sd['modify_date'] = u1.modify_date
+    sd['is_active'] = u1.is_active
+    sd['is_staff'] = u1.is_staff
+    sd['delete_yn'] = u1.delete_yn
+    sd['black_yn'] = u1.black_yn
+    sd['attempt'] = ul1.attempt
+    sd['login_ip'] = ul1.login_ip
+    sd['login_date'] = ul1.login_date
+
+    list.append(sd)
+
+    print(list)
+
+    return JsonResponse({'result': list})
+
+@login_check
+def api_user_edit(request):
+    active = request.POST.get('active')
+    delete_yn = request.POST.get('delete_yn')
+    staff = request.POST.get('staff')
+    black = request.POST.get('black')
+    id = request.POST.get('id')
+
+    u1 = TblUser.objects.get(id = id)
+
+    u1.is_active = active
+    u1.delete_yn = delete_yn
+    u1.is_staff = staff
+    u1.black_yn = black
+    u1.save()
+
+    return JsonResponse({'result': 200})
+
+@login_check
 def api_user_read(request):
     start = int(request.POST.get('start'))
     length = int(request.POST.get('length'))
     draw = int(request.POST.get('draw'))
     orderby_col = int(request.POST.get('order[0][column]'))
     orderby_opt = request.POST.get('order[0][dir]')
+
+    id = request.POST.get('id')
+    email = request.POST.get('email')
+    username = request.POST.get('username')
+    gender = request.POST.get('gender')
+    delete = request.POST.get('delete')
+    black = request.POST.get('black')
+    active = request.POST.get('active')
+    staff = request.POST.get('staff')
+    sql = "where 1=1"
+
+    if id == '':
+        pass
+    else:
+        sql += " and id = '" + id + "'"
+
+    if email == '':
+        pass
+    else:
+        sql += " and email = '" + email + "'"
+
+    if username == '':
+        pass
+    else:
+        sql += " and username = '" + username + "'"
+
+    if gender == '':
+        pass
+    else:
+        sql += " and gender = '" + gender + "'"
+
+    if delete == '':
+        pass
+    else:
+        sql += " and delete_yn = '" + delete + "'"
+
+    if black == '':
+        pass
+    else:
+        sql += " and black_yn = '" + black + "'"
+
+    if active == '':
+        pass
+    else:
+        sql += " and is_active = '" + active + "'"
+
+    if staff == '':
+        pass
+    else:
+        sql += " and is_staff = '" + staff + "'"
+
+
+
+
+    print(sql)
+
 
     column_name = ['id', 'email', 'username', 'gender', 'birth_date', 'sns', 'phone', 'delete_yn', 'black_yn', 'is_active','is_staff']
 
@@ -40,10 +160,13 @@ def api_user_read(request):
             	from (
                     select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
                     from tbl_user
+                    {sql}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
             ) t1;
-        '''.format()
+        '''.format(
+            sql=sql
+        )
 
         cur.execute(query)
         rows = cur.fetchall()
@@ -62,12 +185,14 @@ def api_user_read(request):
                     from (
                     select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
                     from tbl_user
+                    {sql}
                     order by {orderby_col} {orderby_opt}
                     ) x
                     JOIN ( SELECT @rnum := -1 ) AS r
                 ) t1
                 where t1.rnum BETWEEN {start} AND {end};
         '''.format(
+            sql=sql,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start,
