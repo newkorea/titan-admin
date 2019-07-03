@@ -82,6 +82,9 @@
     color: #7f54ff;
     margin-right: 8px;
   }
+  .display .dataTable .no-footer{
+    width: 100%;
+  }
 
 </style>
 </%block>
@@ -453,6 +456,7 @@
           {
             targets: 11,
             visible: true,
+            orderable: false,
             render: function (data) {
               return '<button onclick="callInnerView('+ data +')" class="btn btn-fw warn">상세</button>';
             }
@@ -476,7 +480,7 @@
     function click_search(){
         datatable.ajax.reload();
     }
-    
+
     function editView() {
         id = $('input[id=user_id]').val();
         active = $('#user_active').val();
