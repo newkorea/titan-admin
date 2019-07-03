@@ -11,6 +11,7 @@ from .djangoapps.review import views as ReviewViews
 from .djangoapps.support import views as SupportViews
 from .djangoapps.dashboard import views as DashboardViews
 from .djangoapps.user import views as UserViews
+from .djangoapps.price import views as PriceViews
 
 urlpatterns = [
 
@@ -24,7 +25,6 @@ urlpatterns = [
 
     # 인덱스 리다이렉트 관리
     path('', IndexViews.index, name='index'),
-
 
     # 정책관리
     path('policy/service', PolicyViews.service, name='service'),
@@ -40,6 +40,10 @@ urlpatterns = [
     path('api_user_read', UserViews.api_user_read, name='api_user_read'),
     path('api_user_detail', UserViews.api_user_detail, name='api_user_detail'),
     path('api_user_edit', UserViews.api_user_edit, name='api_user_edit'),
+
+    # 결제관리
+    path('price', PriceViews.price, name='price'),
+    path('api_price_read', PriceViews.api_price_read, name='api_price_read'),
 
     # 회사관리
     path('company/about', CompanyViews.about, name='about'),
