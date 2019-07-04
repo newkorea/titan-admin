@@ -101,42 +101,38 @@
       <label>이메일</label>
       <input class="form-control" id="filter_email">
     </div>
-    <div class="form-group email-form flex1">
-      <label>결제수단</label>
-      <select class="form-control" id="filter_pgcode" name="filter_pgcode">
-        <option>선택하세요</option>
-        <option value="">카카오</option>
-        <option value="">토스</option>
-      </select>
-    </div>
     <div class="form-group name-form flex1">
       <label>세션</label>
-      <select class="form-control" id="filter_sessionr" name="filter_sessionr">
+      <select class="form-control" id="filter_session" name="filter_session">
         <option value="0">선택하세요</option>
-        <option value="1">세션 1</option>
-        <option value="2">세션 2</option>
+        <option value="1">1 세션</option>
+        <option value="2">2 세션</option>
       </select>
     </div>
     <div class="form-group flex1">
       <label>개월수</label>
       <select class="form-control" id="filter_month" name="filter_month">
         <option value="0">선택하세요</option>
-        <option value="1">1개월</option>
-        <option value="6">6개월</option>
-        <option value="12">12개월</option>
+        <option value="1">1 개월</option>
+        <option value="6">6 개월</option>
+        <option value="12">12 개월</option>
       </select>
     </div>
     <div class="form-group flex1">
-      <label>한불여부</label>
-      <select class="form-control" id="filter_refund" name="filter_black">
-        <option>선택하세요</option>
+      <label>환불여부</label>
+      <select class="form-control" id="filter_refund" name="filter_refund">
+        <option value="0">선택하세요</option>
         <option value="Y">Y</option>
         <option value="N">N</option>
       </select>
     </div>
     <div class="form-group flex1">
-      <label>결제일</label>
-      <input class="form-control" id="filter_regist">
+      <label>결제(시작) [<=]</label>
+      <input class="form-control" id="filter_regist_start">
+    </div>
+    <div class="form-group flex1">
+      <label>결제(종료) [<]</label>
+      <input class="form-control" id="filter_regist_end">
     </div>
   </div>
 
@@ -182,292 +178,204 @@
 <%block name="js">
 
 <script>
-    var csrf_token = $('#csrf_token').html();
-    var datatable = $('#price-inform').DataTable({
-      dom: '<"top"Blf>rtp<"bottom"i>',
-      paging: true,
-      ordering: true,
-      info: false,
-      filter: false,
-      lengthChange: false,
-      order: [[0, "desc"]],
-      stateSave: false,
-      pagingType: "full_numbers",
-      scrollX: false,
-      scrollCollapse: false,
-      processing: true,
-      serverSide: true,
-      drawCallback: function () {},
-      ajax: {
-          url: "/api_price_read",
-          type: "POST",
-          dataType: "json",
-          data: {
-              csrfmiddlewaretoken: csrf_token,
-              id: function() { return $('#filter_id').val() },
-              email: function() { return $('#filter_email').val() },
-              username: function() { return $('#filter_name').val() },
-              gender: function() {
-                  if($('#filter_gender option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_gender').val();
-              },
-              delete: function() {
-                  if($('#filter_delete option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_delete').val();
-              },
-              black: function() {
-                  if($('#filter_black option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_black').val();
-              },
-              active: function() {
-                  if($('#filter_active option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_active').val();
-              },
-              staff: function() {
-                  if($('#filter_staff option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_staff').val();
-              },
-          },
-      },
-      columns: [
-          {data: "id"},
-          {data: "tid"},
-          {data: "pgcode"},
-          {data: "product_name"},
-          {data: "amount"},
-          {data: "taxfree_amount"},
-          {data: "tax_amount"},
-          {data: "email"},
-          {data: "autopay_flag"},
-          {data: "refund_yn"},
-          {data: "regist_date"},
-          {data: "refund_date"},
-          {data: "auto_end_date"},
-      ],
-      columnDefs: [
-          {
-            targets: 0,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 1,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 2,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 3,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 4,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 5,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 6,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 7,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 8,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 9,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 10,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 11,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 12,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          }
-      ],
-      language: {
-          lengthMenu: "Display _MENU_ records per page",
-          zeroRecords: "데이터가 존재하지 않습니다",
-          info: "Showing page _PAGE_ of _PAGES_",
-          infoEmpty: "No records available",
-          infoFiltered: "(filtered from _MAX_ total records)",
-          paginate: {
-              first: '처음',
-              last: '끝',
-              previous: "이전",
-              next: "다음"
-          }
-      },
-    });
-
     function click_search(){
         datatable.ajax.reload();
     }
 
-    function editView() {
-        id = $('input[id=user_id]').val();
-        active = $('#user_active').val();
-        delete_yn = $('#user_delete').val();
-        staff = $('#user_staff').val();
-        black = $('#user_black').val();
-        console.log("id  == >", id);
-        $.ajax({
-            url: "/api_user_edit",
+      $('#filter_regist_start').val(getNow());
+      $('#filter_regist_end').val(getTomorrow());
+
+      var csrf_token = $('#csrf_token').html();
+      var datatable = $('#price-inform').DataTable({
+        dom: '<"top"Blf>rtp<"bottom"i>',
+        paging: true,
+        ordering: true,
+        info: false,
+        filter: false,
+        lengthChange: false,
+        order: [[0, "desc"]],
+        stateSave: false,
+        pagingType: "full_numbers",
+        scrollX: false,
+        scrollCollapse: false,
+        processing: true,
+        serverSide: true,
+        drawCallback: function () {},
+        ajax: {
+            url: "/api_price_read",
             type: "POST",
-            async: false, // ture: 비동기, false: 동기
+            dataType: "json",
             data: {
                 csrfmiddlewaretoken: csrf_token,
-                id: id,
-                active: active,
-                delete_yn: delete_yn,
-                staff: staff,
-                black: black,
+                email: function() { return $('#filter_email').val() },
+                session: function() { return $('#filter_session').val() },
+                month: function() { return $('#filter_month').val() },
+                refund: function() { return $('#filter_refund').val() },
+                regist_start: function() {
+                    var filter_regist_start = $('#filter_regist_start').val();
+                    var filter_regist_end = $('#filter_regist_end').val();
+                    if(filter_regist_start == ''){
+                      $('#filter_regist_start').val(getNow());
+                    } else if(filter_regist_start > filter_regist_end){
+                        $('#filter_regist_start').val(getNow());
+                    }
+                    return filter_regist_start;
+                },
+                regist_end: function() {
+                    var filter_regist_start = $('#filter_regist_start').val();
+                    var filter_regist_end = $('#filter_regist_end').val();
+                    if(filter_regist_end == ''){
+                      $('#filter_regist_end').val(getTomorrow());
+                    } else if(filter_regist_start > filter_regist_end){
+                        $('#filter_regist_end').val(getTomorrow());
+                    }
+                    return filter_regist_end;
+                },
             },
-            dataType: "json",
-            success: function(data){
-                if (data.result == '200') {
-                    Swal.fire({
-                        title: '알림',
-                        text: '성공적으로 변경되었습니다.',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    })
-                }
-            }
-        });
-    }
-
-    function callInnerView(seq){
-      $('.user-table').hide();
-      $('.user-filter').hide();
-      $('.btn-store').hide();
-      $('.inner-title').fadeIn();
-      $('.inner-view').fadeIn();
-      $('.inner-view').css({display: 'flex'})
-        $.ajax({
-            url: "/api_user_detail",
-            type: "POST",
-            async: false, // ture: 비동기, false: 동기
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                seq: seq,
+        },
+        columns: [
+            {data: "id"},
+            {data: "tid"},
+            {data: "pgcode"},
+            {data: "product_name"},
+            {data: "amount"},
+            {data: "taxfree_amount"},
+            {data: "tax_amount"},
+            {data: "email"},
+            {data: "autopay_flag"},
+            {data: "refund_yn"},
+            {data: "regist_date"},
+            {data: "refund_date"},
+            {data: "auto_end_date"},
+        ],
+        columnDefs: [
+            {
+              targets: 0,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
             },
-            dataType: "json",
-            success: function(data){
-                console.log(data)
-                $('input[id=user_id]').attr('value', data.result[0]['id']);
-                $('input[id=user_email]').attr('value', data.result[0]['email']);
-                $('input[id=user_name]').attr('value', data.result[0]['username']);
-                $('input[id=user_phone]').attr('value', data.result[0]['phone']);
-                $('input[id=user_gender]').attr('value', data.result[0]['gender']);
-                $('input[id=user_birth]').attr('value', data.result[0]['birth_date']);
-                $('input[id=user_sns]').attr('value', data.result[0]['sns']);
-                $('input[id=user_regist]').attr('value', data.result[0]['regist_date']);
-                $('input[id=user_rec1]').attr('value', data.result[0]['rec']);
-                $('input[id=user_rec2]').attr('value', data.result[0]['regist_rec']);
-                $('input[id=user_rec_ip]').attr('value', data.result[0]['regist_ip']);
-                $('input[id=user_attempt]').attr('value', data.result[0]['attempt']);
-                $('input[id=user_login_ip]').attr('value', data.result[0]['login_ip']);
-                $('input[id=user_login_date]').attr('value', data.result[0]['login_date']);
-
-
-                $('#user_active').val(data.result[0]['is_active']).attr("selected", "selected");
-                $('#user_delete').val(data.result[0]['delete_yn']).attr("selected", "selected");
-                $('#user_staff').val(data.result[0]['is_staff']).attr("selected", "selected");
-                $('#user_black').val(data.result[0]['black_yn']).attr("selected", "selected");
-
-
+            {
+              targets: 1,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 2,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 3,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 4,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 5,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 6,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 7,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 8,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 9,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 10,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 11,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 12,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
             }
-        });
-    }
+        ],
+        language: {
+            lengthMenu: "Display _MENU_ records per page",
+            zeroRecords: "데이터가 존재하지 않습니다",
+            info: "Showing page _PAGE_ of _PAGES_",
+            infoEmpty: "No records available",
+            infoFiltered: "(filtered from _MAX_ total records)",
+            paginate: {
+                first: '처음',
+                last: '끝',
+                previous: "이전",
+                next: "다음"
+            }
+        },
+      });
 
-    function returnView(seq){
-        $('input[id=user_id]').attr('value', '');
-        $('input[id=user_email]').attr('value', '');
-        $('input[id=user_name]').attr('value', '');
-        $('input[id=user_phone]').attr('value', '');
-        $('input[id=user_gender]').attr('value', '');
-        $('input[id=user_birth]').attr('value', '');
-        $('input[id=user_sns]').attr('value', '');
-        $('input[id=user_regist]').attr('value', '');
-        $('input[id=user_rec1]').attr('value', '');
-        $('input[id=user_rec2]').attr('value', '');
-        $('input[id=user_rec_ip]').attr('value', '');
+    $( document ).ready(function() {
 
-      $('.user-table').fadeIn();
-      $('.user-filter').fadeIn();
-      $('.btn-store').fadeIn();
-      $('.inner-title').hide();
-      $('.inner-view').hide();
+    });
+
+    function getNow(){
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
     }
+    function getTomorrow(){
+        var dt = new Date();
+        dt.setDate(dt.getDate() + 1);
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
+      }
 </script>
 </%block>

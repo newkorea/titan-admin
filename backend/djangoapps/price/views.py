@@ -36,16 +36,52 @@ def api_price_read(request):
     orderby_col = int(request.POST.get('order[0][column]'))
     orderby_opt = request.POST.get('order[0][dir]')
 
-    id = request.POST.get('id')
+    # search filter
     email = request.POST.get('email')
-    username = request.POST.get('username')
-    gender = request.POST.get('gender')
-    delete = request.POST.get('delete')
-    black = request.POST.get('black')
-    active = request.POST.get('active')
-    staff = request.POST.get('staff')
+    session = request.POST.get('session')
+    month = request.POST.get('month')
+    refund = request.POST.get('refund')
+    regist_start = request.POST.get('regist_start')
+    regist_end = request.POST.get('regist_end')
 
-    column_name = ['id', 'email', 'username', 'gender', 'birth_date', 'sns', 'phone', 'delete_yn', 'black_yn', 'is_active','is_staff']
+    print('email -> ', email)
+    print('session -> ', session)
+    print('month -> ', month)
+    print('refund -> ', refund)
+    print('regist_start -> ', regist_start)
+    print('regist_end -> ', regist_end)
+
+    filter = ' where 1=1 '
+    if email != '':
+        filter += " and y.email = '{email}' ".format(email=email)
+    if session != '0':
+        filter += " and x.session = '{session}' ".format(session=session)
+    if month != '0':
+        filter += " and x.month_type = '{month}' ".format(month=month)
+    if refund != '0':
+        filter += " and x.refund_yn = '{refund}' ".format(refund=refund)
+
+    filter += '''
+        and x.regist_date >= '{regist_start} 00:00:00'
+        and x.regist_date < '{regist_end} 00:00:00'
+    '''.format(regist_start=regist_start, regist_end=regist_end)
+
+
+    column_name = [
+        'x.id',
+        'x.tid',
+        'x.pgcode',
+        'x.product_name',
+        'x.amount',
+        'x.taxfree_amount',
+        'x.tax_amount',
+        'y.email',
+        'x.autopay_flag',
+        'x.refund_yn',
+        'x.regist_date',
+        'x.refund_date',
+        'x.auto_end_date'
+    ]
 
     # search
     print('start -> ', start)
@@ -76,11 +112,12 @@ def api_price_read(request):
                     from tbl_price_history x
                     join tbl_user y
                     on x.user_id = y.id
+                    {filter}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
             ) t1;
-        '''.format()
-
+        '''.format(filter=filter)
+        print(query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
@@ -124,17 +161,20 @@ def api_price_read(request):
                     from tbl_price_history x
                     join tbl_user y
                     on x.user_id = y.id
+                    {filter}
                     order by {orderby_col} {orderby_opt}
                     ) x
                     JOIN ( SELECT @rnum := -1 ) AS r
                 ) t1
                 where t1.rnum BETWEEN {start} AND {end};
         '''.format(
+            filter=filter,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start,
             end=start+length-1
         )
+        print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
