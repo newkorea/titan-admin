@@ -25,129 +25,50 @@ from django.utils import translation
 
 def dealer(request):
 
+    id = request.session['id']
+    u1 = TblUser.objects.get(id=id)
+    rec = u1.rec # 본인 추천인코드
 
-    return render(request, 'dealer/admin_dealer.html')
+    context = {}
+    context['rec'] = rec
+    return render(request, 'dealer/admin_dealer.html', context)
 
 
 def api_dealer_read(request):
-    start = int(request.POST.get('start'))
-    length = int(request.POST.get('length'))
-    draw = int(request.POST.get('draw'))
-    orderby_col = int(request.POST.get('order[0][column]'))
-    orderby_opt = request.POST.get('order[0][dir]')
 
-    id = request.POST.get('id')
-    email = request.POST.get('email')
-    username = request.POST.get('username')
-    gender = request.POST.get('gender')
-    delete = request.POST.get('delete')
-    black = request.POST.get('black')
-    active = request.POST.get('active')
-    staff = request.POST.get('staff')
-
-    column_name = ['id', 'email', 'username', 'gender', 'birth_date', 'sns', 'phone', 'delete_yn', 'black_yn', 'is_active','is_staff']
-
-    # search
-    print('start -> ', start)
-    print('length -> ', length)
-    print('draw -> ', draw)
-    print('orderby_col -> ', orderby_col)
-    print('orderby_opt -> ', orderby_opt)
+    year = request.POST.get('year')
 
     with connections['default'].cursor() as cur:
         query = '''
-            select count(*)
+            select *
             from (
-            	select @rnum := @rnum + 1 AS rnum, x.*
-            	from (
-                    select  x.id,
-                            x.tid,
-                            x.pgcode,
-                            x.product_name,
-                            x.amount,
-                            x.taxfree_amount,
-                            x.tax_amount,
-                            y.email,
-                            x.autopay_flag,
-                            x.refund_yn,
-                            x.regist_date,
-                            x.refund_date,
-                            x.auto_end_date
-                    from tbl_price_history x
-                    join tbl_user y
-                    on x.user_id = y.id
-            	) x
-            	JOIN ( SELECT @rnum := -1 ) AS r
-            ) t1;
-        '''.format()
-
-        cur.execute(query)
-        rows = cur.fetchall()
-        total = rows[0][0]
-
-    print('---------------------------------')
-    print("total -> ", total)
-    print('---------------------------------')
-
-
-    with connections['default'].cursor() as cur:
-        query = '''
-                select  id,
-                        tid,
-                        pgcode,
-                        product_name,
-                        amount,
-                        taxfree_amount,
-                        tax_amount,
-                        email,
-                        autopay_flag,
-                        refund_yn,
-                        DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i:%S") as regist_date,
-                        DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-                        auto_end_date
-                from (
-                    select @rnum := @rnum + 1 AS rnum, x.*
-                    from (
-                    select  x.id,
-                            x.tid,
-                            x.pgcode,
-                            x.product_name,
-                            x.amount,
-                            x.taxfree_amount,
-                            x.tax_amount,
-                            y.email,
-                            x.autopay_flag,
-                            x.refund_yn,
-                            x.regist_date,
-                            x.refund_date,
-                            x.auto_end_date
-                    from tbl_price_history x
-                    join tbl_user y
-                    on x.user_id = y.id
-                    order by {orderby_col} {orderby_opt}
-                    ) x
-                    JOIN ( SELECT @rnum := -1 ) AS r
-                ) t1
-                where t1.rnum BETWEEN {start} AND {end};
-        '''.format(
-            orderby_col=column_name[orderby_col],
-            orderby_opt=orderby_opt,
-            start=start,
-            end=start+length-1
-        )
+                select
+                    DATE_FORMAT(regist_date, "%Y") as year,
+                    CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
+                    sum(amount) as amount
+                from tbl_price_history x
+                group by year, month
+            ) x
+            where x.year = '{year}'
+            order by month desc;
+        '''.format(year=year)
         cur.execute(query)
         rows = dictfetchall(cur)
 
-    print('---------------------------------')
-    for r in rows:
-        print(r)
-    print('---------------------------------')
+        query = '''
+            select sum(amount)
+            from (
+                select
+                    DATE_FORMAT(regist_date, "%Y") as year,
+                    CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
+                    sum(amount) as amount
+                from tbl_price_history x
+                group by year, month
+            ) x
+            where x.year = '{year}'
+            order by month desc;
+        '''.format(year=year)
+        cur.execute(query)
+        sum_amount = cur.fetchall()[0][0]
 
-    test = {
-        "draw": draw,
-        "recordsTotal": total,
-        "recordsFiltered": total,
-        "data": rows
-    }
-
-    return JsonResponse(test)
+    return JsonResponse({'result': rows, 'sum_amount': sum_amount})

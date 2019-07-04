@@ -2,9 +2,6 @@
 
 <%block name="css">
 <style>
-  .user-container {
-    min-height: 850px;
-  }
   .user-filter {
     display: flex;
   }
@@ -85,6 +82,17 @@
   .display .dataTable .no-footer{
     width: 100%;
   }
+  thead{
+    background: #f1e9ff;
+  }
+  .toptop{
+    display: flex;
+    border: solid 1px #dddddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
 
 </style>
 </%block>
@@ -93,51 +101,41 @@
 <%block name="subtitle">총판으로서 수익 내역을 볼 수 있습니다</%block>
 
 <%block name="content">
-<div class="user-container">
+<div id='vue'>
+
+  <div class='toptop'>
+    <div class="list-item" style='flex: 1'>
+      <div>
+        <img src="/static/dealer/star.png" class="w-40">
+      </div>
+      <div class="list-body">
+        <a href="#" class="_500">추천인코드 (본인)</a>
+        <small class="d-block text-muted">${rec}</small>
+      </div>
+    </div>
+    <div class="list-item" style='flex: 1'>
+      <div>
+        <img src="/static/dealer/money.png" class="w-40">
+      </div>
+      <div class="list-body">
+        <a href="#" class="_500">이번년도 수익</a>
+        <small class="d-block text-muted">[[ sum_amount ]]</small>
+      </div>
+    </div>
+  </div>
 
   <!-- 검색필터 -->
   <div class="user-filter">
     <div class="form-group email-form flex1">
-      <label>YYYY년 수익</label>
-      <select class="form-control" id="filter_pgcode" name="filter_pgcode">
-        <option value="0">선택하세요</option>
-        <option value="2019">2019</option>
+      <select class="form-control" id="filter_year" name="filter_year">
+        <option value="2019">2019년 수익</option>
       </select>
-    </div>
-    <div class="form-group name-form flex1">
-      <label>세션</label>
-      <select class="form-control" id="filter_sessionr" name="filter_sessionr">
-        <option value="0">선택하세요</option>
-        <option value="1">세션 1</option>
-        <option value="2">세션 2</option>
-      </select>
-    </div>
-    <div class="form-group flex1">
-      <label>개월수</label>
-      <select class="form-control" id="filter_month" name="filter_month">
-        <option value="0">선택하세요</option>
-        <option value="1">1개월</option>
-        <option value="6">6개월</option>
-        <option value="12">12개월</option>
-      </select>
-    </div>
-    <div class="form-group flex1">
-      <label>한불여부</label>
-      <select class="form-control" id="filter_refund" name="filter_black">
-        <option>선택하세요</option>
-        <option value="Y">Y</option>
-        <option value="N">N</option>
-      </select>
-    </div>
-    <div class="form-group flex1">
-      <label>결제일</label>
-      <input class="form-control" id="filter_regist">
     </div>
   </div>
 
   <!-- 버튼 -->
   <div class='btn-store'>
-    <button class="btn btn-fw primary" onclick="click_search()">
+    <button class="btn btn-fw primary" v-on:click="click_search()">
       <i class="fa fa-search mr5"></i>
       검색하기
     </button>
@@ -145,324 +143,63 @@
 
   <!-- 데이터테이블즈 -->
   <div class="user-table">
-    <table id="price-inform" class="display">
+    <table class="table table-bordered">
       <thead>
         <tr>
-          <th>아이디</th>
-          <th>tid</th>
-          <th>결제수단</th>
-          <th>상품명</th>
-          <th>가격</th>
-          <th>비과세</th>
-          <th>부과세</th>
-          <th>이메일</th>
-          <th>자동결제</th>
-          <th>환불</th>
-          <th>결제일</th>
-          <th>환불일</th>
-          <th>
-            자동결제<br>
-            취소일
-          </th>
+          <th>년(yaer)</th>
+          <th>월(month)</th>
+          <th>수익합계</th>
         </tr>
       </thead>
       <tbody>
+        <tr v-for="item in items">
+          <td>[[ item.year ]]</td>
+          <td>[[ item.month ]]</td>
+          <td>[[ item.amount ]]</td>
+        </tr>
       </tbody>
     </table>
   </div>
 
 </div>
+
 </%block>
 
 <%block name="js">
 
 <script>
     var csrf_token = $('#csrf_token').html();
-    var datatable = $('#price-inform').DataTable({
-      dom: '<"top"Blf>rtp<"bottom"i>',
-      paging: true,
-      ordering: true,
-      info: false,
-      filter: false,
-      lengthChange: false,
-      order: [[0, "desc"]],
-      stateSave: false,
-      pagingType: "full_numbers",
-      scrollX: false,
-      scrollCollapse: false,
-      processing: true,
-      serverSide: true,
-      drawCallback: function () {},
-      ajax: {
-          url: "/api_price_read",
-          type: "POST",
-          dataType: "json",
-          data: {
-              csrfmiddlewaretoken: csrf_token,
-              id: function() { return $('#filter_id').val() },
-              email: function() { return $('#filter_email').val() },
-              username: function() { return $('#filter_name').val() },
-              gender: function() {
-                  if($('#filter_gender option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_gender').val();
-              },
-              delete: function() {
-                  if($('#filter_delete option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_delete').val();
-              },
-              black: function() {
-                  if($('#filter_black option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_black').val();
-              },
-              active: function() {
-                  if($('#filter_active option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_active').val();
-              },
-              staff: function() {
-                  if($('#filter_staff option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_staff').val();
-              },
-          },
-      },
-      columns: [
-          {data: "id"},
-          {data: "tid"},
-          {data: "pgcode"},
-          {data: "product_name"},
-          {data: "amount"},
-          {data: "taxfree_amount"},
-          {data: "tax_amount"},
-          {data: "email"},
-          {data: "autopay_flag"},
-          {data: "refund_yn"},
-          {data: "regist_date"},
-          {data: "refund_date"},
-          {data: "auto_end_date"},
-      ],
-      columnDefs: [
-          {
-            targets: 0,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 1,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 2,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 3,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 4,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 5,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 6,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 7,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 8,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 9,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 10,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 11,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 12,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          }
-      ],
-      language: {
-          lengthMenu: "Display _MENU_ records per page",
-          zeroRecords: "데이터가 존재하지 않습니다",
-          info: "Showing page _PAGE_ of _PAGES_",
-          infoEmpty: "No records available",
-          infoFiltered: "(filtered from _MAX_ total records)",
-          paginate: {
-              first: '처음',
-              last: '끝',
-              previous: "이전",
-              next: "다음"
-          }
-      },
-    });
-
-    function click_search(){
-        datatable.ajax.reload();
-    }
-
-    function editView() {
-        id = $('input[id=user_id]').val();
-        active = $('#user_active').val();
-        delete_yn = $('#user_delete').val();
-        staff = $('#user_staff').val();
-        black = $('#user_black').val();
-        console.log("id  == >", id);
-        $.ajax({
-            url: "/api_user_edit",
-            type: "POST",
-            async: false, // ture: 비동기, false: 동기
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                id: id,
-                active: active,
-                delete_yn: delete_yn,
-                staff: staff,
-                black: black,
-            },
-            dataType: "json",
-            success: function(data){
-                if (data.result == '200') {
-                    Swal.fire({
-                        title: '알림',
-                        text: '성공적으로 변경되었습니다.',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    })
-                }
-            }
+    var app = new Vue({
+      el: '#vue',
+      delimiters: ['[[', ']]'],
+      created () {
+        $.post( "/api_dealer_read", {
+           csrfmiddlewaretoken: $('#csrf_token').html(),
+           year: $('#filter_year').val()
+         })
+        .done(function( data ) {
+          console.log('data.result -> ', data.result);
+          app.items = data.result;
+          app.sum_amount = data.sum_amount;
         });
-    }
-
-    function callInnerView(seq){
-      $('.user-table').hide();
-      $('.user-filter').hide();
-      $('.btn-store').hide();
-      $('.inner-title').fadeIn();
-      $('.inner-view').fadeIn();
-      $('.inner-view').css({display: 'flex'})
-        $.ajax({
-            url: "/api_user_detail",
-            type: "POST",
-            async: false, // ture: 비동기, false: 동기
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                seq: seq,
-            },
-            dataType: "json",
-            success: function(data){
-                console.log(data)
-                $('input[id=user_id]').attr('value', data.result[0]['id']);
-                $('input[id=user_email]').attr('value', data.result[0]['email']);
-                $('input[id=user_name]').attr('value', data.result[0]['username']);
-                $('input[id=user_phone]').attr('value', data.result[0]['phone']);
-                $('input[id=user_gender]').attr('value', data.result[0]['gender']);
-                $('input[id=user_birth]').attr('value', data.result[0]['birth_date']);
-                $('input[id=user_sns]').attr('value', data.result[0]['sns']);
-                $('input[id=user_regist]').attr('value', data.result[0]['regist_date']);
-                $('input[id=user_rec1]').attr('value', data.result[0]['rec']);
-                $('input[id=user_rec2]').attr('value', data.result[0]['regist_rec']);
-                $('input[id=user_rec_ip]').attr('value', data.result[0]['regist_ip']);
-                $('input[id=user_attempt]').attr('value', data.result[0]['attempt']);
-                $('input[id=user_login_ip]').attr('value', data.result[0]['login_ip']);
-                $('input[id=user_login_date]').attr('value', data.result[0]['login_date']);
-
-
-                $('#user_active').val(data.result[0]['is_active']).attr("selected", "selected");
-                $('#user_delete').val(data.result[0]['delete_yn']).attr("selected", "selected");
-                $('#user_staff').val(data.result[0]['is_staff']).attr("selected", "selected");
-                $('#user_black').val(data.result[0]['black_yn']).attr("selected", "selected");
-
-
-            }
-        });
-    }
-
-    function returnView(seq){
-        $('input[id=user_id]').attr('value', '');
-        $('input[id=user_email]').attr('value', '');
-        $('input[id=user_name]').attr('value', '');
-        $('input[id=user_phone]').attr('value', '');
-        $('input[id=user_gender]').attr('value', '');
-        $('input[id=user_birth]').attr('value', '');
-        $('input[id=user_sns]').attr('value', '');
-        $('input[id=user_regist]').attr('value', '');
-        $('input[id=user_rec1]').attr('value', '');
-        $('input[id=user_rec2]').attr('value', '');
-        $('input[id=user_rec_ip]').attr('value', '');
-
-      $('.user-table').fadeIn();
-      $('.user-filter').fadeIn();
-      $('.btn-store').fadeIn();
-      $('.inner-title').hide();
-      $('.inner-view').hide();
-    }
+      },
+      data: {
+        items: [],
+        sum_amount: 0,
+      },
+      methods: {
+        click_search: function(){
+          $.post( "/api_dealer_read", {
+             csrfmiddlewaretoken: $('#csrf_token').html(),
+             year: $('#filter_year').val()
+           })
+          .done(function( data ) {
+            console.log('data.result -> ', data.result);
+            app.items = data.result;
+            app.sum_amount = data.sum_amount;
+          });
+        }
+      }
+    })
 </script>
 </%block>
