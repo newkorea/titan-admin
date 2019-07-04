@@ -12,6 +12,8 @@ from .djangoapps.support import views as SupportViews
 from .djangoapps.dashboard import views as DashboardViews
 from .djangoapps.user import views as UserViews
 from .djangoapps.price import views as PriceViews
+from .djangoapps.dealer import views as DealerViews
+
 
 urlpatterns = [
 
@@ -45,13 +47,16 @@ urlpatterns = [
     path('price', PriceViews.price, name='price'),
     path('api_price_read', PriceViews.api_price_read, name='api_price_read'),
 
+    # 수익관리 (총판전용)
+    path('dealer', DealerViews.dealer, name='dealer'),
+    path('api_dealer_read', DealerViews.api_dealer_read, name='api_dealer_read'),
+
     # 회사관리
     path('company/about', CompanyViews.about, name='about'),
 
     # 회사관리 API
     path('api_company_edit', CompanyViews.api_company_edit, name='api_company_edit'),
     path('api_company_load', CompanyViews.api_company_load, name='api_company_load'),
-
 
     # 다운로드 관리
     path('download/windows', DownloadViews.windows, name='windows'),
