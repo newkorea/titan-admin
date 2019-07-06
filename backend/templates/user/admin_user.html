@@ -110,40 +110,45 @@
       <label>성별</label>
       <select class="form-control" id="filter_gender" name="filter_gender">
         <option>선택하세요</option>
-        <option value="m">남자</option>
-        <option value="w">여자</option>
+        % for gender in gender_list:
+          <option value="${ gender.code }">${ gender.name }</option>
+        % endfor
       </select>
     </div>
     <div class="form-group flex1">
       <label>삭제여부</label>
       <select class="form-control" id="filter_delete" name="filter_delete">
         <option>선택하세요</option>
-        <option value="Y">Y</option>
-        <option value="N">N</option>
+        % for delete in delete_list:
+          <option value="${ delete.code }">${ delete.name }</option>
+        % endfor
       </select>
     </div>
     <div class="form-group flex1">
       <label>차단여부</label>
       <select class="form-control" id="filter_black" name="filter_black">
         <option>선택하세요</option>
-        <option value="Y">Y</option>
-        <option value="N">N</option>
+        % for black in black_list:
+          <option value="${ black.code }">${ black.name }</option>
+        % endfor
       </select>
     </div>
     <div class="form-group flex1">
       <label>활성여부</label>
       <select class="form-control" id="filter_active" name="filter_active">
         <option>선택하세요</option>
-        <option value="1">활성화</option>
-        <option value="0">비활성화</option>
+        % for active in active_list:
+          <option value="${ active.code }">${ active.name }</option>
+        % endfor
       </select>
     </div>
     <div class="form-group flex1">
       <label>권한</label>
       <select class="form-control" id="filter_staff" name="filter_staff">
         <option>선택하세요</option>
-        <option value="1">1</option>
-        <option value="0">0</option>
+        % for staff in staff_list:
+          <option value="${ staff.code }">${ staff.name }</option>
+        % endfor
       </select>
     </div>
   </div>

@@ -11,7 +11,19 @@ from backend.models import *
 @login_check
 def user(request):
 
-    context = {}
+    gender_list = TblCodeDetail.objects.filter(group_code = 'gender')
+    delete_list = TblCodeDetail.objects.filter(group_code='delete_yn')
+    black_list = TblCodeDetail.objects.filter(group_code='black_yn')
+    active_list = TblCodeDetail.objects.filter(group_code='is_active')
+    staff_list = TblCodeDetail.objects.filter(group_code='is_staff')
+
+    context = {
+        'gender_list': gender_list,
+        'delete_list': delete_list,
+        'black_list': black_list,
+        'active_list': active_list,
+        'staff_list': staff_list
+    }
     return render(request, 'user/admin_user.html', context)
 
 @login_check
@@ -158,8 +170,8 @@ def api_user_read(request):
             from (
             	select @rnum := @rnum + 1 AS rnum, x.*
             	from (
-                    select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
-                    from tbl_user
+                    select a.id, a.email, a.username, a.gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
+                    from tbl_user a
                     {sql}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
@@ -183,9 +195,23 @@ def api_user_read(request):
                 from (
                     select @rnum := @rnum + 1 AS rnum, x.*
                     from (
-                    select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
-                    from tbl_user
+                    select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
+                    from tbl_user a
+                    join tbl_code_detail b
+                    on a.gender = b.code
+					join tbl_code_detail c
+                    on a.delete_yn = c.code
+                    join tbl_code_detail d
+                    on a.black_yn = d.code
+                    join tbl_code_detail e
+                    on a.is_active = e.code
+                    join tbl_code_detail f
+                    on a.is_staff = f.code
                     {sql}
+                    and c.group_code = 'delete_yn'
+                    and d.group_code = 'black_yn'
+                    and e.group_code = 'is_active'
+                    and f.group_code = 'is_staff'
                     order by {orderby_col} {orderby_opt}
                     ) x
                     JOIN ( SELECT @rnum := -1 ) AS r
