@@ -149,8 +149,8 @@ def api_user_read(request):
             from (
             	select @rnum := @rnum + 1 AS rnum, x.*
             	from (
-                    select a.id, a.email, a.username, a.gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
-                    from tbl_user a
+                    select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
+                    from tbl_user
                     {sql}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
@@ -170,41 +170,39 @@ def api_user_read(request):
 
     with connections['default'].cursor() as cur:
         query = '''
-                select id, email, username, gender, birth_date, sns, phone, delete_yn, black_yn, is_active, is_staff
+select id, email, username, gender, birth_date, sns, phone, delete_yn, black_yn, is_active, is_staff
                 from (
-                    select @rnum := @rnum + 1 AS rnum, x.*
+                    select x.*
                     from (
-                    select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
-                    from tbl_user a
-                    join tbl_code_detail b
-                    on a.gender = b.code
-					join tbl_code_detail c
-                    on a.delete_yn = c.code
-                    join tbl_code_detail d
-                    on a.black_yn = d.code
-                    join tbl_code_detail e
-                    on a.is_active = e.code
-                    join tbl_code_detail f
-                    on a.is_staff = f.code
-                    {sql}
-                    and c.group_code = 'delete_yn'
-                    and d.group_code = 'black_yn'
-                    and e.group_code = 'is_active'
-                    and f.group_code = 'is_staff'
-                    order by {orderby_col} {orderby_opt}
+						select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
+                        from (select * from tbl_user {sql} order by {orderby_col} {orderby_opt} limit {start}, 10) a
+                        join tbl_code_detail b
+						on a.gender = b.code
+						join tbl_code_detail c
+						on a.delete_yn = c.code
+						join tbl_code_detail d
+						on a.black_yn = d.code
+						join tbl_code_detail e
+						on a.is_active = e.code
+						join tbl_code_detail f
+						on a.is_staff = f.code
+						where c.group_code = 'delete_yn'
+                        and d.group_code = 'black_yn'
+                        and e.group_code = 'is_active'
+                        and f.group_code = 'is_staff'
+                        order by {orderby_col} {orderby_opt}
                     ) x
                     JOIN ( SELECT @rnum := -1 ) AS r
-                ) t1
-                where t1.rnum BETWEEN {start} AND {end};
+                ) t1;
         '''.format(
             sql=sql,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start,
-            end=start+length-1
         )
         cur.execute(query)
         rows = dictfetchall(cur)
+        print(query)
 
     print('---------------------------------')
     for r in rows:
