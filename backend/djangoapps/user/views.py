@@ -108,56 +108,35 @@ def api_user_read(request):
     staff = request.POST.get('staff')
     sql = "where 1=1"
 
-    if id == '':
-        pass
-    else:
+    if id != '':
         sql += " and id = '" + id + "'"
 
-    if email == '':
-        pass
-    else:
+    if email != '':
         sql += " and email = '" + email + "'"
 
-    if username == '':
-        pass
-    else:
+    if username != '':
         sql += " and username = '" + username + "'"
 
-    if gender == '':
-        pass
-    else:
+    if gender != '':
         sql += " and gender = '" + gender + "'"
 
-    if delete == '':
-        pass
-    else:
+    if delete != '':
         sql += " and delete_yn = '" + delete + "'"
 
-    if black == '':
-        pass
-    else:
+    if black != '':
         sql += " and black_yn = '" + black + "'"
 
-    if active == '':
-        pass
-    else:
+    if active != '':
         sql += " and is_active = '" + active + "'"
 
-    if staff == '':
-        pass
-    else:
+    if staff != '':
         sql += " and is_staff = '" + staff + "'"
 
-
-
-
     print(sql)
-
 
     column_name = ['id', 'email', 'username', 'gender', 'birth_date', 'sns', 'phone', 'delete_yn', 'black_yn', 'is_active','is_staff']
 
     # search
-
     print('start -> ', start)
     print('length -> ', length)
     print('draw -> ', draw)

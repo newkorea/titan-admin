@@ -4,3 +4,4 @@ mysqlclient
 pycrypto
 django_extensions
 ipython
+pymysql
