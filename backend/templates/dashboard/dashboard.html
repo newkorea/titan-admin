@@ -1,13 +1,295 @@
 <%inherit file="../admin_common/admin_frame.html"/>
 
-<%block name="css"></%block>
+<%block name="css">
+<style>
+  .row1, .row2, .row3 {
+    display: flex;
+    margin-bottom: 50px;
+  }
+  .user-box {
+    border: 1px solid #C1C1C1;
+    width: 25%;
+    height: 250px;
+    margin-right: 50px;
+  }
+  .row-head {
+    text-align: center;
+    height: 50px;
+    padding-top: 12px;
+    font-size: 17px;
+    color: white;
+    border-bottom: 1px solid #C1C1C1;
+    background-color: #846EED;
+  }
+  .row-content {
+    font-size: 35px;
+    margin-top: 65px;
+    text-align: center;
+
+  }
+  .chart-container{
+    display: flex;
+  }
+  .chart {
+    width: 30%;
+    height: 100%;
+  }
+  .chart2 {
+    width: 70%;
+    height: 100%;
+  }
+</style>
+</%block>
 
 <%block name="title">대쉬보드</%block>
 <%block name="subtitle">서비스의 전체적인 부분을 한눈에 볼 수 있습니다</%block>
 
 <%block name="content">
-내용
+<div class="statistics-container">
+  <div class="row1">
+    <div class="today-reg-user user-box">
+      <div class="today-reg-user-head row-head">
+        오늘 가입한 유저
+      </div>
+      <div id="regist_user_today" class="row-content"></div>
+    </div>
+    <div class="today-login-user user-box">
+      <div class="today-login-user-head row-head">
+        오늘 로그인 유저
+      </div>
+      <div id="login_today" class="row-content"></div>
+    </div>
+    <div class="today-profit user-box">
+      <div class="today-profit-head row-head">
+        오늘 결제 수익
+      </div>
+      <div id="profit" class="row-content"></div>
+    </div>
+    <div class="today-refund user-box">
+      <div class="today-refund-head row-head">
+        오늘 환불 금액
+      </div>
+      <div id="refund" class="row-content"></div>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="user-count user-box">
+      <div class="user-count-head row-head">
+        사용자
+      </div>
+      <div id="user_count" class="row-content"></div>
+    </div>
+    <div class="admin-count user-box">
+      <div class="admin-count-head row-head">
+        관리자
+      </div>
+      <div id="admin_count" class="row-content"></div>
+    </div>
+    <div class="cs-count user-box">
+      <div class="cs-count-head row-head">
+        cs담당자
+      </div>
+      <div id="cs_count" class="row-content"></div>
+    </div>
+    <div class="chongpan-count user-box">
+      <div class="chongpan-count-head row-head">
+        총판담당자
+      </div>
+      <div id="chongpan_count" class="row-content"></div>
+    </div>
+  </div>
+  <div class="row3">
+    <div class="active_user user-box">
+      <div class="active_user-head row-head">
+        활성화 회원
+      </div>
+      <div id="active_count" class="row-content"></div>
+    </div>
+    <div class="deactive_user user-box">
+      <div class="deactive_user-head row-head">
+        비활성화 회원
+      </div>
+      <div id="deactive_count" class="row-content"></div>
+    </div>
+    <div class="delete_user user-box">
+      <div class="delete_user-head row-head">
+        삭제회원
+      </div>
+      <div id="delete_count" class="row-content"></div>
+    </div>
+    <div class="black-user user-box">
+      <div class="black-user-head row-head">
+        차단회원
+      </div>
+      <div id="black_count" class="row-content"></div>
+    </div>
+  </div>
+</div>
+<div class="chart-container">
+  <div class="chart">
+    <canvas id="myChart" width="400" height="400"></canvas>
+  </div>
+  <div class="chart2">
+    <canvas id="myChart2" width="400" height="173"></canvas>
+  </div>
+</div>
+<div hidden id="regist_today_dt">${ regist_today }</div>
+<div hidden id="login_today_dt">${ login_today }</div>
+<div hidden id="profit_dt">${ profit }</div>
+<div hidden id="refund_dt">${ refund }</div>
+<div hidden id="user_count_dt">${ user_count }</div>
+<div hidden id="admin_count_dt">${ admin_count }</div>
+<div hidden id="cs_count_dt">${ cs_count }</div>
+<div hidden id="chongpan_count_dt">${ chongpan_count }</div>
+<div hidden id="active_count_dt">${ active_count }</div>
+<div hidden id="deactive_count_dt">${ deactive_count }</div>
+<div hidden id="delete_count_dt">${ delete_count }</div>
+<div hidden id="black_count_dt">${ black_count }</div>
+
+
 </%block>
 
 <%block name="js">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
+<script>
+var regist_today_dt = $('#regist_today_dt').html();
+var login_today_dt = $('#login_today_dt').html();
+var profit_dt = $('#profit_dt').html();
+var refund_dt = $('#refund_dt').html();
+var user_count_dt = $('#user_count_dt').html();
+var admin_count_dt = $('#admin_count_dt').html();
+var cs_count_dt = $('#cs_count_dt').html();
+var chongpan_count_dt = $('#chongpan_count_dt').html();
+var active_count_dt = $('#active_count_dt').html();
+var deactive_count_dt = $('#deactive_count_dt').html();
+var delete_count_dt = $('#delete_count_dt').html();
+var black_count_dt = $('#black_count_dt').html();
+
+
+var options = {
+  useEasing : true,
+  useGrouping : true,
+  separator : ',',
+  decimal : '.',
+  prefix: '',
+};
+
+var regist_user_today = new CountUp("regist_user_today", 0, regist_today_dt, 0, 2.5, options);
+regist_user_today.start();
+var login_today = new CountUp("login_today", 0, login_today_dt, 0, 2.5, options);
+login_today.start();
+var profit = new CountUp("profit", 0, profit_dt, 0, 2.5, options);
+profit.start();
+var refund = new CountUp("refund", 0, refund_dt, 0, 2.5, options);
+refund.start();
+var user_count = new CountUp("user_count", 0, user_count_dt, 0, 2.5, options);
+user_count.start();
+var admin_count = new CountUp("admin_count", 0, admin_count_dt, 0, 2.5, options);
+admin_count.start();
+var cs_count = new CountUp("cs_count", 0, cs_count_dt, 0, 2.5, options);
+cs_count.start();
+var chongpan_count = new CountUp("chongpan_count", 0, chongpan_count_dt, 0, 2.5, options);
+chongpan_count.start();
+var active_count = new CountUp("active_count", 0, active_count_dt, 0, 2.5, options);
+active_count.start();
+var deactive_count = new CountUp("deactive_count", 0, deactive_count_dt, 0, 2.5, options);
+deactive_count.start();
+var delete_count = new CountUp("delete_count", 0, delete_count_dt, 0, 2.5, options);
+delete_count.start();
+var black_count = new CountUp("black_count", 0, black_count_dt, 0, 2.5, options);
+black_count.start();
+
+
+var ctx = document.getElementById("myChart");
+var ctx2 = document.getElementById("myChart2");
+var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ["남자", "여자"],
+        datasets: [
+            {
+                label: ["성별 별 가입자 수"],
+                data: [${ men }, ${female}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                ],
+                borderWidth: 1
+            },
+        ]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        },
+        legend: {
+            display: true
+        },
+        tooltips: {
+            callbacks: {
+               label: function(tooltipItem) {
+                      return tooltipItem.xLabel;
+               }
+            }
+        }
+    }
+});
+
+var myChart2 = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+        labels: ["10대", "20대", "30대", "40대", "50대", "60대", "70대", "80대", "기타"],
+        datasets: [
+            {
+                label: ["나이 별 가입자 수"],
+                data: ${ ages },
+                backgroundColor: [
+                    'rgba(153, 102, 255, 0.2)',
+                      'rgba(75, 192, 192, 0.2)',
+                    'rgba(255, 99, 132, 0.2)',
+                      'rgba(54, 162, 235, 0.2)',
+                      'rgba(255, 206, 86, 0.2)',
+                      'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255,99,132,1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            },
+        ]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        },
+        legend: {
+            display: true
+        },
+        tooltips: {
+            callbacks: {
+               label: function(tooltipItem) {
+                      return tooltipItem.xLabel;
+               }
+            }
+        }
+    }
+});
+</script>
 </%block>
