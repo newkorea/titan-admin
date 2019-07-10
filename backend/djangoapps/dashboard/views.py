@@ -6,79 +6,87 @@ from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @login_check
 def dashboard(request):
-    profit = 0
-    refund = 0
-    Teens = 0
-    Twenties = 0
-    Thirties = 0
-    Fourties = 0
-    fifties = 0
-    Sixty = 0
-    Seventies = 0
-    Eighty = 0
-    etc = 0
 
     now_year = datetime.today().year
     now_month = datetime.today().month
     now_day = datetime.today().day
     print(now_year, now_month, now_day)
-    regist_today = len(TblUser.objects.filter(regist_date__year=now_year, regist_date__month=now_month, regist_date__day=now_day))
-    login_today = len(TblUserLogin.objects.filter(login_date__year=now_year, login_date__month=now_month, login_date__day=now_day))
-    today_profits = TblPriceHistory.objects.filter(regist_date__year=now_year, regist_date__month=now_month, regist_date__day=now_day, refund_yn='N')
-    today_refunds = TblPriceHistory.objects.filter(refund_date__year=now_year, refund_date__month=now_month, refund_date__day=now_day, refund_yn='Y')
-    user_count = len(TblUser.objects.filter(is_staff=0))
-    admin_count = len(TblUser.objects.filter(is_staff=1))
-    cs_count = len(TblUser.objects.filter(is_staff=2))
-    chongpan_count = len(TblUser.objects.filter(is_staff=3))
-    active_count = len(TblUser.objects.filter(is_active=1))
-    deactive_count = len(TblUser.objects.filter(is_active=0))
-    delete_count = len(TblUser.objects.filter(delete_yn='Y'))
-    black_count = len(TblUser.objects.filter(black_yn='Y'))
+    print("datetime.today()", datetime.today())
+    now = datetime.now().strftime('%Y-%m-%d')
 
 
-    for today_profit in today_profits:
-        profit += today_profit.amount
-    print(profit)
+    with connections['default'].cursor() as cur:
+        query = '''
+                    select 
+                    count(if(date(regist_date) = '{now}', regist_date, null)) as regist_today,
+                    count(if(is_staff = '0', is_staff, null)) as user_count,
+                    count(if(is_staff = '1', is_staff, null)) as admin_count,
+                    count(if(is_staff = '2', is_staff, null)) as cs_count,
+                    count(if(is_staff = '3', is_staff, null)) as chongpan_count,
+                    count(if(is_active = '1', is_active, null)) as active_count,
+                    count(if(is_active = '0', is_active, null)) as deactive_count,
+                    count(if(delete_yn = 'Y', delete_yn, null)) as delete_count,
+                    count(if(black_yn = 'Y', black_yn, null)) as black_count,
+                    count(if(gender = 'm', gender, null)) as men,
+                    count(if(gender = 'f', gender, null)) as female,
+                    (select count(*) from tbl_user_login where date(login_date) = '{now}') as login_today,
+                    (select sum(amount) from tbl_price_history where refund_yn = 'N' and date(regist_date) = '{now}') as today_profit,
+                    (select sum(amount) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = '{now}') as today_refund
+                    from tbl_user;
+        '''.format(
+            now = now
+        )
+        cur.execute(query)
+        rows = cur.fetchall()
+        regist_today = rows[0][0]
+        user_count = rows[0][1]
+        admin_count = rows[0][2]
+        cs_count = rows[0][3]
+        chongpan_count = rows[0][4]
+        active_count = rows[0][5]
+        deactive_count = rows[0][6]
+        delete_count = rows[0][7]
+        black_count = rows[0][8]
+        men = rows[0][9]
+        female = rows[0][10]
+        login_today = rows[0][11]
+        profit = rows[0][12]
+        refund = rows[0][13]
+        if profit == None:
+            profit = 0
 
-    for today_refund in today_refunds:
-        refund += today_refund.amount
-    print(refund)
+        if refund == None:
+            refund = 0
 
 
-    u1 = TblUser.objects.all()
+        print('profit, refund',profit, refund)
 
-    for u in u1:
-        user_year = u.birth_date[0:4]
-        age = int(now_year) - int(user_year) + 1
-        if age >= 10 and age < 20:
-            Teens += 1
-        elif age >= 20 and age < 30:
-            Twenties += 1
-        elif age >= 30 and age < 40:
-            Thirties += 1
-        elif age >= 40 and age < 50:
-            Fourties += 1
-        elif age >= 50 and age < 60:
-            fifties += 1
-        elif age >= 60 and age < 70:
-            Sixty += 1
-        elif age >= 70 and age < 80:
-            Seventies += 1
-        elif age >= 80 and age < 90:
-            Eighty += 1
-        else:
-            etc += 1
+    with connections['default'].cursor() as cur:
+        query = '''
+                select
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 10 and 19 , 1, 0)) as age_10,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 20 and 29 , 1, 0)) as age_20,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 30 and 39 , 1, 0)) as age_30,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 40 and 49 , 1, 0)) as age_40,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 50 and 59 , 1, 0)) as age_50,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 60 and 69 , 1, 0)) as age_60,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 70 and 79 , 1, 0)) as age_70,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 80 and 89 , 1, 0)) as age_80,
+                sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 90 and 110 , 1, 0)) as etc
+                from tbl_user;
+        '''.format(
+            now = now
+        )
+        cur.execute(query)
+        rows = cur.fetchall()
+        ages = [ str(rows[0][0]), str(rows[0][1]), str(rows[0][2]), str(rows[0][3]), str(rows[0][4]), str(rows[0][5]), str(rows[0][6]), str(rows[0][7]), str(rows[0][8]),  ]
+        print("ages==>", ages)
 
-    ages = [Teens, Twenties, Thirties, Fourties, fifties, Sixty, Seventies, Eighty, etc]
-
-
-    men = len(TblUser.objects.filter(gender='m'))
-    female = len(TblUser.objects.filter(gender='f'))
 
     gender_list = []
     gender_list.append(men)

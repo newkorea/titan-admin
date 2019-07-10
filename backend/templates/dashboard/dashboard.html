@@ -9,34 +9,76 @@
   .user-box {
     border: 1px solid #C1C1C1;
     width: 25%;
-    height: 250px;
-    margin-right: 50px;
+    height: 150px;
+    margin-right: 25px;
+    margin-left: 25px;
+    box-shadow: 3px 3px rgba(128, 128, 128, 0.3);
   }
   .row-head {
-    text-align: center;
-    height: 50px;
-    padding-top: 12px;
-    font-size: 17px;
-    color: white;
+    height: 40px;
     border-bottom: 1px solid #C1C1C1;
-    background-color: #846EED;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    color: white;
+    padding-top: 7px;
   }
   .row-content {
-    font-size: 35px;
-    margin-top: 65px;
+    font-size: 40px;
+    margin-top: 20px;
     text-align: center;
+    font-weight: bold;
 
   }
   .chart-container{
     display: flex;
+    margin-right: 25px;
+    margin-left: 25px;
   }
   .chart {
     width: 30%;
     height: 100%;
+    border: 1px solid #C1C1C1;
+    margin-right: 50px;
+
   }
   .chart2 {
     width: 70%;
     height: 100%;
+    border: 1px solid #C1C1C1;
+  }
+  .row-head-name {
+    margin-top: 10px;
+    margin-left: 15px;
+  }
+  .today-reg-user-head1{
+    background-color: rgba(48, 169, 222, 0.6);
+    border-bottom: 2px solid rgba(48, 169, 222, 1);
+  }
+  .today-reg-user-head2{
+    background-color: rgba(239, 220, 4, 0.6);
+    border-bottom: 2px solid rgba(239, 220, 4, 1);
+  }
+  .today-reg-user-head3{
+    background-color: rgba(229, 58, 64, 0.6);
+    border-bottom: 2px solid rgba(229, 58, 64, 1);
+  }
+  .today-reg-user-head4{
+    background-color: rgba(246, 134, 88, 0.6);
+    border-bottom: 2px solid rgba(246, 134, 88, 1);
+  }
+  .today-reg-user-head5{
+    background-color: rgba(57, 103, 231, 0.6);
+    border-bottom: 2px solid rgba(57, 103, 231, 1);
+  }
+  .today-reg-user-head6{
+    background-color: rgba(116, 145, 33, 0.6);
+    border-bottom: 2px solid rgba(116, 145, 33, 1);
+  }
+  .chart-margin {
+    margin-bottom: 20px;
+    text-align: center;
+    margin-right: 25px;
   }
 </style>
 </%block>
@@ -48,78 +90,91 @@
 <div class="statistics-container">
   <div class="row1">
     <div class="today-reg-user user-box">
-      <div class="today-reg-user-head row-head">
-        오늘 가입한 유저
+      <div class="row-head today-reg-user-head1">오늘 가입한 유저</div>
+      <div class="row-head-name">
+
       </div>
       <div id="regist_user_today" class="row-content"></div>
+      <div class="row-calendar"></div>
     </div>
     <div class="today-login-user user-box">
-      <div class="today-login-user-head row-head">
-        오늘 로그인 유저
+      <div class="row-head today-reg-user-head2">오늘 로그인 유저</div>
+      <div class="row-head-name">
+
       </div>
       <div id="login_today" class="row-content"></div>
     </div>
     <div class="today-profit user-box">
-      <div class="today-profit-head row-head">
-        오늘 결제 수익
+      <div class="row-head today-reg-user-head3">오늘 결제 수익</div>
+      <div class="row-head-name">
+
       </div>
       <div id="profit" class="row-content"></div>
     </div>
     <div class="today-refund user-box">
-      <div class="today-refund-head row-head">
-        오늘 환불 금액
+      <div class="row-head today-reg-user-head4">오늘 환불금액</div>
+      <div class="row-head-name">
+
       </div>
       <div id="refund" class="row-content"></div>
     </div>
   </div>
   <div class="row2">
     <div class="user-count user-box">
-      <div class="user-count-head row-head">
-        사용자
+      <div class="row-head today-reg-user-head1">사용자</div>
+      <div class="row-head-name">
+
       </div>
       <div id="user_count" class="row-content"></div>
     </div>
     <div class="admin-count user-box">
-      <div class="admin-count-head row-head">
-        관리자
+      <div class="row-head today-reg-user-head2">관리자</div>
+      <div class="row-head-name">
+
       </div>
       <div id="admin_count" class="row-content"></div>
     </div>
     <div class="cs-count user-box">
-      <div class="cs-count-head row-head">
-        cs담당자
+      <div class="row-head today-reg-user-head3">cs담당자</div>
+      <div class="row-head-name">
+
       </div>
       <div id="cs_count" class="row-content"></div>
     </div>
     <div class="chongpan-count user-box">
-      <div class="chongpan-count-head row-head">
-        총판담당자
+      <div class="row-head today-reg-user-head4">총판담당자</div>
+      <div class="row-head-name">
+
       </div>
       <div id="chongpan_count" class="row-content"></div>
     </div>
   </div>
   <div class="row3">
     <div class="active_user user-box">
-      <div class="active_user-head row-head">
-        활성화 회원
+      <div class="row-head today-reg-user-head1">활성화 회원</div>
+      <div class="row-head-name">
+
       </div>
       <div id="active_count" class="row-content"></div>
     </div>
     <div class="deactive_user user-box">
-      <div class="deactive_user-head row-head">
-        비활성화 회원
+      <div class="row-head today-reg-user-head2">비활성화 회원</div>
+      <div class="row-head-name">
+
       </div>
       <div id="deactive_count" class="row-content"></div>
     </div>
     <div class="delete_user user-box">
-      <div class="delete_user-head row-head">
-        삭제회원
+      <div class="row-head today-reg-user-head3">삭제회원</div>
+      <div class="row-head-name">
+
       </div>
       <div id="delete_count" class="row-content"></div>
     </div>
     <div class="black-user user-box">
-      <div class="black-user-head row-head">
-        차단회원
+      <div class="row-head today-reg-user-head4">차단회원</div>
+      <div class="row-head-name">
+
       </div>
       <div id="black_count" class="row-content"></div>
     </div>
@@ -127,10 +182,18 @@
 </div>
 <div class="chart-container">
   <div class="chart">
+    <div class="row-head today-reg-user-head5">성별 별 가입자 수</div>
+    <div class="today-reg-user-head row-head-name chart-margin">
+
+    </div>
     <canvas id="myChart" width="400" height="400"></canvas>
   </div>
   <div class="chart2">
-    <canvas id="myChart2" width="400" height="173"></canvas>
+    <div class="row-head today-reg-user-head6">나이 별 가입자 수</div>
+    <div class="today-reg-user-head row-head-name chart-margin">
+
+    </div>
+    <canvas id="myChart2" width="400" height="171.8"></canvas>
   </div>
 </div>
 <div hidden id="regist_today_dt">${ regist_today }</div>
@@ -224,6 +287,12 @@ var myChart = new Chart(ctx, {
     },
     options: {
         scales: {
+            xAxes:[{
+                gridLines:{
+                    color:"rgba(255,255,255,0.5)",
+                    zeroLineColor:"rgba(255,255,255,0.5)"
+                }
+            }],
             yAxes: [{
                 ticks: {
                     beginAtZero:true
@@ -231,7 +300,7 @@ var myChart = new Chart(ctx, {
             }]
         },
         legend: {
-            display: true
+            display: false
         },
         tooltips: {
             callbacks: {
@@ -280,7 +349,7 @@ var myChart2 = new Chart(ctx2, {
             }]
         },
         legend: {
-            display: true
+            display: false
         },
         tooltips: {
             callbacks: {
