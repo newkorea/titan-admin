@@ -118,6 +118,29 @@ class DjangoSession(models.Model):
         db_table = 'django_session'
 
 
+class SampleUser(models.Model):
+    email = models.CharField(max_length=100, blank=True, null=True)
+    password = models.CharField(max_length=100, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'sample_user'
+
+
+class TblAgent(models.Model):
+    name = models.CharField(max_length=200)
+    hostdomain = models.CharField(max_length=200)
+    hostip = models.CharField(max_length=100)
+    is_active = models.IntegerField()
+    is_status = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_agent'
+
+
 class TblCodeDetail(models.Model):
     group_code = models.CharField(primary_key=True, max_length=100)
     code = models.CharField(max_length=100)
@@ -224,6 +247,19 @@ class TblPolicyManage(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_policy_manage'
+
+
+class TblPrice(models.Model):
+    type_session = models.CharField(max_length=100, blank=True, null=True)
+    type_month = models.CharField(max_length=100, blank=True, null=True)
+    item_price = models.CharField(max_length=100, blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    modify_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_price'
+
 
 class TblPriceHistory(models.Model):
     tid = models.CharField(max_length=255, blank=True, null=True)
