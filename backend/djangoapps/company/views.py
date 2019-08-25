@@ -20,7 +20,7 @@ def about(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        print(row)
+        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -72,7 +72,7 @@ def api_company_load(request):
 
     list = []
     for t in rows:
-        print(t)
+        #print(t)
         sd = {}
         sd['en'] = t.en
         sd['ko'] = t.ko
@@ -80,5 +80,5 @@ def api_company_load(request):
         sd['zh'] = t.zh
         list.append(sd)
 
-    print(list)
+    #print(list)
     return JsonResponse({'result': list})
