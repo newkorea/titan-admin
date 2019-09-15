@@ -8,15 +8,14 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+# 회원관리 페이지 렌더링 (2019.09.15 12:04 점검완료)
 @login_check
 def user(request):
-
     gender_list = TblCodeDetail.objects.filter(group_code = 'gender')
     delete_list = TblCodeDetail.objects.filter(group_code='delete_yn')
     black_list = TblCodeDetail.objects.filter(group_code='black_yn')
     active_list = TblCodeDetail.objects.filter(group_code='is_active')
     staff_list = TblCodeDetail.objects.filter(group_code='is_staff')
-
     context = {
         'gender_list': gender_list,
         'delete_list': delete_list,
@@ -26,24 +25,24 @@ def user(request):
     }
     return render(request, 'user/admin_user.html', context)
 
+
+# 회원관리 상세 페이지 렌더링 (2019.09.15 12:04 점검완료)
 @login_check
 def api_user_detail(request):
     seq = int(request.POST.get('seq'))
-
     u1 = TblUser.objects.get(id = seq)
     ul1 = TblUserLogin.objects.get(user_id = seq)
     p_code = u1.phone_country
     p_number = u1.phone
     phone = '+' + p_code + ' ' + p_number
-
     s_code = u1.sns_code
     s_name = u1.sns_name
-    print(s_code, s_name)
     if s_code == None and s_name == None:
         sns = ''
     else:
-        sns = '(' + s_code + ')' + s_name
-
+        sns = '({snsName}) {snsContent}'.format(
+            snsName=TblCodeDetail.objects.get(group_code='message', code=s_code).name,
+            snsContent=s_name)
     list = []
     sd = {}
     sd['id'] = u1.id
@@ -65,13 +64,11 @@ def api_user_detail(request):
     sd['attempt'] = ul1.attempt
     sd['login_ip'] = ul1.login_ip
     sd['login_date'] = ul1.login_date
-
     list.append(sd)
-
-    print(list)
-
     return JsonResponse({'result': list})
 
+
+# 회원정보 수정 APi (2019.09.15 12:05 점검완료)
 @login_check
 def api_user_edit(request):
     active = request.POST.get('active')
@@ -79,17 +76,16 @@ def api_user_edit(request):
     staff = request.POST.get('staff')
     black = request.POST.get('black')
     id = request.POST.get('id')
-
     u1 = TblUser.objects.get(id = id)
-
     u1.is_active = active
     u1.delete_yn = delete_yn
     u1.is_staff = staff
     u1.black_yn = black
     u1.save()
-
     return JsonResponse({'result': 200})
 
+
+# 회원정보 로드 APi (2019.09.15 12:06 점검완료)
 @login_check
 def api_user_read(request):
     start = int(request.POST.get('start'))
@@ -97,7 +93,6 @@ def api_user_read(request):
     draw = int(request.POST.get('draw'))
     orderby_col = int(request.POST.get('order[0][column]'))
     orderby_opt = request.POST.get('order[0][dir]')
-
     id = request.POST.get('id')
     email = request.POST.get('email')
     username = request.POST.get('username')
@@ -106,76 +101,102 @@ def api_user_read(request):
     black = request.POST.get('black')
     active = request.POST.get('active')
     staff = request.POST.get('staff')
-    sql = "where 1=1"
 
+    # where 조건 동적 연산
+    sql = "where 1=1"
     if id != '':
         sql += " and id = '" + id + "'"
-
     if email != '':
         sql += " and email = '" + email + "'"
-
     if username != '':
         sql += " and username = '" + username + "'"
-
     if gender != '':
         sql += " and gender = '" + gender + "'"
-
     if delete != '':
         sql += " and delete_yn = '" + delete + "'"
-
     if black != '':
         sql += " and black_yn = '" + black + "'"
-
     if active != '':
         sql += " and is_active = '" + active + "'"
-
     if staff != '':
         sql += " and is_staff = '" + staff + "'"
 
-    print(sql)
-
+    # order by 컬럼 생성
     column_name = ['id', 'email', 'username', 'gender', 'birth_date', 'sns', 'phone', 'delete_yn', 'black_yn', 'is_active','is_staff']
 
-    # search
-    print('start -> ', start)
-    print('length -> ', length)
-    print('draw -> ', draw)
-    print('orderby_col -> ', orderby_col)
-    print('orderby_opt -> ', orderby_opt)
+    # 디버그 로깅
+    print('DEBUG -> start : ', start)
+    print('DEBUG -> length : ', length)
+    print('DEBUG -> draw : ', draw)
+    print('DEBUG -> orderby_col : ', orderby_col)
+    print('DEBUG -> orderby_opt : ', orderby_opt)
 
+    # 카운팅 쿼리
     with connections['default'].cursor() as cur:
         query = '''
             select count(*)
             from (
             	select @rnum := @rnum + 1 AS rnum, x.*
             	from (
-                    select id, email, username, gender, birth_date, concat("(", sns_code, ")", sns_name) as sns, concat("+", phone_country, " ", phone) as phone, delete_yn, black_yn, is_active, is_staff
+                    select  id,
+                            email,
+                            username,
+                            gender,
+                            birth_date,
+                            concat("(", sns_code, ")", sns_name) as sns,
+                            concat("+", phone_country, " ", phone) as phone,
+                            delete_yn,
+                            black_yn,
+                            is_active,
+                            is_staff
                     from tbl_user
                     {sql}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
             ) t1;
-        '''.format(
-            sql=sql
-        )
-
+        '''.format(sql=sql)
+        print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
+    print('DEBUG -> total : ', total)
 
-    print('---------------------------------')
-    print("total -> ", total)
-    print('---------------------------------')
-
-
+    # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-select id, email, username, gender, birth_date, sns, phone, delete_yn, black_yn, is_active, is_staff
+                select id, email, username, gender, birth_date, sns, phone, delete_yn, black_yn, is_active, is_staff
                 from (
                     select x.*
                     from (
-						select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ")", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
-                        from (select * from tbl_user {sql} order by {orderby_col} {orderby_opt} limit {start}, 10) a
+						select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ") ", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
+                        from (
+                            select  x.id,
+                                    x.email,
+                                    x.password,
+                                    x.username,
+                                    x.phone,
+                                    x.phone_country,
+                                    x.gender,
+                                    x.birth_date,
+                                    y.name as sns_code,
+                                    x.sns_name,
+                                    x.rec,
+                                    x.regist_rec,
+                                    x.regist_ip,
+                                    x.regist_date,
+                                    x.modify_date,
+                                    x.is_active,
+                                    x.is_staff,
+                                    x.delete_yn,
+                                    x.black_yn
+                            from tbl_user x
+                            left join tbl_code_detail y
+                            on x.sns_code = y.code
+                            {sql}
+                            and y.group_code = 'message'
+                            order by {orderby_col} {orderby_opt}
+                            limit {start}, 10
+                        ) a
                         join tbl_code_detail b
 						on a.gender = b.code
 						join tbl_code_detail c
@@ -198,22 +219,16 @@ select id, email, username, gender, birth_date, sns, phone, delete_yn, black_yn,
             sql=sql,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
-            start=start,
-        )
+            start=start)
+        print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = dictfetchall(cur)
-        print(query)
 
-    print('---------------------------------')
-    for r in rows:
-        print(r)
-    print('---------------------------------')
-
-    test = {
+    returnData = {
         "draw": draw,
         "recordsTotal": total,
         "recordsFiltered": total,
         "data": rows
     }
 
-    return JsonResponse(test)
+    return JsonResponse(returnData)

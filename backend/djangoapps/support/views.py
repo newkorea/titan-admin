@@ -11,35 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-@login_check
-def support(request):
-
-    tcg = TblCodeGroup.objects.filter(memo='support')
-    context = {}
-    context['code_group'] = tcg
-    return render(request, 'support/support.html', context)
-
-
-@login_check
-def api_support_getSubOption(request):
-
-    group_code = request.POST.get('group_code')
-    
-    tcd = TblCodeDetail.objects.filter(group_code=group_code)
-
-    rr = []
-    for f in tcd:
-        tmp = {}
-        tmp['code'] = f.code
-        tmp['name'] = f.memo
-        rr.append(tmp)
-
-    return JsonResponse({'result': rr})
-
-
 # parameter : yyyy-mm-dd
 def convertStrToDatetime(strTypedate):
-
     tmp = strTypedate.split('-')
     yyyy = int(tmp[0])
     mm = int(tmp[1])
@@ -47,6 +20,30 @@ def convertStrToDatetime(strTypedate):
     return datetime.datetime(yyyy, mm, dd)
 
 
+# 문의관리 페이지 렌더링 (2019.09.15 12:54 점검완료)
+@login_check
+def support(request):
+    tcg = TblCodeGroup.objects.filter(memo='support')
+    context = {}
+    context['code_group'] = tcg
+    return render(request, 'support/support.html', context)
+
+
+# 검색 필터 생성 API (2019.09.15 12:54 점검완료)
+@login_check
+def api_support_getSubOption(request):
+    group_code = request.POST.get('group_code')
+    tcd = TblCodeDetail.objects.filter(group_code=group_code)
+    rr = []
+    for f in tcd:
+        tmp = {}
+        tmp['code'] = f.code
+        tmp['name'] = f.memo
+        rr.append(tmp)
+    return JsonResponse({'result': rr})
+
+
+# 내용 로드 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_support_getContent(request):
 
@@ -54,18 +51,10 @@ def api_support_getContent(request):
     sub_sel = request.POST.get('sub_sel')
     send_yn = request.POST.get('send_yn')
     target_date = request.POST.get('target_date')
-    
+
     # life cycle bug fix
     if sub_sel == '':
         sub_sel = '0'
-
-    print('----------------------------')
-    print('main_sel -> ', main_sel)
-    print('sub_sel -> ', sub_sel)
-    print('sub_sel -> ', type(sub_sel))
-    print('send_yn -> ', send_yn)
-    print('target_date -> ', target_date)
-    print('----------------------------')
 
     with connections['default'].cursor() as cur:
         if sub_sel == '0' and send_yn != 'D':
@@ -77,7 +66,6 @@ def api_support_getContent(request):
                 and send_yn='{send_yn}'
                 and delete_yn = 'N';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
-            print(query)
             cur.execute(query)
             rows = cur.fetchall()
         elif sub_sel != '0' and send_yn != 'D':
@@ -90,7 +78,6 @@ def api_support_getContent(request):
                 and send_yn='{send_yn}'
                 and delete_yn = 'N';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
-            print(query)
             cur.execute(query)
             rows = cur.fetchall()
         elif sub_sel == '0' and send_yn == 'D':
@@ -101,7 +88,6 @@ def api_support_getContent(request):
                 and date(regist_date) = date('{target_date}')
                 and delete_yn='Y';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
-            print(query)
             cur.execute(query)
             rows = cur.fetchall()
         elif sub_sel != '0' and send_yn == 'D':
@@ -113,53 +99,38 @@ def api_support_getContent(request):
                 and date(regist_date) = date('{target_date}')
                 and delete_yn='Y';
             '''.format(main_sel=main_sel, sub_sel=sub_sel, target_date=target_date, send_yn=send_yn)
-            print(query)
             cur.execute(query)
-            rows = cur.fetchall()      
-
-    print('len(rows) -> ', len(rows))
+            rows = cur.fetchall()
 
     rr = []
     for row in rows:
         tmp = {}
         tmp['id'] = row[0]
-
-        print('row[1] -> ', row[1])
-        print('len(row[1]) -> ', len(row[1]))
-
-        # text overflow detect
         title = row[1]
         if len(title) > 20:
             title = title[0:20] + '...'
-
         tmp['title'] = title
         tmp['regist_date'] = row[2]
         rr.append(tmp)
-
     return JsonResponse({'result': rr})
 
 
+# 상세내용 로드 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_support_getSelectContent(request):
-
     id = request.POST.get('id')
-
     ts = TblSupport.objects.get(id=id)
-
     tcg = TblCodeGroup.objects.get(
         code=ts.main_type
     )
-
     tcd = TblCodeDetail.objects.get(
         group_code=ts.main_type,
         code=ts.sub_type
     )
-
     tf = TblFile.objects.filter(
         gname=ts.main_type,
         gid=id
     )
-
     rr = {}
     rr['main_type'] = tcg.name
     rr['sub_type'] = tcd.memo
@@ -168,8 +139,7 @@ def api_support_getSelectContent(request):
     rr['send_title'] = ts.send_title
     rr['send_content'] = ts.send_content
     rr['send_date'] = ts.send_date
-    rr['content'] = xssProtect(ts.content) # xss protext
-    
+    rr['content'] = xssProtect(ts.content)
     if len(tf) == 0:
         rr['file1'] = ''
         rr['file2'] = ''
@@ -183,55 +153,51 @@ def api_support_getSelectContent(request):
     return JsonResponse({'result': rr})
 
 
+# 문의 삭제 API (2019.09.15 12:54 점검완료)
 def api_support_deleteItem(request):
     id = request.POST.get('id')
-
     ts = TblSupport.objects.get(id=id)
-
     ts.delete_yn = 'Y'
     ts.delete_date = datetime.now()
     ts.save()
-
     return JsonResponse({'result': 200})
 
+
+# 문의 답변 API (2019.09.15 12:54 점검완료)
 def api_support_sendItem(request):
     id = request.POST.get('id')
     to_email = request.POST.get('email')
     subject = request.POST.get('subject')
     content = request.POST.get('content')
 
-    print(type(content))
-    print('content------------->', content)
-
     smtp_host = settings.SMTP_HOST
     smtp_port = settings.SMTP_PORT
+    smtp_email = settings.SMTP_EMAIL
     smtp_id = settings.SMTP_ID
     smtp_pw = settings.SMTP_PW
     smtp_to = to_email
 
     smtp = smtplib.SMTP(smtp_host, smtp_port)
-    smtp.ehlo()      # say Hello
-    smtp.starttls()  # TLS 사용시 필요
+    smtp.ehlo()
+    smtp.starttls()
     smtp.ehlo()
     smtp.login(smtp_id, smtp_pw)
 
-    msg = MIMEText(content)
+    msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = smtp_id
+    msg['From'] = smtp_email
     msg['To'] = smtp_to
-    smtp.sendmail(smtp_id, smtp_to, msg.as_string())
 
+    part = MIMEText(content, 'html')
+    msg.attach(part)
+    smtp.sendmail(smtp_email, smtp_to, msg.as_string())
     smtp.quit()
-
+    
     ts = TblSupport.objects.get(id=id)
-
-    # 띄어쓰기 픽스 txt -> html
     content = content.replace('\n', '<br>')
-
     ts.send_yn = 'Y'
     ts.send_title = subject
     ts.send_content = content
     ts.send_date = datetime.now()
     ts.save()
-
     return JsonResponse({'result': 200})

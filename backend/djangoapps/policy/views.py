@@ -8,6 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+# 서비스이용약관 렌더링 (2019.09.15 11:49 점검완료)
 @login_check
 def service(request):
     with connections['default'].cursor() as cur:
@@ -18,7 +19,6 @@ def service(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -34,6 +34,7 @@ def service(request):
     return render(request, 'policy/admin_service.html', context)
 
 
+# 개인정보보호정책 렌더링 (2019.09.15 11:49 점검완료)
 @login_check
 def privacy(request):
     with connections['default'].cursor() as cur:
@@ -44,7 +45,6 @@ def privacy(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -61,6 +61,7 @@ def privacy(request):
     return render(request, 'policy/admin_privacy.html', context)
 
 
+# 환불정책 렌더링 (2019.09.15 11:49 점검완료)
 @login_check
 def refund(request):
     with connections['default'].cursor() as cur:
@@ -71,7 +72,6 @@ def refund(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -87,6 +87,7 @@ def refund(request):
     return render(request, 'policy/admin_refund.html', context)
 
 
+# 약관 공통 편집 API (2019.09.15 11:49 점검완료)
 @login_check
 def api_policy_edit(request):
     sum = request.POST.get('sum')
@@ -112,10 +113,10 @@ def api_policy_edit(request):
         t1.zh_modify_date = datetime.now()
         t1.save()
 
-
     return JsonResponse({'result': '200'})
 
 
+# 약관 공통 로드 API (2019.09.15 11:49 점검완료)
 @login_check
 def api_policy_load(request):
     kind = request.POST.get('kind')
@@ -124,7 +125,6 @@ def api_policy_load(request):
 
     list = []
     for t in rows:
-        print(t)
         sd = {}
         sd['en'] = t.en
         sd['ko'] = t.ko
@@ -132,5 +132,4 @@ def api_policy_load(request):
         sd['zh'] = t.zh
         list.append(sd)
 
-    print(list)
     return JsonResponse({'result': list})

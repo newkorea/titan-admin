@@ -1,0 +1,122 @@
+.row1, .row2, .row3 {
+  display: flex;
+  margin-bottom: 50px;
+}
+.user-box {
+  border: 1px solid #C1C1C1;
+  width: 25%;
+  height: 150px;
+  margin-right: 25px;
+  margin-left: 25px;
+  box-shadow: 3px 3px rgba(128, 128, 128, 0.3);
+}
+.row-head {
+  height: 40px;
+  border-bottom: 1px solid #C1C1C1;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  color: white;
+  padding-top: 7px;
+}
+.row-content {
+  font-size: 40px;
+  margin-top: 20px;
+  text-align: center;
+  font-weight: bold;
+
+}
+.chart-container{
+  display: flex;
+  margin-right: 25px;
+  margin-left: 25px;
+  margin-top: 20px;
+}
+.chart {
+  width: 30%;
+  height: 100%;
+  border: 1px solid #C1C1C1;
+  margin-right: 50px;
+
+}
+.chart2 {
+  width: 70%;
+  height: 100%;
+  border: 1px solid #C1C1C1;
+}
+.row-head-name {
+  margin-top: 10px;
+  margin-left: 15px;
+}
+.today-reg-user-head1{
+  background-color: #DF3545;
+  opacity: 0.7;
+}
+.content1{
+  color: #DF3545;
+  opacity: 0.7;
+}
+.today-reg-user-head2{
+  background-color: #F44336;
+  opacity: 0.7;
+}
+.content2 {
+  color: #F44336;
+  opacity: 0.7;
+}
+.today-reg-user-head3{
+  background-color: #009713;
+  opacity: 0.7;
+}
+.content3{
+  color: #009713;
+  opacity: 0.7;
+}
+.today-reg-user-head4{
+  background-color: #448AFF;
+  opacity: 0.7;
+}
+.content4{
+  color: #448AFF;
+  opacity: 0.7;
+}
+.today-reg-user-head5{
+  background-color: #000000;
+  opacity: 0.7;
+}
+.today-reg-user-head6{
+  background-color: #000000;
+  opacity: 0.7;
+}
+.chart-margin {
+  margin-bottom: 20px;
+  text-align: center;
+  margin-right: 25px;
+}
+.xxx {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.xxx > table > tbody > tr {
+  text-align: center;
+}
+.xxx > table {
+  font-size: 12px;
+}
+.xxx-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.wd50p {
+  width: 50%;
+}
+.p-color-red {
+  color: red;
+}
+.p-color-blue {
+  color: blue;
+}
+.fwb {
+  font-weight: bold;
+}

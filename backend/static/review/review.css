@@ -1,0 +1,45 @@
+.flex-item {
+  flex: 1;
+}
+.country-logo {
+  width: 20px;
+  margin-left: 5px;
+  margin-top: -5px;
+}
+.input-margin {
+font-size: 15px;
+display: flex;
+}
+.btn-store{
+    text-align: right;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.item-store{
+border: solid 0px yellow;
+display: flex;
+margin-top: 12px;
+}
+.review-section{
+  padding: 12px;
+  border: solid 1px #e3e0e6;
+  width: 300px;
+  border-radius: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.review-col2{
+  margin-top: 10px;
+}
+.review-col3{
+  margin-top: 10px;
+}
+.review-col4{
+  margin-top: 10px;
+}
+.review-col5{
+  margin-top: 3px;
+}
+.w100p{
+  width: 100%;
+}

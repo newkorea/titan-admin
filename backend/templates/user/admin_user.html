@@ -1,104 +1,21 @@
 <%inherit file="../admin_common/admin_frame.html"/>
 
-<%block name="css">
-<style>
-  .user-container {
-    min-height: 850px;
-  }
-  .user-filter {
-    display: flex;
-  }
-  table > thead > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  table > tbody > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  .flex1{
-    flex: 1;
-    margin-left: 10px;
-    margin-right: 10px;
-  }
-  .btn-store{
-    text-align: right;
-    margin-bottom: 12px;
-  }
-  .dataTables_paginate{
-    width: 100% !important;
-    text-align: center !important;
-    margin-top: 10px !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .inner-view{
-    display: none;
-    padding: 5px;
-    margin-top: 20px;
-    height:860px;
-    width: 1100px;
-    margin: 0 auto;
-  }
-  .view-left{
-    margin-right: 10px;
-    border-radius: 10px;
-    padding-top: 20px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .view-right{
-    margin-left: 10px;
-    padding-top: 18px;
-    border-radius: 10px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .inner-title{
-    display: none;
-    text-align: center;
-    font-size: 25px;
-    padding: 20px;
-  }
-  .tar{
-    text-align: center;
-  }
-  .view-input{
-    width: 450px;
-    margin: 0 auto;
-  }
-  .label-margin {
-    margin-left: 45px;
-  }
-  .r-icon{
-    color: #7f54ff;
-    margin-right: 8px;
-  }
-  .display .dataTable .no-footer{
-    width: 100%;
-  }
 
-</style>
+<%block name="css">
+<link rel="stylesheet" href="/static/user/user.css">
 </%block>
+
 
 <%block name="title">회원 관리</%block>
 <%block name="subtitle">TITAN VPN에 가입한 회원들의 정보를 한눈에 볼 수 있습니다</%block>
 
+
 <%block name="content">
 <div class="user-container">
-
   <!-- 검색필터 -->
   <div class="user-filter">
     <div class="form-group id-form flex1">
-      <label>아이디</label>
+      <label>번호</label>
       <input class="form-control" id="filter_id">
     </div>
     <div class="form-group email-form flex1">
@@ -155,7 +72,6 @@
       </select>
     </div>
   </div>
-
   <!-- 버튼 -->
   <div class='btn-store'>
     <button class="btn btn-fw primary" onclick="click_search()">
@@ -163,13 +79,12 @@
       검색하기
     </button>
   </div>
-
   <!-- 데이터테이블즈 -->
   <div class="user-table">
     <table id="user-inform" class="display">
       <thead>
         <tr>
-          <th>아이디</th>
+          <th>번호</th>
           <th>이메일</th>
           <th>사용자명</th>
           <th>성별</th>
@@ -187,7 +102,6 @@
       </tbody>
     </table>
   </div>
-
   <!-- 상세영역 -->
   <div class='inner-title'>
     회원 상세정보
@@ -195,7 +109,7 @@
   <div class='inner-view'>
     <div class="view-left">
       <div class="form-group">
-        <label class="label-margin"><i class="fas fa-check r-icon"></i>아이디</label>
+        <label class="label-margin"><i class="fas fa-check r-icon"></i>번호</label>
         <input class="form-control view-input" id="user_id" readonly>
       </div>
       <div class="form-group">
@@ -237,7 +151,6 @@
       <div class='tar'>
         <button onclick='returnView()' class="btn btn-fw white">목록</button>
       </div>
-
     </div>
     <div class="view-right">
       <div class="form-group">
@@ -297,290 +210,10 @@
       </div>
     </div>
   </div>
-
 </div>
 </%block>
 
+
 <%block name="js">
-
-<script>
-    var csrf_token = $('#csrf_token').html();
-    var datatable = $('#user-inform').DataTable({
-      dom: '<"top"Blf>rtp<"bottom"i>',
-      paging: true,
-      ordering: true,
-      info: false,
-      filter: false,
-      lengthChange: false,
-      order: [[0, "desc"]],
-      stateSave: false,
-      pagingType: "full_numbers",
-      scrollX: false,
-      scrollCollapse: false,
-      processing: true,
-      serverSide: true,
-      drawCallback: function () {},
-      ajax: {
-          url: "/api_user_read",
-          type: "POST",
-          dataType: "json",
-          data: {
-              csrfmiddlewaretoken: csrf_token,
-              id: function() { return $('#filter_id').val() },
-              email: function() { return $('#filter_email').val() },
-              username: function() { return $('#filter_name').val() },
-              gender: function() {
-                  if($('#filter_gender option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_gender').val();
-              },
-              delete: function() {
-                  if($('#filter_delete option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_delete').val();
-              },
-              black: function() {
-                  if($('#filter_black option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_black').val();
-              },
-              active: function() {
-                  if($('#filter_active option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_active').val();
-              },
-              staff: function() {
-                  if($('#filter_staff option:selected').text() == "선택하세요") {
-                      return '';
-                  }
-                  else
-                      return $('#filter_staff').val();
-              },
-          },
-      },
-      columns: [
-          {data: "id"},
-          {data: "email"},
-          {data: "username"},
-          {data: "gender"},
-          {data: "birth_date"},
-          {data: "sns"},
-          {data: "phone"},
-          {data: "delete_yn"},
-          {data: "black_yn"},
-          {data: "is_active"},
-          {data: "is_staff"},
-          {data: "id"},
-      ],
-      columnDefs: [
-          {
-            targets: 0,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 1,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 2,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 3,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 4,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 5,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 6,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 7,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 8,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 9,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 10,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 11,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return '<button onclick="callInnerView('+ data +')" class="btn btn-fw warn">상세</button>';
-            }
-          }
-      ],
-      language: {
-          lengthMenu: "Display _MENU_ records per page",
-          zeroRecords: "데이터가 존재하지 않습니다",
-          info: "Showing page _PAGE_ of _PAGES_",
-          infoEmpty: "No records available",
-          infoFiltered: "(filtered from _MAX_ total records)",
-          paginate: {
-              first: '처음',
-              last: '끝',
-              previous: "이전",
-              next: "다음"
-          }
-      },
-    });
-
-    function click_search(){
-        datatable.ajax.reload();
-    }
-
-    function editView() {
-        id = $('input[id=user_id]').val();
-        active = $('#user_active').val();
-        delete_yn = $('#user_delete').val();
-        staff = $('#user_staff').val();
-        black = $('#user_black').val();
-        console.log("id  == >", id);
-        $.ajax({
-            url: "/api_user_edit",
-            type: "POST",
-            async: false, // ture: 비동기, false: 동기
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                id: id,
-                active: active,
-                delete_yn: delete_yn,
-                staff: staff,
-                black: black,
-            },
-            dataType: "json",
-            success: function(data){
-                if (data.result == '200') {
-                    Swal.fire({
-                        title: '알림',
-                        text: '성공적으로 변경되었습니다.',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    })
-                }
-            }
-        });
-    }
-
-    function callInnerView(seq){
-      $('.user-table').hide();
-      $('.user-filter').hide();
-      $('.btn-store').hide();
-      $('.inner-title').fadeIn();
-      $('.inner-view').fadeIn();
-      $('.inner-view').css({display: 'flex'})
-        $.ajax({
-            url: "/api_user_detail",
-            type: "POST",
-            async: false, // ture: 비동기, false: 동기
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                seq: seq,
-            },
-            dataType: "json",
-            success: function(data){
-                console.log(data)
-                $('input[id=user_id]').attr('value', data.result[0]['id']);
-                $('input[id=user_email]').attr('value', data.result[0]['email']);
-                $('input[id=user_name]').attr('value', data.result[0]['username']);
-                $('input[id=user_phone]').attr('value', data.result[0]['phone']);
-                $('input[id=user_gender]').attr('value', data.result[0]['gender']);
-                $('input[id=user_birth]').attr('value', data.result[0]['birth_date']);
-                $('input[id=user_sns]').attr('value', data.result[0]['sns']);
-                $('input[id=user_regist]').attr('value', data.result[0]['regist_date']);
-                $('input[id=user_rec1]').attr('value', data.result[0]['rec']);
-                $('input[id=user_rec2]').attr('value', data.result[0]['regist_rec']);
-                $('input[id=user_rec_ip]').attr('value', data.result[0]['regist_ip']);
-                $('input[id=user_attempt]').attr('value', data.result[0]['attempt']);
-                $('input[id=user_login_ip]').attr('value', data.result[0]['login_ip']);
-                $('input[id=user_login_date]').attr('value', data.result[0]['login_date']);
-
-
-                $('#user_active').val(data.result[0]['is_active']).attr("selected", "selected");
-                $('#user_delete').val(data.result[0]['delete_yn']).attr("selected", "selected");
-                $('#user_staff').val(data.result[0]['is_staff']).attr("selected", "selected");
-                $('#user_black').val(data.result[0]['black_yn']).attr("selected", "selected");
-
-
-            }
-        });
-    }
-
-    function returnView(seq){
-        $('input[id=user_id]').attr('value', '');
-        $('input[id=user_email]').attr('value', '');
-        $('input[id=user_name]').attr('value', '');
-        $('input[id=user_phone]').attr('value', '');
-        $('input[id=user_gender]').attr('value', '');
-        $('input[id=user_birth]').attr('value', '');
-        $('input[id=user_sns]').attr('value', '');
-        $('input[id=user_regist]').attr('value', '');
-        $('input[id=user_rec1]').attr('value', '');
-        $('input[id=user_rec2]').attr('value', '');
-        $('input[id=user_rec_ip]').attr('value', '');
-
-      $('.user-table').fadeIn();
-      $('.user-filter').fadeIn();
-      $('.btn-store').fadeIn();
-      $('.inner-title').hide();
-      $('.inner-view').hide();
-    }
-</script>
+<script src="/static/user/user.js"></script>
 </%block>

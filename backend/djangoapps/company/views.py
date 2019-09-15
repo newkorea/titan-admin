@@ -9,6 +9,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+# 회사소개 렌더링 (2019.09.15 11:56 점검완료)
 @login_check
 def about(request):
 
@@ -20,7 +21,6 @@ def about(request):
         '''
         cur.execute(query)
         row = cur.fetchall()
-        #print(row)
         en = row[0][0]
         ko = row[0][1]
         ja = row[0][2]
@@ -37,6 +37,7 @@ def about(request):
     return render(request, 'company/admin_about.html', context)
 
 
+# 회사소개 편집 API (2019.09.15 11:56 점검완료)
 @login_check
 def api_company_edit(request):
     sum = request.POST.get('sum')
@@ -44,7 +45,7 @@ def api_company_edit(request):
     lang = request.POST.get('lang')
 
     t1 = TblCompanyManage.objects.get(type=kind)
-    
+
     if lang == 'en':
         t1.en = sum
         t1.en_modify_date = datetime.now()
@@ -64,6 +65,7 @@ def api_company_edit(request):
     return JsonResponse({'result': '200'})
 
 
+# 회사소개 로드 API (2019.09.15 11:56 점검완료)
 @login_check
 def api_company_load(request):
     kind = request.POST.get('kind')
@@ -72,7 +74,6 @@ def api_company_load(request):
 
     list = []
     for t in rows:
-        #print(t)
         sd = {}
         sd['en'] = t.en
         sd['ko'] = t.ko
@@ -80,5 +81,4 @@ def api_company_load(request):
         sd['zh'] = t.zh
         list.append(sd)
 
-    #print(list)
     return JsonResponse({'result': list})

@@ -1,21 +1,21 @@
 <%inherit file="../admin_common/admin_frame.html"/>
 
+
 <%block name="css">
 <link rel="stylesheet" href="/static/download/download.css" type="text/css" />
 </%block>
 
+
 <%block name="title">Mac 파일 관리</%block>
 <%block name="subtitle">파일 다운로드 링크 및 설명 이미지를 등록할 수 있습니다</%block>
 
+
 <%block name="content">
-
 <input type='text' id='version_check' value='${version}' hidden>
-
 <div class='download-set'>
     <div class="box-header indigo">
       <h3>메뉴 활성화 여부</h3>
     </div>
-  
     <div class="meun-con">
       % if use_yn == 'Y':
         <button class="btn btn-fw success mbt" onclick="menuChange('Y', 'mac')">활성화</button>
@@ -25,18 +25,15 @@
         <button class="btn btn-fw success mbt" onclick="menuChange('N', 'mac')">비활성화</button>
       % endif
     </div>
-
     <div class='menu-txt'>
       버튼 클릭시 알림 문구 변경 없이 바로 적용됩니다<br>
       신중히 생각하고 눌러주세요<br>
     </div>
 </div>
-
 <div class='download-set'>
   <div class="box-header indigo">
     <h3>상태관리</h3>
   </div>
-
   <div class="client-status">
     <div class="download-flex">
       <div class="download-flex-item-left">
@@ -75,7 +72,6 @@
       </div>
     </div>
   </div>
-
   <div class="image-status">
     <div class="download-flex">
       <div class="download-flex-item-left">
@@ -115,12 +111,10 @@
     </div>
   </div>
 </div>
-
 <div class='download-set'>
     <div class="box-header indigo" style="margin-top: 15px;">
       <h3>파일등록</h3>
     </div>
-
     <div class="client-status">
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
@@ -163,7 +157,6 @@
         <button class="btn btn-fw success" onclick='common_save("ja_mac_clt")'>Save</button>
       </div>
     </div>
-
     <div class="image-status">
       <div class="download-flex">
         <div class="download-flex-item-left pt20">
@@ -207,8 +200,8 @@
       </div>
     </div>
   </div>
-
 </%block>
+
 
 <%block name="js">
 <script src="/static/download/download.js"></script>

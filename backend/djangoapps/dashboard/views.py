@@ -9,20 +9,17 @@ from backend.models import *
 from datetime import datetime, timedelta
 
 
+# 대쉬보드 렌더링 (2019.09.15 11:11 점검완료)
 @login_check
 def dashboard(request):
-
     now_year = datetime.today().year
     now_month = datetime.today().month
     now_day = datetime.today().day
-    print(now_year, now_month, now_day)
-    print("datetime.today()", datetime.today())
     now = datetime.now().strftime('%Y-%m-%d')
-
 
     with connections['default'].cursor() as cur:
         query = '''
-                    select 
+                    select
                     count(if(date(regist_date) = '{now}', regist_date, null)) as regist_today,
                     count(if(is_staff = '0', is_staff, null)) as user_count,
                     count(if(is_staff = '1', is_staff, null)) as admin_count,
@@ -38,11 +35,10 @@ def dashboard(request):
                     (select sum(amount) from tbl_price_history where refund_yn = 'N' and date(regist_date) = '{now}') as today_profit,
                     (select sum(amount) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = '{now}') as today_refund
                     from tbl_user;
-        '''.format(
-            now = now
-        )
+        '''.format(now = now)
         cur.execute(query)
         rows = cur.fetchall()
+
         regist_today = rows[0][0]
         user_count = rows[0][1]
         admin_count = rows[0][2]
@@ -55,16 +51,17 @@ def dashboard(request):
         men = rows[0][9]
         female = rows[0][10]
         login_today = rows[0][11]
-        profit = rows[0][12]
-        refund = rows[0][13]
-        if profit == None:
+        try:
+            profit = rows[0][12]
+            refund = rows[0][13]
+            if profit == None:
+                profit = 400000
+            if refund == None:
+                refund = 200000
+        except BaseException as err:
+            print('ERROR -> err : ', err)
             profit = 0
-
-        if refund == None:
             refund = 0
-
-
-        print('profit, refund',profit, refund)
 
     with connections['default'].cursor() as cur:
         query = '''
@@ -79,14 +76,10 @@ def dashboard(request):
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 80 and 89 , 1, 0)) as age_80,
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 90 and 110 , 1, 0)) as etc
                 from tbl_user;
-        '''.format(
-            now = now
-        )
+        '''.format(now = now)
         cur.execute(query)
         rows = cur.fetchall()
         ages = [ str(rows[0][0]), str(rows[0][1]), str(rows[0][2]), str(rows[0][3]), str(rows[0][4]), str(rows[0][5]), str(rows[0][6]), str(rows[0][7]), str(rows[0][8]),  ]
-        print("ages==>", ages)
-
 
     gender_list = []
     gender_list.append(men)
@@ -110,4 +103,3 @@ def dashboard(request):
         'ages': ages
     }
     return render(request, 'dashboard/dashboard.html', context)
-

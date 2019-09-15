@@ -1,207 +1,87 @@
 <%inherit file="../admin_common/admin_frame.html"/>
 
+
 <%block name="css">
-<style>
-  .row1, .row2, .row3 {
-    display: flex;
-    margin-bottom: 50px;
-  }
-  .user-box {
-    border: 1px solid #C1C1C1;
-    width: 25%;
-    height: 150px;
-    margin-right: 25px;
-    margin-left: 25px;
-    box-shadow: 3px 3px rgba(128, 128, 128, 0.3);
-  }
-  .row-head {
-    height: 40px;
-    border-bottom: 1px solid #C1C1C1;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
-    color: white;
-    padding-top: 7px;
-  }
-  .row-content {
-    font-size: 40px;
-    margin-top: 20px;
-    text-align: center;
-    font-weight: bold;
-
-  }
-  .chart-container{
-    display: flex;
-    margin-right: 25px;
-    margin-left: 25px;
-  }
-  .chart {
-    width: 30%;
-    height: 100%;
-    border: 1px solid #C1C1C1;
-    margin-right: 50px;
-
-  }
-  .chart2 {
-    width: 70%;
-    height: 100%;
-    border: 1px solid #C1C1C1;
-  }
-  .row-head-name {
-    margin-top: 10px;
-    margin-left: 15px;
-  }
-
-  .today-reg-user-head1{
-    background-color: #DF3545;
-    opacity: 0.7;
-  }
-  .content1{
-    color: #DF3545;
-    opacity: 0.7;
-  }
-  .today-reg-user-head2{
-    background-color: #F44336;
-    opacity: 0.7;
-  }
-  .content2 {
-    color: #F44336;
-    opacity: 0.7;
-  }
-  .today-reg-user-head3{
-    background-color: #009713;
-    opacity: 0.7;
-  }
-  .content3{
-    color: #009713;
-    opacity: 0.7;
-  }
-  .today-reg-user-head4{
-    background-color: #448AFF;
-    opacity: 0.7;
-  }
-  .content4{
-    color: #448AFF;
-    opacity: 0.7;
-  }
-  .today-reg-user-head5{
-    background-color: #536DFE;
-    opacity: 0.7;
-  }
-  .today-reg-user-head6{
-    background-color: #7C4DFF;
-    opacity: 0.7;
-  }
-  .chart-margin {
-    margin-bottom: 20px;
-    text-align: center;
-    margin-right: 25px;
-  }
-</style>
+<link rel="stylesheet" href="/static/dashboard/dashboard.css">
 </%block>
+
 
 <%block name="title">대쉬보드</%block>
 <%block name="subtitle">서비스의 전체적인 부분을 한눈에 볼 수 있습니다</%block>
 
+
 <%block name="content">
 <div class="statistics-container">
-  <div class="row1">
-    <div class="today-reg-user user-box">
-      <div class="row-head today-reg-user-head1">오늘 가입한 유저</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="regist_user_today" class="row-content content1" style="color: #FF5252;"></div>
-      <div class="row-calendar"></div>
+  <div class='xxx'>
+    <div class='xxx-title'>
+      오늘의 통계
     </div>
-    <div class="today-login-user user-box">
-      <div class="row-head today-reg-user-head2">오늘 로그인 유저</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="login_today" class="row-content content2"></div>
-    </div>
-    <div class="today-profit user-box">
-      <div class="row-head today-reg-user-head3">오늘 결제 수익</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="profit" class="row-content content3"></div>
-    </div>
-    <div class="today-refund user-box">
-      <div class="row-head today-reg-user-head4">오늘 환불금액</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="refund" class="row-content content4"></div>
-    </div>
+    <table class="table">
+      <tbody>
+        <tr>
+          <td class='wd50p'>가입한 사용자</td>
+          <td id='regist_user_today'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>로그인한 사용자</td>
+          <td id='login_today'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>결제 수익</td>
+          <td class='p-color-blue fwb' id='profit'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>환불 금액</td>
+          <td class='p-color-red fwb' id='refund'></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  <div class="row2">
-    <div class="user-count user-box">
-      <div class="row-head today-reg-user-head1">사용자</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="user_count" class="row-content content1"></div>
+  <div class='xxx'>
+    <div class='xxx-title'>
+      회원 통계
     </div>
-    <div class="admin-count user-box">
-      <div class="row-head today-reg-user-head2">관리자</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="admin_count" class="row-content content2"></div>
-    </div>
-    <div class="cs-count user-box">
-      <div class="row-head today-reg-user-head3">cs담당자</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="cs_count" class="row-content content3"></div>
-    </div>
-    <div class="chongpan-count user-box">
-      <div class="row-head today-reg-user-head4">총판담당자</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="chongpan_count" class="row-content content4"></div>
-    </div>
+    <table class="table">
+      <tbody>
+        <tr>
+          <td class='wd50p'>사용자 권한</td>
+          <td id='user_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>관리자 권한</td>
+          <td id='admin_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>CS 권한</td>
+          <td id='cs_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>총판 권한</td>
+          <td id='chongpan_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>활성화 사용자</td>
+          <td class='p-color-blue' id='active_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>비활성화 사용자</td>
+          <td class='p-color-red' id='deactive_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>삭제된 사용자</td>
+          <td id='delete_count'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>차단된 사용자</td>
+          <td id='black_count'></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
-  <div class="row3">
-    <div class="active_user user-box">
-      <div class="row-head today-reg-user-head1">활성화 회원</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="active_count" class="row-content content1"></div>
-    </div>
-    <div class="deactive_user user-box">
-      <div class="row-head today-reg-user-head2">비활성화 회원</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="deactive_count" class="row-content content2"></div>
-    </div>
-    <div class="delete_user user-box">
-      <div class="row-head today-reg-user-head3">삭제회원</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="delete_count" class="row-content content3"></div>
-    </div>
-    <div class="black-user user-box">
-      <div class="row-head today-reg-user-head4">차단회원</div>
-      <div class="row-head-name">
-
-      </div>
-      <div id="black_count" class="row-content content4"></div>
-    </div>
-  </div>
-</div>
 <div class="chart-container">
   <div class="chart">
     <div class="row-head today-reg-user-head5">성별 별 가입자 수</div>
     <div class="today-reg-user-head row-head-name chart-margin">
-
     </div>
     <canvas id="myChart" width="400" height="400"></canvas>
   </div>
@@ -225,9 +105,11 @@
 <div hidden id="deactive_count_dt">${ deactive_count }</div>
 <div hidden id="delete_count_dt">${ delete_count }</div>
 <div hidden id="black_count_dt">${ black_count }</div>
-
-
+<div hidden id="men">${ men }</div>
+<div hidden id="female">${ female }</div>
+<div hidden id="ages">${ ages }</div>
 </%block>
+
 
 <%block name="js">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
@@ -244,7 +126,6 @@ var active_count_dt = $('#active_count_dt').html();
 var deactive_count_dt = $('#deactive_count_dt').html();
 var delete_count_dt = $('#delete_count_dt').html();
 var black_count_dt = $('#black_count_dt').html();
-
 
 var options = {
   useEasing : true,
@@ -278,7 +159,6 @@ var delete_count = new CountUp("delete_count", 0, delete_count_dt, 0, 2.5, optio
 delete_count.start();
 var black_count = new CountUp("black_count", 0, black_count_dt, 0, 2.5, options);
 black_count.start();
-
 
 var ctx = document.getElementById("myChart");
 var ctx2 = document.getElementById("myChart2");

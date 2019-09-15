@@ -5,7 +5,6 @@ function menuChange(flag, version){
     csrfmiddlewaretoken: $('#csrf_token').html()
   })
  .done(function( data ) {
-   console.log('data.result -> ', data.result);
    if(data.result==200){
     window.location.reload()
    }
@@ -14,17 +13,12 @@ function menuChange(flag, version){
 
 
 function common_save(flag){
-
-  console.log('flag -> ', flag);
-
   try {
     var upload_file = $("#" + flag)[0].files[0];
   }
   catch (e){
     var upload_file = $("#" + flag).val();
   }
-
-  console.log('upload_file -> ', upload_file);
 
   var formData = new FormData();
   formData.append("csrfmiddlewaretoken", $('#csrf_token').html());
@@ -51,9 +45,6 @@ function common_save(flag){
 
 function load_data(){
   var version = $('#version_check').val();
-
-  console.log('version -> ', version);
-
   $.post( "/api_load_download_data", {
      version: version,
      csrfmiddlewaretoken: $('#csrf_token').html()
@@ -77,7 +68,6 @@ function load_data(){
         $('#bot_ja').html(data.result[i]['image_name']);
       }
     }
-    console.log(data.result)
   });
 }
 

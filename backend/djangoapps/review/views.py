@@ -8,18 +8,18 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 
 
+# 리뷰관리 페이지 렌더링 (2019.09.15 12:54 점검완료)
 @login_check
 def review(request):
-
     context = {}
     return render(request, 'review/admin_review.html', context)
 
 
+# 리뷰관리 리듀 로드 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_review_read(request):
     language = request.POST.get('language')
     rows = TblReview.objects.filter(language=language, delete_yn='N')
-
     res = []
     idx = 1
     for t in rows:
@@ -32,20 +32,18 @@ def api_review_read(request):
         sd['content'] = t.content
         res.append(sd)
         idx += 1
-
     return JsonResponse({'result': res})
 
+
+# 리뷰관리 리듀 카운트 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_review_count(request):
     language = request.POST.get('language')
-
     length = len(TblReview.objects.filter(language=language, delete_yn='N'))
-    print(length)
-
-
     return JsonResponse({'result': length})
 
 
+# 리뷰관리 리듀 저장 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_review_save(request):
 
@@ -54,12 +52,6 @@ def api_review_save(request):
     username = request.POST.get('username')
     content = request.POST.get('content')
     language = request.POST.get('language')
-
-    print('seq -> ', seq)
-    print('starbox -> ', starbox)
-    print('username -> ', username)
-    print('content -> ', content)
-    print('language -> ', language)
 
     if seq == '0':
         print('insert')
@@ -87,6 +79,7 @@ def api_review_save(request):
     return JsonResponse({'result': 200})
 
 
+# 리뷰관리 리듀 삭제 API (2019.09.15 12:54 점검완료)
 @login_check
 def api_review_del(request):
 

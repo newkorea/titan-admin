@@ -2,13 +2,9 @@ import os
 import json
 import uuid
 import hashlib
-from datetime import datetime, timedelta
 import base64
 import re
-try:
-    from html.parser import HTMLParser
-except:
-    from HTMLParser import HTMLParser
+from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -17,14 +13,19 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from Crypto import Random
 from Crypto.Cipher import AES
-
 from backend.models import *
+try:
+    from html.parser import HTMLParser
+except:
+    from HTMLParser import HTMLParser
 
 
+# 공통 테스트 함수 (2019.09.15 12:26 점검완료)
 def common_sample():
     print("hello world")
 
 
+# xss 해킹 방어 함수 (2019.09.15 12:26 점검완료)
 def xssProtect(text):
     if '<'  in text:
         text = text.replace('<', '&lt')
@@ -35,170 +36,7 @@ def xssProtect(text):
     return text
 
 
-class XssHtml(HTMLParser):
-    """
-    allow_tags = ['a', 'img', 'br', 'strong', 'b', 'code', 'pre',
-                  'p', 'div', 'em', 'span', 'h1', 'h2', 'h3', 'h4',
-                  'h5', 'h6', 'blockquote', 'ul', 'ol', 'tr', 'th', 'td',
-                  'hr', 'li', 'u', 'embed', 's', 'table', 'thead', 'tbody',
-                  'caption', 'small', 'q', 'sup', 'sub']
-    """
-    allow_tags = ['br']
-    common_attrs = ["style", "class", "name"]
-    nonend_tags = ["img", "hr", "br", "embed"]
-    tags_own_attrs = {
-        "img": ["src", "width", "height", "alt", "align"], 
-        "a": ["href", "target", "rel", "title"],
-        "embed": ["src", "width", "height", "type", "allowfullscreen", "loop", "play", "wmode", "menu"],
-        "table": ["border", "cellpadding", "cellspacing"],
-    }
-
-    _regex_url = re.compile(r'^(http|https|ftp)://.*', re.I | re.S)
-    _regex_style_1 = re.compile(r'(\\|&#|/\*|\*/)', re.I)
-    _regex_style_2 = re.compile(r'e.*x.*p.*r.*e.*s.*s.*i.*o.*n', re.I | re.S)
-
-
-    def __init__(self, allows=[]):
-        HTMLParser.__init__(self)
-        self.allow_tags = allows if allows else self.allow_tags
-        self.result = []
-        self.start = []
-        self.data = []
-
-    def getHtml(self):
-        """
-        Get the safe html code
-        """
-        for i in range(0, len(self.result)):
-            self.data.append(self.result[i])
-        return ''.join(self.data)
-
-    def handle_startendtag(self, tag, attrs):
-        self.handle_starttag(tag, attrs)
-
-    def handle_starttag(self, tag, attrs):
-        if tag not in self.allow_tags:
-            return
-        end_diagonal = ' /' if tag in self.nonend_tags else ''
-        if not end_diagonal:
-            self.start.append(tag)
-        attdict = {}
-        for attr in attrs:
-            attdict[attr[0]] = attr[1]
-
-        attdict = self._wash_attr(attdict, tag)
-        if hasattr(self, "node_%s" % tag):
-            attdict = getattr(self, "node_%s" % tag)(attdict)
-        else:
-            attdict = self.node_default(attdict)
-
-        attrs = []
-        for (key, value) in attdict.items():
-            attrs.append('%s="%s"' % (key, self._htmlspecialchars(value)))
-        attrs = (' ' + ' '.join(attrs)) if attrs else ''
-        self.result.append('<' + tag + attrs + end_diagonal + '>')
-
-    def handle_endtag(self, tag):
-        if self.start and tag == self.start[len(self.start) - 1]:
-            self.result.append('</' + tag + '>')
-            self.start.pop()
-
-    def handle_data(self, data):
-        self.result.append(self._htmlspecialchars(data))
-
-    def handle_entityref(self, name):
-        if name.isalpha():
-            self.result.append("&%s;" % name)
-
-    def handle_charref(self, name):
-        if name.isdigit():
-            self.result.append("&#%s;" % name)
-
-    def node_default(self, attrs):
-        attrs = self._common_attr(attrs)
-        return attrs
-
-    def node_a(self, attrs):
-        attrs = self._common_attr(attrs)
-        attrs = self._get_link(attrs, "href")
-        attrs = self._set_attr_default(attrs, "target", "_blank")
-        attrs = self._limit_attr(attrs, {
-            "target": ["_blank", "_self"]
-        })
-        return attrs
-
-    def node_embed(self, attrs):
-        attrs = self._common_attr(attrs)
-        attrs = self._get_link(attrs, "src")
-        attrs = self._limit_attr(attrs, {
-            "type": ["application/x-shockwave-flash"],
-            "wmode": ["transparent", "window", "opaque"],
-            "play": ["true", "false"],
-            "loop": ["true", "false"],
-            "menu": ["true", "false"],
-            "allowfullscreen": ["true", "false"]
-        })
-        attrs["allowscriptaccess"] = "never"
-        attrs["allownetworking"] = "none"
-        return attrs
-
-    def _true_url(self, url):
-        if self._regex_url.match(url):
-            return url
-        else:
-            return "http://%s" % url
-
-    def _true_style(self, style):
-        if style:
-            style = self._regex_style_1.sub('_', style)
-            style = self._regex_style_2.sub('_', style)
-        return style
-
-    def _get_style(self, attrs):
-        if "style" in attrs:
-            attrs["style"] = self._true_style(attrs.get("style"))
-        return attrs
-
-    def _get_link(self, attrs, name):
-        if name in attrs:
-            attrs[name] = self._true_url(attrs[name])
-        return attrs
-
-    def _wash_attr(self, attrs, tag):
-        if tag in self.tags_own_attrs:
-            other = self.tags_own_attrs.get(tag)
-        else:
-            other = []
-
-        _attrs = {}
-        if attrs:
-            for (key, value) in attrs.items():
-                if key in self.common_attrs + other:
-                    _attrs[key] = value
-        return _attrs
-
-    def _common_attr(self, attrs):
-        attrs = self._get_style(attrs)
-        return attrs
-
-    def _set_attr_default(self, attrs, name, default=''):
-        if name not in attrs:
-            attrs[name] = default
-        return attrs
-
-    def _limit_attr(self, attrs, limit={}):
-        for (key, value) in limit.items():
-            if key in attrs and attrs[key] not in value:
-                del attrs[key]
-        return attrs
-
-    def _htmlspecialchars(self, html):
-        return html.replace("<", "&lt;")\
-            .replace(">", "&gt;")\
-            .replace('"', "&quot;")\
-            .replace("'", "&#039;")
-
-
+# AES 공통 클래스 (2019.09.15 12:26 점검완료)
 class AESCipher(object):
 
     def __init__(self):
@@ -226,6 +64,7 @@ class AESCipher(object):
         return s[:-ord(s[len(s)-1:])]
 
 
+# 쿼리 결과 dict 형 반환 함수 (2019.09.15 12:26 점검완료)
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"
     desc = cursor.description
@@ -235,6 +74,7 @@ def dictfetchall(cursor):
     ]
 
 
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
 def login_check(func):
     def wrapper(request, *args, **kwargs):
 
@@ -249,6 +89,7 @@ def login_check(func):
     return wrapper
 
 
+# 리퀘스트에 들어온 아이피를 얻는 함수 (2019.09.15 12:26 점검완료)
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
@@ -258,16 +99,19 @@ def get_client_ip(request):
     return ip
 
 
+# 평문을 sha256으로 반환하는 함수 (2019.09.15 12:26 점검완료)
 def hashText(text):
     salt = uuid.uuid4().hex
     return hashlib.sha256(salt.encode() + text.encode()).hexdigest() + ':' + salt
 
 
+# 해쉬와 평문이 일치하는지 확인하는 함수 (2019.09.15 12:26 점검완료)
 def matchHashedText(hashedText, providedText):
     _hashedText, salt = hashedText.split(':')
     return _hashedText == hashlib.sha256(salt.encode() + providedText.encode()).hexdigest()
 
 
+# 파일 사이즈 연산 함수 (2019.09.15 12:26 점검완료)
 def sizeof_fmt(num, suffix='b'):
     for unit in ['', 'k', 'm', 'g', 't', 'p', 'e', 'z']:
         if abs(num) < 1024.0:
@@ -276,8 +120,8 @@ def sizeof_fmt(num, suffix='b'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
+# 파일 업로드 공통 함수 (2019.09.15 12:26 점검완료)
 def file_upload(file, gname, gid):
-
     upload_root = settings.UPLOAD_ROOT
     real_name = file.name
     save_name = str(uuid.uuid4()).replace('-', '')
@@ -285,36 +129,48 @@ def file_upload(file, gname, gid):
     real_size = file.size
     save_size = sizeof_fmt(file.size)
     save_path = upload_root + save_name
+    lock = 0
 
-    print('upload_root -> ', upload_root)
-    print('save_name -> ', save_name)
-    print('ext -> ', ext)
-    print('real_size -> ', real_size)
-    print('save_size -> ', save_size)
+    print('DEBUG -> upload_root : ', upload_root)
+    print('DEBUG -> save_name -> ', save_name)
+    print('DEBUG -> ext -> ', ext)
+    print('DEBUG -> real_size -> ', real_size)
+    print('DEBUG -> save_size -> ', save_size)
+
+    if real_name.endswith('.png'):
+        print('INFO -> File is a png extension')
+    else:
+        print('INFO -> File is not a png extension')
+        lock = 1
 
     if not os.path.exists(upload_root):
+        print('INFO -> Create upload directory because it does not exist')
         os.makedirs(upload_root)
 
-    fs = FileSystemStorage()
-    filename = fs.save(save_path, file)
+    if lock == 0:
+        fs = FileSystemStorage()
+        filename = fs.save(save_path, file)
+        print('INFO -> File saved in directory')
 
-    file = TblFile(
-        gname       = gname,
-        gid         = gid,
-        real_name   = real_name,
-        save_name   = save_name,
-        ext         = ext,
-        real_size   = real_size,
-        save_size   = save_size,
-        save_path   = save_path,
-        regist_id   = None,
-        regist_date = datetime.datetime.now(),
-        delete_yn   = 'N',
-        delete_date = None
-    )
-    file.save()
+        file = TblFile(
+            gname       = gname,
+            gid         = gid,
+            real_name   = real_name,
+            save_name   = save_name,
+            ext         = ext,
+            real_size   = real_size,
+            save_size   = save_size,
+            save_path   = save_path,
+            regist_id   = None,
+            regist_date = datetime.datetime.now(),
+            delete_yn   = 'N',
+            delete_date = None
+        )
+        file.save()
+        print('INFO -> File saved in database')
 
 
+# 파일관리 공통 함수 (2019.09.15 12:26 점검완료)
 def download_upload(file, flag):
 
     if flag.find('link') != -1:
@@ -323,22 +179,22 @@ def download_upload(file, flag):
         save_size = ''
         save_path = ''
 
-        print('real_name -> ', real_name)
-        print('real_size -> ', real_size)
-        print('save_size -> ', save_size)
-        print('save_path -> ', save_path)
+        print('DEBUG -> real_name : ', real_name)
+        print('DEBUG -> real_size : ', real_size)
+        print('DEBUG -> save_size : ', save_size)
+        print('DEBUG -> save_path : ', save_path)
     else:
-        upload_root = settings.UPLOAD_ROOT + 'download/'
+        upload_root = settings.UPLOAD_ROOT + '/download/'
         real_name = file.name
         real_size = file.size
         save_size = sizeof_fmt(file.size)
         save_path = upload_root + real_name
 
-        print('upload_root -> ', upload_root)
-        print('real_name -> ', real_name)
-        print('real_size -> ', real_size)
-        print('save_size -> ', save_size)
-        print('save_path -> ', save_path)
+        print('DEBUG -> upload_root : ', upload_root)
+        print('DEBUG -> real_name : ', real_name)
+        print('DEBUG -> real_size : ', real_size)
+        print('DEBUG -> save_size : ', save_size)
+        print('DEBUG -> save_path : ', save_path)
 
         if not os.path.exists(upload_root):
             os.makedirs(upload_root)
@@ -389,6 +245,7 @@ def download_upload(file, flag):
         tdm.client_save_path = save_path
         tdm.client_modify_date = datetime.datetime.now()
         tdm.save()
+        print('INFO -> client save success')
 
     if flag.find('img') != -1:
         tdm.image_name = real_name
@@ -397,3 +254,4 @@ def download_upload(file, flag):
         tdm.image_save_path = save_path
         tdm.image_modify_date = datetime.datetime.now()
         tdm.save()
+        print('INFO -> image save success')

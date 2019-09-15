@@ -1,7 +1,5 @@
-    $('input[type=radio][name=sum]').on('click', function () {
-var chkValue = $('input[type=radio][name=sum]:checked').val();
-
-  console.log(chkValue)
+$('input[type=radio][name=sum]').on('click', function () {
+  var chkValue = $('input[type=radio][name=sum]:checked').val();
   if(chkValue == '1') {
       note_disable();
       load_content();
@@ -42,8 +40,6 @@ function click_edit(){
         lang = 'zh';
     }
   var csrf_token = $('#csrf_token').html();
-  console.log(lang);
-
   if(sum == ''){
       Swal.fire({
           title: '알림',
@@ -102,7 +98,6 @@ function load_content(){
         .done(function( data ) {
             for(var i=0; i<4; i++){
                 if(chkValue == '1') {
-                    console.log(data.result[0][0])
                     $('#summernote1').summernote('code', data.result[0]['en']);
                 }
                 else if(chkValue == '2') {
@@ -122,9 +117,9 @@ $(document).ready(function() {
     }).summernote({
         height: 500,
         lang: 'ko-KR',
-        popover: {        
-            image: [], 
-            link: [],  
+        popover: {
+            image: [],
+            link: [],
             air: []
         },
     });
