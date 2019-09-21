@@ -118,6 +118,39 @@ class DjangoSession(models.Model):
         db_table = 'django_session'
 
 
+class SampleUser(models.Model):
+    email = models.CharField(max_length=100, blank=True, null=True)
+    password = models.CharField(max_length=100, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'sample_user'
+
+
+class TblAgent(models.Model):
+    name = models.CharField(max_length=200)
+    hostdomain = models.CharField(max_length=200)
+    hostip = models.CharField(max_length=100)
+    is_active = models.IntegerField()
+    is_status = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_agent'
+
+
+class TblAndroidVersion(models.Model):
+    ver_name = models.CharField(max_length=200, blank=True, null=True)
+    ver_code = models.CharField(max_length=200, blank=True, null=True)
+    remark = models.CharField(max_length=300, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_android_version'
+
+
 class TblCodeDetail(models.Model):
     group_code = models.CharField(primary_key=True, max_length=100)
     code = models.CharField(max_length=100)
@@ -225,6 +258,22 @@ class TblPolicyManage(models.Model):
         managed = False
         db_table = 'tbl_policy_manage'
 
+
+class TblPrice(models.Model):
+    type_session = models.CharField(max_length=100, blank=True, null=True)
+    type_month = models.CharField(max_length=100, blank=True, null=True)
+    item_price = models.CharField(max_length=100, blank=True, null=True)
+    item_price_usd = models.CharField(max_length=100, blank=True, null=True)
+    item_price_jpy = models.CharField(max_length=100, blank=True, null=True)
+    item_price_cny = models.CharField(max_length=100, blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    modify_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_price'
+
+
 class TblPriceHistory(models.Model):
     tid = models.CharField(max_length=255, blank=True, null=True)
     user_id = models.IntegerField()
@@ -232,7 +281,10 @@ class TblPriceHistory(models.Model):
     product_name = models.CharField(max_length=255, blank=True, null=True)
     session = models.IntegerField(blank=True, null=True)
     month_type = models.IntegerField(blank=True, null=True)
-    amount = models.IntegerField(blank=True, null=True)
+    krw = models.CharField(max_length=100, blank=True, null=True)
+    usd = models.CharField(max_length=100, blank=True, null=True)
+    jpy = models.CharField(max_length=100, blank=True, null=True)
+    cny = models.CharField(max_length=100, blank=True, null=True)
     taxfree_amount = models.IntegerField(blank=True, null=True)
     tax_amount = models.IntegerField(blank=True, null=True)
     autopay_flag = models.CharField(max_length=10, blank=True, null=True)
@@ -319,3 +371,12 @@ class TblUserLogin(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_user_login'
+
+
+class TblWindowsVersion(models.Model):
+    ver_code = models.CharField(max_length=200, blank=True, null=True)
+    remark = models.CharField(max_length=300, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_windows_version'

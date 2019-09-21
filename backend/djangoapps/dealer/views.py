@@ -30,7 +30,7 @@ def dealer(request):
     return render(request, 'dealer/admin_dealer.html', context)
 
 
-# 수익관리 데이터 로드 API (2019.09.15 12:40 점검완료)
+# 수익관리 데이터 로드 API (2019.09.21 13:55 개발필요)
 @login_check
 def api_dealer_read(request):
     year = request.POST.get('year')
@@ -41,7 +41,7 @@ def api_dealer_read(request):
                 select
                     DATE_FORMAT(regist_date, "%Y") as year,
                     CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
-                    sum(amount) as amount
+                    sum(krw) as amount
                 from tbl_price_history x
                 group by year, month
             ) x
@@ -57,7 +57,7 @@ def api_dealer_read(request):
                 select
                     DATE_FORMAT(regist_date, "%Y") as year,
                     CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
-                    sum(amount) as amount
+                    sum(krw) as amount
                 from tbl_price_history x
                 group by year, month
             ) x

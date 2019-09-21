@@ -113,7 +113,7 @@ def api_user_read(request):
     if gender != '':
         sql += " and gender = '" + gender + "'"
     if delete != '':
-        sql += " and delete_yn = '" + delete + "'"
+        sql += " and x.delete_yn = '" + delete + "'"
     if black != '':
         sql += " and black_yn = '" + black + "'"
     if active != '':
@@ -149,7 +149,7 @@ def api_user_read(request):
                             black_yn,
                             is_active,
                             is_staff
-                    from tbl_user
+                    from tbl_user x
                     {sql}
             	) x
             	JOIN ( SELECT @rnum := -1 ) AS r
@@ -193,7 +193,6 @@ def api_user_read(request):
                             left join tbl_code_detail y
                             on x.sns_code = y.code
                             {sql}
-                            and y.group_code = 'message'
                             order by {orderby_col} {orderby_opt}
                             limit {start}, 10
                         ) a

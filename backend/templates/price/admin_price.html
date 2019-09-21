@@ -95,7 +95,7 @@
   <!-- 검색필터 -->
   <div class="user-filter">
     <div class="form-group id-form flex1">
-      <label>이메일</label>
+      <label>이메일[=]</label>
       <input class="form-control" id="filter_email">
     </div>
     <div class="form-group name-form flex1">
@@ -147,21 +147,16 @@
       <thead>
         <tr>
           <th>아이디</th>
-          <th>tid</th>
+          <th>트랜잭션코드</th>
           <th>결제수단</th>
           <th>상품명</th>
-          <th>가격</th>
-          <th>비과세</th>
-          <th>부과세</th>
-          <th>이메일</th>
-          <th>자동결제</th>
+          <th>국내(원)</th>
+          <th>해외(달러)</th>
+          <th>부과세(원)</th>
+          <th>사용자 이메일</th>
           <th>환불</th>
           <th>결제일</th>
           <th>환불일</th>
-          <th>
-            자동결제<br>
-            취소일
-          </th>
         </tr>
       </thead>
       <tbody>
@@ -235,15 +230,13 @@
             {data: "tid"},
             {data: "pgcode"},
             {data: "product_name"},
-            {data: "amount"},
-            {data: "taxfree_amount"},
+            {data: "krw"},
+            {data: "usd"},
             {data: "tax_amount"},
             {data: "email"},
-            {data: "autopay_flag"},
             {data: "refund_yn"},
             {data: "regist_date"},
             {data: "refund_date"},
-            {data: "auto_end_date"},
         ],
         columnDefs: [
             {
@@ -318,20 +311,6 @@
             },
             {
               targets: 10,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 11,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 12,
               visible: true,
               render: function (data) {
                 return data;

@@ -19,22 +19,22 @@ def dashboard(request):
 
     with connections['default'].cursor() as cur:
         query = '''
-                    select
-                    count(if(date(regist_date) = '{now}', regist_date, null)) as regist_today,
-                    count(if(is_staff = '0', is_staff, null)) as user_count,
-                    count(if(is_staff = '1', is_staff, null)) as admin_count,
-                    count(if(is_staff = '2', is_staff, null)) as cs_count,
-                    count(if(is_staff = '3', is_staff, null)) as chongpan_count,
-                    count(if(is_active = '1', is_active, null)) as active_count,
-                    count(if(is_active = '0', is_active, null)) as deactive_count,
-                    count(if(delete_yn = 'Y', delete_yn, null)) as delete_count,
-                    count(if(black_yn = 'Y', black_yn, null)) as black_count,
-                    count(if(gender = 'm', gender, null)) as men,
-                    count(if(gender = 'f', gender, null)) as female,
-                    (select count(*) from tbl_user_login where date(login_date) = '{now}') as login_today,
-                    (select sum(amount) from tbl_price_history where refund_yn = 'N' and date(regist_date) = '{now}') as today_profit,
-                    (select sum(amount) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = '{now}') as today_refund
-                    from tbl_user;
+            select
+            count(if(date(regist_date) = date(now()), regist_date, null)) as regist_today,
+            count(if(is_staff = '0', is_staff, null)) as user_count,
+            count(if(is_staff = '1', is_staff, null)) as admin_count,
+            count(if(is_staff = '2', is_staff, null)) as cs_count,
+            count(if(is_staff = '3', is_staff, null)) as chongpan_count,
+            count(if(is_active = '1', is_active, null)) as active_count,
+            count(if(is_active = '0', is_active, null)) as deactive_count,
+            count(if(delete_yn = 'Y', delete_yn, null)) as delete_count,
+            count(if(black_yn = 'Y', black_yn, null)) as black_count,
+            count(if(gender = 'm', gender, null)) as men,
+            count(if(gender = 'f', gender, null)) as female,
+            (select count(*) from tbl_user_login where date(login_date) = date(now())) as login_today,
+            (select sum(krw) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit,
+            (select sum(krw) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund
+            from tbl_user;
         '''.format(now = now)
         cur.execute(query)
         rows = cur.fetchall()
@@ -53,14 +53,17 @@ def dashboard(request):
         login_today = rows[0][11]
         try:
             profit = rows[0][12]
-            refund = rows[0][13]
             if profit == None:
-                profit = 400000
-            if refund == None:
-                refund = 200000
+                profile = 0
         except BaseException as err:
             print('ERROR -> err : ', err)
             profit = 0
+        try:
+            refund = rows[0][13]
+            if refund == None:
+                refund = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
             refund = 0
 
     with connections['default'].cursor() as cur:
