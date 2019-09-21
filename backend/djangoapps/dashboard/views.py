@@ -33,7 +33,9 @@ def dashboard(request):
             count(if(gender = 'f', gender, null)) as female,
             (select count(*) from tbl_user_login where date(login_date) = date(now())) as login_today,
             (select sum(krw) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit,
-            (select sum(krw) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund
+            (select sum(krw) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund,
+            (select sum(usd) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit_usd,
+            (select sum(usd) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund_usd
             from tbl_user;
         '''.format(now = now)
         cur.execute(query)
@@ -65,6 +67,20 @@ def dashboard(request):
         except BaseException as err:
             print('ERROR -> err : ', err)
             refund = 0
+        try:
+            profit_usd = rows[0][14]
+            if profit_usd == None:
+                profit_usd = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            profit_usd = 0
+        try:
+            refund_usd = rows[0][15]
+            if refund_usd == None:
+                refund_usd = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            refund_usd = 0
 
     with connections['default'].cursor() as cur:
         query = '''
@@ -93,6 +109,8 @@ def dashboard(request):
         'login_today': login_today,
         'profit': profit,
         'refund': refund,
+        'profit_usd': profit_usd,
+        'refund_usd': refund_usd,
         'user_count': user_count,
         'admin_count': admin_count,
         'cs_count': cs_count,

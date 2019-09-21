@@ -27,12 +27,20 @@
           <td id='login_today'></td>
         </tr>
         <tr>
-          <td class='wd50p'>결제 수익</td>
+          <td class='wd50p'>결제 수익(원)</td>
           <td class='p-color-blue fwb' id='profit'></td>
         </tr>
         <tr>
-          <td class='wd50p'>환불 금액</td>
+          <td class='wd50p'>환불 금액(원)</td>
           <td class='p-color-red fwb' id='refund'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>결제 수익(달러)</td>
+          <td class='p-color-blue fwb' id='profit_usd'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>환불 금액(달러)</td>
+          <td class='p-color-red fwb' id='refund_usd'></td>
         </tr>
       </tbody>
     </table>
@@ -97,6 +105,8 @@
 <div hidden id="login_today_dt">${ login_today }</div>
 <div hidden id="profit_dt">${ profit }</div>
 <div hidden id="refund_dt">${ refund }</div>
+<div hidden id="profit_usd_dt">${ profit_usd }</div>
+<div hidden id="refund_usd_dt">${ refund_usd }</div>
 <div hidden id="user_count_dt">${ user_count }</div>
 <div hidden id="admin_count_dt">${ admin_count }</div>
 <div hidden id="cs_count_dt">${ cs_count }</div>
@@ -118,6 +128,8 @@ var regist_today_dt = $('#regist_today_dt').html();
 var login_today_dt = $('#login_today_dt').html();
 var profit_dt = $('#profit_dt').html();
 var refund_dt = $('#refund_dt').html();
+var profit_usd_dt = $('#profit_usd_dt').html();
+var refund_usd_dt = $('#refund_usd_dt').html();
 var user_count_dt = $('#user_count_dt').html();
 var admin_count_dt = $('#admin_count_dt').html();
 var cs_count_dt = $('#cs_count_dt').html();
@@ -143,6 +155,10 @@ var profit = new CountUp("profit", 0, profit_dt, 0, 2.5, options);
 profit.start();
 var refund = new CountUp("refund", 0, refund_dt, 0, 2.5, options);
 refund.start();
+var profit_usd = new CountUp("profit_usd", 0, profit_usd_dt, 0, 2.5, options);
+profit_usd.start();
+var refund_usd = new CountUp("refund_usd", 0, refund_usd_dt, 0, 2.5, options);
+refund_usd.start();
 var user_count = new CountUp("user_count", 0, user_count_dt, 0, 2.5, options);
 user_count.start();
 var admin_count = new CountUp("admin_count", 0, admin_count_dt, 0, 2.5, options);
