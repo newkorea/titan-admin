@@ -157,6 +157,7 @@
           <th>환불</th>
           <th>결제일</th>
           <th>환불일</th>
+          <th>환불</th>
         </tr>
       </thead>
       <tbody>
@@ -172,6 +173,35 @@
 <script>
     function click_search(){
         datatable.ajax.reload();
+    }
+
+    function click_refund(id){
+      var csrf_token = $('#csrf_token').html();
+
+      $.post( "/api_price_refund", {
+        csrfmiddlewaretoken: csrf_token,
+        id: id
+      })
+      .done(function( data ) {
+        if(data.result == 200){
+          click_search();
+        } else if (data.result == 400) {
+          Swal.fire({
+              title: '알림',
+              text: '환불처리가 완료된 거래입니다',
+              type: 'error',
+              confirmButtonColor: swalColor('error')
+          })
+        }
+        else {
+          Swal.fire({
+              title: '알림',
+              text: '환불 중 오류가 발생했습니다',
+              type: 'error',
+              confirmButtonColor: swalColor('error')
+          })
+        }
+      });
     }
 
       $('#filter_regist_start').val(getNow());
@@ -237,6 +267,7 @@
             {data: "refund_yn"},
             {data: "regist_date"},
             {data: "refund_date"},
+            {data: "refund"},
         ],
         columnDefs: [
             {
@@ -314,6 +345,19 @@
               visible: true,
               render: function (data) {
                 return data;
+              }
+            },
+            {
+              targets: 11,
+              visible: true,
+              render: function (data) {
+                var id = data.split('+')[0]
+                var refund_yn = data.split('+')[1]
+                if(refund_yn == 'Y'){
+                  return '환불완료'
+                } else {
+                  return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';
+                }
               }
             }
         ],

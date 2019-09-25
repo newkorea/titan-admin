@@ -17,11 +17,69 @@ from email.mime.text import MIMEText
 from backend.models import *
 from backend.djangoapps.common.views import *
 from django.utils import translation
+from backend.djangoapps.common.payletter import Payletter
+from backend.djangoapps.common.payletter_global import PayletterGlobal
 
 
 # 결제관리 페이지 렌더링 (2019.09.21 13:56 점검완료)
 def price(request):
     return render(request, 'price/admin_price.html')
+
+
+# 환불 API (2019.09.25 09:54 개발중)
+def api_price_refund(request):
+
+    # 파라미터 로드
+    id = request.POST.get('id')
+
+    # 결제 테이블 조회
+    tph = TblPriceHistory.objects.get(id=id)
+    krw = tph.krw
+    usd = tph.usd
+    tid = tph.tid
+    user_id = tph.user_id
+    pgcode = tph.pgcode
+
+    # 파라미터 로깅
+    print('DEBUG -> id : ', id)
+    print('DEBUG -> krw : ', krw)
+    print('DEBUG -> usd : ', usd)
+    print('DEBUG -> tid : ', tid)
+    print('DEBUG -> user_id : ', user_id)
+    print('DEBUG -> pgcode : ', pgcode)
+
+    # 국내환불 / 해외환불 판단
+    if krw != None:
+        p = Payletter(settings.PAYLETTER_MODE)
+        res = p.payments_cancel(pgcode, user_id, tid, krw)
+        if res == 200:
+            tph.refund_yn = 'Y'
+            tph.refund_date = datetime.now()
+            tph.save()
+            # 환불 성공
+            return JsonResponse({'result': 200})
+        else:
+            # 환불 실패
+            return JsonResponse({'result': 500})
+    elif usd != None:
+        p = PayletterGlobal(settings.PAYLETTER_MODE)
+        res = p.payments_cancel(pgcode, user_id, tid, usd)
+        if res == 200:
+            tph.refund_yn = 'Y'
+            tph.refund_date = datetime.now()
+            tph.save()
+            # 환불 성공
+            return JsonResponse({'result': 200})
+        elif res == 400:
+            # 환불 실패 (이미 처리된 트랜잭션)
+            return JsonResponse({'result': 400})
+        else:
+            # 환불 실패
+            return JsonResponse({'result': 500})
+        return JsonResponse({'result': 200})
+    else:
+        # 알 수 없는 분기
+        return JsonResponse({'result': 404})
 
 
 # 결제관리 데이터 로드 (2019.09.21 13:56 점검완료)
@@ -127,7 +185,8 @@ def api_price_read(request):
                         refund_yn,
                         DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i:%S") as regist_date,
                         DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-                        auto_end_date
+                        auto_end_date,
+                        concat(id, '+', refund_yn) as refund
                 from (
                     select @rnum := @rnum + 1 AS rnum, x.*
                     from (

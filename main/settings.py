@@ -19,6 +19,33 @@ LOGIN_FAIL_ATTEMPT = 10                                 # 로그인 시도 가�
 
 UPLOAD_ROOT = BASE_DIR + '/upload'                      # 업로드 디렉토리
 
+# 페이레터 모드 설정 ('LIVE' or 'TEST')
+PAYLETTER_MODE = 'TEST'
+
+# 페이레터 국내 테스트 설정
+PAYLETTER_KOR_TEST_ENDPOINT         = 'https://testpgapi.payletter.com/'
+PAYLETTER_KOR_TEST_SHOPID           = 'pay_test'
+PAYLETTER_KOR_TEST_APIKEY_PAYMENT   = 'MTFBNTAzNTEwNDAxQUIyMjlCQzgwNTg1MkU4MkZENDA='
+PAYLETTER_KOR_TEST_APIKEY_SEARCH    = 'MUI3MjM0RUExQTgyRDA1ODZGRDUyOEM4OTY2QTVCN0Y='
+
+# 페이레터 국내 라이브 설정
+PAYLETTER_KOR_LIVE_ENDPOINT         = 'https://testpgapi.payletter.com/'
+PAYLETTER_KOR_LIVE_SHOPID           = ''
+PAYLETTER_KOR_LIVE_APIKEY_PAYMENT   = ''
+PAYLETTER_KOR_LIVE_APIKEY_SEARCH    = ''
+
+# 페이레터 해외 테스트 설정
+PAYLETTER_GLOBAL_TEST_ENDPOINT      = 'https://dev-gpgclient.payletter.com/'
+PAYLETTER_GLOBAL_TEST_ENDPOINT_API  = 'https://dev-api.payletter.com/'
+PAYLETTER_GLOBAL_TEST_STOREID       = 'titanvpn'
+PAYLETTER_GLOBAL_TEST_STORE_HASHKEY = 'titanvpn_190613'
+
+# 페이레터 해외 라이브 설정
+PAYLETTER_GLOBAL_LIVE_ENDPOINT      = ''
+PAYLETTER_GLOBAL_LIVE_ENDPOINT_API  = ''
+PAYLETTER_GLOBAL_LIVE_STOREID       = ''
+PAYLETTER_GLOBAL_LIVE_STORE_HASHKEY = ''
+
 
 # 데이터베이스 커넥션 관리
 DATABASES = {

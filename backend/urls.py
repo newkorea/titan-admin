@@ -56,6 +56,7 @@ urlpatterns = [
     # 결제관리
     path('price', PriceViews.price, name='price'),                                      # [render] 결제관리
     path('api_price_read', PriceViews.api_price_read, name='api_price_read'),           # [api] 결제 데이터 로드
+    path('api_price_refund', PriceViews.api_price_refund, name='api_price_refund'),     # [api] 환불
 
 
     # 수익관리 (총판전용)
