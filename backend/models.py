@@ -243,6 +243,25 @@ class TblMenuManage(models.Model):
         db_table = 'tbl_menu_manage'
 
 
+class TblNotice(models.Model):
+    title_en = models.CharField(max_length=255, blank=True, null=True)
+    title_ko = models.CharField(max_length=255, blank=True, null=True)
+    title_ja = models.CharField(max_length=255, blank=True, null=True)
+    title_zh = models.CharField(max_length=255, blank=True, null=True)
+    content_en = models.TextField(blank=True, null=True)
+    content_ko = models.TextField(blank=True, null=True)
+    content_ja = models.TextField(blank=True, null=True)
+    content_zh = models.TextField(blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_notice'
+
+
 class TblPolicyManage(models.Model):
     type = models.CharField(primary_key=True, max_length=10)
     en = models.TextField(blank=True, null=True)

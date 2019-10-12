@@ -46,6 +46,16 @@ urlpatterns = [
     path('api_company_load', CompanyViews.api_company_load, name='api_company_load'),   # [api] 회사소개 로드
 
 
+    # 공지사항
+    path('company/notice', CompanyViews.notice, name='notice'),
+    path('company/create_notice', CompanyViews.create_notice, name='create_notice'),
+    path('company/notice_inner/<int:no>', CompanyViews.notice_inner, name='notice_inner'),
+
+    path('api_create_notice', CompanyViews.api_create_notice, name='api_create_notice'),
+    path('api_update_notice', CompanyViews.api_update_notice, name='api_update_notice'),
+    path('api_delete_notice', CompanyViews.api_delete_notice, name='api_delete_notice'),
+
+
     # 회원관리
     path('user', UserViews.user, name='user'),                                          # [render] 회원관리
     path('api_user_read', UserViews.api_user_read, name='api_user_read'),               # [api] 회원 로드
