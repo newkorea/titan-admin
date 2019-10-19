@@ -19,6 +19,9 @@ LOGIN_FAIL_ATTEMPT = 10                                 # 로그인 시도 가�
 
 UPLOAD_ROOT = BASE_DIR + '/upload'                      # 업로드 디렉토리
 
+REPLACE_ABS_FROM = '/home/ubuntu/project/titan'  # 파일 서브 디렉토리 변경 (FROM)
+REPLACE_ABS_TO = ''                                     # 파일 서브 디렉토리 변경 (TO)
+
 # 페이레터 모드 설정 ('LIVE' or 'TEST')
 PAYLETTER_MODE = 'TEST'
 
