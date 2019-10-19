@@ -21,7 +21,7 @@ def convertStrToDatetime(strTypedate):
 
 
 # 문의관리 페이지 렌더링 (2019.09.15 12:54 점검완료)
-@login_check
+@allow_cs
 def support(request):
     tcg = TblCodeGroup.objects.filter(memo='support')
     context = {}
@@ -30,7 +30,7 @@ def support(request):
 
 
 # 검색 필터 생성 API (2019.09.15 12:54 점검완료)
-@login_check
+@allow_cs
 def api_support_getSubOption(request):
     group_code = request.POST.get('group_code')
     tcd = TblCodeDetail.objects.filter(group_code=group_code)
@@ -44,7 +44,7 @@ def api_support_getSubOption(request):
 
 
 # 내용 로드 API (2019.09.15 12:54 점검완료)
-@login_check
+@allow_cs
 def api_support_getContent(request):
 
     main_sel = request.POST.get('main_sel')
@@ -116,7 +116,7 @@ def api_support_getContent(request):
 
 
 # 상세내용 로드 API (2019.09.15 12:54 점검완료)
-@login_check
+@allow_cs
 def api_support_getSelectContent(request):
     id = request.POST.get('id')
     ts = TblSupport.objects.get(id=id)
@@ -154,6 +154,7 @@ def api_support_getSelectContent(request):
 
 
 # 문의 삭제 API (2019.09.15 12:54 점검완료)
+@allow_cs
 def api_support_deleteItem(request):
     id = request.POST.get('id')
     ts = TblSupport.objects.get(id=id)
@@ -164,6 +165,7 @@ def api_support_deleteItem(request):
 
 
 # 문의 답변 API (2019.09.15 12:54 점검완료)
+@allow_cs
 def api_support_sendItem(request):
     id = request.POST.get('id')
     to_email = request.POST.get('email')
@@ -192,7 +194,7 @@ def api_support_sendItem(request):
     msg.attach(part)
     smtp.sendmail(smtp_email, smtp_to, msg.as_string())
     smtp.quit()
-    
+
     ts = TblSupport.objects.get(id=id)
     content = content.replace('\n', '<br>')
     ts.send_yn = 'Y'

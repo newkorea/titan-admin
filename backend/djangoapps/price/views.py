@@ -22,11 +22,13 @@ from backend.djangoapps.common.payletter_global import PayletterGlobal
 
 
 # 결제관리 페이지 렌더링 (2019.09.21 13:56 점검완료)
+@allow_cs
 def price(request):
     return render(request, 'price/admin_price.html')
 
 
 # 환불 API (2019.09.25 09:54 개발중)
+@allow_cs
 def api_price_refund(request):
 
     # 파라미터 로드
@@ -83,6 +85,7 @@ def api_price_refund(request):
 
 
 # 결제관리 데이터 로드 (2019.09.21 13:56 점검완료)
+@allow_cs
 def api_price_read(request):
 
     # datatables 기본 파라미터

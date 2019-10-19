@@ -10,4 +10,12 @@ from backend.djangoapps.common.views import *
 # 인덱스 페이지 리다이렉트 설정 (2019.09.15 11:46 점검완료)
 @login_check
 def index(request):
-    return redirect('/dashboard')
+    # 시스템 관리자 리다이렉트 설정
+    if request.session['is_staff'] == 1:
+        return redirect('/dashboard')
+    # CS 관리자 리다이렉트 설정
+    elif request.session['is_staff'] == 2:
+        return redirect('/price')
+    # 총판 리다이렉트 설정
+    elif request.session['is_staff'] == 3:
+        return redirect('/dealer')

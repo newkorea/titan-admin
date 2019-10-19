@@ -20,7 +20,7 @@ from django.utils import translation
 
 
 # 총판관리 -> 수익관리 페이지 렌더링 (2019.10.19 10:56 점검완료)
-@login_check
+@allow_dealer
 def dealer(request):
     id = request.session['id']
     u1 = TblUser.objects.get(id=id)
@@ -40,7 +40,7 @@ def dealer(request):
 
 
 # 총판관리 -> 회원관리 페이지 렌더링 (2019.10.19 10:56 점검완료)
-@login_check
+@allow_dealer
 def dealer_user(request):
     id = request.session['id']
     u1 = TblUser.objects.get(id=id)
@@ -67,7 +67,7 @@ def dealer_user(request):
 
 
 # 수익관리 데이터 로드 API (2019.09.21 13:55 개발필요)
-@login_check
+@allow_dealer
 def api_dealer_read(request):
     year = request.POST.get('year')
     with connections['default'].cursor() as cur:

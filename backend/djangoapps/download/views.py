@@ -9,7 +9,7 @@ from backend.models import *
 
 
 # 안드로이드 다운로드 관리 페이지 렌더링 (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def android(request):
     use_yn = TblMenuManage.objects.get(type='android').use_yn
     context = {}
@@ -19,7 +19,7 @@ def android(request):
 
 
 # IOS 다운로드 관리 페이지 렌더링 (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def ios(request):
     use_yn = TblMenuManage.objects.get(type='ios').use_yn
     context = {}
@@ -29,7 +29,7 @@ def ios(request):
 
 
 # 맥 다운로드 관리 페이지 렌더링 (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def mac(request):
     use_yn = TblMenuManage.objects.get(type='mac').use_yn
     context = {}
@@ -39,7 +39,7 @@ def mac(request):
 
 
 # 윈도우즈 다운로드 관리 페이지 렌더링 (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def windows(request):
     use_yn = TblMenuManage.objects.get(type='windows').use_yn
     context = {}
@@ -49,7 +49,7 @@ def windows(request):
 
 
 # 메뉴 활성화 API (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def api_menuControl(request):
     flag = request.POST.get('flag')
     version = request.POST.get('version')
@@ -60,7 +60,7 @@ def api_menuControl(request):
 
 
 # 파일 업로드 API (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def api_download(request):
     flag = request.POST.get('flag')
     if flag.find('link') != -1:
@@ -73,7 +73,7 @@ def api_download(request):
 
 
 # 렌더링 데이터 로드 API (2019.09.15 12:44 점검완료)
-@login_check
+@allow_admin
 def api_load_download_data(request):
     version = request.POST.get('version')
     tdm = TblDownloadManage.objects.filter(type=version)

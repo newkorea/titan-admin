@@ -26,6 +26,7 @@ def login(request):
 
 
 # 로그아웃 API (2019.09.15 10:21 점검완료)
+@login_check
 def api_logout(request):
 
     if 'id' in request.session:

@@ -10,7 +10,7 @@ from backend.models import *
 
 
 # 공지사항 추가 API (2019.10.12 16:00 점검완료)
-@login_check
+@allow_admin
 def api_create_notice(request):
     title_ko = request.POST.get('title_ko')
     title_en = request.POST.get('title_en')
@@ -36,7 +36,7 @@ def api_create_notice(request):
 
 
 # 공지사항 수정 API (2019.10.12 16:00 점검완료)
-@login_check
+@allow_admin
 def api_update_notice(request):
     no = request.POST.get('no')
     title_ko = request.POST.get('title_ko')
@@ -61,7 +61,7 @@ def api_update_notice(request):
 
 
 # 공지사항 삭제 API (2019.10.12 16:00 점검완료)
-@login_check
+@allow_admin
 def api_delete_notice(request):
     no = request.POST.get('no')
     notice = TblNotice.objects.get(id=no)
@@ -70,7 +70,7 @@ def api_delete_notice(request):
 
 
 # 공지사항 렌더링 (2019.10.12 15:30 점검완료)
-@login_check
+@allow_admin
 def notice(request):
     noticeList = TblNotice.objects.filter(delete_yn='N')
     rows = []
@@ -87,14 +87,14 @@ def notice(request):
 
 
 # 공지사항 추가 렌더링 (2019.10.12 15:30 점검완료)
-@login_check
+@allow_admin
 def create_notice(request):
     context = {}
     return render(request, 'company/admin_create_notice.html', context)
 
 
 # 공지사항 상세 렌더링 (2019.10.12 15:30 점검완료)
-@login_check
+@allow_admin
 def notice_inner(request, no):
     try:
         notice = TblNotice.objects.get(id=no)
@@ -114,7 +114,7 @@ def notice_inner(request, no):
 
 
 # 회사소개 렌더링 (2019.09.15 11:56 점검완료)
-@login_check
+@allow_admin
 def about(request):
 
     with connections['default'].cursor() as cur:
@@ -142,7 +142,7 @@ def about(request):
 
 
 # 회사소개 편집 API (2019.09.15 11:56 점검완료)
-@login_check
+@allow_admin
 def api_company_edit(request):
     sum = request.POST.get('sum')
     kind = request.POST.get('kind')
@@ -170,7 +170,7 @@ def api_company_edit(request):
 
 
 # 회사소개 로드 API (2019.09.15 11:56 점검완료)
-@login_check
+@allow_admin
 def api_company_load(request):
     kind = request.POST.get('kind')
 

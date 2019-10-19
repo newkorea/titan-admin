@@ -22,6 +22,7 @@
 									</li>
 
 									<!-- 단일 메뉴 시작 -->
+									% if request.session['is_staff'] in [1]:
 									<li>
 										<a href="#" onclick="location.href='/dashboard'">
 											<span class="nav-icon">
@@ -30,9 +31,11 @@
 											<span class="nav-text">대쉬보드</span>
 										</a>
 									</li>
+									% endif
 									<!-- 단일 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1]:
 		              <li>
 		                <a>
 		                  <span class="nav-caret">
@@ -56,9 +59,11 @@
 		                  </li>
 		                </ul>
 		              </li>
+									% endif
 									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1]:
 		              <li>
 		                <a>
 		                  <span class="nav-caret">
@@ -87,9 +92,11 @@
 		                  </li>
 		                </ul>
 		              </li>
+									% endif
 									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1, 2]:
 									<li>
 										<a href="#" onclick="location.href='/user'">
 											<span class="nav-icon">
@@ -98,9 +105,11 @@
 											<span class="nav-text">회원관리</span>
 										</a>
 									</li>
+									% endif
 									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1, 2]:
 									<li>
 										<a href="#" onclick="location.href='/price'">
 											<span class="nav-icon">
@@ -109,9 +118,11 @@
 											<span class="nav-text">결제관리</span>
 										</a>
 									</li>
+									% endif
 									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1, 3]:
 									<li>
 		                <a>
 		                  <span class="nav-caret">
@@ -135,45 +146,49 @@
 		                  </li>
 		                </ul>
 		              </li>
+									% endif:
 									<!-- 펼침 메뉴 끝 -->
 
 									<!-- 펼침 메뉴 시작 -->
+									% if request.session['is_staff'] in [1]:
 									<li>
-											<a>
-												<span class="nav-caret">
-													<i class="fa fa-caret-down"></i>
-												</span>
-												<span class="nav-icon">
-													<i class="fa fa-cubes"></i>
-												</span>
-												<span class="nav-text">파일관리</span>
-											</a>
-											<ul class="nav-sub">
-												<li>
-													<a href="#" onclick="location.href='/download/windows'">
-														<span class="nav-text">Windows</span>
-													</a>
-												</li>
-												<li>
-													<a href="#" onclick="location.href='/download/mac'">
-														<span class="nav-text">Mac</span>
-													</a>
-												</li>
-												<li>
-													<a href="#" onclick="location.href='/download/android'">
-														<span class="nav-text">Android</span>
-													</a>
-												</li>
-												<li>
-													<a href="#" onclick="location.href='/download/ios'">
-														<span class="nav-text">IOS</span>
-													</a>
-												</li>
-											</ul>
-										</li>
-										<!-- 펼침 메뉴 끝 -->
+										<a>
+											<span class="nav-caret">
+												<i class="fa fa-caret-down"></i>
+											</span>
+											<span class="nav-icon">
+												<i class="fa fa-cubes"></i>
+											</span>
+											<span class="nav-text">파일관리</span>
+										</a>
+										<ul class="nav-sub">
+											<li>
+												<a href="#" onclick="location.href='/download/windows'">
+													<span class="nav-text">Windows</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/mac'">
+													<span class="nav-text">Mac</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/android'">
+													<span class="nav-text">Android</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/download/ios'">
+													<span class="nav-text">IOS</span>
+												</a>
+											</li>
+										</ul>
+									</li>
+									% endif:
+									<!-- 펼침 메뉴 끝 -->
 
                   <!-- 단일 메뉴 시작 -->
+									% if request.session['is_staff'] in [1]:
 									<li>
 										<a href="#" onclick="location.href='/review'">
 											<span class="nav-icon">
@@ -182,18 +197,21 @@
 											<span class="nav-text">리뷰관리</span>
 										</a>
 									</li>
+									% endif:
 									<!-- 단일 메뉴 끝 -->
 
 									<!-- 단일 메뉴 시작 -->
+									% if request.session['is_staff'] in [1, 2]:
 									<li>
-											<a href="#" onclick="location.href='/support'">
-												<span class="nav-icon">
-													<i class="fa fa-smile-o"></i>
-												</span>
-												<span class="nav-text">문의관리</span>
-											</a>
-										</li>
-										<!-- 단일 메뉴 끝 -->
+										<a href="#" onclick="location.href='/support'">
+											<span class="nav-icon">
+												<i class="fa fa-smile-o"></i>
+											</span>
+											<span class="nav-text">문의관리</span>
+										</a>
+									</li>
+									% endif:
+									<!-- 단일 메뉴 끝 -->
 
 									<!-- 단일 메뉴 시작 -->
 									<!--

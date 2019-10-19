@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 
 # 대쉬보드 렌더링 (2019.09.15 11:11 점검완료)
-@login_check
+@allow_admin
 def dashboard(request):
     now_year = datetime.today().year
     now_month = datetime.today().month
@@ -94,7 +94,7 @@ def dashboard(request):
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 70 and 79 , 1, 0)) as age_70,
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 80 and 89 , 1, 0)) as age_80,
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 90 and 110 , 1, 0)) as etc
-                from tbl_user;
+                from tbl_user;ㅅ
         '''.format(now = now)
         cur.execute(query)
         rows = cur.fetchall()

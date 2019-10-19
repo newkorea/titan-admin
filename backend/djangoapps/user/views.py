@@ -9,7 +9,7 @@ from backend.models import *
 
 
 # 회원관리 페이지 렌더링 (2019.09.15 12:04 점검완료)
-@login_check
+@allow_cs
 def user(request):
     gender_list = TblCodeDetail.objects.filter(group_code = 'gender')
     delete_list = TblCodeDetail.objects.filter(group_code='delete_yn')
@@ -28,7 +28,7 @@ def user(request):
 
 
 # 회원관리 상세 페이지 렌더링 (2019.09.15 12:04 점검완료)
-@login_check
+@allow_cs
 def api_user_detail(request):
     seq = int(request.POST.get('seq'))
     u1 = TblUser.objects.get(id = seq)
@@ -70,7 +70,7 @@ def api_user_detail(request):
 
 
 # 회원정보 수정 APi (2019.09.15 12:05 점검완료)
-@login_check
+@allow_cs
 def api_user_edit(request):
     active = request.POST.get('active')
     delete_yn = request.POST.get('delete_yn')
@@ -87,7 +87,7 @@ def api_user_edit(request):
 
 
 # 회원정보 로드 APi (2019.09.15 12:06 점검완료)
-@login_check
+@allow_cs
 def api_user_read(request):
     start = int(request.POST.get('start'))
     length = int(request.POST.get('length'))

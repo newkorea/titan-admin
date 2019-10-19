@@ -13,11 +13,21 @@
 	        </span>
 					<div class='info-box'>
 						<div class='info-box-top'>
-							운영자
+							${request.session['username']}
 						</div>
+						% if request.session['is_staff'] == 1:
 						<div class='info-box-bottom'>
-							서비스 관리자
+							시스템 관리자
 						</div>
+						% elif request.session['is_staff'] == 2:
+						<div class='info-box-bottom'>
+							CS 관리자
+						</div>
+						% elif request.session['is_staff'] == 3:
+						<div class='info-box-bottom'>
+							총판 관리자
+						</div>
+						% endif
 					</div>
 					<div class='btn-logout' onclick='callLogout()'>
 						로그아웃

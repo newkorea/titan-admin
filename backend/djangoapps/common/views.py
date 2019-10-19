@@ -89,6 +89,63 @@ def login_check(func):
     return wrapper
 
 
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_admin(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1]:
+                print('--------------> 1')
+                pass
+            else:
+                print('--------------> 2')
+                return redirect('/login')
+        else:
+            print('--------------> 3')
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_cs(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1, 2]:
+                pass
+            else:
+                return redirect('/login')
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_dealer(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1, 3]:
+                pass
+            else:
+                return redirect('/login')
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
 # 리퀘스트에 들어온 아이피를 얻는 함수 (2019.09.15 12:26 점검완료)
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

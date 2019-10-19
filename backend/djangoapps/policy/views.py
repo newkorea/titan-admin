@@ -9,7 +9,7 @@ from backend.models import *
 
 
 # 서비스이용약관 렌더링 (2019.09.15 11:49 점검완료)
-@login_check
+@allow_admin
 def service(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -35,7 +35,7 @@ def service(request):
 
 
 # 개인정보보호정책 렌더링 (2019.09.15 11:49 점검완료)
-@login_check
+@allow_admin
 def privacy(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -62,7 +62,7 @@ def privacy(request):
 
 
 # 환불정책 렌더링 (2019.09.15 11:49 점검완료)
-@login_check
+@allow_admin
 def refund(request):
     with connections['default'].cursor() as cur:
         query = '''
@@ -88,7 +88,7 @@ def refund(request):
 
 
 # 약관 공통 편집 API (2019.09.15 11:49 점검완료)
-@login_check
+@allow_admin
 def api_policy_edit(request):
     sum = request.POST.get('sum')
     kind = request.POST.get('kind')
@@ -117,7 +117,7 @@ def api_policy_edit(request):
 
 
 # 약관 공통 로드 API (2019.09.15 11:49 점검완료)
-@login_check
+@allow_admin
 def api_policy_load(request):
     kind = request.POST.get('kind')
 
