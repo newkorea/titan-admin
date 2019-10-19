@@ -172,29 +172,33 @@
       <div class="form-group">
         <label class="label-margin"><i class="fas fa-check r-icon"></i>활성화 여부</label>
         <select class="form-control view-input" id="user_active" name="user_active">
-          <option value="0">0</option>
-          <option value="1">1</option>
+          % for active in active_list:
+            <option value="${ active.code }">${ active.name }</option>
+          % endfor
         </select>
       </div>
       <div class="form-group">
         <label class="label-margin"><i class="fas fa-check r-icon"></i>권한 여부</label>
         <select class="form-control view-input" id="user_staff" name="user_staff">
-          <option value="0">0</option>
-          <option value="1">1</option>
+          % for staff in staff_list:
+            <option value="${ staff.code }">${ staff.name }</option>
+          % endfor
         </select>
       </div>
       <div class="form-group">
         <label class="label-margin"><i class="fas fa-check r-icon"></i>삭제 여부</label>
         <select class="form-control view-input" id="user_delete" name="user_delete">
-          <option value="Y">Y</option>
-          <option value="N">N</option>
+          % for delete in delete_list:
+            <option value="${ delete.code }">${ delete.name }</option>
+          % endfor
         </select>
       </div>
       <div class="form-group">
         <label class="label-margin"><i class="fas fa-check r-icon"></i>차단 여부</label>
         <select class="form-control view-input" id="user_black" name="user_black">
-          <option value="Y">Y</option>
-          <option value="N">N</option>
+          % for black in black_list:
+            <option value="${ black.code }">${ black.name }</option>
+          % endfor
         </select>
       </div>
       <div class="form-group">

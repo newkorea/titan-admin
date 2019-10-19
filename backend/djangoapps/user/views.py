@@ -16,6 +16,7 @@ def user(request):
     black_list = TblCodeDetail.objects.filter(group_code='black_yn')
     active_list = TblCodeDetail.objects.filter(group_code='is_active')
     staff_list = TblCodeDetail.objects.filter(group_code='is_staff')
+
     context = {
         'gender_list': gender_list,
         'delete_list': delete_list,
@@ -155,7 +156,7 @@ def api_user_read(request):
             	JOIN ( SELECT @rnum := -1 ) AS r
             ) t1;
         '''.format(sql=sql)
-        print('DEBUG -> query : ', query)
+        # print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
@@ -219,7 +220,7 @@ def api_user_read(request):
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start)
-        print('DEBUG -> query : ', query)
+        # print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = dictfetchall(cur)
 

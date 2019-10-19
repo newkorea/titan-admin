@@ -207,6 +207,7 @@ function editView() {
                     type: 'success',
                     confirmButtonColor: swalColor('success')
                 })
+                click_search();
             }
         }
     });
