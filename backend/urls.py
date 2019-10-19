@@ -71,6 +71,7 @@ urlpatterns = [
 
     # 수익관리 (총판전용)
     path('dealer', DealerViews.dealer, name='dealer'),                                  # [render] 수익관리
+    path('dealer_user', DealerViews.dealer_user, name='dealer_user'),                                  # [render] 회원관리
     path('api_dealer_read', DealerViews.api_dealer_read, name='api_dealer_read'),       # [api] 수익 데이터 로드
 
 

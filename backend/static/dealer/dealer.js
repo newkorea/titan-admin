@@ -9,7 +9,8 @@ var app = new Vue({
      })
     .done(function( data ) {
       app.items = data.result;
-      app.sum_amount = data.sum_amount;
+      app.amount_krw = data.amount_krw;
+      app.amount_usd = data.amount_usd;
     });
   },
   data: {
@@ -24,7 +25,8 @@ var app = new Vue({
        })
       .done(function( data ) {
         app.items = data.result;
-        app.sum_amount = data.sum_amount;
+        app.amount_krw = data.amount_krw;
+        app.amount_usd = data.amount_usd;
       });
     }
   }

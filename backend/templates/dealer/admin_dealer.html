@@ -27,8 +27,17 @@
         <img src="/static/dealer/img/money.png" class="w-40">
       </div>
       <div class="list-body">
-        <a href="#" class="_500">이번년도 수익</a>
-        <small class="d-block text-muted">[[ sum_amount ]]</small>
+        <a href="#" class="_500">이번년도 수익(KRW)</a>
+        <small class="d-block text-muted">[[ amount_krw ]]</small>
+      </div>
+    </div>
+    <div class="list-item" style='flex: 1'>
+      <div>
+        <img src="/static/dealer/img/money.png" class="w-40">
+      </div>
+      <div class="list-body">
+        <a href="#" class="_500">이번년도 수익(USD)</a>
+        <small class="d-block text-muted">[[ amount_usd ]]</small>
       </div>
     </div>
   </div>
@@ -36,7 +45,9 @@
   <div class="user-filter">
     <div class="form-group email-form flex1">
       <select class="form-control" id="filter_year" name="filter_year">
-        <option value="2019">2019년 수익</option>
+        % for year in searchYear:
+        <option value="${year}">${year}년 수익</option>
+        % endfor:
       </select>
     </div>
   </div>
@@ -47,24 +58,29 @@
       검색하기
     </button>
   </div>
-  <!-- 데이터테이블즈 -->
+  <!-- 테이블 -->
   <div class="user-table">
     <table class="table table-bordered">
       <thead>
         <tr>
           <th>년(yaer)</th>
           <th>월(month)</th>
-          <th>수익합계</th>
+          <th>KRW 수익합계</th>
+          <th>USD 수익합계</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="item in items">
           <td>[[ item.year ]]</td>
           <td>[[ item.month ]]</td>
-          <td>[[ item.amount ]]</td>
+          <td>[[ item.amount_krw ]]</td>
+          <td>[[ item.amount_usd ]]</td>
         </tr>
       </tbody>
     </table>
+  </div>
+  <div v-if="items.length == 0" class='null-history'>
+    수익이 존재하지 않습니다
   </div>
 </div>
 </%block>

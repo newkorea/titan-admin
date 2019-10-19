@@ -1,0 +1,43 @@
+<%inherit file="../admin_common/admin_frame.html"/>
+
+
+<%block name="css">
+<link rel="stylesheet" href="/static/dealer/dealer_user.css" type="text/css"/>
+</%block>
+
+
+<%block name="title">총판 관리</%block>
+<%block name="subtitle">총판으로서 추천코드로 가입한 회원 내역을 볼 수 있습니다</%block>
+
+
+<%block name="content">
+<div>
+  <table class="table table-bordered" id='dtable'>
+    <thead>
+      <tr>
+        <th scope="col">번호</th>
+        <th scope="col">이메일</th>
+        <th scope="col">사용자명</th>
+        <th scope="col">추천인</th>
+        <th scope="col">가입일</th>
+      </tr>
+    </thead>
+    <tbody>
+      % for dump in dumps:
+      <tr>
+        <td scope="col">${dump['seq']}</td>
+        <td scope="col">${dump['email']}</td>
+        <td scope="col">${dump['username']}</td>
+        <td scope="col">${dump['regist_rec']}</td>
+        <td scope="col">${dump['regist_date']}</td>
+      </tr>
+      % endfor
+    </tbody>
+  </table>
+</div>
+</%block>
+
+
+<%block name="js">
+<script src="/static/dealer/dealer_user.js"></script>
+</%block>

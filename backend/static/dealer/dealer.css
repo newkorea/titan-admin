@@ -89,3 +89,7 @@ thead{
   margin-left: 10px;
   margin-right: 10px;
 }
+.null-history {
+  text-align: center;
+  padding: 50px;
+}
