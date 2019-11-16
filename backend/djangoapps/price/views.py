@@ -15,6 +15,7 @@ from urllib.parse import unquote
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from backend.models import *
+from backend.models_radius import Radcheck
 from backend.djangoapps.common.views import *
 from django.utils import translation
 from backend.djangoapps.common.payletter import Payletter
@@ -53,15 +54,26 @@ def api_price_refund(request):
     print('DEBUG -> user_id : ', user_id)
     print('DEBUG -> pgcode : ', pgcode)
 
+    # 사용자 객체
+    user = TblUser.objects.get(id=user_id)
+    email = user.email
+
     # 국내환불
     if krw != None:
         p = Payletter(settings.PAYLETTER_MODE)
         res = p.payments_cancel(pgcode, user_id, tid, krw)
+        # 환불 성공
         if res == 200:
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.now()
             tph.save()
-            # 환불 성공
+            rcei = Radcheck(
+                username = email,
+                attribute = 'Expiration',
+                op = ':=',
+                value = '01 Jan 2010 00:00:00 KST'
+            )
+            rcei.save(using='radius')
             return JsonResponse({'result': 200})
         else:
             # 환불 실패
@@ -70,11 +82,18 @@ def api_price_refund(request):
     elif usd != None:
         p = PayletterGlobal(settings.PAYLETTER_MODE)
         res = p.payments_cancel(pgcode, user_id, tid, usd)
+        # 환불 성공
         if res == 200:
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.now()
             tph.save()
-            # 환불 성공
+            rcei = Radcheck(
+                username = email,
+                attribute = 'Expiration',
+                op = ':=',
+                value = '01 Jan 2010 00:00:00 KST'
+            )
+            rcei.save(using='radius')
             return JsonResponse({'result': 200})
         elif res == 400:
             # 환불 실패 (이미 처리된 트랜잭션)
@@ -89,10 +108,18 @@ def api_price_refund(request):
         token = p.load_token()
         if token != 500:
             res = p.payments_cancel(pgcode, user_id, tid, cny, token)
+            # 환불성공
             if res != 500:
                 tph.refund_yn = 'Y'
                 tph.refund_date = datetime.now()
                 tph.save()
+                rcei = Radcheck(
+                    username = email,
+                    attribute = 'Expiration',
+                    op = ':=',
+                    value = '01 Jan 2010 00:00:00 KST'
+                )
+                rcei.save(using='radius')
                 return JsonResponse({'result': 200})
             else:
                 return JsonResponse({'result': 404})
