@@ -78,7 +78,8 @@ def api_dealer_read(request):
                     DATE_FORMAT(regist_date, "%Y") as 'year',
                     CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as 'month',
                     sum(krw) as 'amount_krw',
-                    sum(usd) as 'amount_usd'
+                    sum(usd) as 'amount_usd',
+                    sum(cny) as 'amount_cny'
                 from tbl_price_history x
                 group by year, month
             ) x
@@ -90,13 +91,15 @@ def api_dealer_read(request):
 
         query = '''
             select sum(amount_krw) as amount_krw,
-                   sum(amount_usd) as amount_usd
+                   sum(amount_usd) as amount_usd,
+                   sum(amount_cny) as amount_cny
             from (
                 select
                     DATE_FORMAT(regist_date, "%Y") as year,
                     CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
                     sum(krw) as 'amount_krw',
-                    sum(usd) as 'amount_usd'
+                    sum(usd) as 'amount_usd',
+                    sum(cny) as 'amount_cny'
                 from tbl_price_history x
                 group by year, month
             ) x
@@ -108,9 +111,11 @@ def api_dealer_read(request):
 
         amount_krw = sums[0][0]
         amount_usd = sums[0][1]
+        amount_cny = sums[0][2]
 
     return JsonResponse({
         'result': rows,
         'amount_krw': amount_krw,
         'amount_usd': amount_usd,
+        'amount_cny': amount_cny,
     })

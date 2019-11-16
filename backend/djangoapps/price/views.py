@@ -19,6 +19,7 @@ from backend.djangoapps.common.views import *
 from django.utils import translation
 from backend.djangoapps.common.payletter import Payletter
 from backend.djangoapps.common.payletter_global import PayletterGlobal
+from backend.djangoapps.common.paybox import Paybox
 
 
 # 결제관리 페이지 렌더링 (2019.09.21 13:56 점검완료)
@@ -38,6 +39,7 @@ def api_price_refund(request):
     tph = TblPriceHistory.objects.get(id=id)
     krw = tph.krw
     usd = tph.usd
+    cny = tph.cny
     tid = tph.tid
     user_id = tph.user_id
     pgcode = tph.pgcode
@@ -46,11 +48,12 @@ def api_price_refund(request):
     print('DEBUG -> id : ', id)
     print('DEBUG -> krw : ', krw)
     print('DEBUG -> usd : ', usd)
+    print('DEBUG -> cny : ', cny)
     print('DEBUG -> tid : ', tid)
     print('DEBUG -> user_id : ', user_id)
     print('DEBUG -> pgcode : ', pgcode)
 
-    # 국내환불 / 해외환불 판단
+    # 국내환불
     if krw != None:
         p = Payletter(settings.PAYLETTER_MODE)
         res = p.payments_cancel(pgcode, user_id, tid, krw)
@@ -63,6 +66,7 @@ def api_price_refund(request):
         else:
             # 환불 실패
             return JsonResponse({'result': 500})
+    # 해외환불
     elif usd != None:
         p = PayletterGlobal(settings.PAYLETTER_MODE)
         res = p.payments_cancel(pgcode, user_id, tid, usd)
@@ -79,6 +83,22 @@ def api_price_refund(request):
             # 환불 실패
             return JsonResponse({'result': 500})
         return JsonResponse({'result': 200})
+    # 위챗환불
+    elif cny != None:
+        p = Paybox(settings.PAYLETTER_MODE)
+        token = p.load_token()
+        if token != 500:
+            res = p.payments_cancel(pgcode, user_id, tid, cny, token)
+            if res != 500:
+                tph.refund_yn = 'Y'
+                tph.refund_date = datetime.now()
+                tph.save()
+                return JsonResponse({'result': 200})
+            else:
+                return JsonResponse({'result': 404})
+            return JsonResponse({'result': 404})
+        else:
+            return JsonResponse({'result': 404})
     else:
         # 알 수 없는 분기
         return JsonResponse({'result': 404})
@@ -181,6 +201,7 @@ def api_price_read(request):
                         product_name,
                         krw,
                         usd,
+                        cny,
                         taxfree_amount,
                         tax_amount,
                         email,
@@ -199,6 +220,7 @@ def api_price_read(request):
                             x.product_name,
                             x.krw as krw,
                             x.usd as usd,
+                            x.cny as cny,
                             x.taxfree_amount,
                             x.tax_amount,
                             y.email,

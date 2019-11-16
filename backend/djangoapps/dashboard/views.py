@@ -39,6 +39,8 @@ def dashboard(request):
             (select sum(krw) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund,
             (select sum(usd) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit_usd,
             (select sum(usd) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund_usd,
+            (select sum(cny) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit_cny,
+            (select sum(cny) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund_cny,
             (select count(*) from radius.radacct where acctstoptime is null) as vpn_connection
             from tbl_user;
         '''.format(now = now)
@@ -60,7 +62,7 @@ def dashboard(request):
         try:
             profit = rows[0][12]
             if profit == None:
-                profile = 0
+                profit = 0
         except BaseException as err:
             print('ERROR -> err : ', err)
             profit = 0
@@ -85,10 +87,24 @@ def dashboard(request):
         except BaseException as err:
             print('ERROR -> err : ', err)
             refund_usd = 0
+        try:
+            profit_cny = rows[0][16]
+            if profit_cny == None:
+                profit_cny = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            profit_cny = 0
+        try:
+            refund_cny = rows[0][17]
+            if refund_cny == None:
+                refund_cny = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            refund_cny = 0
 
         # 2019.11.14 이용훈 작업시작
         try:
-            vpn_connection = rows[0][16]
+            vpn_connection = rows[0][18]
             if vpn_connection == None:
                 vpn_connection = 0
         except BaseException as err:
@@ -108,7 +124,7 @@ def dashboard(request):
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 70 and 79 , 1, 0)) as age_70,
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 80 and 89 , 1, 0)) as age_80,
                 sum(if(date_format(now(),'%Y')-substring(birth_date,1,4) between 90 and 110 , 1, 0)) as etc
-                from tbl_user;ㅅ
+                from tbl_user;
         '''.format(now = now)
         cur.execute(query)
         rows = cur.fetchall()
@@ -118,6 +134,13 @@ def dashboard(request):
     gender_list.append(men)
     gender_list.append(female)
 
+    print('profit : ', profit)
+    print('refund : ', refund)
+    print('profit_usd : ', profit_usd)
+    print('refund_usd : ', refund_usd)
+    print('profit_cny : ', profit_cny)
+    print('refund_cny : ', refund_cny)
+
     context = {
         'regist_today': regist_today,
         'login_today': login_today,
@@ -125,6 +148,8 @@ def dashboard(request):
         'refund': refund,
         'profit_usd': profit_usd,
         'refund_usd': refund_usd,
+        'profit_cny': profit_cny,
+        'refund_cny': refund_cny,
         'user_count': user_count,
         'admin_count': admin_count,
         'cs_count': cs_count,

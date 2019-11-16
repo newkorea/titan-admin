@@ -11,6 +11,7 @@ var app = new Vue({
       app.items = data.result;
       app.amount_krw = data.amount_krw;
       app.amount_usd = data.amount_usd;
+      app.amount_cny = data.amount_cny;
     });
   },
   data: {
@@ -27,6 +28,7 @@ var app = new Vue({
         app.items = data.result;
         app.amount_krw = data.amount_krw;
         app.amount_usd = data.amount_usd;
+        app.amount_cny = data.amount_cny;
       });
     }
   }

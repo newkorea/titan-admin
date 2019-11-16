@@ -152,6 +152,7 @@
           <th>상품명</th>
           <th>국내(원)</th>
           <th>해외(달러)</th>
+          <th>위쳇(위안)</th>
           <th>부과세(원)</th>
           <th>사용자 이메일</th>
           <th>환불</th>
@@ -262,6 +263,7 @@
             {data: "product_name"},
             {data: "krw"},
             {data: "usd"},
+            {data: "cny"},
             {data: "tax_amount"},
             {data: "email"},
             {data: "refund_yn"},
@@ -349,6 +351,13 @@
             },
             {
               targets: 11,
+              visible: true,
+              render: function (data) {
+                return data;
+              }
+            },
+            {
+              targets: 12,
               visible: true,
               render: function (data) {
                 var id = data.split('+')[0]

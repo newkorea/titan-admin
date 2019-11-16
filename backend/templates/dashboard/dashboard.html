@@ -42,6 +42,14 @@
           <td class='wd50p'>환불 금액(달러)</td>
           <td class='p-color-red fwb' id='refund_usd'></td>
         </tr>
+        <tr>
+          <td class='wd50p'>결제 수익(위안)</td>
+          <td class='p-color-blue fwb' id='profit_cny'></td>
+        </tr>
+        <tr>
+          <td class='wd50p'>환불 금액(위안)</td>
+          <td class='p-color-red fwb' id='refund_cny'></td>
+        </tr>
         <!-- 2019.11.14 이용훈 작업시작 -->
         <tr>
           <td class='wd50p'>VPN 접속자 수</td>
@@ -113,6 +121,8 @@
 <div hidden id="refund_dt">${ refund }</div>
 <div hidden id="profit_usd_dt">${ profit_usd }</div>
 <div hidden id="refund_usd_dt">${ refund_usd }</div>
+<div id="profit_cny_dt">${ profit_cny }</div>
+<div id="refund_cny_dt">${ refund_cny }</div>
 <div hidden id="user_count_dt">${ user_count }</div>
 <div hidden id="admin_count_dt">${ admin_count }</div>
 <div hidden id="cs_count_dt">${ cs_count }</div>
@@ -124,9 +134,7 @@
 <div hidden id="men">${ men }</div>
 <div hidden id="female">${ female }</div>
 <div hidden id="ages">${ ages }</div>
-<!-- 2019.11.14 이용훈 작업시작 -->
 <div hidden id="vpn_connection_dt">${ vpn_connection }</div>
-<!-- 2019.11.14 이용훈 작업끝 -->
 </%block>
 
 
@@ -139,6 +147,13 @@ var profit_dt = $('#profit_dt').html();
 var refund_dt = $('#refund_dt').html();
 var profit_usd_dt = $('#profit_usd_dt').html();
 var refund_usd_dt = $('#refund_usd_dt').html();
+
+// 위안 추가
+var profit_cny_dt = $('#profit_cny_dt').html();
+var refund_cny_dt = $('#refund_cny_dt').html();
+console.log('profit_cny_dt : ', profit_cny_dt);
+console.log('refund_cny_dt : ', refund_cny_dt);
+
 var user_count_dt = $('#user_count_dt').html();
 var admin_count_dt = $('#admin_count_dt').html();
 var cs_count_dt = $('#cs_count_dt').html();
@@ -169,6 +184,13 @@ var profit_usd = new CountUp("profit_usd", 0, profit_usd_dt, 0, 2.5, options);
 profit_usd.start();
 var refund_usd = new CountUp("refund_usd", 0, refund_usd_dt, 0, 2.5, options);
 refund_usd.start();
+
+// 위안 추가
+var profit_cny = new CountUp("profit_cny", 0, profit_cny_dt, 0, 2.5, options);
+profit_cny.start();
+var refund_cny = new CountUp("refund_cny", 0, refund_cny_dt, 0, 2.5, options);
+refund_cny.start();
+
 var user_count = new CountUp("user_count", 0, user_count_dt, 0, 2.5, options);
 user_count.start();
 var admin_count = new CountUp("admin_count", 0, admin_count_dt, 0, 2.5, options);
@@ -187,7 +209,7 @@ var black_count = new CountUp("black_count", 0, black_count_dt, 0, 2.5, options)
 black_count.start();
 // 2019.11.14 이용훈 작업시작
 var vpn_connection = new CountUp("vpn_connection", 0, vpn_connection_dt , 0, 2.5, options);
-vpn_connection.start()
+vpn_connection.start();
 //2019.11.14 이용훈 작업끝
 
 var ctx = document.getElementById("myChart");

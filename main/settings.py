@@ -49,6 +49,15 @@ PAYLETTER_GLOBAL_LIVE_ENDPOINT_API  = 'https://api.payletter.com/'
 PAYLETTER_GLOBAL_LIVE_STOREID       = 'titanvpn'
 PAYLETTER_GLOBAL_LIVE_STORE_HASHKEY = 'titanvpn_190905'
 
+# 페이박스 위쳇페이 테스트 설정
+PAYBOX_WECHATPAY_TEST_ENDPOINT      = 'http://devapi.paybox.store/'
+PAYBOX_WECHATPAY_TEST_PARTNER_ID    = 'riv1mmx7zirp4l4mtnntwf6ii7i6no4z'
+PAYBOX_WECHATPAY_TEST_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5anI='
+
+# 페이박스 위쳇페이 라이브 설정
+PAYBOX_WECHATPAY_LIVE_ENDPOINT      = 'http://api.paybox.store/'
+PAYBOX_WECHATPAY_LIVE_PARTNER_ID    = 'riv1mmx7zirp4l4mtnntwf6ii7i6no4z'
+PAYBOX_WECHATPAY_LIVE_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5anI='
 
 # 데이터베이스 커넥션 관리
 DATABASES = {

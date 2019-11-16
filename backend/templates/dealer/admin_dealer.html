@@ -40,6 +40,15 @@
         <small class="d-block text-muted">[[ amount_usd ]]</small>
       </div>
     </div>
+    <div class="list-item" style='flex: 1'>
+      <div>
+        <img src="/static/dealer/img/money.png" class="w-40">
+      </div>
+      <div class="list-body">
+        <a href="#" class="_500">이번년도 수익(CNY)</a>
+        <small class="d-block text-muted">[[ amount_cny ]]</small>
+      </div>
+    </div>
   </div>
   <!-- 검색필터 -->
   <div class="user-filter">
@@ -67,6 +76,7 @@
           <th>월(month)</th>
           <th>KRW 수익합계</th>
           <th>USD 수익합계</th>
+          <th>CNY 수익합계</th>
         </tr>
       </thead>
       <tbody>
@@ -75,6 +85,7 @@
           <td>[[ item.month ]]</td>
           <td>[[ item.amount_krw ]]</td>
           <td>[[ item.amount_usd ]]</td>
+          <td>[[ item.amount_cny ]]</td>
         </tr>
       </tbody>
     </table>
