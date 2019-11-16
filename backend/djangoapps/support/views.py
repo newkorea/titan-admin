@@ -175,15 +175,15 @@ def api_support_sendItem(request):
     smtp_host = settings.SMTP_HOST
     smtp_port = settings.SMTP_PORT
     smtp_email = settings.SMTP_EMAIL
-    smtp_id = settings.SMTP_ID
-    smtp_pw = settings.SMTP_PW
+    # smtp_id = settings.SMTP_ID
+    # smtp_pw = settings.SMTP_PW
     smtp_to = to_email
 
     smtp = smtplib.SMTP(smtp_host, smtp_port)
     smtp.ehlo()
     smtp.starttls()
     smtp.ehlo()
-    smtp.login(smtp_id, smtp_pw)
+    # smtp.login(smtp_id, smtp_pw)
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
