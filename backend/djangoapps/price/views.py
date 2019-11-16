@@ -67,13 +67,9 @@ def api_price_refund(request):
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.now()
             tph.save()
-            rcei = Radcheck(
-                username = email,
-                attribute = 'Expiration',
-                op = ':=',
-                value = '01 Jan 2010 00:00:00 KST'
-            )
-            rcei.save(using='radius')
+            rad = Radcheck.objects.using('radius').get(username=email, attribute='Expiration')
+            rad.value = '01 Jan 2010 00:00:00 KST'
+            rad.save(using='radius')
             return JsonResponse({'result': 200})
         else:
             # 환불 실패
@@ -87,13 +83,9 @@ def api_price_refund(request):
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.now()
             tph.save()
-            rcei = Radcheck(
-                username = email,
-                attribute = 'Expiration',
-                op = ':=',
-                value = '01 Jan 2010 00:00:00 KST'
-            )
-            rcei.save(using='radius')
+            rad = Radcheck.objects.using('radius').get(username=email, attribute='Expiration')
+            rad.value = '01 Jan 2010 00:00:00 KST'
+            rad.save()
             return JsonResponse({'result': 200})
         elif res == 400:
             # 환불 실패 (이미 처리된 트랜잭션)
@@ -113,13 +105,9 @@ def api_price_refund(request):
                 tph.refund_yn = 'Y'
                 tph.refund_date = datetime.now()
                 tph.save()
-                rcei = Radcheck(
-                    username = email,
-                    attribute = 'Expiration',
-                    op = ':=',
-                    value = '01 Jan 2010 00:00:00 KST'
-                )
-                rcei.save(using='radius')
+                rad = Radcheck.objects.using('radius').get(username=email, attribute='Expiration')
+                rad.value = '01 Jan 2010 00:00:00 KST'
+                rad.save(using='radius')
                 return JsonResponse({'result': 200})
             else:
                 return JsonResponse({'result': 404})
