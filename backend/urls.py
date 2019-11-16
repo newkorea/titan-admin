@@ -13,6 +13,7 @@ from .djangoapps.dashboard import views as DashboardViews
 from .djangoapps.user import views as UserViews
 from .djangoapps.price import views as PriceViews
 from .djangoapps.dealer import views as DealerViews
+from .djangoapps.vpn import views as VpnViews
 
 
 urlpatterns = [
@@ -101,6 +102,9 @@ urlpatterns = [
     path('api_support_deleteItem', SupportViews.api_support_deleteItem, name='api_support_deleteItem'),                     # [api] 문의 삭제
     path('api_support_sendItem', SupportViews.api_support_sendItem, name='api_support_sendItem'),                           # [api] 문의 답변
 
+    #VPN 통계
+    #2019-11-14 이용훈 작업
+    path('vpn/traffic', VpnViews.traffic, name = 'traffic'),
 
     # 대쉬보드
     path('dashboard', DashboardViews.dashboard, name='dashboard'),                      # [render] 대쉬보드

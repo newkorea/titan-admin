@@ -17,6 +17,9 @@ def dashboard(request):
     now_day = datetime.today().day
     now = datetime.now().strftime('%Y-%m-%d')
 
+
+    # 2019.11.14 이용훈 쿼리작업
+    # 추가내용 : line 42번
     with connections['default'].cursor() as cur:
         query = '''
             select
@@ -35,7 +38,8 @@ def dashboard(request):
             (select sum(krw) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit,
             (select sum(krw) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund,
             (select sum(usd) from tbl_price_history where refund_yn = 'N' and date(regist_date) = date(now())) as today_profit_usd,
-            (select sum(usd) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund_usd
+            (select sum(usd) from tbl_price_history where refund_yn = 'Y' and date(refund_date) = date(now())) as today_refund_usd,
+            (select count(*) from radius.radacct where acctstoptime is null) as vpn_connection
             from tbl_user;
         '''.format(now = now)
         cur.execute(query)
@@ -82,6 +86,16 @@ def dashboard(request):
             print('ERROR -> err : ', err)
             refund_usd = 0
 
+        # 2019.11.14 이용훈 작업시작
+        try:
+            vpn_connection = rows[0][16]
+            if vpn_connection == None:
+                vpn_connection = 0
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            vpn_connection = 0
+        # 2019.11.14 이용훈 작업 끝
+
     with connections['default'].cursor() as cur:
         query = '''
                 select
@@ -121,6 +135,7 @@ def dashboard(request):
         'black_count': black_count,
         'men': men,
         'female': female,
-        'ages': ages
+        'ages': ages,
+        'vpn_connection' : vpn_connection # 2019.11.14 이용훈 추가
     }
     return render(request, 'dashboard/dashboard.html', context)

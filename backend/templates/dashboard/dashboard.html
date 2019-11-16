@@ -42,6 +42,12 @@
           <td class='wd50p'>환불 금액(달러)</td>
           <td class='p-color-red fwb' id='refund_usd'></td>
         </tr>
+        <!-- 2019.11.14 이용훈 작업시작 -->
+        <tr>
+          <td class='wd50p'>VPN 접속자 수</td>
+          <td class='p-color-blue fwb' id='vpn_connection'></td>
+        </tr>
+        <!-- // 2019.11.14 이용훈 작업끝 -->
       </tbody>
     </table>
   </div>
@@ -118,6 +124,9 @@
 <div hidden id="men">${ men }</div>
 <div hidden id="female">${ female }</div>
 <div hidden id="ages">${ ages }</div>
+<!-- 2019.11.14 이용훈 작업시작 -->
+<div hidden id="vpn_connection_dt">${ vpn_connection }</div>
+<!-- 2019.11.14 이용훈 작업끝 -->
 </%block>
 
 
@@ -138,6 +147,7 @@ var active_count_dt = $('#active_count_dt').html();
 var deactive_count_dt = $('#deactive_count_dt').html();
 var delete_count_dt = $('#delete_count_dt').html();
 var black_count_dt = $('#black_count_dt').html();
+var vpn_connection_dt = $('#vpn_connection_dt').html();
 
 var options = {
   useEasing : true,
@@ -175,6 +185,10 @@ var delete_count = new CountUp("delete_count", 0, delete_count_dt, 0, 2.5, optio
 delete_count.start();
 var black_count = new CountUp("black_count", 0, black_count_dt, 0, 2.5, options);
 black_count.start();
+// 2019.11.14 이용훈 작업시작
+var vpn_connection = new CountUp("vpn_connection", 0, vpn_connection_dt , 0, 2.5, options);
+vpn_connection.start()
+//2019.11.14 이용훈 작업끝
 
 var ctx = document.getElementById("myChart");
 var ctx2 = document.getElementById("myChart2");
