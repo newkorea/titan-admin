@@ -9,11 +9,11 @@ ALLOWED_HOSTS = ['*']
 # 글로벌 변수 관리 영역
 DEBUG = True
 
-SMTP_HOST = 'smtp.titanvpn.io'                          # SMTP 도메인
+SMTP_HOST = 'smtp-relay.gmail.com'                      # SMTP 도메인
 SMTP_PORT = 25                                          # SMTP 포트
-SMTP_EMAIL = 'titanvpnsupport@titanvpn.io'              # SMTP 이메일
-SMTP_ID = 'titanvpnsupport'                             # SMTP 아이디
-SMTP_PW = 'xkdlxks12!@'                                 # SMTP 비밀번호
+SMTP_EMAIL = 'master@titanvpn.io'                       # SMTP 이메일
+#SMTP_ID = 'titanvpnsupport'                            # SMTP 아이디
+#SMTP_PW = 'xkdlxks12!@'                                # SMTP 비밀번호
 
 LOGIN_FAIL_ATTEMPT = 10                                 # 로그인 시도 가능 회수
 
@@ -56,8 +56,8 @@ PAYBOX_WECHATPAY_TEST_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5a
 
 # 페이박스 위쳇페이 라이브 설정
 PAYBOX_WECHATPAY_LIVE_ENDPOINT      = 'http://api.paybox.store/'
-PAYBOX_WECHATPAY_LIVE_PARTNER_ID    = 'riv1mmx7zirp4l4mtnntwf6ii7i6no4z'
-PAYBOX_WECHATPAY_LIVE_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5anI='
+PAYBOX_WECHATPAY_LIVE_PARTNER_ID    = 'nmlqpm5reoubrvtkypkl29q9hse1gj4l'
+PAYBOX_WECHATPAY_LIVE_PARTNER_KEY   = 'dHQzbnBlMmZwbHcxcXRibDN1YjNqbjEzNmphMmRoeWY='
 
 # 데이터베이스 커넥션 관리
 DATABASES = {
