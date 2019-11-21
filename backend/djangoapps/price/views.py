@@ -96,7 +96,7 @@ def api_price_refund(request):
         return JsonResponse({'result': 200})
     # 위챗환불
     elif cny != None:
-        p = Paybox(settings.PAYLETTER_MODE)
+        p = Paybox(settings.PAYBOX_MODE)
         token = p.load_token()
         if token != 500:
             res = p.payments_cancel(pgcode, user_id, tid, cny, token)

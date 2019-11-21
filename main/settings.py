@@ -23,7 +23,8 @@ REPLACE_ABS_FROM = '/home/ubuntu/project/titan'  # 파일 서브 디렉토리 �
 REPLACE_ABS_TO = ''                                     # 파일 서브 디렉토리 변경 (TO)
 
 # 페이레터 모드 설정 ('LIVE' or 'TEST')
-PAYLETTER_MODE = 'TEST'
+PAYLETTER_MODE  = 'TEST'
+PAYBOX_MODE     = 'TEST'
 
 # 페이레터 국내 테스트 설정
 PAYLETTER_KOR_TEST_ENDPOINT         = 'https://testpgapi.payletter.com/'
@@ -55,7 +56,7 @@ PAYBOX_WECHATPAY_TEST_PARTNER_ID    = 'riv1mmx7zirp4l4mtnntwf6ii7i6no4z'
 PAYBOX_WECHATPAY_TEST_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5anI='
 
 # 페이박스 위쳇페이 라이브 설정
-PAYBOX_WECHATPAY_LIVE_ENDPOINT      = 'http://api.paybox.store/'
+PAYBOX_WECHATPAY_LIVE_ENDPOINT      = 'https://api.paybox.store/'
 PAYBOX_WECHATPAY_LIVE_PARTNER_ID    = 'nmlqpm5reoubrvtkypkl29q9hse1gj4l'
 PAYBOX_WECHATPAY_LIVE_PARTNER_KEY   = 'dHQzbnBlMmZwbHcxcXRibDN1YjNqbjEzNmphMmRoeWY='
 
@@ -89,7 +90,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'backend',
-     'django_extensions',
+    'django_extensions',
 ]
 
 
