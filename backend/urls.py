@@ -64,10 +64,22 @@ urlpatterns = [
     path('api_user_edit', UserViews.api_user_edit, name='api_user_edit'),               # [api] 회원 수정
 
 
-    # 결제관리
+    # 결제모듈
     path('price', PriceViews.price, name='price'),                                      # [render] 결제관리
     path('api_price_read', PriceViews.api_price_read, name='api_price_read'),           # [api] 결제 데이터 로드
     path('api_price_refund', PriceViews.api_price_refund, name='api_price_refund'),     # [api] 환불
+
+
+    # 무통장내역
+    path('account_history', PriceViews.account_history, name='account_history'),        # [render] 무통장내역
+    path('api_read_ah', PriceViews.api_read_ah, name='api_read_ah'),                    # [api] 무통장내역 조회
+    path('api_set_status', PriceViews.api_set_status, name='api_set_status'),           # [api] 무통장내역 상태변경
+
+
+    # 계좌관리
+    path('account_setting', PriceViews.account_setting, name='account_setting'),        # [render] 계좌관리
+    path('api_read_bank', PriceViews.api_read_bank, name='api_read_bank'),              # [api] 계좌관리 내용 로드
+    path('api_update_bank', PriceViews.api_update_bank, name='api_update_bank'),        # [api] 계좌관리 내용 편집
 
 
     # 수익관리 (총판전용)

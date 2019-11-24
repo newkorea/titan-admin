@@ -111,13 +111,35 @@
 									<!-- 펼침 메뉴 시작 -->
 									% if request.session['is_staff'] in [1, 2]:
 									<li>
-										<a href="#" onclick="location.href='/price'">
-											<span class="nav-icon">
-												<i class="fa fa-money"></i>
-											</span>
-											<span class="nav-text">결제관리</span>
-										</a>
-									</li>
+		                <a>
+		                  <span class="nav-caret">
+		                    <i class="fa fa-caret-down"></i>
+		                  </span>
+		                  <span class="nav-icon">
+	                    	<i class="fa fa-money"></i>
+		                  </span>
+		                  <span class="nav-text">결제관리</span>
+		                </a>
+		                <ul class="nav-sub">
+											<li>
+		                    <a href="#" onclick="location.href='/price'">
+		                      <span class="nav-text">결제모듈</span>
+		                    </a>
+		                  </li>
+											<li>
+		                    <a href="#" onclick="location.href='/account_history'">
+		                      <span class="nav-text">무통장내역</span>
+		                    </a>
+		                  </li>
+											<li>
+		                    <a href="#" onclick="location.href='/account_setting'">
+		                      <span class="nav-text">계좌관리</span>
+		                    </a>
+		                  </li>
+		                </ul>
+		              </li>
+
+
 									% endif
 									<!-- 펼침 메뉴 끝 -->
 

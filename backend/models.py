@@ -151,6 +151,19 @@ class TblAndroidVersion(models.Model):
         db_table = 'tbl_android_version'
 
 
+class TblBankAccount(models.Model):
+    type = models.CharField(primary_key=True, max_length=255)
+    person_name = models.CharField(max_length=255)
+    bank_name = models.CharField(max_length=255)
+    bank_number = models.CharField(max_length=255)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_bank_account'
+
+
 class TblCodeDetail(models.Model):
     group_code = models.CharField(primary_key=True, max_length=100)
     code = models.CharField(max_length=100)
@@ -333,6 +346,26 @@ class TblReview(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_review'
+
+
+class TblSendHistory(models.Model):
+    user_id = models.IntegerField()
+    product_name = models.CharField(max_length=255, blank=True, null=True)
+    session = models.IntegerField(blank=True, null=True)
+    month_type = models.IntegerField(blank=True, null=True)
+    krw = models.CharField(max_length=100, blank=True, null=True)
+    usd = models.CharField(max_length=100, blank=True, null=True)
+    jpy = models.CharField(max_length=100, blank=True, null=True)
+    cny = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=10, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    accept_date = models.DateTimeField(blank=True, null=True)
+    cancel_date = models.DateTimeField(blank=True, null=True)
+    refund_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_send_history'
 
 
 class TblSupport(models.Model):

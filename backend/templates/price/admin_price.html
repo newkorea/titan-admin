@@ -86,7 +86,7 @@
 </style>
 </%block>
 
-<%block name="title">결제 관리</%block>
+<%block name="title">결제 모듈</%block>
 <%block name="subtitle">TITAN VPN에 결제 내역을 한눈에 볼 수 있습니다</%block>
 
 <%block name="content">
@@ -359,11 +359,12 @@
             {
               targets: 12,
               visible: true,
+              orderable: false,
               render: function (data) {
                 var id = data.split('+')[0]
                 var refund_yn = data.split('+')[1]
                 if(refund_yn == 'Y'){
-                  return '환불완료'
+                  return ''
                 } else {
                   return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';
                 }

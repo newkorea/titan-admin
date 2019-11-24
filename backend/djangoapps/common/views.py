@@ -4,7 +4,8 @@ import uuid
 import hashlib
 import base64
 import re
-from datetime import datetime, timedelta
+import datetime
+from pytz import timezone
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -18,11 +19,214 @@ try:
     from html.parser import HTMLParser
 except:
     from HTMLParser import HTMLParser
-
+from backend.models_radius import Radcheck
 
 # 공통 테스트 함수 (2019.09.15 12:26 점검완료)
 def common_sample():
     print("hello world")
+
+
+# 요금 초기화 함수 (2019.11.14 14.33)
+def initServiceTime(user_id):
+
+    # 유저객체 획득
+    u1 = TblUser.objects.get(id = user_id)
+    email = u1.email
+
+    # Radcheck의 Cleartext-Password가 없을 경우 생성
+    rr = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Cleartext-Password')
+    if len(rr) == 0:
+        r1 = Radcheck(
+            username=email,
+            attribute='Cleartext-Password',
+            op=':=',
+            value=str(uuid.uuid4()).replace('-', '')
+        )
+        r1.save(using='radius')
+
+    # Radcheck의 session 변경 (merge 로직)
+    rc = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Simultaneous-Use'
+    )
+    if len(rc) == 0:
+        rci = Radcheck(
+            username = email,
+            attribute = 'Simultaneous-Use',
+            op = ':=',
+            value = int(1)
+        )
+        rci.save(using='radius')
+    else:
+        rcu = rc.first()
+        rcu.value = int(1)
+        rcu.save(using='radius')
+
+    # Radcheck의 time 변경 (merge 로직)
+    rce = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Expiration'
+    )
+    if len(rce) == 0:
+        rcei = Radcheck(
+            username = email,
+            attribute = 'Expiration',
+            op = ':=',
+            value = '01 Jan 2010 00:00:00 KST'
+        )
+        rcei.save(using='radius')
+    else:
+        rceu = rce.first()
+        rceu.value = '01 Jan 2010 00:00:00 KST'
+        rceu.save(using='radius')
+
+
+# 요금 충전 공통함수 (2019.09.21 12:57 점검완료)
+def giveServiceTime(user_id, session, month_type):
+
+    # 유저객체 획득
+    u1 = TblUser.objects.get(id = user_id)
+    email = u1.email
+
+    # Radcheck의 Cleartext-Password가 없을 경우 생성
+    rr = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Cleartext-Password')
+    if len(rr) == 0:
+        r1 = Radcheck(
+            username=email,
+            attribute='Cleartext-Password',
+            op=':=',
+            value=str(uuid.uuid4()).replace('-', '')
+        )
+        r1.save(using='radius')
+
+    # Radcheck의 session 변경 (merge 로직)
+    rc = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Simultaneous-Use'
+    )
+    if len(rc) == 0:
+        rci = Radcheck(
+            username = email,
+            attribute = 'Simultaneous-Use',
+            op = ':=',
+            value = int(session)
+        )
+        rci.save(using='radius')
+    else:
+        rcu = rc.first()
+        rcu.value = int(session)
+        rcu.save(using='radius')
+
+    # Radcheck의 time 변경 (merge 로직)
+    if month_type == '1':
+        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(30)
+    if month_type == '6':
+        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(180)
+    if month_type == '12':
+        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(360)
+    radius_time = enc_radius_time(add_time)
+    rce = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Expiration'
+    )
+    if len(rce) == 0:
+        rcei = Radcheck(
+            username = email,
+            attribute = 'Expiration',
+            op = ':=',
+            value = radius_time
+        )
+        rcei.save(using='radius')
+    else:
+        rceu = rce.first()
+        rceu.value = radius_time
+        rceu.save(using='radius')
+
+
+# python datetime 자료형을 radius 자료형으로 변경하는 함수 (2019.09.09 12:53 점검완료)
+def enc_radius_time(obj):
+    print('DEBUG -> enc_radius_time / obj : ', obj)
+    radius_time = obj.strftime('%d') + ' ' + \
+                  obj.strftime('%B')[:3] + ' ' + \
+                  obj.strftime('%Y') + ' ' + \
+                  obj.strftime('%H') + ':' + \
+                  obj.strftime('%M') + ':' + \
+                  obj.strftime('%S') + ' KST'
+    print('DEBUG -> enc_radius_time / radius_time : ', radius_time)
+    return radius_time
+
+
+# radius 자료형을 python datetime 자료형으로 변경하는 함수 (2019.09.09 12:53 점검완료)
+def dec_radius_time(radius_time):
+    radius_time = radius_time.replace(' KST', '')
+    radius_time = radius_time.replace('Jan', 'January')
+    radius_time = radius_time.replace('Feb', 'February')
+    radius_time = radius_time.replace('Mar', 'March')
+    radius_time = radius_time.replace('Apr', 'April')
+    radius_time = radius_time.replace('May', 'May')
+    radius_time = radius_time.replace('Jun', 'June')
+    radius_time = radius_time.replace('Jul', 'July')
+    radius_time = radius_time.replace('Aug', 'August')
+    radius_time = radius_time.replace('Sep', 'September')
+    radius_time = radius_time.replace('Oct', 'October')
+    radius_time = radius_time.replace('Nov', 'November')
+    radius_time = radius_time.replace('Dec', 'December')
+    radius_time = datetime.datetime.strptime(radius_time, '%d %B %Y %H:%M:%S')
+    return radius_time
+
+
+# 상품 가격 획득 함수 (2019.09.10 11:31 점검완료)
+def getProductPirce(session, month_type, type):
+    if type == 'KRW':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price
+    elif type == 'USD':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price_usd
+    elif type == 'CNY':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price_cny
+    return price
+
+
+# 해당 이메일의 세션 수를 반환하는 함수 (2019.09.09 12:53 점검완료)
+def my_radius_session(email):
+    try:
+        r = Radcheck.objects.using('radius').get(
+            username=email,
+            attribute='Simultaneous-Use'
+        )
+        my_session = r.value
+        return my_session
+    except BaseException:
+        return None
+
+
+# 해당 이메일의 radius 자료형을 반환하는 함수 (2019.09.09 12:53 점검완료)
+def my_radius_time(email, return_type):
+    try:
+        r = Radcheck.objects.using('radius').get(
+            username=email,
+            attribute='Expiration'
+        )
+        expire_time = r.value
+        expire_time = dec_radius_time(expire_time)
+        if return_type == 'datetime':
+            return expire_time
+        elif return_type == 'str':
+            return expire_time.strftime("%Y-%m-%d %H:%M:%S")
+    except BaseException:
+        return None
 
 
 # xss 해킹 방어 함수 (2019.09.15 12:26 점검완료)
@@ -95,13 +299,10 @@ def allow_admin(func):
 
         if 'is_staff' in request.session:
             if request.session['is_staff'] in [1]:
-                print('--------------> 1')
                 pass
             else:
-                print('--------------> 2')
                 return redirect('/login')
         else:
-            print('--------------> 3')
             return redirect('/login')
 
         result = func(request, *args, **kwargs)
