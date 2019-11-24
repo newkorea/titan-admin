@@ -82,7 +82,13 @@
   .display .dataTable .no-footer{
     width: 100%;
   }
-
+  .gbb {
+      border: solid 1px #989898;
+  }
+  .mmrl {
+    margin-left: auto;
+    margin-right: auto;
+  }
 </style>
 </%block>
 
@@ -91,6 +97,63 @@
 
 <%block name="content">
 <div>
+
+  <div class="row" style="text-align: center;">
+    <div class="col-sm-2 mmrl">
+      <div class="box gbb">
+        <div class="box-header DEEP-PURPLE">
+          <h3 style='font-size: 12px;'>승인금액 총합(원)</h3>
+        </div>
+        <div class="box-body light lt" id='accept_krw'>
+          0
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-2 mmrl">
+      <div class="box gbb">
+        <div class="box-header ORANGE">
+          <h3 style='font-size: 12px;'>환불금액 총합(원)</h3>
+        </div>
+        <div class="box-body light lt" id='refund_krw'>
+          0
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-2 mmrl">
+      <div class="box gbb">
+        <div class="box-header DEEP-PURPLE">
+          <h3 style='font-size: 12px;'>승인처리 된 유저수(명)</h3>
+        </div>
+        <div class="box-body light lt" id='accept_cnt'>
+          0
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-2 mmrl">
+      <div class="box gbb">
+        <div class="box-header ORANGE">
+          <h3 style='font-size: 12px;'>환불처리 된 유저수(명)</h3>
+        </div>
+        <div class="box-body light lt" id='refund_cnt'>
+          0
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-2 mmrl">
+      <div class="box gbb">
+        <div class="box-header TEAL">
+          <h3 style='font-size: 12px;'>결제대기 유저수(명)</h3>
+        </div>
+        <div class="box-body light lt" id='wait_cnt'>
+          0
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 검색필터 -->
   <div class="user-filter">
@@ -185,6 +248,7 @@
 <script>
     function click_search(){
         datatable.ajax.reload();
+        load_sum();
     }
 
     $('#filter_regist_start').val(getNow());
@@ -420,8 +484,48 @@
     });
 
   $( document ).ready(function() {
-
+    load_sum();
   });
+
+  function load_sum() {
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api_read_sum", {
+          csrfmiddlewaretoken: csrf_token,
+          number: function() { return $('#filter_number').val() },
+          email: function() { return $('#filter_email').val() },
+          username: function() { return $('#filter_username').val() },
+          session: function() { return $('#filter_session').val() },
+          month: function() { return $('#filter_month').val() },
+          status: function() { return $('#filter_status').val() },
+          regist_start: function() {
+              var filter_regist_start = $('#filter_regist_start').val();
+              var filter_regist_end = $('#filter_regist_end').val();
+              if(filter_regist_start == ''){
+                $('#filter_regist_start').val(getNow());
+              } else if(filter_regist_start > filter_regist_end){
+                  $('#filter_regist_start').val(getNow());
+              }
+              return filter_regist_start;
+          },
+          regist_end: function() {
+              var filter_regist_start = $('#filter_regist_start').val();
+              var filter_regist_end = $('#filter_regist_end').val();
+              if(filter_regist_end == ''){
+                $('#filter_regist_end').val(getTomorrow());
+              } else if(filter_regist_start > filter_regist_end){
+                  $('#filter_regist_end').val(getTomorrow());
+              }
+              return filter_regist_end;
+          },
+         })
+        .done(function( data ) {
+          $('#accept_krw').html(data.accept_krw);
+          $('#refund_krw').html(data.refund_krw);
+          $('#accept_cnt').html(data.accept_cnt);
+          $('#refund_cnt').html(data.refund_cnt);
+          $('#wait_cnt').html(data.wait_cnt);
+      });
+  }
 
   function getNow(){
       var dt = new Date();

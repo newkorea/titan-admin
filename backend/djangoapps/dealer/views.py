@@ -27,7 +27,7 @@ def dealer(request):
     myRec = u1.rec    # 로그인 된 사용자의 추천코드
 
     startYear = 2019
-    currentYear = int(datetime.today().strftime('%Y'))
+    currentYear = int(datetime.datetime.today().strftime('%Y'))
 
     searchYear = []
     for n in range(startYear, currentYear+1):

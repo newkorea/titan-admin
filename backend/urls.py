@@ -74,6 +74,7 @@ urlpatterns = [
     path('account_history', PriceViews.account_history, name='account_history'),        # [render] 무통장내역
     path('api_read_ah', PriceViews.api_read_ah, name='api_read_ah'),                    # [api] 무통장내역 조회
     path('api_set_status', PriceViews.api_set_status, name='api_set_status'),           # [api] 무통장내역 상태변경
+    path('api_read_sum', PriceViews.api_read_sum, name='api_read_sum'),                 # [api] 무통장내역 통계
 
 
     # 계좌관리

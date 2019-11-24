@@ -480,7 +480,7 @@ def api_read_ah(request):
             start=start,
             end=start+length-1
         )
-        # print(query)
+        print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
@@ -492,3 +492,134 @@ def api_read_ah(request):
     }
 
     return JsonResponse(ret)
+
+
+def api_read_sum(request):
+
+    # 검색필터 파라미터
+    number = request.POST.get('number')
+    email = request.POST.get('email')
+    username = request.POST.get('username')
+    session = request.POST.get('session')
+    month = request.POST.get('month')
+    status = request.POST.get('status')
+    regist_start = request.POST.get('regist_start')
+    regist_end = request.POST.get('regist_end')
+
+    # 로깅 (검색필터 파라미터)
+    print('DEBUG -> number : ', number)
+    print('DEBUG -> email : ', email)
+    print('DEBUG -> username : ', username)
+    print('DEBUG -> session : ', session)
+    print('DEBUG -> month : ', month)
+    print('DEBUG -> status : ', status)
+    print('DEBUG -> regist_start : ', regist_start)
+    print('DEBUG -> regist_end : ', regist_end)
+
+    # where 절 통계 필터링 생성
+    s_filter = ' where 1=1 '
+    z_filter = ' where 1=1 '
+    r_filter = ' where 1=1 '
+    if number != '':
+        s_filter += " and x.id = '{number}' ".format(number=number)
+        z_filter += " and x.id = '{number}' ".format(number=number)
+        r_filter += " and x.id = '{number}' ".format(number=number)
+    if email != '':
+        s_filter += " and y.email = '{email}' ".format(email=email)
+        z_filter += " and y.email = '{email}' ".format(email=email)
+        r_filter += " and y.email = '{email}' ".format(email=email)
+    if username != '':
+        s_filter += " and y.username = '{username}' ".format(username=username)
+        z_filter += " and y.username = '{username}' ".format(username=username)
+        r_filter += " and y.username = '{username}' ".format(username=username)
+    if session != '0':
+        s_filter += " and x.session = '{session}' ".format(session=session)
+        z_filter += " and x.session = '{session}' ".format(session=session)
+        r_filter += " and x.session = '{session}' ".format(session=session)
+    if month != '0':
+        s_filter += " and x.month_type = '{month}' ".format(month=month)
+        z_filter += " and x.month_type = '{month}' ".format(month=month)
+        r_filter += " and x.month_type = '{month}' ".format(month=month)
+    s_filter += " and x.status = 'A' "
+    z_filter += " and x.status = 'Z' "
+    r_filter += " and x.status = 'R' "
+    s_filter += '''
+        and x.regist_date >= '{regist_start} 00:00:00'
+        and x.regist_date < '{regist_end} 00:00:00'
+    '''.format(regist_start=regist_start, regist_end=regist_end)
+    z_filter += '''
+        and x.regist_date >= '{regist_start} 00:00:00'
+        and x.regist_date < '{regist_end} 00:00:00'
+    '''.format(regist_start=regist_start, regist_end=regist_end)
+    r_filter += '''
+        and x.regist_date >= '{regist_start} 00:00:00'
+        and x.regist_date < '{regist_end} 00:00:00'
+    '''.format(regist_start=regist_start, regist_end=regist_end)
+
+    # 데이터테이블즈 - 통계
+    with connections['default'].cursor() as cur:
+        query = '''
+            select sum(x.krw) as accept_krw, count(*) as accept_cnt
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {s_filter}
+        '''.format(s_filter=s_filter)
+        # print(query)
+        cur.execute(query)
+        x = dictfetchall(cur)
+        accept_krw = x[0]['accept_krw']
+        accept_cnt = x[0]['accept_cnt']
+
+        query = '''
+            select sum(x.krw) as refund_krw, count(*) as refund_cnt
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {z_filter}
+        '''.format(z_filter=z_filter)
+        # print(query)
+        cur.execute(query)
+        x = dictfetchall(cur)
+        refund_krw = x[0]['refund_krw']
+        refund_cnt = x[0]['refund_cnt']
+
+        query = '''
+            select count(*) as wait_cnt
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {r_filter}
+        '''.format(r_filter=r_filter)
+        # print(query)
+        cur.execute(query)
+        x = dictfetchall(cur)
+        wait_cnt = x[0]['wait_cnt']
+
+    if accept_krw == None:
+        accept_krw = 0
+    if refund_krw == None:
+        refund_krw = 0
+    if accept_cnt == None:
+        accept_cnt = 0
+    if refund_cnt == None:
+        refund_cnt = 0
+    if wait_cnt == None:
+        wait_cnt = 0
+
+    accept_krw =  format(int(accept_krw), ',')
+    refund_krw =  format(int(refund_krw), ',')
+
+    print('### accept_krw : ', accept_krw)
+    print('### refund_krw : ', refund_krw)
+    print('### accept_cnt : ', accept_cnt)
+    print('### refund_cnt : ', refund_cnt)
+    print('### wait_cnt : ', wait_cnt)
+
+    return JsonResponse({
+        'accept_krw': accept_krw,
+        'refund_krw': refund_krw,
+        'accept_cnt': accept_cnt,
+        'refund_cnt': refund_cnt,
+        'wait_cnt': wait_cnt,
+    })
