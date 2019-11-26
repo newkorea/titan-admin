@@ -59,9 +59,13 @@ class Paybox:
         headers = {
             'Content-Type'      : 'application/json',
             'Accept'            : 'application/json',
-            'Authorization '    : token
+            'Authorization'    : token
         }
         r = requests.post(full_url, json=payload, headers=headers)
+
+        print('full_url : ', full_url)
+        print('payload : ', payload)
+        print('headers : ', headers)
 
         status_code = r.status_code
         print('status_code : ', status_code)

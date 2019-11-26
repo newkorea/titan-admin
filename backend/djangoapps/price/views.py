@@ -137,7 +137,7 @@ def api_price_refund(request):
         # 환불 성공
         if res == 200:
             tph.refund_yn = 'Y'
-            tph.refund_date = datetime.now()
+            tph.refund_date = datetime.datetime.now()
             tph.save()
             initServiceTime(user_id)
             return JsonResponse({'result': 200})
@@ -151,7 +151,7 @@ def api_price_refund(request):
         # 환불 성공
         if res == 200:
             tph.refund_yn = 'Y'
-            tph.refund_date = datetime.now()
+            tph.refund_date = datetime.datetime.now()
             tph.save()
             initServiceTime(user_id)
             return JsonResponse({'result': 200})
@@ -171,7 +171,7 @@ def api_price_refund(request):
             # 환불성공
             if res != 500:
                 tph.refund_yn = 'Y'
-                tph.refund_date = datetime.now()
+                tph.refund_date = datetime.datetime.now()
                 tph.save()
                 initServiceTime(user_id)
                 return JsonResponse({'result': 200})
