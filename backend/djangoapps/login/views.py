@@ -98,7 +98,7 @@ def api_login(request):
                 # 관리자 계정 정상 정급 시
                 u1.login_ip = login_ip
                 u2.attempt = 0
-                u2.login_date = datetime.now()
+                u2.login_date = datetime.datetime.now()
                 u1.save()
                 u2.save()
                 request.session['id'] = u1.id
@@ -116,7 +116,7 @@ def api_login(request):
             with transaction.atomic():
                 u1.login_ip = login_ip
                 u2.attempt = u2.attempt + 1
-                u2.login_date = datetime.now()
+                u2.login_date = datetime.datetime.now()
                 u1.save()
                 u2.save()
                 print("INFO -> Login Fail")
