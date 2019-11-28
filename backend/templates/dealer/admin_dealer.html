@@ -24,7 +24,7 @@
     </div>
     <div class="list-item" style='flex: 1'>
       <div>
-        <img src="/static/dealer/img/money.png" class="w-40">
+        <img src="/static/dealer/img/korea.png" class="w-40">
       </div>
       <div class="list-body">
         <a href="#" class="_500">이번년도 수익(KRW)</a>
@@ -33,7 +33,7 @@
     </div>
     <div class="list-item" style='flex: 1'>
       <div>
-        <img src="/static/dealer/img/money.png" class="w-40">
+        <img src="/static/dealer/img/united-states.png" class="w-40">
       </div>
       <div class="list-body">
         <a href="#" class="_500">이번년도 수익(USD)</a>
@@ -42,11 +42,20 @@
     </div>
     <div class="list-item" style='flex: 1'>
       <div>
-        <img src="/static/dealer/img/money.png" class="w-40">
+        <img src="/static/dealer/img/china.png" class="w-40">
       </div>
       <div class="list-body">
         <a href="#" class="_500">이번년도 수익(CNY)</a>
         <small class="d-block text-muted">[[ amount_cny ]]</small>
+      </div>
+    </div>
+    <div class="list-item" style='flex: 1'>
+      <div>
+        <img src="/static/dealer/img/money.png" class="w-40">
+      </div>
+      <div class="list-body">
+        <a href="#" class="_500">이번년도 수익(무통장)</a>
+        <small class="d-block text-muted">[[ amount_free ]]</small>
       </div>
     </div>
   </div>
@@ -77,6 +86,7 @@
           <th>KRW 수익합계</th>
           <th>USD 수익합계</th>
           <th>CNY 수익합계</th>
+          <th>무통장 수익합계</th>
         </tr>
       </thead>
       <tbody>
@@ -86,6 +96,7 @@
           <td>[[ item.amount_krw ]]</td>
           <td>[[ item.amount_usd ]]</td>
           <td>[[ item.amount_cny ]]</td>
+          <td>[[ item.amount_free ]]</td>
         </tr>
       </tbody>
     </table>

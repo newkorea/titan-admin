@@ -69,53 +69,103 @@ def dealer_user(request):
 # 수익관리 데이터 로드 API (2019.09.21 13:55 개발필요)
 @allow_dealer
 def api_dealer_read(request):
+
+    id = request.session['id']
+    u1 = TblUser.objects.get(id=id)
+    myRec = u1.rec  # 로그인 된 사용자의 추천코드
+
     year = request.POST.get('year')
     with connections['default'].cursor() as cur:
         query = '''
-            select *
+            select t1.year, t1.month, t1.amount_krw, t1.amount_usd, t1.amount_cny, t2.amount_free
             from (
-                select
-                    DATE_FORMAT(regist_date, "%Y") as 'year',
-                    CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as 'month',
-                    sum(krw) as 'amount_krw',
-                    sum(usd) as 'amount_usd',
-                    sum(cny) as 'amount_cny'
-                from tbl_price_history x
-                group by year, month
-            ) x
-            where x.year = '{year}'
-            order by month desc;
-        '''.format(year=year)
+            	select year, month, amount_krw, amount_usd, amount_cny
+            	from (
+            		select
+            			DATE_FORMAT(x.regist_date, "%Y") as 'year',
+            			CAST(DATE_FORMAT(x.regist_date, "%c") as UNSIGNED) as 'month',
+            			sum(krw) as 'amount_krw',
+            			sum(usd) as 'amount_usd',
+            			sum(cny) as 'amount_cny'
+            		from tbl_price_history x
+            		join tbl_user y
+            		on x.user_id = y.id
+            		where y.rec = '{myRec}'
+            		and refund_yn = 'N'
+            		group by year, month
+            	) x
+            	where x.year = '{year}'
+            	order by month desc
+            ) t1
+            join (
+            	select year, month, amount_free
+            	from (
+            		select  DATE_FORMAT(x.accept_date, "%Y") as year,
+            				CAST(DATE_FORMAT(x.regist_date, "%c") as UNSIGNED) as 'month',
+            				IFNULL(sum(krw), 0) as amount_free
+            		from tbl_send_history x
+            		join tbl_user y
+            		on x.user_id = y.id
+            		where y.rec = '{myRec}'
+            		and x.status = 'A'
+            		group by year
+            	) x
+            	where x.year = '{year}'
+            ) t2
+            on t1.year = t2.year
+            and t1.month = t2.month;
+        '''.format(year=year, myRec=myRec)
         cur.execute(query)
         rows = dictfetchall(cur)
 
         query = '''
-            select sum(amount_krw) as amount_krw,
-                   sum(amount_usd) as amount_usd,
-                   sum(amount_cny) as amount_cny
+            select IFNULL(amount_krw, 0) as amount_krw,
+            	   IFNULL(amount_usd, 0) as amount_usd,
+            	   IFNULL(amount_cny, 0) as amount_cny
             from (
-                select
-                    DATE_FORMAT(regist_date, "%Y") as year,
-                    CAST(DATE_FORMAT(regist_date, "%c") as UNSIGNED) as month,
-                    sum(krw) as 'amount_krw',
-                    sum(usd) as 'amount_usd',
-                    sum(cny) as 'amount_cny'
-                from tbl_price_history x
-                group by year, month
+            	select DATE_FORMAT(x.regist_date, "%Y") as year,
+            			CAST(DATE_FORMAT(x.regist_date, "%c") as UNSIGNED) as month,
+            			sum(krw) as 'amount_krw',
+            			sum(usd) as 'amount_usd',
+            			sum(cny) as 'amount_cny'
+            	from tbl_price_history x
+            	join tbl_user y
+            	on x.user_id = y.id
+            	where y.rec = '{myRec}'
+                and refund_yn = 'N'
+            	group by year, month
             ) x
             where x.year = '{year}'
             order by month desc;
-        '''.format(year=year)
+        '''.format(year=year, myRec=myRec)
         cur.execute(query)
         sums = cur.fetchall()
+
+        query = '''
+            select IFNULL(amount_free, 0) as amount_free
+            from (
+            	select DATE_FORMAT(x.accept_date, "%Y") as year, IFNULL(sum(krw), 0) as amount_free
+            	from tbl_send_history x
+            	join tbl_user y
+            	on x.user_id = y.id
+            	where y.rec = 'hackx3'
+            	and x.status = 'A'
+            	group by year
+            ) x
+            where x.year = '2019';
+        '''.format(year=year, myRec=myRec)
+        cur.execute(query)
+        free_sums = cur.fetchall()
 
         amount_krw = sums[0][0]
         amount_usd = sums[0][1]
         amount_cny = sums[0][2]
+        amount_free = free_sums[0][0]
 
     return JsonResponse({
         'result': rows,
         'amount_krw': amount_krw,
         'amount_usd': amount_usd,
         'amount_cny': amount_cny,
+        'amount_free': amount_free
     })
