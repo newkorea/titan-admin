@@ -420,7 +420,7 @@ def file_upload(file, gname, gid):
             save_size   = save_size,
             save_path   = save_path,
             regist_id   = None,
-            regist_date = datetime.now(),
+            regist_date = datetime.datetime.now(),
             delete_yn   = 'N',
             delete_date = None
         )
@@ -501,7 +501,7 @@ def download_upload(file, flag):
         tdm.client_real_size = real_size
         tdm.client_save_size = save_size
         tdm.client_save_path = save_path
-        tdm.client_modify_date = datetime.now()
+        tdm.client_modify_date = datetime.datetime.now()
         tdm.save()
         print('INFO -> client save success')
 
@@ -510,6 +510,6 @@ def download_upload(file, flag):
         tdm.image_real_size = real_size
         tdm.image_save_size = save_size
         tdm.image_save_path = save_path
-        tdm.image_modify_date = datetime.now()
+        tdm.image_modify_date = datetime.datetime.now()
         tdm.save()
         print('INFO -> image save success')

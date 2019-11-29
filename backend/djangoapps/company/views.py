@@ -29,7 +29,7 @@ def api_create_notice(request):
         content_en = content_en,
         content_zh = content_zh,
         content_ja = content_ja,
-        regist_date = datetime.now(),
+        regist_date = datetime.datetime.now(),
         delete_yn = 'N'
     ).save()
     return JsonResponse({'result': '200'})
@@ -152,19 +152,19 @@ def api_company_edit(request):
 
     if lang == 'en':
         t1.en = sum
-        t1.en_modify_date = datetime.now()
+        t1.en_modify_date = datetime.datetime.now()
         t1.save()
     elif lang == 'ko':
         t1.ko = sum
-        t1.ko_modify_date = datetime.now()
+        t1.ko_modify_date = datetime.datetime.now()
         t1.save()
     elif lang == 'ja':
         t1.ja = sum
-        t1.ja_modify_date = datetime.now()
+        t1.ja_modify_date = datetime.datetime.now()
         t1.save()
     elif lang == 'zh':
         t1.zh = sum
-        t1.zh_modify_date = datetime.now()
+        t1.zh_modify_date = datetime.datetime.now()
         t1.save()
     return JsonResponse({'result': '200'})
 

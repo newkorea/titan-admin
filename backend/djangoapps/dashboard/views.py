@@ -15,7 +15,7 @@ def dashboard(request):
     now_year = datetime.today().year
     now_month = datetime.today().month
     now_day = datetime.today().day
-    now = datetime.now().strftime('%Y-%m-%d')
+    now = datetime.datetime.now().strftime('%Y-%m-%d')
 
 
     # 2019.11.14 이용훈 쿼리작업

@@ -159,7 +159,7 @@ def api_support_deleteItem(request):
     id = request.POST.get('id')
     ts = TblSupport.objects.get(id=id)
     ts.delete_yn = 'Y'
-    ts.delete_date = datetime.now()
+    ts.delete_date = datetime.datetime.now()
     ts.save()
     return JsonResponse({'result': 200})
 
@@ -200,6 +200,6 @@ def api_support_sendItem(request):
     ts.send_yn = 'Y'
     ts.send_title = subject
     ts.send_content = content
-    ts.send_date = datetime.now()
+    ts.send_date = datetime.datetime.now()
     ts.save()
     return JsonResponse({'result': 200})
