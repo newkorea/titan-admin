@@ -8,7 +8,7 @@ from backend.djangoapps.common.views import *
 from backend.models import *
 from backend.models_radius import *
 import datetime
-
+from django.db import transaction
 
 # 서비스 시간 페이지 렌더링
 @allow_cs
@@ -37,29 +37,34 @@ def api_service_update(request):
     u1 = TblUser.objects.get(id = seq)
     ue1 = u1.email
 
-    after = datetime.datetime.strptime(mody_time, '%Y-%m-%d %H:%M:%S')
-    after_rad= enc_radius_time(after)
     try:
-        rce = Radcheck.objects.using('radius').get(
-            username = ue1,
-            attribute = 'Expiration'
-        )
-        prev_rad = rce.value
-        prev = dec_radius_time(prev_rad)
-        time_diff = after - prev
-        st1 = TblServiceTime(
-            user_id = seq,
-            prev_time = prev,
-            prev_time_rad = prev_rad,
-            after_time = after,
-            after_time_rad = after_rad,
-            diff = time_diff,
-            regist_date = datetime.datetime.now()
-            )
-        rce.value = after_rad
-        rce.save(using='radius')
-        st1.save()
+        after = datetime.datetime.strptime(mody_time, '%Y-%m-%d %H:%M:%S')
+        after_rad= enc_radius_time(after)
+    except BaseException:
+        return JsonResponse({'result': '300'}) # 시간 형식 안맞음
 
+    try:
+        with transaction.atomic():
+            rce = Radcheck.objects.using('radius').get(
+                username = ue1,
+                attribute = 'Expiration'
+            )
+            prev_rad = rce.value
+            prev = dec_radius_time(prev_rad)
+            time_dif = after - prev
+            time_diff = round((time_dif).total_seconds()/60)
+            st1 = TblServiceTime(
+                user_id = seq,
+                prev_time = prev,
+                prev_time_rad = prev_rad,
+                after_time = after,
+                after_time_rad = after_rad,
+                diff = time_diff,
+                regist_date = datetime.datetime.now()
+                )
+            rce.value = after_rad
+            rce.save(using='radius')
+            st1.save()
 
         return JsonResponse({'result': '200'})
     except BaseException as p:
@@ -90,7 +95,7 @@ def api_service_time_read(request):
     #    sql += " and id = '" + id + "'"
 
     # order by 컬럼 생성
-    column_name = ['id', 'user_id', 'prev_time', 'prev_time_rad', 'after_time', 'after_time_rad', 'regist_date']
+    column_name = ['id', 'user_id', 'prev_time', 'prev_time_rad', 'after_time', 'after_time_rad', 'diff', 'regist_date']
 
     # 디버그 로깅
     print('DEBUG -> start : ', start)
@@ -106,7 +111,7 @@ def api_service_time_read(request):
                 from (
                 	select @rnum := @rnum + 1 AS rnum, x.*
                 	from (
-                        select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, a.regist_date
+                        select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date
                         from tbl_service_time a
                         join tbl_user b
                         on a.user_id = b.id
@@ -127,11 +132,11 @@ def api_service_time_read(request):
     # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-                    select id, email, prev_time, prev_time_rad, after_time, after_time_rad, DATE_FORMAT(regist_date, '%Y-%m-%d %H:%i') as regist_date
+                    select id, email, prev_time, prev_time_rad, after_time, after_time_rad, diff, DATE_FORMAT(regist_date, '%Y-%m-%d %H:%i') as regist_date
                     from (
                         select x.*
                         from (
-                                select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, a.regist_date
+                                select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date
                                 from tbl_service_time a
                                 join tbl_user b
                                 on a.user_id = b.id

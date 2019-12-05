@@ -213,15 +213,6 @@ function click_service(user_seq){
           if(call['value'] == true){
             var mody_time = $("input[type=text][id=swal_time]").val();
             console.log('mod', mody_time.length);
-            if(mody_time.length != 19){
-              Swal.fire({
-                  title: '알림',
-                  text: '시간 형식을 맞게 입력해주세요.',
-                  type: 'warning',
-                  confirmButtonColor: swalColor('warning')
-              })
-              return 0;
-            }
             $.post("/api_service_update", {
                 csrfmiddlewaretoken: csrf_token,
                 mody_time: mody_time,
@@ -239,6 +230,15 @@ function click_service(user_seq){
                             datatable.ajax.reload();
                         }
                     })
+                }
+                else if (data.result == '300') {
+                    Swal.fire({
+                        title: '알림',
+                        text: '시간 형식이 맞지 않습니다.',
+                        type: 'warning',
+                        confirmButtonColor: swalColor('warning')
+                    })
+                    return 0
                 }
                 else{
                   Swal.fire({

@@ -32,6 +32,7 @@ var datatable = $('#user-inform').DataTable({
       {data: "prev_time_rad"},
       {data: "after_time"},
       {data: "after_time_rad"},
+      {data: "diff"},
       {data: "regist_date"}
   ],
   columnDefs: [
@@ -81,9 +82,29 @@ var datatable = $('#user-inform').DataTable({
         targets: 6,
         visible: true,
         render: function (data) {
-          return data;
+          console.log('diff_data', data);
+          if (data < 0){
+            data = Math.abs(data)
+            var hour = Math.round(data / 60)
+            var minutes = data % 60
+            var time = '-' + hour + '시간 ' + minutes + '분'
+            return time;
+          }
+          else{
+            var hour = Math.round(data / 60)
+            var minutes = data % 60
+            var time = hour + '시간 ' + minutes + '분'
+            return time;
+          }
         }
       },
+      {
+        targets: 7,
+        visible: true,
+        render: function (data) {
+          return data;
+        }
+      }
   ],
   language: {
       lengthMenu: "Display _MENU_ records per page",
