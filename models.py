@@ -191,19 +191,6 @@ class TblCodeGroup(models.Model):
         managed = False
         db_table = 'tbl_code_group'
 
-class TblServiceTime(models.Model):
-    user_id = models.IntegerField()
-    prev_time = models.CharField(max_length=255, blank=True, null=True)
-    prev_time_rad = models.CharField(max_length=255, blank=True, null=True)
-    after_time = models.CharField(max_length=255, blank=True, null=True)
-    after_time_rad = models.CharField(max_length=255, blank=True, null=True)
-    diff = models.CharField(max_length=255, blank=True, null=True)
-    regist_date = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'tbl_service_time'
-        
 
 class TblCompanyManage(models.Model):
     type = models.CharField(primary_key=True, max_length=10)
@@ -379,6 +366,20 @@ class TblSendHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_send_history'
+
+
+class TblServiceTime(models.Model):
+    user_id = models.IntegerField()
+    prev_time = models.CharField(max_length=255, blank=True, null=True)
+    prev_time_rad = models.CharField(max_length=255, blank=True, null=True)
+    after_time = models.CharField(max_length=255, blank=True, null=True)
+    after_time_rad = models.CharField(max_length=255, blank=True, null=True)
+    diff = models.CharField(max_length=255, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_service_time'
 
 
 class TblSupport(models.Model):

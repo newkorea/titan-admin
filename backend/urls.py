@@ -14,6 +14,7 @@ from .djangoapps.user import views as UserViews
 from .djangoapps.price import views as PriceViews
 from .djangoapps.dealer import views as DealerViews
 from .djangoapps.vpn import views as VpnViews
+from .djangoapps.service import views as ServiceViews
 
 
 urlpatterns = [
@@ -114,6 +115,12 @@ urlpatterns = [
     path('api_support_getSelectContent', SupportViews.api_support_getSelectContent, name='api_support_getSelectContent'),   # [api] 상세 내용 로드
     path('api_support_deleteItem', SupportViews.api_support_deleteItem, name='api_support_deleteItem'),                     # [api] 문의 삭제
     path('api_support_sendItem', SupportViews.api_support_sendItem, name='api_support_sendItem'),                           # [api] 문의 답변
+
+    # 서비스 시간 관리
+    path('service', ServiceViews.service, name='service'),
+    path('api_service_read', ServiceViews.api_service_read, name='api_service_read'),
+    path('api_service_time_read', ServiceViews.api_service_time_read, name='api_service_time_read'),
+    path('api_service_update', ServiceViews.api_service_update, name='api_service_update'),
 
     #VPN 통계
     #2019-11-14 이용훈 작업

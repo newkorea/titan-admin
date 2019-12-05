@@ -98,13 +98,30 @@
 									<!-- 펼침 메뉴 시작 -->
 									% if request.session['is_staff'] in [1, 2]:
 									<li>
-										<a href="#" onclick="location.href='/user'">
-											<span class="nav-icon">
-												<i class="fa fa-group"></i>
-											</span>
-											<span class="nav-text">회원관리</span>
-										</a>
-									</li>
+		                <a>
+		                  <span class="nav-caret">
+		                    <i class="fa fa-caret-down"></i>
+		                  </span>
+		                  <span class="nav-icon">
+	                    	<i class="fa fa-group"></i>
+		                  </span>
+		                  <span class="nav-text">회원관리</span>
+		                </a>
+		                <ul class="nav-sub">
+											<li>
+		                    <a href="#" onclick="location.href='/user'">
+		                      <span class="nav-text">유저관리</span>
+		                    </a>
+		                  </li>
+											<li>
+		                    <a href="#" onclick="location.href='/service'">
+		                      <span class="nav-text">서비스 내역</span>
+		                    </a>
+		                  </li>
+		                </ul>
+		              </li>
+
+
 									% endif
 									<!-- 펼침 메뉴 끝 -->
 

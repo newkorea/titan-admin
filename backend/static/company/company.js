@@ -54,7 +54,6 @@ function click_edit(){
         html:
             '<div style="font-size: 14px;">회사소개의 수정은 시스템의 중대한 영향을 미칩니다</div>'+
             '<div style="font-size: 14px;">정말로 저장하시겠습니까?</div>',
-        type: 'error',
         confirmButtonColor: swalColor('error'),
         showCancelButton: true,
         confirmButtonText: '저장',

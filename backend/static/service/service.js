@@ -15,65 +15,24 @@ var datatable = $('#user-inform').DataTable({
   serverSide: true,
   drawCallback: function () {},
   ajax: {
-      url: "/api_user_read",
+      url: "/api_service_time_read",
       type: "POST",
       dataType: "json",
       data: {
           csrfmiddlewaretoken: csrf_token,
           id: function() { return $('#filter_id').val() },
-          email: function() { return $('#filter_email').val() },
-          username: function() { return $('#filter_name').val() },
-          gender: function() {
-              if($('#filter_gender option:selected').text() == "선택하세요") {
-                  return '';
-              }
-              else
-                  return $('#filter_gender').val();
-          },
-          delete: function() {
-              if($('#filter_delete option:selected').text() == "선택하세요") {
-                  return '';
-              }
-              else
-                  return $('#filter_delete').val();
-          },
-          black: function() {
-              if($('#filter_black option:selected').text() == "선택하세요") {
-                  return '';
-              }
-              else
-                  return $('#filter_black').val();
-          },
-          active: function() {
-              if($('#filter_active option:selected').text() == "선택하세요") {
-                  return '';
-              }
-              else
-                  return $('#filter_active').val();
-          },
-          staff: function() {
-              if($('#filter_staff option:selected').text() == "선택하세요") {
-                  return '';
-              }
-              else
-                  return $('#filter_staff').val();
-          },
+          regist_date_start: function() { return $('#filter_regist_start').val() },
+          regist_date_end: function() { return $('#filter_regist_end').val() },
       },
   },
   columns: [
       {data: "id"},
       {data: "email"},
-      {data: "username"},
-      {data: "gender"},
-      {data: "birth_date"},
-      {data: "sns"},
-      {data: "phone"},
-      {data: "delete_yn"},
-      {data: "black_yn"},
-      {data: "is_active"},
-      {data: "is_staff"},
-      {data: "id"},
-      {data: "id"}
+      {data: "prev_time"},
+      {data: "prev_time_rad"},
+      {data: "after_time"},
+      {data: "after_time_rad"},
+      {data: "regist_date"}
   ],
   columnDefs: [
       {
@@ -125,50 +84,6 @@ var datatable = $('#user-inform').DataTable({
           return data;
         }
       },
-      {
-        targets: 7,
-        visible: true,
-        render: function (data) {
-          return data;
-        }
-      },
-      {
-        targets: 8,
-        visible: true,
-        render: function (data) {
-          return data;
-        }
-      },
-      {
-        targets: 9,
-        visible: true,
-        render: function (data) {
-          return data;
-        }
-      },
-      {
-        targets: 10,
-        visible: true,
-        render: function (data) {
-          return data;
-        }
-      },
-      {
-        targets: 11,
-        visible: true,
-        orderable: false,
-        render: function (data) {
-          return '<button onclick="callInnerView('+ data +')" class="btn btn-fw warn">상세</button>';
-        }
-      },
-      {
-        targets: 12,
-        visible: true,
-        orderable: false,
-        render: function (data) {
-          return '<button onclick="click_service('+ data +')" class="btn btn-fw warn">서비스</button>';
-        }
-      }
   ],
   language: {
       lengthMenu: "Display _MENU_ records per page",
