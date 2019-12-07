@@ -88,9 +88,9 @@ def api_service_time_read(request):
     if id != '':
         sql += " and b.email = '" + id + "'"
     if regist_date_start != '':
-        sql += " and prev_time >= '" + regist_date_start + "'"
+        sql += " and a.regist_date >= '" + regist_date_start + "'"
     if regist_date_end != '':
-        sql += " and prev_time <= '" + regist_date_end + "'"
+        sql += " and a.regist_date <= '" + regist_date_end + "'"
     #if id != '':
     #    sql += " and id = '" + id + "'"
 
