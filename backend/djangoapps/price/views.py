@@ -446,7 +446,8 @@ def api_read_ah(request):
                     accept,
                     DATE_FORMAT(accept_date, "%Y-%m-%d %H:%i:%S") as accept_date,
                     refund,
-                    DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date
+                    DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
+                    type
             from (
             	select @rnum := @rnum + 1 AS rnum, x.*
             	from (
@@ -463,7 +464,8 @@ def api_read_ah(request):
                             concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as accept,
                             x.accept_date,
                             concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
-                            x.refund_date
+                            x.refund_date,
+                            x.type
             		from tbl_send_history x
             		join tbl_user y
             		on x.user_id = y.id

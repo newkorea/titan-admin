@@ -233,6 +233,7 @@
           <th>승인시간</th>
           <th>환불</th>
           <th>환불시간</th>
+          <th>요청구분</th>
         </tr>
       </thead>
       <tbody>
@@ -319,6 +320,7 @@
           {data: "accept_date"},
           {data: "refund"},
           {data: "refund_date"},
+          {data: "type"},
       ],
       columnDefs: [
           {
@@ -465,6 +467,20 @@
             orderable: false,
             render: function (data) {
               return data;
+            }
+          },
+          {
+            targets: 14,
+            visible: true,
+            orderable: false,
+            render: function (data) {
+              if (data == 'M') {
+                return '무통장';
+              } else if (data == 'W') {
+                return '위쳇페이';
+              } else {
+                return '';
+              }
             }
           }
       ],
