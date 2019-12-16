@@ -233,3 +233,217 @@ class TblFile(models.Model):
     real_name = models.CharField(max_length=255)
     save_name = models.CharField(max_length=255)
     ext = models.CharField(max_length=255)
+    real_size = models.IntegerField()
+    save_size = models.CharField(max_length=255)
+    save_path = models.CharField(max_length=255)
+    regist_id = models.CharField(max_length=255, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_file'
+
+
+class TblMenuManage(models.Model):
+    type = models.CharField(max_length=100)
+    use_yn = models.CharField(max_length=10)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_menu_manage'
+
+
+class TblNotice(models.Model):
+    title_en = models.CharField(max_length=255, blank=True, null=True)
+    title_ko = models.CharField(max_length=255, blank=True, null=True)
+    title_ja = models.CharField(max_length=255, blank=True, null=True)
+    title_zh = models.CharField(max_length=255, blank=True, null=True)
+    content_en = models.TextField(blank=True, null=True)
+    content_ko = models.TextField(blank=True, null=True)
+    content_ja = models.TextField(blank=True, null=True)
+    content_zh = models.TextField(blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_notice'
+
+
+class TblPolicyManage(models.Model):
+    type = models.CharField(primary_key=True, max_length=10)
+    en = models.TextField(blank=True, null=True)
+    ko = models.TextField(blank=True, null=True)
+    ja = models.TextField(blank=True, null=True)
+    zh = models.TextField(blank=True, null=True)
+    en_modify_date = models.DateTimeField(blank=True, null=True)
+    ko_modify_date = models.DateTimeField(blank=True, null=True)
+    ja_modify_date = models.DateTimeField(blank=True, null=True)
+    zh_modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_policy_manage'
+
+
+class TblPrice(models.Model):
+    type_session = models.CharField(max_length=100, blank=True, null=True)
+    type_month = models.CharField(max_length=100, blank=True, null=True)
+    item_price = models.CharField(max_length=100, blank=True, null=True)
+    item_price_usd = models.CharField(max_length=100, blank=True, null=True)
+    item_price_jpy = models.CharField(max_length=100, blank=True, null=True)
+    item_price_cny = models.CharField(max_length=100, blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    modify_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_price'
+
+
+class TblPriceHistory(models.Model):
+    tid = models.CharField(max_length=255, blank=True, null=True)
+    user_id = models.IntegerField()
+    pgcode = models.CharField(max_length=255, blank=True, null=True)
+    product_name = models.CharField(max_length=255, blank=True, null=True)
+    session = models.IntegerField(blank=True, null=True)
+    month_type = models.IntegerField(blank=True, null=True)
+    krw = models.CharField(max_length=100, blank=True, null=True)
+    usd = models.CharField(max_length=100, blank=True, null=True)
+    jpy = models.CharField(max_length=100, blank=True, null=True)
+    cny = models.CharField(max_length=100, blank=True, null=True)
+    taxfree_amount = models.IntegerField(blank=True, null=True)
+    tax_amount = models.IntegerField(blank=True, null=True)
+    autopay_flag = models.CharField(max_length=10, blank=True, null=True)
+    billkey = models.CharField(max_length=255, blank=True, null=True)
+    refund_yn = models.CharField(max_length=10, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    refund_date = models.DateTimeField(blank=True, null=True)
+    auto_end_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_price_history'
+
+
+class TblReview(models.Model):
+    language = models.CharField(max_length=10)
+    star = models.IntegerField()
+    content = models.CharField(max_length=1000)
+    username = models.CharField(max_length=200)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    regist_id = models.IntegerField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    modify_id = models.IntegerField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_review'
+
+
+class TblSendHistory(models.Model):
+    user_id = models.IntegerField()
+    product_name = models.CharField(max_length=255, blank=True, null=True)
+    session = models.IntegerField(blank=True, null=True)
+    month_type = models.IntegerField(blank=True, null=True)
+    krw = models.CharField(max_length=100, blank=True, null=True)
+    usd = models.CharField(max_length=100, blank=True, null=True)
+    jpy = models.CharField(max_length=100, blank=True, null=True)
+    cny = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=10, blank=True, null=True)
+    type = models.CharField(max_length=10, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    accept_date = models.DateTimeField(blank=True, null=True)
+    cancel_date = models.DateTimeField(blank=True, null=True)
+    refund_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_send_history'
+
+
+class TblServiceTime(models.Model):
+    user_id = models.IntegerField()
+    prev_time = models.CharField(max_length=255, blank=True, null=True)
+    prev_time_rad = models.CharField(max_length=255, blank=True, null=True)
+    after_time = models.CharField(max_length=255, blank=True, null=True)
+    after_time_rad = models.CharField(max_length=255, blank=True, null=True)
+    diff = models.CharField(max_length=255, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_service_time'
+
+
+class TblSupport(models.Model):
+    email = models.CharField(max_length=255, blank=True, null=True)
+    main_type = models.CharField(max_length=30, blank=True, null=True)
+    sub_type = models.CharField(max_length=10, blank=True, null=True)
+    title = models.CharField(max_length=1000, blank=True, null=True)
+    content = models.TextField(blank=True, null=True)
+    regist_ip = models.CharField(max_length=255, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    view_date = models.DateTimeField(blank=True, null=True)
+    send_title = models.CharField(max_length=100, blank=True, null=True)
+    send_content = models.TextField(blank=True, null=True)
+    send_yn = models.CharField(max_length=10, blank=True, null=True)
+    send_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_support'
+
+
+class TblUser(models.Model):
+    email = models.CharField(unique=True, max_length=100)
+    password = models.CharField(max_length=100)
+    username = models.CharField(max_length=100)
+    phone = models.CharField(max_length=100)
+    phone_country = models.CharField(max_length=100)
+    gender = models.CharField(max_length=1, blank=True, null=True)
+    birth_date = models.CharField(max_length=8, blank=True, null=True)
+    sns_code = models.CharField(max_length=100, blank=True, null=True)
+    sns_name = models.CharField(max_length=100, blank=True, null=True)
+    rec = models.CharField(max_length=100, blank=True, null=True)
+    regist_rec = models.CharField(max_length=100, blank=True, null=True)
+    regist_ip = models.CharField(max_length=100, blank=True, null=True)
+    regist_date = models.DateTimeField()
+    modify_date = models.DateTimeField(blank=True, null=True)
+    is_active = models.IntegerField(blank=True, null=True)
+    is_staff = models.IntegerField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=1, blank=True, null=True)
+    black_yn = models.CharField(max_length=1, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_user'
+
+
+class TblUserLogin(models.Model):
+    user_id = models.IntegerField(unique=True)
+    attempt = models.IntegerField(blank=True, null=True)
+    login_ip = models.CharField(max_length=100, blank=True, null=True)
+    login_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_user_login'
+
+
+class TblWindowsVersion(models.Model):
+    ver_code = models.CharField(max_length=200, blank=True, null=True)
+    remark = models.CharField(max_length=300, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_windows_version'
