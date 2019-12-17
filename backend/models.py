@@ -376,6 +376,7 @@ class TblServiceTime(models.Model):
     after_time = models.CharField(max_length=255, blank=True, null=True)
     after_time_rad = models.CharField(max_length=255, blank=True, null=True)
     diff = models.CharField(max_length=255, blank=True, null=True)
+    reason = models.CharField(max_length=1000, blank=True, null=True)
     regist_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:

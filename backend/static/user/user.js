@@ -73,6 +73,7 @@ var datatable = $('#user-inform').DataTable({
       {data: "is_active"},
       {data: "is_staff"},
       {data: "id"},
+      {data: "id"},
       {data: "id"}
   ],
   columnDefs: [
@@ -158,7 +159,7 @@ var datatable = $('#user-inform').DataTable({
         visible: true,
         orderable: false,
         render: function (data) {
-          return '<button onclick="callInnerView('+ data +')" class="btn btn-fw warn">상세</button>';
+          return '<button onclick="callInnerView('+ data +')" class="btn btn-outline b-primary text-primary">상세</button>';
         }
       },
       {
@@ -166,7 +167,15 @@ var datatable = $('#user-inform').DataTable({
         visible: true,
         orderable: false,
         render: function (data) {
-          return '<button onclick="click_service('+ data +')" class="btn btn-fw warn">서비스</button>';
+          return '<button onclick="click_service('+ data +')" class="btn btn-outline b-info text-info">서비스</button>';
+        }
+      },
+      {
+        targets: 13,
+        visible: true,
+        orderable: false,
+        render: function (data) {
+          return '<button onclick="click_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
         }
       }
   ],
@@ -185,71 +194,140 @@ var datatable = $('#user-inform').DataTable({
   },
 });
 
-function click_service(user_seq){
-    $.post( "/api_service_read", {
+
+function click_session(user_seq){
+    $.post( "/api_session_read", {
         csrfmiddlewaretoken: csrf_token,
         user_seq: user_seq,
     }).done(function (data) {
         swal.fire({
-            title: '서비스 시간 적용',
-            type: 'info',
+            title: '사용자 세션 수 변경',
             html:
                 '<form class="form-inline" style="margin-top: 20px;">' +
-                '<label class="swal-label"><span class="label-span">현재 적용시간</span></label>' +
-                '<input class="swal-control form-control" type="text" value="'+data.service_time+'" readonly></form>' +
+                  '<label class="swal-label"><span class="label-span">현재 사용자 세션</span></label>' +
+                  '<input class="swal-control form-control" type="text" value="'+data.result+'" readonly></form>' +
+                '</form>'+
                 '<form class="form-inline">' +
-                '<label class="swal-label"><span class="label-span">변경할 시간</span></label>' +
-                '<input class="swal-control form-control" type="text" id="swal_time" value="'+data.service_time+'"></form>',
+                  '<label class="swal-label"><span class="label-span">변경할 사용자 세션</span></label>' +
+                  '<select class="form-control" id="change_session">'+
+                    '<option value="1">1</option>'+
+                    '<option value="2">2</option>'+
+                  '</select>'+
+                '</form>'+
+                '<form class="form-inline">' +
+                  '<label class="swal-label"><span class="label-span">변경 사유</span></label>' +
+                  '<input class="swal-control form-control" type="text" id="change_reason_s">'+
+                '</form>',
             confirmButtonText: '수정',
             confirmButtonColor: swalColor('info'),
             cancelButtonText: '취소',
             showCloseButton: true,
             showCancelButton: true,
         }).then((call) => {
-          console.log('call -> ', call);
-          console.log('call/dismiss -> ', call['dismiss']);
-          console.log('call/value -> ', call['value']);
-
+          // confirmButton 클릭 시에 조건
           if(call['value'] == true){
-            var mody_time = $("input[type=text][id=swal_time]").val();
-            console.log('mod', mody_time.length);
-            $.post("/api_service_update", {
-                csrfmiddlewaretoken: csrf_token,
-                mody_time: mody_time,
-                user_seq: user_seq,
-            })
-            .done(function (data) {
-                if (data.result == '200') {
+              var change_session = $("#change_session").val();
+              var change_reason = $("#change_reason_s").val();
+              $.post("/api_session_update", {
+                  csrfmiddlewaretoken: csrf_token,
+                  user_seq: user_seq,
+                  change_session: change_session,
+                  change_reason: change_reason
+              })
+              .done(function (data) {
+                  if (data.result == '200') {
+                      Swal.fire({
+                          title: '알림',
+                          text: data.msg,
+                          type: 'success',
+                          confirmButtonColor: swalColor('success'),
+                      }).then(function (ok) {
+                          if (ok) {
+                              datatable.ajax.reload();
+                          }
+                      })
+                  }
+                  else{
                     Swal.fire({
                         title: '알림',
-                        text: '서비스 시간이 성공적으로 변경되었습니다.',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success'),
-                    }).then(function (ok) {
-                        if (ok) {
-                            datatable.ajax.reload();
-                        }
-                    })
-                }
-                else if (data.result == '300') {
-                    Swal.fire({
-                        title: '알림',
-                        text: '시간 형식이 맞지 않습니다.',
+                        text: data.msg,
                         type: 'warning',
                         confirmButtonColor: swalColor('warning')
                     })
-                    return 0
-                }
-                else{
-                  Swal.fire({
-                      title: '알림',
-                      text: '오류 발생 관리자에게 문의하세요.',
-                      type: 'warning',
-                      confirmButtonColor: swalColor('warning')
-                  })
-                  return 0;
-                }
-            })
+                    return false;
+                  }
+              })
+          }
+        })
+    })
+}
+
+
+function click_service(user_seq){
+    $.post( "/api_service_read", {
+        csrfmiddlewaretoken: csrf_token,
+        user_seq: user_seq,
+    }).done(function (data) {
+        swal.fire({
+            title: '서비스 시간 변경',
+            html:
+                '<form class="form-inline" style="margin-top: 20px;">' +
+                '<label class="swal-label"><span class="label-span">현재 사용자 시간</span></label>' +
+                '<input class="swal-control form-control" type="text" value="'+data.service_time+'" readonly></form>' +
+                '<form class="form-inline">' +
+                '<label class="swal-label"><span class="label-span">변경할 사용자 시간</span></label>' +
+                '<input class="swal-control form-control" type="text" id="mody_time" value="'+data.service_time+'"></form>'+
+                '<form class="form-inline">' +
+                '<label class="swal-label"><span class="label-span">변경 사유</span></label>' +
+                '<input class="swal-control form-control" type="text" id="change_reason"></form>',
+            confirmButtonText: '수정',
+            confirmButtonColor: swalColor('info'),
+            cancelButtonText: '취소',
+            showCloseButton: true,
+            showCancelButton: true,
+        }).then((call) => {
+          // confirmButton 클릭 시에 조건
+          if(call['value'] == true){
+              var mody_time = $("#mody_time").val();
+              var change_reason = $("#change_reason").val();
+              $.post("/api_service_update", {
+                  csrfmiddlewaretoken: csrf_token,
+                  mody_time: mody_time,
+                  user_seq: user_seq,
+                  change_reason: change_reason
+              })
+              .done(function (data) {
+                  if (data.result == '200') {
+                      Swal.fire({
+                          title: '알림',
+                          text: '서비스 시간이 성공적으로 변경되었습니다.',
+                          type: 'success',
+                          confirmButtonColor: swalColor('success'),
+                      }).then(function (ok) {
+                          if (ok) {
+                              datatable.ajax.reload();
+                          }
+                      })
+                  }
+                  else if (data.result == '300') {
+                      Swal.fire({
+                          title: '알림',
+                          text: '시간 형식이 맞지 않습니다.',
+                          type: 'warning',
+                          confirmButtonColor: swalColor('warning')
+                      })
+                      return 0
+                  }
+                  else{
+                    Swal.fire({
+                        title: '알림',
+                        text: '오류 발생 관리자에게 문의하세요.',
+                        type: 'warning',
+                        confirmButtonColor: swalColor('warning')
+                    })
+                    return 0;
+                  }
+              })
           }
         })
     })

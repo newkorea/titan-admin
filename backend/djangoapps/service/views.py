@@ -10,68 +10,127 @@ from backend.models_radius import *
 import datetime
 from django.db import transaction
 
+
+# 사용자 세션 업데이트
+def api_session_update(request):
+    change_session = request.POST.get('change_session')
+    change_reason = request.POST.get('change_reason')
+    user_seq = request.POST.get('user_seq')
+    user = TblUser.objects.get(id = user_seq)
+    email = user.email
+
+    print("change_session => ", change_session)
+    print("change_reason => ", change_reason)
+    print("user_seq => ", user_seq)
+
+    if change_session == '1' or change_session == '2':
+        try:
+            session = Radcheck.objects.using('radius').get(
+                username = email,
+                attribute = 'Simultaneous-Use')
+            prev_session = session.value
+            session.value = change_session
+            session.save()
+            after_session = session.value
+
+            st = TblServiceTime(
+                user_id = user_seq,
+                prev_time = prev_session,
+                prev_time_rad = '',
+                after_time = after_session,
+                after_time_rad = '',
+                diff = '세션변경',
+                reason = change_reason,
+                regist_date = datetime.datetime.now())
+            st.save()
+            return JsonResponse({'result': 200, 'msg': '세션이 정상적으로 변경되었습니다'})
+        except BaseException as err:
+            print("err => ", err)
+            return JsonResponse({'result': 500, 'msg': '디비에 데이터 값이 2개 이상입니다 [수정필요]'})
+    else:
+        return JsonResponse({'result': 300, 'msg': '유효하지 않은 변경 값입니다'})
+
+
+# 사용자 세션 불러오기
+def api_session_read(request):
+    user_seq = request.POST.get('user_seq')
+    user = TblUser.objects.get(id = user_seq)
+    email = user.email
+
+    try:
+        session = Radcheck.objects.using('radius').get(
+            username = email,
+            attribute = 'Simultaneous-Use').value
+    except BaseException:
+        session = 'ERROR'
+
+    return JsonResponse({'result': session})
+
+
 # 서비스 시간 페이지 렌더링
 @allow_cs
 def service(request):
-
-    context = {
-    }
+    context = {}
     return render(request, 'service/admin_service.html', context)
 
 
-
+# 서비스 시간 불러오기
 @allow_cs
 def api_service_read(request):
     seq = int(request.POST.get('user_seq'))
     u1 = TblUser.objects.get(id = seq)
     ue1 = u1.email
     service_time = my_radius_time(ue1, 'str')
-
-
     return JsonResponse({'service_time':service_time})
 
+
+# 서비스 시간 수정
 @allow_cs
 def api_service_update(request):
     mody_time = request.POST.get('mody_time')
-    seq = int(request.POST.get('user_seq'))
-    u1 = TblUser.objects.get(id = seq)
-    ue1 = u1.email
+    change_reason = request.POST.get('change_reason')
+    user_seq = request.POST.get('user_seq')
+    user = TblUser.objects.get(id = user_seq)
+    user_email = user.email
 
+    # 시간 유효성 체크
     try:
         after = datetime.datetime.strptime(mody_time, '%Y-%m-%d %H:%M:%S')
-        after_rad= enc_radius_time(after)
+        after_rad = enc_radius_time(after)
     except BaseException:
-        return JsonResponse({'result': '300'}) # 시간 형식 안맞음
+        return JsonResponse({'result': '300'})
 
+    # 서비스 적용 및 서비스 내역 기록
     try:
         with transaction.atomic():
             rce = Radcheck.objects.using('radius').get(
-                username = ue1,
+                username = user_email,
                 attribute = 'Expiration'
             )
             prev_rad = rce.value
             prev = dec_radius_time(prev_rad)
             time_dif = after - prev
             time_diff = round((time_dif).total_seconds()/60)
-            st1 = TblServiceTime(
-                user_id = seq,
+            st = TblServiceTime(
+                user_id = user_seq,
                 prev_time = prev,
                 prev_time_rad = prev_rad,
                 after_time = after,
                 after_time_rad = after_rad,
                 diff = time_diff,
+                reason = change_reason,
                 regist_date = datetime.datetime.now()
-                )
+            )
             rce.value = after_rad
             rce.save(using='radius')
-            st1.save()
-
+            st.save()
         return JsonResponse({'result': '200'})
     except BaseException as p:
         print(p)
         return JsonResponse({'result': '500'})
 
 
+# 서비스 시간 데이터테이블즈
 @allow_cs
 def api_service_time_read(request):
     start = int(request.POST.get('start'))
@@ -132,26 +191,33 @@ def api_service_time_read(request):
     # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-                    select id, email, prev_time, prev_time_rad, after_time, after_time_rad, diff, DATE_FORMAT(regist_date, '%Y-%m-%d %H:%i') as regist_date
-                    from (
-                        select x.*
-                        from (
-                                select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date
-                                from tbl_service_time a
-                                join tbl_user b
-                                on a.user_id = b.id
-                                {sql}
-                                order by {orderby_col} {orderby_opt}
-                                limit {start}, 10
-                        ) x
-                        JOIN ( SELECT @rnum := -1 ) AS r
-                    ) t1;
-            '''.format(
+            select  id,
+                    email,
+                    prev_time,
+                    prev_time_rad,
+                    after_time,
+                    after_time_rad,
+                    diff,
+                    reason,
+                    DATE_FORMAT(regist_date, '%Y-%m-%d %H:%i') as regist_date
+            from (
+                select x.*
+                from (
+                    select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date, a.reason
+                    from tbl_service_time a
+                    join tbl_user b
+                    on a.user_id = b.id
+                    {sql}
+                    order by {orderby_col} {orderby_opt}
+                    limit {start}, 10
+                ) x
+                JOIN ( SELECT @rnum := -1 ) AS r
+            ) t1;
+        '''.format(
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start,
-            sql = sql
-        )
+            sql = sql)
         print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = dictfetchall(cur)

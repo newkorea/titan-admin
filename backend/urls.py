@@ -121,6 +121,8 @@ urlpatterns = [
     path('api_service_read', ServiceViews.api_service_read, name='api_service_read'),
     path('api_service_time_read', ServiceViews.api_service_time_read, name='api_service_time_read'),
     path('api_service_update', ServiceViews.api_service_update, name='api_service_update'),
+    path('api_session_read', ServiceViews.api_session_read, name='api_session_read'),
+    path('api_session_update', ServiceViews.api_session_update, name='api_session_update'),
 
     #VPN 통계
     #2019-11-14 이용훈 작업
