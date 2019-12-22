@@ -23,6 +23,50 @@ from backend.djangoapps.common.payletter_global import PayletterGlobal
 from backend.djangoapps.common.paybox import Paybox
 
 
+# 무통장내역 등록
+def api_create_sh(request):
+    note_email = request.POST.get('note_email')
+    note_session = request.POST.get('note_session')
+    note_month = request.POST.get('note_month')
+    note_type = request.POST.get('note_type')
+
+    print("note_email -> ", note_email)
+    print("note_session -> ", note_session)
+    print("note_month -> ", note_month)
+    print("note_type -> ", note_type)
+
+    try:
+        user = TblUser.objects.get(email=note_email)
+    except BaseException as err:
+        print("err => ", err)
+        return JsonResponse({'result': '400', 'msg': '이메일을 찾을 수 없습니다'})
+
+    price = getProductPirce(note_session, note_month, 'KRW')
+    product_name = makeProductName(note_session, note_month)
+
+    try:
+        sh = TblSendHistory(
+            user_id = user.id,
+            product_name = product_name,
+            session = note_session,
+            month_type = note_month,
+            krw = price,
+            usd = None,
+            jpy = None,
+            cny = None,
+            status = 'R',
+            type = note_type,
+            regist_date = datetime.datetime.now(),
+            accept_date = None,
+            cancel_date = None,
+            refund_date = None)
+        sh.save()
+        return JsonResponse({'result': '200', 'msg': '정상적으로 처리되었습니다'})
+    except BaseException as err:
+        print("err =>", err)
+        return JsonResponse({'result': '500', 'msg': '처리 중 오류가 발생했습니다'})
+
+
 # 무통장내역 상태변경 (2019.11.24 11:22 점검완료)
 def api_set_status(request):
     id = request.POST.get('id')

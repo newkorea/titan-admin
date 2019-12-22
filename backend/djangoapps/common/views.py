@@ -122,12 +122,29 @@ def giveServiceTime(user_id, session, month_type):
         rcu.save(using='radius')
 
     # Radcheck의 time 변경 (merge 로직)
-    if month_type == '1':
-        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(30)
-    if month_type == '6':
-        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(180)
-    if month_type == '12':
-        add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(360)
+    ph = TblPriceHistory.objects.filter(user_id=user_id, refund_yn='N')
+    sh = TblSendHistory.objects.filter(user_id=user_id, status='A')
+    st = TblServiceTime.objects.filter(user_id=user_id)
+    if len(ph) == 0 and len(sh) == 0 and len(st) == 0:
+        my_time = my_radius_time(email, 'datetime')
+        if month_type == '1':
+            add_time = my_time + datetime.timedelta(30)
+        if month_type == '6':
+            add_time = my_time + datetime.timedelta(180)
+        if month_type == '12':
+            add_time = my_time + datetime.timedelta(360)
+    else:
+        if month_type == '1':
+            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(30)
+        if month_type == '6':
+            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(180)
+        if month_type == '12':
+            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(360)
+
+    print("###############################")
+    print("add_time => ", add_time)
+    print("###############################")
+
     radius_time = enc_radius_time(add_time)
     rce = Radcheck.objects.using('radius').filter(
         username = email,
@@ -197,6 +214,24 @@ def getProductPirce(session, month_type, type):
             type_month = month_type,
         ).item_price_cny
     return price
+
+
+# 세션과 개월을 입력받아 상품명 생성 (2019.09.10 09:44 점검완료)
+def makeProductName(session, month_type):
+    if session == '1':
+        if month_type == '1':
+            return settings.SESSION_MONTH_1_1
+        elif month_type == '6':
+            return settings.SESSION_MONTH_1_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_1_12
+    elif session == '2':
+        if month_type == '1':
+            return settings.SESSION_MONTH_1_1
+        elif month_type == '6':
+            return settings.SESSION_MONTH_2_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_2_12
 
 
 # 해당 이메일의 세션 수를 반환하는 함수 (2019.09.09 12:53 점검완료)

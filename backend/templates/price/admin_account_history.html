@@ -208,6 +208,10 @@
 
   <!-- 버튼 -->
   <div class='btn-store'>
+    <button class="btn btn-fw success" onclick="enroll_ready()">
+      <i class="fa fa-search mr5"></i>
+      등록하기
+    </button>
     <button class="btn btn-fw primary" onclick="click_search()">
       <i class="fa fa-search mr5"></i>
       검색하기
@@ -247,6 +251,74 @@
 <%block name="js">
 
 <script>
+    function enroll_ready(){
+      var csrf_token = $('#csrf_token').html();
+      Swal.fire({
+          title: '결제요청 등록',
+          html: '' +
+          '<div style="margin-top: 10px;">사용자이메일</div>'+
+          '<input type="text" class="form-control" id="note_email">'+
+          '<div style="margin-top: 10px;">세션</div>'+
+          '<select class="form-control" id="note_session">'+
+          '  <option value="1">1 세션</option>'+
+          '  <option value="2">2 세션</option>'+
+          '</select>'+
+          '<div style="margin-top: 10px;">개월수</div>'+
+          '<select class="form-control" id="note_month">'+
+          '  <option value="1">1 개월</option>'+
+          '  <option value="6">6 개월</option>'+
+          '  <option value="12">12 개월</option>'+
+          '</select>'+
+          '<div style="margin-top: 10px;">결제방식</div>'+
+          '<select class="form-control" id="note_type">'+
+          '  <option value="M">무통장</option>'+
+          '  <option value="W">위쳇페이</option>'+
+          '</select>',
+          confirmButtonColor: '#8938ff',
+          showCancelButton: true,
+          confirmButtonText: '등록',
+          cancelButtonText: "닫기"
+      }).then(function (result){
+          if (result.value) {
+              var note_email = $('#note_email').val();
+              var note_session = $('#note_session').val();
+              var note_month = $('#note_month').val();
+              var note_type = $('#note_type').val();
+
+              console.log("note_email -> ", note_email);
+              console.log("note_session -> ", note_session);
+              console.log("note_month -> ", note_month);
+              console.log("note_type -> ", note_type);
+
+              $.post("/api_create_sh", {
+                  csrfmiddlewaretoken: csrf_token,
+                  note_email: note_email,
+                  note_session: note_session,
+                  note_month: note_month,
+                  note_type: note_type,
+              })
+              .done(function (data) {
+                  if (data.result == 200) {
+                      Swal.fire({
+                          title: '알림',
+                          text: data.msg,
+                          type: 'success',
+                          confirmButtonColor: swalColor('success')
+                      });
+                      click_search();
+                  } else {
+                    Swal.fire({
+                        title: '알림',
+                        text: data.msg,
+                        type: 'error',
+                        confirmButtonColor: swalColor('error')
+                    });
+                  }
+              })
+          }
+      })
+    }
+
     function click_search(){
         datatable.ajax.reload();
         load_sum();

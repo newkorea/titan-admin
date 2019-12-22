@@ -22,6 +22,14 @@ UPLOAD_ROOT = BASE_DIR + '/upload'                      # 업로드 디렉토리
 REPLACE_ABS_FROM = '/home/ubuntu/project/titan'  # 파일 서브 디렉토리 변경 (FROM)
 REPLACE_ABS_TO = ''                                     # 파일 서브 디렉토리 변경 (TO)
 
+# 상품 이름 관리
+SESSION_MONTH_1_1   = 'TITAN NETWORKS 세션1 (1개월)'
+SESSION_MONTH_1_6   = 'TITAN NETWORKS 세션1 (6개월)'
+SESSION_MONTH_1_12  = 'TITAN NETWORKS 세션1 (12개월)'
+SESSION_MONTH_2_1   = 'TITAN NETWORKS 세션2 (1개월)'
+SESSION_MONTH_2_6   = 'TITAN NETWORKS 세션2 (6개월)'
+SESSION_MONTH_2_12  = 'TITAN NETWORKS 세션2 (12개월)'
+
 # 페이레터 모드 설정 ('LIVE' or 'TEST')
 PAYLETTER_MODE  = 'TEST'
 PAYBOX_MODE     = 'TEST'
