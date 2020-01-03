@@ -125,8 +125,9 @@ def giveServiceTime(user_id, session, month_type):
     ph = TblPriceHistory.objects.filter(user_id=user_id, refund_yn='N')
     sh = TblSendHistory.objects.filter(user_id=user_id, status='A')
     st = TblServiceTime.objects.filter(user_id=user_id)
-    if len(ph) == 0 and len(sh) == 0 and len(st) == 0:
-        my_time = my_radius_time(email, 'datetime')
+    my_time = my_radius_time(email, 'datetime')
+
+    if len(ph) == 0 and len(sh) == 0 and len(st) == 0 and (my_time > datetime.datetime.now()):
         if month_type == '1':
             add_time = my_time + datetime.timedelta(30)
         if month_type == '6':
