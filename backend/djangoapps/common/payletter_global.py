@@ -28,7 +28,10 @@ class PayletterGlobal:
 
         # 헤더생성
         unixtime = str(datetime.datetime.now().timestamp())[:10]
-        request_url_enc = 'https%3a%2f%2fdev-api.payletter.com%2fpayment%2f' + pgcode.lower() + '%2frefund'
+        if settings.PAYLETTER_MODE == 'TEST':
+            request_url_enc = 'https%3a%2f%2fdev-api.payletter.com%2fpayment%2f' + pgcode.lower() + '%2frefund'
+        elif settings.PAYLETTER_MODE == 'LIVE':
+            request_url_enc = 'https%3a%2f%2fapi.payletter.com%2fpayment%2f' + pgcode.lower() + '%2frefund'
         nonce = str(uuid.uuid4())
         request_content = 'storeid=' + self.storeid + '&paytoken=' + tid + '&currency=USD&amount=' + amount + '&pginfo=' + pgcode
         request_string = self.storeid + self.store_hashkey + 'POST' + request_url_enc + unixtime + nonce + request_content
