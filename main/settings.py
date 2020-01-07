@@ -8,7 +8,8 @@ ALLOWED_HOSTS = ['*']
 
 # 글로벌 변수 관리 영역
 DEBUG = True
-
+SESSION_COOKIE_AGE = 24 * 60 * 60                       # 세션 타임아웃 (sec)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True                  # 브라우저 닫을 시 세션 만료 (크롬 적용 불가)
 SMTP_HOST = 'smtp-relay.gmail.com'                      # SMTP 도메인
 SMTP_PORT = 25                                          # SMTP 포트
 SMTP_EMAIL = 'master@titanvpn.io'                       # SMTP 이메일
