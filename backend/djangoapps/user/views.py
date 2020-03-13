@@ -6,7 +6,7 @@ from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.models import *
-
+from django.db import transaction
 
 # 회원관리 페이지 렌더링 (2019.09.15 12:04 점검완료)
 @allow_cs
@@ -169,7 +169,7 @@ def api_user_read(request):
                 from (
                     select x.*
                     from (
-						select a.id, a.email, a.username, b.name as gender, a.birth_date, concat("(", a.sns_code, ") ", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
+						select a.id, a.email, a.username, '' as gender, a.birth_date, concat("(", a.sns_code, ") ", a.sns_name) as sns, concat("+", a.phone_country, " ", a.phone) as phone, c.name as delete_yn, d.name as black_yn, e.name as is_active, f.name as is_staff
                         from (
                             select  x.id,
                                     x.email,
@@ -197,8 +197,6 @@ def api_user_read(request):
                             order by {orderby_col} {orderby_opt}
                             limit {start}, 10
                         ) a
-                        join tbl_code_detail b
-						on a.gender = b.code
 						join tbl_code_detail c
 						on a.delete_yn = c.code
 						join tbl_code_detail d
