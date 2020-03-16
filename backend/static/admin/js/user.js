@@ -38,6 +38,9 @@ var datatable = $('#user-inform').DataTable({
       {data: "regist_date"},
       {data: "id"},
       {data: "id"},
+      {data: "id"},
+      {data: "id"},
+      {data: "id"},
       {data: "id"}
   ],
   columnDefs: [
@@ -112,7 +115,31 @@ var datatable = $('#user-inform').DataTable({
         orderable: false,
         render: function (data) {
           return '<button onclick="click_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
-        }
+        },
+      },
+      {
+        targets: 10,
+        visible: true,
+        orderable: false,
+        render: function (data) {
+          return '<button onclick="click_session('+ data +')" class="btn btn-outline b-warning text-warning">비번</button>';
+        },
+      },
+      {
+        targets: 11,
+        visible: true,
+        orderable: false,
+        render: function (data) {
+          return '<button onclick="click_session('+ data +')" class="btn btn-outline b-success text-success">활성</button>';
+        },
+      },
+      {
+        targets: 12,
+        visible: true,
+        orderable: false,
+        render: function (data) {
+          return '<button onclick="click_session('+ data +')" class="btn btn-outline b-danger text-danger">탈퇴</button>';
+        },
       }
   ],
   language: {
