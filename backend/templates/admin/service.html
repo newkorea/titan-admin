@@ -1,0 +1,63 @@
+<%inherit file="admin_frame.html"/>
+
+
+<%block name="css">
+<link rel="stylesheet" href="/static/admin/css/service.css">
+</%block>
+
+
+<%block name="title">서비스 시간 관리</%block>
+<%block name="subtitle">TITAN VPN에 가입한 회원들의 서비스 시간 변경 내역을 한눈에 볼 수 있습니다</%block>
+
+
+<%block name="content">
+<div class="user-container">
+  <!-- 검색필터 -->
+  <div class="user-filter">
+    <div class="form-group id-form flex1">
+      <label>이메일[=]</label>
+      <input class="form-control" id="filter_id">
+    </div>
+    <div class="form-group email-form flex1">
+      <label>등록일[>=]</label>
+      <input class="form-control" id="filter_regist_start" placeholder="2010-00-00 00:00:00">
+    </div>
+    <div class="form-group name-form flex1">
+      <label>등록일[<=]</label>
+      <input class="form-control" id="filter_regist_end" placeholder="2010-00-00 00:00:00">
+    </div>
+  </div>
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="click_search()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="user-inform" class="display table">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>이메일</th>
+          <th>변경 전 내역</th>
+          <th>변경 전 시간(rad)</th>
+          <th>변경 후 내역</th>
+          <th>변경 후 시간(rad)</th>
+          <th>내역</th>
+          <th>변경 사유</th>
+          <th>등록일</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+
+<%block name="js">
+<script src="/static/admin/js/service.js"></script>
+</%block>

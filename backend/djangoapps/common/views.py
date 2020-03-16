@@ -21,11 +21,76 @@ except:
     from HTMLParser import HTMLParser
 from backend.models_radius import Radcheck
 
-# 공통 테스트 함수 (2019.09.15 12:26 점검완료)
-def common_sample():
-    print("hello world")
+
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def login_check(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'id' in request.session:
+            pass
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_admin(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1]:
+                pass
+            else:
+                return redirect('/login')
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_cs(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1, 2]:
+                pass
+            else:
+                return redirect('/login')
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
+def allow_dealer(func):
+    def wrapper(request, *args, **kwargs):
+
+        if 'is_staff' in request.session:
+            if request.session['is_staff'] in [1, 3]:
+                pass
+            else:
+                return redirect('/login')
+        else:
+            return redirect('/login')
+
+        result = func(request, *args, **kwargs)
+        return result
+
+    return wrapper
+
+    
 # 요금 초기화 함수 (2019.11.14 14.33)
 def initServiceTime(user_id):
 
@@ -312,75 +377,6 @@ def dictfetchall(cursor):
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
-
-
-# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
-def login_check(func):
-    def wrapper(request, *args, **kwargs):
-
-        if 'id' in request.session:
-            pass
-        else:
-            return redirect('/login')
-
-        result = func(request, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
-# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
-def allow_admin(func):
-    def wrapper(request, *args, **kwargs):
-
-        if 'is_staff' in request.session:
-            if request.session['is_staff'] in [1]:
-                pass
-            else:
-                return redirect('/login')
-        else:
-            return redirect('/login')
-
-        result = func(request, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
-# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
-def allow_cs(func):
-    def wrapper(request, *args, **kwargs):
-
-        if 'is_staff' in request.session:
-            if request.session['is_staff'] in [1, 2]:
-                pass
-            else:
-                return redirect('/login')
-        else:
-            return redirect('/login')
-
-        result = func(request, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
-# 미들웨어 - 로그인 여부 확인 (2019.09.15 12:26 점검완료)
-def allow_dealer(func):
-    def wrapper(request, *args, **kwargs):
-
-        if 'is_staff' in request.session:
-            if request.session['is_staff'] in [1, 3]:
-                pass
-            else:
-                return redirect('/login')
-        else:
-            return redirect('/login')
-
-        result = func(request, *args, **kwargs)
-        return result
-
-    return wrapper
 
 
 # 리퀘스트에 들어온 아이피를 얻는 함수 (2019.09.15 12:26 점검완료)

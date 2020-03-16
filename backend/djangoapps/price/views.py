@@ -130,19 +130,19 @@ def api_read_bank(request):
 # 무통장내역 렌더링 (2019.11.24 11:22 점검완료)
 @allow_cs
 def account_history(request):
-    return render(request, 'price/admin_account_history.html')
+    return render(request, 'admin/price_bank.html')
 
 
 # 계좌관리 렌더링 (2019.11.24 11:22 점검완료)
 @allow_cs
 def account_setting(request):
-    return render(request, 'price/admin_account_setting.html')
+    return render(request, 'admin/price_account.html')
 
 
 # 결제관리 페이지 렌더링 (2019.09.21 13:56 점검완료)
 @allow_cs
 def price(request):
-    return render(request, 'price/admin_price.html')
+    return render(request, 'admin/price_payment.html')
 
 
 # 환불 API (2019.09.25 09:54 개발중)

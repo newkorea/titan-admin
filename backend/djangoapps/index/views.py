@@ -11,7 +11,7 @@ from backend.djangoapps.common.views import *
 @login_check
 def index(request):
     # 시스템 관리자 리다이렉트 설정
-    return redirect('/dashboard')
+    return redirect('/user')
     """
     if request.session['is_staff'] == 1:
         return redirect('/dashboard')

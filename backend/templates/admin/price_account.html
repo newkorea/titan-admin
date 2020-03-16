@@ -1,0 +1,90 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+<style>
+</style>
+</%block>
+
+<%block name="title">계좌관리</%block>
+<%block name="subtitle">사용자가 입금할 무통장 정보를 관리할 수 있습니다</%block>
+
+<%block name="content">
+<div>
+  <div class="form-group">
+    <label>입금주</label>
+    <input type="text" class="form-control" id="person_name" placeholder="(주) 타이탄 네트웍스">
+  </div>
+  <div class="form-group">
+    <label>은행 이름</label>
+    <input type="text" class="form-control" id="bank_name" placeholder="신한은행">
+  </div>
+  <div class="form-group">
+    <label>은행 계좌번호</label>
+    <input type="text" class="form-control" id="bank_number" placeholder="123-12515-1623">
+  </div>
+  <button class="btn btn-fw warn" onclick='update_bank()'>수정</button>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+  read_bank();
+
+  function read_bank(){
+    var csrf_token = $('#csrf_token').html();
+
+    $.post( "/api_read_bank", {
+      csrfmiddlewaretoken: csrf_token
+    })
+    .done(function( data ) {
+      if(data.result == 200){
+        var person_name = data.bank.person_name;
+        var bank_name = data.bank.bank_name;
+        var bank_number = data.bank.bank_number;
+        $('#person_name').val(person_name);
+        $('#bank_name').val(bank_name);
+        $('#bank_number').val(bank_number);
+      } else {
+        Swal.fire({
+            title: '알림',
+            text: '내용 불러오기 중 오류가 발생했습니다',
+            type: 'error',
+            confirmButtonColor: swalColor('error')
+        })
+      }
+    });
+  }
+
+  function update_bank(){
+    var csrf_token = $('#csrf_token').html();
+    var person_name = $('#person_name').val();
+    var bank_name = $('#bank_name').val();
+    var bank_number = $('#bank_number').val();
+
+    $.post( "/api_update_bank", {
+      csrfmiddlewaretoken: csrf_token,
+      person_name: person_name,
+      bank_name: bank_name,
+      bank_number: bank_number
+    })
+    .done(function( data ) {
+      if(data.result == 200){
+        read_bank();
+        Swal.fire({
+            title: '알림',
+            text: '성공적으로 수정이 완료되었습니다',
+            type: 'success',
+            confirmButtonColor: swalColor('success')
+        })
+      } else {
+        Swal.fire({
+            title: '알림',
+            text: '내용 불러오기 중 오류가 발생했습니다',
+            type: 'error',
+            confirmButtonColor: swalColor('error')
+        })
+      }
+    });
+  }
+</script>
+</%block>

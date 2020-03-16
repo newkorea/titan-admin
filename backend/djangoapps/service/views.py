@@ -71,7 +71,7 @@ def api_session_read(request):
 @allow_cs
 def service(request):
     context = {}
-    return render(request, 'service/admin_service.html', context)
+    return render(request, 'admin/service.html', context)
 
 
 # 서비스 시간 불러오기

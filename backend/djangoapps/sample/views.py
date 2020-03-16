@@ -26,7 +26,6 @@ def sample(request):
     context['sample_key'] = 'sample_val'
 
     print("-------------------------> DEBUG [s]")
-    common_sample()
     print(settings.TIME_ZONE)
     print("-------------------------> DEBUG [e]")
 
