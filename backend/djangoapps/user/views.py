@@ -10,7 +10,7 @@ from django.db import transaction
 
 
 # 회원관리 페이지 렌더링 (2020-03-16)
-@allow_cs
+@allow_admin
 def user(request):
     delete_list = TblCodeDetail.objects.filter(group_code='delete_yn')
     active_list = TblCodeDetail.objects.filter(group_code='is_active')
