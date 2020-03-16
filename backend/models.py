@@ -135,10 +135,23 @@ class TblAgent(models.Model):
     hostip = models.CharField(max_length=100)
     is_active = models.IntegerField()
     is_status = models.IntegerField()
+    pd_name = models.CharField(max_length=15, blank=True, null=True)
+    telecom = models.CharField(max_length=15, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'tbl_agent'
+
+
+class TblAllowIp(models.Model):
+    ip = models.CharField(primary_key=True, max_length=255)
+    reason = models.CharField(max_length=255)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_allow_ip'
 
 
 class TblAndroidVersion(models.Model):
@@ -227,6 +240,15 @@ class TblDownloadManage(models.Model):
         db_table = 'tbl_download_manage'
 
 
+class TblFakeEvent(models.Model):
+    fake_code = models.CharField(max_length=255)
+    fake_cnt = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_fake_event'
+
+
 class TblFile(models.Model):
     gname = models.CharField(max_length=255, blank=True, null=True)
     gid = models.CharField(max_length=255, blank=True, null=True)
@@ -273,6 +295,15 @@ class TblNotice(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_notice'
+
+
+class TblOsxVersion(models.Model):
+    ver_code = models.CharField(max_length=255, blank=True, null=True)
+    remark = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_osx_version'
 
 
 class TblPolicyManage(models.Model):

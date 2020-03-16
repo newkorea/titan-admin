@@ -18,20 +18,20 @@ from .djangoapps.service import views as ServiceViews
 
 
 urlpatterns = [
+    # [render] 샘플
+    path('sample', SampleViews.sample, name='sample'),
 
+    # [render] 로그인
+    path('login', LoginViews.login, name='login'),
 
-    # sample
-    path('sample', SampleViews.sample, name='sample'),                                  # [render] 샘플
+    # [api] 로그인
+    path('api_login', LoginViews.api_login, name='api_login'),
 
+    # [api] 로그아웃
+    path('api_logout', LoginViews.api_logout, name='api_logout'),
 
-    # 로그인
-    path('login', LoginViews.login, name='login'),                                      # [render] 로그인
-    path('api_login', LoginViews.api_login, name='api_login'),                          # [api] 로그인
-    path('api_logout', LoginViews.api_logout, name='api_logout'),                       # [api] 로그아웃
-
-
-    # 인덱스 리다이렉트 관리 ('/dashboard')
-    path('', IndexViews.index, name='index'),                                           # [redirect] 인덱스페이지 지정
+    # [redirect] 인덱스페이지 지정
+    path('', IndexViews.index, name='index'),
 
 
     # 정책관리

@@ -1,14 +1,14 @@
-<%include file="../admin_common/admin_head.html"/>
+<%include file="admin_head.html"/>
 
 
 <%block name="css">
-<link rel="stylesheet" href="/static/login/login.css">
+<link rel="stylesheet" href="/static/admin/css/login.css">
 </%block>
 
 
 <div class="login-container">
   <div class="common-title">
-    <img class="common-logo" src='/static/login/img/titan.png'>
+    <img class="common-logo" src='/static/admin/img/titan.png'>
     <div>TITAN Admin</div>
   </div>
   <div class="form-group">
@@ -24,12 +24,10 @@
   <div class="button">
     <button id="btn-Yes" class="btn btn-lg btn-block btn-login" onclick='adminLogin()'>로 그 인</button>
   </div>
-
-  <div class='nono'>일반사용자 계정으로 로그인 시 계정이 잠김상태가 되니 주의하세요</div>
 </div>
 
 
-<%include file="../admin_common/admin_jquery.html"/>
+<%include file="admin_jquery.html"/>
 <%block name="js">
-<script src="/static/login/login.js"></script>
+<script src="/static/admin/js/login.js"></script>
 </%block>

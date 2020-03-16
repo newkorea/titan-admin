@@ -16,19 +16,19 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from backend.models import *
 from backend.djangoapps.common.views import *
+from backend.djangoapps.common.swal import get_swal
 from django.utils import translation
 from django.conf import settings
 
 
-# 로그인 페이지 렌더링 (2019.09.15 10:21 점검완료)
+# 로그인 페이지 렌더링 (2020-03-16)
 def login(request):
-    return render(request, 'login/admin_login.html')
+    return render(request, 'admin/login.html')
 
 
-# 로그아웃 API (2019.09.15 10:21 점검완료)
+# 로그아웃 API (2020-03-16)
 @login_check
 def api_logout(request):
-
     if 'id' in request.session:
         del request.session['id']
     if 'email' in request.session:
@@ -37,11 +37,10 @@ def api_logout(request):
         del request.session['username']
     if 'is_staff' in request.session:
         del request.session['is_staff']
-
     return JsonResponse({'result': 200})
 
 
-# 로그인 API (2019.09.15 10:21 점검완료)
+# 로그인 API (2020-03-16)
 def api_login(request):
 
     login_email = request.POST.get('input_id')
@@ -53,18 +52,27 @@ def api_login(request):
     print('INFO -> login_password : ', login_password)
     print('INFO -> login_ip : ', login_ip)
 
+    # allow ip 체크
+    try:
+        allow_ip = TblAllowIp.objects.get(ip=login_ip)
+    except BaseException as err:
+        title, text = get_swal('NOT_ALLOW_IP')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
     # 입력 파라미터 공백 유효성 체크
     if login_email == '':
-        return JsonResponse({'result': 400})
+        title, text = get_swal('NULL_EMAIL')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
     elif login_password == '':
-        return JsonResponse({'result': 400})
+        title, text = get_swal('NULL_PASSWORD')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     # 아이디 존재 여부 확인
     try:
         u1 = TblUser.objects.get(email=login_email)
     except BaseException as err:
-        print('ERROR -> err : ', err)
-        return JsonResponse({'result': 600})
+        title, text = get_swal('INCORRECT_LOGIN')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     user_password = u1.password
     user_id = u1.id
@@ -73,29 +81,23 @@ def api_login(request):
     try:
         u2 = TblUserLogin.objects.get(user_id=user_id)
     except BaseException as err:
-        print('ERROR -> err : ', err)
-        return JsonResponse({'result': 601})
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     user_attempt = u2.attempt
     print('INFO -> user_attempt : ', user_attempt)
 
     # 비밀번호 시도 회수 초과 시 계정 잠금
     if user_attempt >= settings.LOGIN_FAIL_ATTEMPT:
-        return JsonResponse({'result': 300})
+        title, text = get_swal('OVER_LOGIN')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     match_result = matchHashedText(user_password, login_password)
     # 로그인 성공
     if match_result == True:
         try:
             with transaction.atomic():
-                # 일반 계정 접근 시
-                if u1.is_staff == 0:
-                    u2.attempt = 99999
-                    u2.save()
-                    print('INFO -> You have locked your account by trying to access the general account')
-                    return JsonResponse({'result': 700})
-
-                # 관리자 계정 정상 정급 시
+                # 관리자 계정 정상 접근 시
                 u1.login_ip = login_ip
                 u2.attempt = 0
                 u2.login_date = datetime.datetime.now()
@@ -108,8 +110,8 @@ def api_login(request):
                 print("INFO -> Login Success")
                 return JsonResponse({'result': 200})
         except BaseException as err:
-            print('ERROR -> err : ', err)
-            return JsonResponse({'result': 500})
+            title, text = get_swal('UNKNOWN_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
     # 로그인 실패
     else:
         try:
@@ -119,10 +121,8 @@ def api_login(request):
                 u2.login_date = datetime.datetime.now()
                 u1.save()
                 u2.save()
-                print("INFO -> Login Fail")
-                return JsonResponse({'result': 600})
+                title, text = get_swal('INCORRECT_LOGIN')
+                return JsonResponse({'result': 500, 'title': title, 'text': text})
         except BaseException as err:
-            print('ERROR -> err : ', err)
-            return JsonResponse({'result': 500})
-
-    return JsonResponse({'result': 200})
+            title, text = get_swal('UNKNOWN_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
