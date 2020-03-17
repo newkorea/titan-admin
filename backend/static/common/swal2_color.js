@@ -14,6 +14,9 @@ function swalColor(type){
     else if(type == 'question'){
         return '#87adbd';
     }
+    else if(type == 'base'){
+        return '#7e4aff';
+    }
     else{
         return '#333333';
     }

@@ -5,11 +5,12 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
+from backend.djangoapps.common.swal import get_swal
 from backend.models import *
 from django.db import transaction
 
 
-# 회원관리 페이지 렌더링 (2020-03-16)
+# (2020-03-16)
 @allow_admin
 def user(request):
     delete_list = TblCodeDetail.objects.filter(group_code='delete_yn')
@@ -23,9 +24,9 @@ def user(request):
     return render(request, 'admin/user.html', context)
 
 
-# 회원정보 로드 APi (2020-03-16)
+# (2020-03-16)
 @allow_admin
-def api_user_read(request):
+def api_read_user_datatables(request):
     # datatables 기본 파라미터
     start = int(request.POST.get('start'))
     length = int(request.POST.get('length'))
@@ -126,77 +127,118 @@ def api_user_read(request):
     return JsonResponse(returnData)
 
 
+# (2020-03-17)
+@allow_admin
+def api_read_user_detail(request):
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+    ret = {
+        'id': user.id,
+        'email': user.email,
+        'rec': user.rec,
+        'regist_rec': user.regist_rec,
+    }
+    return JsonResponse({'result': ret})
 
 
+# (2020-03-17)
+@allow_admin
+def api_read_user_service_time(request):
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+    service_time = my_radius_time(user.email, 'str')
+    return JsonResponse({'result': service_time})
 
 
+# (2020-03-17)
+@allow_admin
+def api_read_user_session(request):
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+    try:
+        session = Radcheck.objects.using('radius').get(username = user.email, attribute = 'Simultaneous-Use').value
+    except BaseException as err:
+        session = 'ERROR'
+    return JsonResponse({'result': session})
 
 
+# (2020-03-17)
+@allow_admin
+def api_update_user_service_time(request):
+    change_time = request.POST.get('change_time')
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+
+    # 시간 유효성 체크
+    try:
+        change_time = datetime.datetime.strptime(change_time, '%Y-%m-%d %H:%M:%S')
+        change_time_rad = enc_radius_time(change_time)
+    except BaseException as err:
+        title, text = get_swal('NOT_TIME_FORMAT')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 서비스 적용 및 서비스 내역 기록
+    try:
+        with transaction.atomic():
+            rce = Radcheck.objects.using('radius').get(
+                username = user.email,
+                attribute = 'Expiration'
+            )
+            prev_time_rad = rce.value
+            prev_time = dec_radius_time(prev_time_rad)
+            time_diff = change_time - prev_time
+            time_diff = round((time_diff).total_seconds()/60)
+            st = TblServiceTime(
+                user_id = user_id,
+                prev_time = prev_time,
+                prev_time_rad = prev_time_rad,
+                after_time = change_time,
+                after_time_rad = change_time_rad,
+                diff = time_diff,
+                reason = change_reason,
+                regist_date = datetime.datetime.now()
+            )
+            rce.value = change_time_rad
+            rce.save(using='radius')
+            st.save()
+        title, text = get_swal('SUCCESS_SERVICE_TIME')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 
+# (2020-03-17)
+@allow_admin
+def api_update_user_session(request):
+    change_session = request.POST.get('change_session')
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
 
-
-
-
-
-
-
-
-
-# 회원관리 상세 페이지 렌더링 (2019.09.15 12:04 점검완료)
-@allow_cs
-def api_user_detail(request):
-    seq = int(request.POST.get('seq'))
-    u1 = TblUser.objects.get(id = seq)
-    ul1 = TblUserLogin.objects.get(user_id = seq)
-    p_code = u1.phone_country
-    p_number = u1.phone
-    phone = '+' + p_code + ' ' + p_number
-    s_code = u1.sns_code
-    s_name = u1.sns_name
-    if s_code == None and s_name == None:
-        sns = ''
+    if change_session == '1' or change_session == '2':
+        try:
+            session = Radcheck.objects.using('radius').get(username = user.email, attribute = 'Simultaneous-Use')
+            prev_session = session.value
+            session.value = change_session
+            session.save()
+            after_session = session.value
+            st = TblServiceTime(
+                user_id = user_id,
+                prev_time = prev_session,
+                prev_time_rad = '',
+                after_time = after_session,
+                after_time_rad = '',
+                diff = '세션변경',
+                reason = change_reason,
+                regist_date = datetime.datetime.now())
+            st.save()
+            title, text = get_swal('SUCCESS_SESSION')
+            return JsonResponse({'result': 200, 'title': title, 'text': text})
+        except BaseException as err:
+            title, text = get_swal('UNKNOWN_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
     else:
-        sns = '({snsName}) {snsContent}'.format(
-            snsName=TblCodeDetail.objects.get(group_code='message', code=s_code).name,
-            snsContent=s_name)
-    list = []
-    sd = {}
-    sd['id'] = u1.id
-    sd['email'] = u1.email
-    sd['username'] = u1.username
-    sd['phone'] = phone
-    sd['gender'] = u1.gender
-    sd['birth_date'] = u1.birth_date
-    sd['sns'] = sns
-    sd['rec'] = u1.rec
-    sd['regist_rec'] = u1.regist_rec
-    sd['regist_ip'] = u1.regist_ip
-    sd['regist_date'] = u1.regist_date
-    sd['modify_date'] = u1.modify_date
-    sd['is_active'] = u1.is_active
-    sd['is_staff'] = u1.is_staff
-    sd['delete_yn'] = u1.delete_yn
-    sd['black_yn'] = u1.black_yn
-    sd['attempt'] = ul1.attempt
-    sd['login_ip'] = ul1.login_ip
-    sd['login_date'] = ul1.login_date
-    list.append(sd)
-    return JsonResponse({'result': list})
-
-
-# 회원정보 수정 APi (2019.09.15 12:05 점검완료)
-@allow_cs
-def api_user_edit(request):
-    active = request.POST.get('active')
-    delete_yn = request.POST.get('delete_yn')
-    staff = request.POST.get('staff')
-    black = request.POST.get('black')
-    id = request.POST.get('id')
-    u1 = TblUser.objects.get(id = id)
-    u1.is_active = active
-    u1.delete_yn = delete_yn
-    u1.is_staff = staff
-    u1.black_yn = black
-    u1.save()
-    return JsonResponse({'result': 200})
+        title, text = get_swal('NOT_SESSION_FORMAT')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})

@@ -76,3 +76,19 @@ def get_swal(type):
         title = '알림'
         text = '허용되지 않은 IP 접근입니다'
         return title, text
+    elif type == 'NOT_TIME_FORMAT':
+        title = '알림'
+        text = '유효하지 않은 시간 형식입니다'
+        return title, text
+    elif type == 'SUCCESS_SERVICE_TIME':
+        title = '알림'
+        text = '서비스 시간이 변경되었습니다'
+        return title,
+    elif type == 'NOT_SESSION_FORMAT':
+        title = '알림'
+        text = '유효하지 않은 세션값입니다'
+        return title, text
+    elif type == 'SUCCESS_SESSION':
+        title = '알림'
+        text = '세션이 변경되었습니다'
+        return title, text

@@ -26,9 +26,9 @@
 									<li>
 										<a href="#" onclick="location.href='/dashboard'">
 											<span class="nav-icon">
-												<i class="fa fa-bar-chart"></i>
+												<i class="fa fa-check"></i>
 											</span>
-											<span class="nav-text">대쉬보드</span>
+											<span class="nav-text">시작하기</span>
 										</a>
 									</li>
 
@@ -37,14 +37,14 @@
 											<span class="nav-icon">
 												<i class="fa fa-group"></i>
 											</span>
-											<span class="nav-text">유저관리</span>
+											<span class="nav-text">회원 관리</span>
 										</a>
 									</li>
 
 									<li>
 										<a href="#" onclick="location.href='/service'">
 											<span class="nav-icon">
-												<i class="fa fa-group"></i>
+												<i class="fa fa-book"></i>
 											</span>
 											<span class="nav-text">서비스 내역</span>
 										</a>
@@ -71,10 +71,97 @@
 									<li>
 										<a href="#" onclick="location.href='/account_setting'">
 											<span class="nav-icon">
-												<i class="fa fa-money"></i>
+												<i class="fa fa-credit-card"></i>
 											</span>
 											<span class="nav-text">계좌관리</span>
 										</a>
+									</li>
+
+									<li>
+										<a>
+											<span class="nav-caret">
+												<i class="fa fa-caret-down"></i>
+											</span>
+											<span class="nav-icon">
+												<i class="fa fa-sort-amount-desc"></i>
+											</span>
+											<span class="nav-text">전체 통계</span>
+										</a>
+										<ul class="nav-sub">
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">가입계정 및 활성계정</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">결제모듈 별 카운트</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">서비스 & 결제모듈(결제)</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">서비스 & 무통장(결제)</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">서비스 & 결제모듈(환불)</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">서비스 & 무통장(환불)</span>
+												</a>
+											</li>
+										</ul>
+									</li>
+
+									<li>
+										<a>
+											<span class="nav-caret">
+												<i class="fa fa-caret-down"></i>
+											</span>
+											<span class="nav-icon">
+												<i class="fa fa-sort-numeric-asc"></i>
+											</span>
+											<span class="nav-text">월별 통계</span>
+										</a>
+										<ul class="nav-sub">
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">수익내역</span>
+												</a>
+											</li>
+										</ul>
+									</li>
+
+									<li>
+										<a>
+											<span class="nav-caret">
+												<i class="fa fa-caret-down"></i>
+											</span>
+											<span class="nav-icon">
+												<i class="fa fa-bolt"></i>
+											</span>
+											<span class="nav-text">무결성 복구</span>
+										</a>
+										<ul class="nav-sub">
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">tbl_user</span>
+												</a>
+											</li>
+											<li>
+												<a href="#" onclick="location.href='/'">
+													<span class="nav-text">radcheck</span>
+												</a>
+											</li>
+										</ul>
 									</li>
 									% endif
 		          </ul>
