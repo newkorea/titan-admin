@@ -31,3 +31,8 @@ table > tbody > tr {
 .fz12 {
     font-size: 12px;
 }
+.dp-re {
+    height: 35px;
+    padding-left: 10px !important;
+    font-size: 12px !important;
+}

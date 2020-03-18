@@ -11,14 +11,14 @@ import datetime
 from django.db import transaction
 
 
-# 서비스 시간 페이지 렌더링
+# 서비스 시간 페이지 렌더링 (2020-03-18)
 @allow_admin
 def service(request):
     context = {}
     return render(request, 'admin/service.html', context)
 
 
-# 서비스 시간 데이터테이블즈
+# (2020-03-18)
 @allow_admin
 def api_service_time_read(request):
     start = int(request.POST.get('start'))
@@ -26,23 +26,35 @@ def api_service_time_read(request):
     draw = int(request.POST.get('draw'))
     orderby_col = int(request.POST.get('order[0][column]'))
     orderby_opt = request.POST.get('order[0][dir]')
+
     id = request.POST.get('id')
     regist_date_start = request.POST.get('regist_date_start')
     regist_date_end = request.POST.get('regist_date_end')
+    type = request.POST.get('type')
 
     # where 조건 동적 연산
-    sql = "where 1=1"
+    wc = "where 1=1"
     if id != '':
-        sql += " and b.email = '" + id + "'"
+        wc += " and b.email like '%" + id + "%'"
     if regist_date_start != '':
-        sql += " and a.regist_date >= '" + regist_date_start + "'"
+        wc += " and a.regist_date >= '" + regist_date_start + "'"
     if regist_date_end != '':
-        sql += " and a.regist_date <= '" + regist_date_end + "'"
-    #if id != '':
-    #    sql += " and id = '" + id + "'"
+        wc += " and a.regist_date < '" + regist_date_end + "'"
+    if type != '':
+        if type == 'session':
+            wc += " and a.diff = '세션 변경' "
+        elif type == 'password':
+            wc += " and a.diff = '비밀번호 변경' "
+        elif type == 'active':
+            wc += " and a.diff = '활성화 변경' "
+        elif type == 'delete':
+            wc += " and a.diff = '회원탈퇴' "
+        elif type == 'service':
+            wc += " and a.diff not in ('세션 변경', '비밀번호 변경', '활성화 변경', '회원탈퇴') "
+
 
     # order by 컬럼 생성
-    column_name = ['id', 'user_id', 'prev_time', 'prev_time_rad', 'after_time', 'after_time_rad', 'diff', 'regist_date']
+    column_name = ['id', 'email', 'prev_time', 'prev_time_rad', 'after_time', 'after_time_rad', 'diff', 'regist_date']
 
     # 디버그 로깅
     print('DEBUG -> start : ', start)
@@ -54,67 +66,53 @@ def api_service_time_read(request):
     # 카운팅 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-                select count(*)
-                from (
-                	select @rnum := @rnum + 1 AS rnum, x.*
-                	from (
-                        select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date
-                        from tbl_service_time a
-                        join tbl_user b
-                        on a.user_id = b.id
-                        {sql}
-                	) x
-                	JOIN ( SELECT @rnum := -1 ) AS r
-                ) t1;
-            '''.format(
-            sql=sql
-        )
-        print('DEBUG -> query : ', query)
+            select count(*)
+            from tbl_service_time a
+            join tbl_user b
+            on a.user_id = b.id
+            {wc}
+        '''.format(wc=wc)
+        # print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
-    print('DEBUG -> total : ', total)
-
+        # print('DEBUG -> total : ', total)
 
     # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-            select  id,
-                    email,
-                    prev_time,
-                    prev_time_rad,
-                    after_time,
-                    after_time_rad,
-                    diff,
-                    reason,
-                    DATE_FORMAT(regist_date, '%Y-%m-%d %H:%i') as regist_date
-            from (
                 select x.*
                 from (
-                    select a.id, b.email, prev_time, prev_time_rad, after_time, after_time_rad, diff, a.regist_date, a.reason
+                    select  a.id,
+                            b.email,
+                            a.prev_time,
+                            a.prev_time_rad,
+                            a.after_time,
+                            a.after_time_rad,
+                            a.diff,
+                            DATE_FORMAT(a.regist_date, '%Y-%m-%d %H:%i') as regist_date,
+                            a.reason
                     from tbl_service_time a
                     join tbl_user b
                     on a.user_id = b.id
-                    {sql}
+                    {wc}
                     order by {orderby_col} {orderby_opt}
                     limit {start}, 10
                 ) x
                 JOIN ( SELECT @rnum := -1 ) AS r
-            ) t1;
         '''.format(
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
             start=start,
-            sql = sql)
+            wc = wc)
         print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
     returnData = {
-        "draw": draw,
         "recordsTotal": total,
         "recordsFiltered": total,
+        "draw": draw,
         "data": rows
     }
-
     return JsonResponse(returnData)
