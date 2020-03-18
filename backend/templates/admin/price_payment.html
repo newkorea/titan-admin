@@ -1,104 +1,20 @@
 <%inherit file="admin_frame.html"/>
 
 <%block name="css">
-<style>
-  .user-filter {
-    display: flex;
-  }
-  table > thead > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  table > tbody > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  .flex1{
-    flex: 1;
-    margin-left: 10px;
-    margin-right: 10px;
-  }
-  .btn-store{
-    text-align: right;
-    margin-bottom: 12px;
-  }
-  .dataTables_paginate{
-    width: 100% !important;
-    text-align: center !important;
-    margin-top: 10px !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .inner-view{
-    display: none;
-    padding: 5px;
-    margin-top: 20px;
-    height:860px;
-    width: 1100px;
-    margin: 0 auto;
-  }
-  .view-left{
-    margin-right: 10px;
-    border-radius: 10px;
-    padding-top: 20px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .view-right{
-    margin-left: 10px;
-    padding-top: 18px;
-    border-radius: 10px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .inner-title{
-    display: none;
-    text-align: center;
-    font-size: 25px;
-    padding: 20px;
-  }
-  .tar{
-    text-align: center;
-  }
-  .view-input{
-    width: 450px;
-    margin: 0 auto;
-  }
-  .label-margin {
-    margin-left: 45px;
-  }
-  .r-icon{
-    color: #7f54ff;
-    margin-right: 8px;
-  }
-  .display .dataTable .no-footer{
-    width: 100%;
-  }
-
-</style>
 </%block>
 
 <%block name="title">결제 모듈</%block>
-<%block name="subtitle">TITAN VPN에 결제 내역을 한눈에 볼 수 있습니다</%block>
+<%block name="subtitle">TITAN VPN에 결제모듈로 결제한 내역을 보여줍니다</%block>
 
 <%block name="content">
 <div>
-
   <!-- 검색필터 -->
-  <div class="user-filter">
-    <div class="form-group id-form flex1">
-      <label>이메일[=]</label>
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
       <input class="form-control" id="filter_email">
     </div>
-    <div class="form-group name-form flex1">
+    <div class="form-group col-sm-2">
       <label>세션</label>
       <select class="form-control" id="filter_session" name="filter_session">
         <option value="0">선택하세요</option>
@@ -106,7 +22,7 @@
         <option value="2">2 세션</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>개월수</label>
       <select class="form-control" id="filter_month" name="filter_month">
         <option value="0">선택하세요</option>
@@ -115,7 +31,7 @@
         <option value="12">12 개월</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>환불여부</label>
       <select class="form-control" id="filter_refund" name="filter_refund">
         <option value="0">선택하세요</option>
@@ -123,27 +39,25 @@
         <option value="N">N</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>결제(시작) [<=]</label>
-      <input class="form-control" id="filter_regist_start">
+      <input id="filter_regist_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>결제(종료) [<]</label>
-      <input class="form-control" id="filter_regist_end">
+      <input id="filter_regist_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
     </div>
   </div>
-
   <!-- 버튼 -->
   <div class='btn-store'>
-    <button class="btn btn-fw primary" onclick="click_search()">
+    <button class="btn btn-fw primary" onclick="reload_data()">
       <i class="fa fa-search mr5"></i>
       검색하기
     </button>
   </div>
-
   <!-- 데이터테이블즈 -->
   <div class="user-table">
-    <table id="price-inform" class="display">
+    <table id="price-inform" class="table display">
       <thead>
         <tr>
           <th>아이디</th>
@@ -153,7 +67,6 @@
           <th>국내(원)</th>
           <th>해외(달러)</th>
           <th>위쳇(위안)</th>
-          <th>부과세(원)</th>
           <th>사용자 이메일</th>
           <th>환불</th>
           <th>결제일</th>
@@ -165,247 +78,9 @@
       </tbody>
     </table>
   </div>
-
 </div>
 </%block>
 
 <%block name="js">
-
-<script>
-    function click_search(){
-        datatable.ajax.reload();
-    }
-
-    function click_refund(id){
-      var csrf_token = $('#csrf_token').html();
-
-      $.post( "/api_price_refund", {
-        csrfmiddlewaretoken: csrf_token,
-        id: id
-      })
-      .done(function( data ) {
-        if(data.result == 200){
-          click_search();
-        } else if (data.result == 400) {
-          Swal.fire({
-              title: '알림',
-              text: '환불처리가 완료된 거래입니다',
-              type: 'error',
-              confirmButtonColor: swalColor('error')
-          })
-        }
-        else {
-          Swal.fire({
-              title: '알림',
-              text: '환불 중 오류가 발생했습니다',
-              type: 'error',
-              confirmButtonColor: swalColor('error')
-          })
-        }
-      });
-    }
-
-      $('#filter_regist_start').val(getNow());
-      $('#filter_regist_end').val(getTomorrow());
-
-      var csrf_token = $('#csrf_token').html();
-      var datatable = $('#price-inform').DataTable({
-        dom: '<"top"Blf>rtp<"bottom"i>',
-        paging: true,
-        ordering: true,
-        info: false,
-        filter: false,
-        lengthChange: false,
-        order: [[0, "desc"]],
-        stateSave: false,
-        pagingType: "full_numbers",
-        scrollX: false,
-        scrollCollapse: false,
-        processing: true,
-        serverSide: true,
-        drawCallback: function () {},
-        ajax: {
-            url: "/api_price_read",
-            type: "POST",
-            dataType: "json",
-            data: {
-                csrfmiddlewaretoken: csrf_token,
-                email: function() { return $('#filter_email').val() },
-                session: function() { return $('#filter_session').val() },
-                month: function() { return $('#filter_month').val() },
-                refund: function() { return $('#filter_refund').val() },
-                regist_start: function() {
-                    var filter_regist_start = $('#filter_regist_start').val();
-                    var filter_regist_end = $('#filter_regist_end').val();
-                    if(filter_regist_start == ''){
-                      $('#filter_regist_start').val(getNow());
-                    } else if(filter_regist_start > filter_regist_end){
-                        $('#filter_regist_start').val(getNow());
-                    }
-                    return filter_regist_start;
-                },
-                regist_end: function() {
-                    var filter_regist_start = $('#filter_regist_start').val();
-                    var filter_regist_end = $('#filter_regist_end').val();
-                    if(filter_regist_end == ''){
-                      $('#filter_regist_end').val(getTomorrow());
-                    } else if(filter_regist_start > filter_regist_end){
-                        $('#filter_regist_end').val(getTomorrow());
-                    }
-                    return filter_regist_end;
-                },
-            },
-        },
-        columns: [
-            {data: "id"},
-            {data: "tid"},
-            {data: "pgcode"},
-            {data: "product_name"},
-            {data: "krw"},
-            {data: "usd"},
-            {data: "cny"},
-            {data: "tax_amount"},
-            {data: "email"},
-            {data: "refund_yn"},
-            {data: "regist_date"},
-            {data: "refund_date"},
-            {data: "refund"},
-        ],
-        columnDefs: [
-            {
-              targets: 0,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 1,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 2,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 3,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 4,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 5,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 6,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 7,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 8,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 9,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 10,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 11,
-              visible: true,
-              render: function (data) {
-                return data;
-              }
-            },
-            {
-              targets: 12,
-              visible: true,
-              orderable: false,
-              render: function (data) {
-                var id = data.split('+')[0]
-                var refund_yn = data.split('+')[1]
-                if(refund_yn == 'Y'){
-                  return ''
-                } else {
-                  return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';
-                }
-              }
-            }
-        ],
-        language: {
-            lengthMenu: "Display _MENU_ records per page",
-            zeroRecords: "데이터가 존재하지 않습니다",
-            info: "Showing page _PAGE_ of _PAGES_",
-            infoEmpty: "No records available",
-            infoFiltered: "(filtered from _MAX_ total records)",
-            paginate: {
-                first: '처음',
-                last: '끝',
-                previous: "이전",
-                next: "다음"
-            }
-        },
-      });
-
-    $( document ).ready(function() {
-
-    });
-
-    function getNow(){
-        var dt = new Date();
-        var y = dt.getFullYear();
-        var m = ("00" + (dt.getMonth()+1)).slice(-2);
-        var d = ("00" + dt.getDate()).slice(-2);
-        var result = y + "-" + m + "-" + d;
-        return result;
-    }
-    function getTomorrow(){
-        var dt = new Date();
-        dt.setDate(dt.getDate() + 1);
-        var y = dt.getFullYear();
-        var m = ("00" + (dt.getMonth()+1)).slice(-2);
-        var d = ("00" + dt.getDate()).slice(-2);
-        var result = y + "-" + m + "-" + d;
-        return result;
-      }
-</script>
+<script src="/static/admin/js/payment.js"></script>
 </%block>

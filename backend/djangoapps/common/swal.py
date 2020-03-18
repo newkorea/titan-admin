@@ -104,3 +104,31 @@ def get_swal(type):
         title = '알림'
         text = '회원 탈퇴 처리가 완료되었습니다'
         return title, text
+    elif type == 'PAYMENT_ERROR':
+        title = '알림'
+        text = '환불 API 반환이 정상적으로 반환되지 않았습니다'
+        return title, text
+    elif type == 'PAYMENT_UNKNOWN':
+        title = '알림'
+        text = '알 수 없는 결제 수단 입니다'
+        return title, text
+    elif type == 'PAYMENT_SUCCESS':
+        title = '알림'
+        text = '환불이 정상적으로 처리되었습니다'
+        return title, text
+    elif type == 'PAYMENT_ALREADY':
+        title = '알림'
+        text = '이미 처리된 트랜잭션 입니다'
+        return title, text
+    elif type == 'SUCCESS_ACCOUNT':
+        title = '알림'
+        text = '성공적으로 계좌 정보가 수정되었습니다'
+        return title, text
+    elif type == 'SUCCESS_BANK':
+        title = '알림'
+        text = '결제요청이 정상적으로 등록되었습니다'
+        return title, text
+    elif type == 'SUCCESS_COMMON':
+        title = '알림'
+        text = '프로세스가 정상적으로 등록되었습니다'
+        return title, text

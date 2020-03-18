@@ -17,137 +17,162 @@ from email.mime.text import MIMEText
 from backend.models import *
 from backend.models_radius import Radcheck
 from backend.djangoapps.common.views import *
+from backend.djangoapps.common.swal import get_swal
 from django.utils import translation
 from backend.djangoapps.common.payletter import Payletter
 from backend.djangoapps.common.payletter_global import PayletterGlobal
 from backend.djangoapps.common.paybox import Paybox
 
 
-# 무통장내역 등록
-def api_create_sh(request):
-    note_email = request.POST.get('note_email')
-    note_session = request.POST.get('note_session')
-    note_month = request.POST.get('note_month')
-    note_type = request.POST.get('note_type')
-
-    print("note_email -> ", note_email)
-    print("note_session -> ", note_session)
-    print("note_month -> ", note_month)
-    print("note_type -> ", note_type)
-
-    try:
-        user = TblUser.objects.get(email=note_email)
-    except BaseException as err:
-        print("err => ", err)
-        return JsonResponse({'result': '400', 'msg': '이메일을 찾을 수 없습니다'})
-
-    price = getProductPirce(note_session, note_month, 'KRW')
-    product_name = makeProductName(note_session, note_month)
-
-    try:
-        sh = TblSendHistory(
-            user_id = user.id,
-            product_name = product_name,
-            session = note_session,
-            month_type = note_month,
-            krw = price,
-            usd = None,
-            jpy = None,
-            cny = None,
-            status = 'R',
-            type = note_type,
-            regist_date = datetime.datetime.now(),
-            accept_date = None,
-            cancel_date = None,
-            refund_date = None)
-        sh.save()
-        return JsonResponse({'result': '200', 'msg': '정상적으로 처리되었습니다'})
-    except BaseException as err:
-        print("err =>", err)
-        return JsonResponse({'result': '500', 'msg': '처리 중 오류가 발생했습니다'})
-
-
-# 무통장내역 상태변경 (2019.11.24 11:22 점검완료)
-def api_set_status(request):
-    id = request.POST.get('id')
-    type = request.POST.get('type')
-
-    history = TblSendHistory.objects.get(id=id)
-    session = str(history.session)
-    month_type = str(history.month_type)
-    user_id = history.user_id
-
-    history.status = type
-    if type == 'C':
-        history.cancel_date = datetime.datetime.now()
-    elif type == 'A':
-        history.accept_date = datetime.datetime.now()
-        # 시간충전
-        giveServiceTime(user_id, session, month_type)
-    elif type == 'Z':
-        history.refund_date = datetime.datetime.now()
-        # 시간초기화
-        initServiceTime(user_id)
-    history.save()
-
-    return JsonResponse({'result': 200})
-
-
-# 계좌관리 내용편집 (2019.11.24 11:22 점검완료)
-@allow_cs
-def api_update_bank(request):
-    person_name = request.POST.get('person_name')
-    bank_name = request.POST.get('bank_name')
-    bank_number = request.POST.get('bank_number')
-
-    bank = TblBankAccount.objects.get(type='main')
-    bank.person_name = person_name
-    bank.bank_name = bank_name
-    bank.bank_number = bank_number
-    bank.save()
-
-    return JsonResponse({'result': 200})
-
-
-# 계좌관리 내용로드 (2019.11.24 11:22 점검완료)
-@allow_cs
-def api_read_bank(request):
-
-    bank = TblBankAccount.objects.get(type='main')
-    person_name = bank.person_name
-    bank_name = bank.bank_name
-    bank_number = bank.bank_number
-
-    send = {
-        'person_name': person_name,
-        'bank_name': bank_name,
-        'bank_number': bank_number
-    }
-
-    return JsonResponse({'result': 200, 'bank': send})
-
-
-# 무통장내역 렌더링 (2019.11.24 11:22 점검완료)
-@allow_cs
+# 무통장내역 렌더링 (2020-03-18)
+@allow_admin
 def account_history(request):
     return render(request, 'admin/price_bank.html')
 
 
-# 계좌관리 렌더링 (2019.11.24 11:22 점검완료)
-@allow_cs
+# 계좌관리 렌더링 (2020-03-18)
+@allow_admin
 def account_setting(request):
     return render(request, 'admin/price_account.html')
 
 
-# 결제관리 페이지 렌더링 (2019.09.21 13:56 점검완료)
-@allow_cs
+# 결제관리 페이지 렌더링 (2020-03-18)
+@allow_admin
 def price(request):
     return render(request, 'admin/price_payment.html')
 
 
-# 환불 API (2019.09.25 09:54 개발중)
-@allow_cs
-def api_price_refund(request):
+# (2020-03-18)
+@allow_admin
+def api_read_payment(request):
+
+    # datatables 기본 파라미터
+    start = int(request.POST.get('start'))
+    length = int(request.POST.get('length'))
+    draw = int(request.POST.get('draw'))
+    orderby_col = int(request.POST.get('order[0][column]'))
+    orderby_opt = request.POST.get('order[0][dir]')
+
+    # 검색필터 파라미터
+    email = request.POST.get('email')
+    session = request.POST.get('session')
+    month = request.POST.get('month')
+    refund = request.POST.get('refund')
+    regist_start = request.POST.get('regist_start')
+    regist_end = request.POST.get('regist_end')
+
+    # 로깅 (datatables 기본 파라미터)
+    print('DEBUG -> start : ', start)
+    print('DEBUG -> length : ', length)
+    print('DEBUG -> draw : ', draw)
+    print('DEBUG -> orderby_col : ', orderby_col)
+    print('DEBUG -> orderby_opt : ', orderby_opt)
+
+    # 로깅 (검색필터 파라미터)
+    print('DEBUG -> email : ', email)
+    print('DEBUG -> session : ', session)
+    print('DEBUG -> month : ', month)
+    print('DEBUG -> refund : ', refund)
+    print('DEBUG -> regist_start : ', regist_start)
+    print('DEBUG -> regist_end : ', regist_end)
+
+    # where 절 필터링 생성
+    wc = ' where 1=1 '
+    if email != '':
+        wc += " and y.email like '%{email}%' ".format(email=email)
+    if session != '0':
+        wc += " and x.session = '{session}' ".format(session=session)
+    if month != '0':
+        wc += " and x.month_type = '{month}' ".format(month=month)
+    if refund != '0':
+        wc += " and x.refund_yn = '{refund}' ".format(refund=refund)
+    if regist_start != '':
+        wc += '''
+            and x.regist_date >= '{regist_start}'
+        '''.format(regist_start=regist_start)
+    if regist_end != '':
+        wc += '''
+            and x.regist_date < '{regist_end}'
+        '''.format(regist_end=regist_end)
+
+    # order by 리스트
+    column_name = [
+        'x.id',
+        'x.tid',
+        'x.pgcode',
+        'x.product_name',
+        'x.krw',
+        'x.usd',
+        'x.cny',
+        'y.email',
+        'x.refund_yn',
+        'x.regist_date',
+        'x.refund_date'
+    ]
+
+    # 데이터테이블즈 - 카운팅 쿼리
+    with connections['default'].cursor() as cur:
+        query = '''
+            select count(*)
+            from tbl_price_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {wc}
+        '''.format(wc=wc)
+        # print(query)
+        cur.execute(query)
+        rows = cur.fetchall()
+        total = rows[0][0]
+        # print('DEBUG -> total : ', total)
+
+    # 데이터테이블즈 - 메인 쿼리
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  x.id,
+            		x.tid,
+            		x.pgcode,
+            		x.product_name,
+            		x.krw as krw,
+            		x.usd as usd,
+            		x.cny as cny,
+            		x.taxfree_amount,
+            		x.tax_amount,
+            		y.email,
+            		x.autopay_flag,
+            		x.refund_yn,
+            		x.regist_date,
+            		x.refund_date,
+            		x.auto_end_date,
+                    concat(x.id, '+', x.refund_yn) as refund
+            from tbl_price_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {wc}
+            order by {orderby_col} {orderby_opt}
+            limit {start}, 10
+        '''.format(
+            wc=wc,
+            orderby_col=column_name[orderby_col],
+            orderby_opt=orderby_opt,
+            start=start,
+            end=start+length-1
+        )
+        print(query)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+
+    ret = {
+        "recordsTotal": total,
+        "recordsFiltered": total,
+        "draw": draw,
+        "data": rows
+    }
+    return JsonResponse(ret)
+
+
+# (2020-03-18)
+@allow_admin
+def api_update_refund(request):
 
     # 파라미터 로드
     id = request.POST.get('id')
@@ -184,10 +209,12 @@ def api_price_refund(request):
             tph.refund_date = datetime.datetime.now()
             tph.save()
             initServiceTime(user_id)
-            return JsonResponse({'result': 200})
+            title, text = get_swal('PAYMENT_SUCCESS')
+            return JsonResponse({'result': 200, 'title': title, 'text': text})
         else:
             # 환불 실패
-            return JsonResponse({'result': 500})
+            title, text = get_swal('PAYMENT_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
     # 해외환불
     elif usd != None:
         p = PayletterGlobal(settings.PAYLETTER_MODE)
@@ -198,14 +225,16 @@ def api_price_refund(request):
             tph.refund_date = datetime.datetime.now()
             tph.save()
             initServiceTime(user_id)
-            return JsonResponse({'result': 200})
+            title, text = get_swal('PAYMENT_SUCCESS')
+            return JsonResponse({'result': 200, 'title': title, 'text': text})
         elif res == 400:
             # 환불 실패 (이미 처리된 트랜잭션)
-            return JsonResponse({'result': 400})
+            title, text = get_swal('PAYMENT_ALREADY')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
         else:
             # 환불 실패
-            return JsonResponse({'result': 500})
-        return JsonResponse({'result': 200})
+            title, text = get_swal('PAYMENT_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
     # 위챗환불
     elif cny != None:
         p = Paybox(settings.PAYBOX_MODE)
@@ -218,175 +247,69 @@ def api_price_refund(request):
                 tph.refund_date = datetime.datetime.now()
                 tph.save()
                 initServiceTime(user_id)
-                return JsonResponse({'result': 200})
+                title, text = get_swal('PAYMENT_SUCCESS')
+                return JsonResponse({'result': 200, 'title': title, 'text': text})
             else:
-                return JsonResponse({'result': 404})
-            return JsonResponse({'result': 404})
+                title, text = get_swal('PAYMENT_ERROR')
+                return JsonResponse({'result': 500, 'title': title, 'text': text})
         else:
-            return JsonResponse({'result': 404})
+            title, text = get_swal('PAYMENT_ERROR')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
     else:
-        # 알 수 없는 분기
-        return JsonResponse({'result': 404})
+        title, text = get_swal('PAYMENT_UNKNOWN')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 
-# 결제모듈 데이터 로드 (2019.09.21 13:56 점검완료)
-@allow_cs
-def api_price_read(request):
-
-    # datatables 기본 파라미터
-    start = int(request.POST.get('start'))
-    length = int(request.POST.get('length'))
-    draw = int(request.POST.get('draw'))
-    orderby_col = int(request.POST.get('order[0][column]'))
-    orderby_opt = request.POST.get('order[0][dir]')
-
-    # 검색필터 파라미터
-    email = request.POST.get('email')
-    session = request.POST.get('session')
-    month = request.POST.get('month')
-    refund = request.POST.get('refund')
-    regist_start = request.POST.get('regist_start')
-    regist_end = request.POST.get('regist_end')
-
-    # 로깅 (datatables 기본 파라미터)
-    print('DEBUG -> start : ', start)
-    print('DEBUG -> length : ', length)
-    print('DEBUG -> draw : ', draw)
-    print('DEBUG -> orderby_col : ', orderby_col)
-    print('DEBUG -> orderby_opt : ', orderby_opt)
-
-    # 로깅 (검색필터 파라미터)
-    print('DEBUG -> email : ', email)
-    print('DEBUG -> session : ', session)
-    print('DEBUG -> month : ', month)
-    print('DEBUG -> refund : ', refund)
-    print('DEBUG -> regist_start : ', regist_start)
-    print('DEBUG -> regist_end : ', regist_end)
-
-    # where 절 필터링 생성
-    filter = ' where 1=1 '
-    if email != '':
-        filter += " and y.email = '{email}' ".format(email=email)
-    if session != '0':
-        filter += " and x.session = '{session}' ".format(session=session)
-    if month != '0':
-        filter += " and x.month_type = '{month}' ".format(month=month)
-    if refund != '0':
-        filter += " and x.refund_yn = '{refund}' ".format(refund=refund)
-    filter += '''
-        and x.regist_date >= '{regist_start} 00:00:00'
-        and x.regist_date < '{regist_end} 00:00:00'
-    '''.format(regist_start=regist_start, regist_end=regist_end)
-
-    # order by 리스트
-    column_name = [
-        'x.id',
-        'x.tid',
-        'x.pgcode',
-        'x.product_name',
-        'x.amount',
-        'x.taxfree_amount',
-        'x.tax_amount',
-        'y.email',
-        'x.autopay_flag',
-        'x.refund_yn',
-        'x.regist_date',
-        'x.refund_date',
-        'x.auto_end_date'
-    ]
-
-    # 데이터테이블즈 - 카운팅 쿼리
-    with connections['default'].cursor() as cur:
-        query = '''
-            select count(*)
-            from (
-            	select @rnum := @rnum + 1 AS rnum, x.*
-            	from (
-                    select  x.id
-                    from tbl_price_history x
-                    join tbl_user y
-                    on x.user_id = y.id
-                    {filter}
-            	) x
-            	JOIN ( SELECT @rnum := -1 ) AS r
-            ) t1;
-        '''.format(filter=filter)
-        # print(query)
-        cur.execute(query)
-        rows = cur.fetchall()
-        total = rows[0][0]
-    print('DEBUG -> total : ', total)
-
-    # 데이터테이블즈 - 메인 쿼리
-    with connections['default'].cursor() as cur:
-        query = '''
-                select  id,
-                        tid,
-                        pgcode,
-                        product_name,
-                        krw,
-                        usd,
-                        cny,
-                        taxfree_amount,
-                        tax_amount,
-                        email,
-                        autopay_flag,
-                        refund_yn,
-                        DATE_FORMAT(regist_date, "%Y-%m-%d %H:%i:%S") as regist_date,
-                        DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-                        auto_end_date,
-                        concat(id, '+', refund_yn) as refund
-                from (
-                    select @rnum := @rnum + 1 AS rnum, x.*
-                    from (
-                    select  x.id,
-                            x.tid,
-                            x.pgcode,
-                            x.product_name,
-                            x.krw as krw,
-                            x.usd as usd,
-                            x.cny as cny,
-                            x.taxfree_amount,
-                            x.tax_amount,
-                            y.email,
-                            x.autopay_flag,
-                            x.refund_yn,
-                            x.regist_date,
-                            x.refund_date,
-                            x.auto_end_date
-                    from tbl_price_history x
-                    join tbl_user y
-                    on x.user_id = y.id
-                    {filter}
-                    order by {orderby_col} {orderby_opt}
-                    ) x
-                    JOIN ( SELECT @rnum := -1 ) AS r
-                ) t1
-                where t1.rnum BETWEEN {start} AND {end};
-        '''.format(
-            filter=filter,
-            orderby_col=column_name[orderby_col],
-            orderby_opt=orderby_opt,
-            start=start,
-            end=start+length-1
-        )
-        # print(query)
-        cur.execute(query)
-        rows = dictfetchall(cur)
-
-    ret = {
-        "draw": draw,
-        "recordsTotal": total,
-        "recordsFiltered": total,
-        "data": rows
-    }
-
-    return JsonResponse(ret)
+# (2020-03-18)
+@allow_admin
+def api_update_account(request):
+    person_name = request.POST.get('person_name')
+    bank_name = request.POST.get('bank_name')
+    bank_number = request.POST.get('bank_number')
+    try:
+        bank = TblBankAccount.objects.get(type='main')
+        bank.person_name = person_name
+        bank.bank_name = bank_name
+        bank.bank_number = bank_number
+        bank.save()
+        title, text = get_swal('SUCCESS_ACCOUNT')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 
-# 무통장내역 데이터 로드 (2019.11.24 11:57 점검완료)
-@allow_cs
-def api_read_ah(request):
+
+# (2020-03-18)
+@allow_admin
+def api_read_account(request):
+    try:
+        bank = TblBankAccount.objects.get(type='main')
+        person_name = bank.person_name
+        bank_name = bank.bank_name
+        bank_number = bank.bank_number
+        send = {
+            'person_name': person_name,
+            'bank_name': bank_name,
+            'bank_number': bank_number
+        }
+        return JsonResponse({'result': 200, 'bank': send})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+
+# (2020-03-18)
+@allow_admin
+def api_read_ready_count(request):
+    history = TblSendHistory.objects.filter(status='R')
+    ready_count = len(history)
+    return JsonResponse({'result': 200, 'ready_count': ready_count})
+
+
+# (2020-03-18)
+@allow_admin
+def api_read_bank(request):
 
     # datatables 기본 파라미터
     start = int(request.POST.get('start'))
@@ -423,30 +346,33 @@ def api_read_ah(request):
     print('DEBUG -> regist_end : ', regist_end)
 
     # where 절 필터링 생성
-    filter = ' where 1=1 '
+    wc = ' where 1=1 '
     if number != '':
-        filter += " and x.id = '{number}' ".format(number=number)
+        wc += " and x.id = '{number}' ".format(number=number)
     if email != '':
-        filter += " and y.email = '{email}' ".format(email=email)
+        wc += " and y.email like '%{email}%' ".format(email=email)
     if username != '':
-        filter += " and y.username = '{username}' ".format(username=username)
+        wc += " and y.username like '%{username}%' ".format(username=username)
     if session != '0':
-        filter += " and x.session = '{session}' ".format(session=session)
+        wc += " and x.session = '{session}' ".format(session=session)
     if month != '0':
-        filter += " and x.month_type = '{month}' ".format(month=month)
+        wc += " and x.month_type = '{month}' ".format(month=month)
     if status != '0':
-        filter += " and x.status = '{status}' ".format(status=status)
-    filter += '''
-        and x.regist_date >= '{regist_start} 00:00:00'
-        and x.regist_date < '{regist_end} 00:00:00'
-    '''.format(regist_start=regist_start, regist_end=regist_end)
+        wc += " and x.status = '{status}' ".format(status=status)
+    if regist_start != '':
+        wc += '''
+            and x.regist_date >= '{regist_start}'
+        '''.format(regist_start=regist_start)
+    if regist_end != '':
+        wc += '''
+            and x.regist_date < '{regist_end}'
+        '''.format(regist_end=regist_end)
 
     # order by 리스트
     column_name = [
         'x.id',
         'y.email',
         'y.username',
-        'phone',
         'x.session',
         'x.month_type',
         'x.krw'
@@ -456,216 +382,132 @@ def api_read_ah(request):
     with connections['default'].cursor() as cur:
         query = '''
             select count(*)
-            from (
-            	select @rnum := @rnum + 1 AS rnum, x.*
-            	from (
-            		select  x.id
-            		from tbl_send_history x
-            		join tbl_user y
-            		on x.user_id = y.id
-            		{filter}
-            	) x
-            	JOIN ( SELECT @rnum := -1 ) AS r
-            ) t1;
-        '''.format(filter=filter)
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {wc}
+        '''.format(wc=wc)
         # print(query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
-    print('DEBUG -> total : ', total)
+        # print('DEBUG -> total : ', total)
 
     # 데이터테이블즈 - 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-            select  id,
-                    email,
-                    username,
-                    phone,
-                    session,
-                    month_type,
-                    krw,
-                    status,
-                    cancel,
-                    DATE_FORMAT(cancel_date, "%Y-%m-%d %H:%i:%S") as cancel_date,
-                    accept,
-                    DATE_FORMAT(accept_date, "%Y-%m-%d %H:%i:%S") as accept_date,
-                    refund,
-                    DATE_FORMAT(refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-                    type
-            from (
-            	select @rnum := @rnum + 1 AS rnum, x.*
-            	from (
-            		select  x.id,
-                            y.email,
-                            y.username,
-                            concat('(', y.phone_country, ') ', y.phone) as phone,
-                            x.session,
-                            x.month_type,
-                            x.krw,
-                            x.status as status,
-                            concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as cancel,
-                            x.cancel_date,
-                            concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as accept,
-                            x.accept_date,
-                            concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
-                            x.refund_date,
-                            x.type
-            		from tbl_send_history x
-            		join tbl_user y
-            		on x.user_id = y.id
-            		{filter}
-                    order by {orderby_col} {orderby_opt}
-            	) x
-            	JOIN ( SELECT @rnum := -1 ) AS r
-            ) t1
-            where t1.rnum BETWEEN {start} and {end};
+            select  x.id,
+            		y.email,
+            		y.username,
+            		x.session,
+            		x.month_type,
+            		x.krw,
+            		x.status as status,
+            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as cancel,
+                    DATE_FORMAT(x.cancel_date, "%Y-%m-%d %H:%i:%S") as cancel_date,
+            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as accept,
+                    DATE_FORMAT(x.accept_date, "%Y-%m-%d %H:%i:%S") as accept_date,
+            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
+                    DATE_FORMAT(x.refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
+            		x.type
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            {wc}
+            order by {orderby_col} {orderby_opt}
+            limit {start}, 10
         '''.format(
-            filter=filter,
+            wc=wc,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
-            start=start,
-            end=start+length-1
+            start=start
         )
         print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
     ret = {
-        "draw": draw,
         "recordsTotal": total,
         "recordsFiltered": total,
+        "draw": draw,
         "data": rows
     }
-
     return JsonResponse(ret)
 
 
-def api_read_sum(request):
+# (2020-03-18)
+@allow_admin
+def api_create_bank(request):
+    note_email = request.POST.get('note_email')
+    note_session = request.POST.get('note_session')
+    note_month = request.POST.get('note_month')
+    note_type = request.POST.get('note_type')
 
-    # 검색필터 파라미터
-    number = request.POST.get('number')
-    email = request.POST.get('email')
-    username = request.POST.get('username')
-    session = request.POST.get('session')
-    month = request.POST.get('month')
-    status = request.POST.get('status')
-    regist_start = request.POST.get('regist_start')
-    regist_end = request.POST.get('regist_end')
+    print("note_email -> ", note_email)
+    print("note_session -> ", note_session)
+    print("note_month -> ", note_month)
+    print("note_type -> ", note_type)
 
-    # 로깅 (검색필터 파라미터)
-    print('DEBUG -> number : ', number)
-    print('DEBUG -> email : ', email)
-    print('DEBUG -> username : ', username)
-    print('DEBUG -> session : ', session)
-    print('DEBUG -> month : ', month)
-    print('DEBUG -> status : ', status)
-    print('DEBUG -> regist_start : ', regist_start)
-    print('DEBUG -> regist_end : ', regist_end)
+    try:
+        user = TblUser.objects.get(email=note_email)
+    except BaseException as err:
+        title, text = get_swal('NOT_USER')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
-    # where 절 통계 필터링 생성
-    s_filter = ' where 1=1 '
-    z_filter = ' where 1=1 '
-    r_filter = ' where 1=1 '
-    if number != '':
-        s_filter += " and x.id = '{number}' ".format(number=number)
-        z_filter += " and x.id = '{number}' ".format(number=number)
-        r_filter += " and x.id = '{number}' ".format(number=number)
-    if email != '':
-        s_filter += " and y.email = '{email}' ".format(email=email)
-        z_filter += " and y.email = '{email}' ".format(email=email)
-        r_filter += " and y.email = '{email}' ".format(email=email)
-    if username != '':
-        s_filter += " and y.username = '{username}' ".format(username=username)
-        z_filter += " and y.username = '{username}' ".format(username=username)
-        r_filter += " and y.username = '{username}' ".format(username=username)
-    if session != '0':
-        s_filter += " and x.session = '{session}' ".format(session=session)
-        z_filter += " and x.session = '{session}' ".format(session=session)
-        r_filter += " and x.session = '{session}' ".format(session=session)
-    if month != '0':
-        s_filter += " and x.month_type = '{month}' ".format(month=month)
-        z_filter += " and x.month_type = '{month}' ".format(month=month)
-        r_filter += " and x.month_type = '{month}' ".format(month=month)
-    s_filter += " and x.status = 'A' "
-    z_filter += " and x.status = 'Z' "
-    r_filter += " and x.status = 'R' "
-    s_filter += '''
-        and x.regist_date >= '{regist_start} 00:00:00'
-        and x.regist_date < '{regist_end} 00:00:00'
-    '''.format(regist_start=regist_start, regist_end=regist_end)
-    z_filter += '''
-        and x.regist_date >= '{regist_start} 00:00:00'
-        and x.regist_date < '{regist_end} 00:00:00'
-    '''.format(regist_start=regist_start, regist_end=regist_end)
-    r_filter += '''
-        and x.regist_date >= '{regist_start} 00:00:00'
-        and x.regist_date < '{regist_end} 00:00:00'
-    '''.format(regist_start=regist_start, regist_end=regist_end)
+    price = getProductPirce(note_session, note_month, 'KRW')
+    product_name = makeProductName(note_session, note_month)
 
-    # 데이터테이블즈 - 통계
-    with connections['default'].cursor() as cur:
-        query = '''
-            select sum(x.krw) as accept_krw, count(*) as accept_cnt
-            from tbl_send_history x
-            join tbl_user y
-            on x.user_id = y.id
-            {s_filter}
-        '''.format(s_filter=s_filter)
-        # print(query)
-        cur.execute(query)
-        x = dictfetchall(cur)
-        accept_krw = x[0]['accept_krw']
-        accept_cnt = x[0]['accept_cnt']
+    try:
+        sh = TblSendHistory(
+            user_id = user.id,
+            product_name = product_name,
+            session = note_session,
+            month_type = note_month,
+            krw = price,
+            usd = None,
+            jpy = None,
+            cny = None,
+            status = 'R',
+            type = note_type,
+            regist_date = datetime.datetime.now(),
+            accept_date = None,
+            cancel_date = None,
+            refund_date = None)
+        sh.save()
+        title, text = get_swal('SUCCESS_BANK')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
-        query = '''
-            select sum(x.krw) as refund_krw, count(*) as refund_cnt
-            from tbl_send_history x
-            join tbl_user y
-            on x.user_id = y.id
-            {z_filter}
-        '''.format(z_filter=z_filter)
-        # print(query)
-        cur.execute(query)
-        x = dictfetchall(cur)
-        refund_krw = x[0]['refund_krw']
-        refund_cnt = x[0]['refund_cnt']
 
-        query = '''
-            select count(*) as wait_cnt
-            from tbl_send_history x
-            join tbl_user y
-            on x.user_id = y.id
-            {r_filter}
-        '''.format(r_filter=r_filter)
-        # print(query)
-        cur.execute(query)
-        x = dictfetchall(cur)
-        wait_cnt = x[0]['wait_cnt']
+# (2020-03-18)
+@allow_admin
+def api_update_bank(request):
+    id = request.POST.get('id')
+    type = request.POST.get('type')
 
-    if accept_krw == None:
-        accept_krw = 0
-    if refund_krw == None:
-        refund_krw = 0
-    if accept_cnt == None:
-        accept_cnt = 0
-    if refund_cnt == None:
-        refund_cnt = 0
-    if wait_cnt == None:
-        wait_cnt = 0
+    try:
+        history = TblSendHistory.objects.get(id=id)
+        session = str(history.session)
+        month_type = str(history.month_type)
+        user_id = history.user_id
 
-    accept_krw =  format(int(accept_krw), ',')
-    refund_krw =  format(int(refund_krw), ',')
+        history.status = type
+        if type == 'C':
+            history.cancel_date = datetime.datetime.now()
+        elif type == 'A':
+            history.accept_date = datetime.datetime.now()
+            # 시간충전
+            giveServiceTime(user_id, session, month_type)
+        elif type == 'Z':
+            history.refund_date = datetime.datetime.now()
+            # 시간초기화
+            initServiceTime(user_id)
+        history.save()
 
-    print('### accept_krw : ', accept_krw)
-    print('### refund_krw : ', refund_krw)
-    print('### accept_cnt : ', accept_cnt)
-    print('### refund_cnt : ', refund_cnt)
-    print('### wait_cnt : ', wait_cnt)
-
-    return JsonResponse({
-        'accept_krw': accept_krw,
-        'refund_krw': refund_krw,
-        'accept_cnt': accept_cnt,
-        'refund_cnt': refund_cnt,
-        'wait_cnt': wait_cnt,
-    })
+        title, text = get_swal('SUCCESS_COMMON')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})

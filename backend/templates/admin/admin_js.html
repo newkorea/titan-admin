@@ -29,11 +29,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
 
 <script>
+    // 로그아웃
     function callLogout(){
-
         var csrf_token = $('#csrf_token').html();
-
-        $.post( "/api_logout", {
+        $.post( "/api/v1/logout", {
             csrfmiddlewaretoken: csrf_token
         })
         .done(function( data ) {
@@ -42,4 +41,43 @@
             }
         });
     }
+
+    // 무통장 결제 대기 건수
+    function ready_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api/v1/read/ready_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                var ready_count = data.ready_count;
+                $('#ready_count').html(ready_count);
+            }
+        });
+    }
+
+    // 오늘 날짜 yyyy-mm-dd
+    function getNow(){
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
+    }
+
+    // 내일 날짜 yyyy-mm-dd
+    function getTomorrow(){
+        var dt = new Date();
+        dt.setDate(dt.getDate() + 1);
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
+    }
+
+    // 초기화 실행
+    ready_count();
+    $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
 </script>

@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
+from backend.djangoapps.common.swal import get_swal
 from backend.models import *
 from datetime import datetime, timedelta
 

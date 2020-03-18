@@ -1,29 +1,29 @@
 table > thead > tr {
-  font-size: 12px;
-  text-align: center;
+    font-size: 12px;
+    text-align: center;
 }
 table > tbody > tr {
-  font-size: 12px;
-  text-align: center;
+    font-size: 12px;
+    text-align: center;
 }
 .btn-store{
-  text-align: right;
-  margin-bottom: 12px;
+    text-align: right;
+    margin-bottom: 12px;
 }
 .dataTables_paginate{
-  width: 100% !important;
-  text-align: center !important;
-  margin-top: 10px !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin-top: 10px !important;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
-  background: #ab6cff !important;
-  border: solid 1px #ab6cff !important;
-  color: #ffffff !important;
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
 }
 .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
-  background: #ab6cff !important;
-  border: solid 1px #ab6cff !important;
-  color: #ffffff !important;
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
 }
 .tal {
     text-align: left;
@@ -35,4 +35,14 @@ table > tbody > tr {
     height: 35px;
     padding-left: 10px !important;
     font-size: 12px !important;
+}
+.ready-count {
+    background: #53a6fa;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 5px;
+    color: #ffffff !important;
 }

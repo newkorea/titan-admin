@@ -1,5 +1,9 @@
+// 검색필터 날짜 초기화
+// $('#filter_regist_start').val(getNow());
+// $('#filter_regist_end').val(getTomorrow());
+
 var csrf_token = $('#csrf_token').html();
-var datatable = $('#user-inform').DataTable({
+var datatable = $('#price-inform').DataTable({
     dom: '<"top"Blf>rtp<"bottom"i>',
     paging: true,
     ordering: true,
@@ -15,27 +19,32 @@ var datatable = $('#user-inform').DataTable({
     serverSide: true,
     drawCallback: function () {},
     ajax: {
-        url: "/api/v1/read/change_history",
+        url: "api/v1/read/payment",
         type: "POST",
         dataType: "json",
         data: {
             csrfmiddlewaretoken: csrf_token,
-            id: function() { return $('#filter_id').val() },
-            regist_date_start: function() { return $('#filter_regist_start').val() },
-            regist_date_end: function() { return $('#filter_regist_end').val() },
-            type: function() { return $('#filter_type').val() },
+            email: function() { return $('#filter_email').val() },
+            session: function() { return $('#filter_session').val() },
+            month: function() { return $('#filter_month').val() },
+            refund: function() { return $('#filter_refund').val() },
+            regist_start: function() { return $('#filter_regist_start').val() },
+            regist_end: function() { return $('#filter_regist_end').val() }
         },
     },
     columns: [
         {data: "id"},
+        {data: "tid"},
+        {data: "pgcode"},
+        {data: "product_name"},
+        {data: "krw"},
+        {data: "usd"},
+        {data: "cny"},
         {data: "email"},
-        {data: "prev_time"},
-        {data: "prev_time_rad"},
-        {data: "after_time"},
-        {data: "after_time_rad"},
-        {data: "diff"},
+        {data: "refund_yn"},
         {data: "regist_date"},
-        {data: "reason"}
+        {data: "refund_date"},
+        {data: "refund"},
     ],
     columnDefs: [
         {
@@ -84,22 +93,7 @@ var datatable = $('#user-inform').DataTable({
             targets: 6,
             visible: true,
             render: function (data) {
-                if (data == '세션 변경' || data == '비밀번호 변경' || data == '활성화 변경' || data == '회원탈퇴') {
-                    return data;
-                } else {
-                    if (data < 0){
-                        data = Math.abs(data)
-                        var hour = Math.round(data / 60)
-                        var minutes = data % 60
-                        var time = '-' + hour + '시간 ' + minutes + '분'
-                        return time;
-                      } else {
-                        var hour = Math.round(data / 60)
-                        var minutes = data % 60
-                        var time = hour + '시간 ' + minutes + '분'
-                        return time;
-                    }
-                }
+                return data;
             }
         },
         {
@@ -112,9 +106,36 @@ var datatable = $('#user-inform').DataTable({
         {
             targets: 8,
             visible: true,
+            render: function (data) {
+                return data;
+            }
+        },
+        {
+            targets: 9,
+            visible: true,
+            render: function (data) {
+                return data;
+            }
+        },
+        {
+            targets: 10,
+            visible: true,
+            render: function (data) {
+                return data;
+            }
+        },
+        {
+            targets: 11,
+            visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="view_reason(\'' + data + '\')" type="button" class="btn btn-outline b-primary text-primary">사유</button>';
+                var id = data.split('+')[0]
+                var refund_yn = data.split('+')[1]
+                if (refund_yn == 'Y') {
+                    return ''
+                } else {
+                    return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';
+                }
             }
         }
     ],
@@ -133,16 +154,32 @@ var datatable = $('#user-inform').DataTable({
     },
 });
 
-// 사유 버튼 클릭
-function view_reason(reason) {
-    if (reason == '') {
-        reason = '변경 사유가 등록되지 않았습니다';
-    }
-    swal.fire({
-        title: '변경 사유',
-        html: reason,
-        confirmButtonColor: swalColor('base')
-    }).then(function () { /* pass */ });
+// 환불
+function click_refund(id){
+    var csrf_token = $('#csrf_token').html();
+    $.post( "/api/v1/update/refund", {
+        csrfmiddlewaretoken: csrf_token,
+        id: id
+    }).done(function( data ) {
+        if (data.result == 200) {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'success',
+                confirmButtonColor: swalColor('success')
+            }).then(function (result) {
+                reload_data();
+            })
+        }
+        else {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            })
+        }
+    });
 }
 
 // 검색하기 버튼 클릭

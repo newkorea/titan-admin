@@ -3,10 +3,10 @@ function swalColor(type){
         return '#3fa556';
     }
     else if(type == 'error'){
-        return '#F27474';
+        return '#dc3545';
     }
     else if(type == 'warning'){
-        return '#facea8';
+        return '#ffc107';
     }
     else if(type == 'info'){
         return '#3fc3ee';

@@ -1,95 +1,6 @@
 <%inherit file="admin_frame.html"/>
 
 <%block name="css">
-<style>
-  .user-filter {
-    display: flex;
-  }
-  table > thead > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  table > tbody > tr {
-    font-size: 12px;
-    text-align: center;
-  }
-  .flex1{
-    flex: 1;
-    margin-left: 10px;
-    margin-right: 10px;
-  }
-  .btn-store{
-    text-align: right;
-    margin-bottom: 12px;
-  }
-  .dataTables_paginate{
-    width: 100% !important;
-    text-align: center !important;
-    margin-top: 10px !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
-    background: #ab6cff !important;
-    border: solid 1px #ab6cff !important;
-    color: #ffffff !important;
-  }
-  .inner-view{
-    display: none;
-    padding: 5px;
-    margin-top: 20px;
-    height:860px;
-    width: 1100px;
-    margin: 0 auto;
-  }
-  .view-left{
-    margin-right: 10px;
-    border-radius: 10px;
-    padding-top: 20px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .view-right{
-    margin-left: 10px;
-    padding-top: 18px;
-    border-radius: 10px;
-    border: solid 3px #bc90ff;
-    width: 50%;
-  }
-  .inner-title{
-    display: none;
-    text-align: center;
-    font-size: 25px;
-    padding: 20px;
-  }
-  .tar{
-    text-align: center;
-  }
-  .view-input{
-    width: 450px;
-    margin: 0 auto;
-  }
-  .label-margin {
-    margin-left: 45px;
-  }
-  .r-icon{
-    color: #7f54ff;
-    margin-right: 8px;
-  }
-  .display .dataTable .no-footer{
-    width: 100%;
-  }
-  .gbb {
-      border: solid 1px #989898;
-  }
-  .mmrl {
-    margin-left: auto;
-    margin-right: auto;
-  }
-</style>
 </%block>
 
 <%block name="title">무통장 내역</%block>
@@ -97,79 +8,21 @@
 
 <%block name="content">
 <div>
-
-  <div class="row" style="text-align: center;">
-    <div class="col-sm-2 mmrl">
-      <div class="box gbb">
-        <div class="box-header DEEP-PURPLE">
-          <h3 style='font-size: 12px;'>승인금액 총합(원)</h3>
-        </div>
-        <div class="box-body light lt" id='accept_krw'>
-          0
-        </div>
-      </div>
-    </div>
-
-    <div class="col-sm-2 mmrl">
-      <div class="box gbb">
-        <div class="box-header ORANGE">
-          <h3 style='font-size: 12px;'>환불금액 총합(원)</h3>
-        </div>
-        <div class="box-body light lt" id='refund_krw'>
-          0
-        </div>
-      </div>
-    </div>
-
-    <div class="col-sm-2 mmrl">
-      <div class="box gbb">
-        <div class="box-header DEEP-PURPLE">
-          <h3 style='font-size: 12px;'>승인처리 된 유저수(명)</h3>
-        </div>
-        <div class="box-body light lt" id='accept_cnt'>
-          0
-        </div>
-      </div>
-    </div>
-
-    <div class="col-sm-2 mmrl">
-      <div class="box gbb">
-        <div class="box-header ORANGE">
-          <h3 style='font-size: 12px;'>환불처리 된 유저수(명)</h3>
-        </div>
-        <div class="box-body light lt" id='refund_cnt'>
-          0
-        </div>
-      </div>
-    </div>
-
-    <div class="col-sm-2 mmrl">
-      <div class="box gbb">
-        <div class="box-header TEAL">
-          <h3 style='font-size: 12px;'>결제대기 유저수(명)</h3>
-        </div>
-        <div class="box-body light lt" id='wait_cnt'>
-          0
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- 검색필터 -->
-  <div class="user-filter">
-    <div class="form-group id-form flex1">
+  <div class="row">
+    <div class="form-group col-sm-2">
       <label>번호[=]</label>
       <input class="form-control" id="filter_number">
     </div>
-    <div class="form-group id-form flex1">
-      <label>이메일[=]</label>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
       <input class="form-control" id="filter_email">
     </div>
-    <div class="form-group id-form flex1">
-      <label>사용자명[=]</label>
+    <div class="form-group col-sm-2">
+      <label>사용자명[like]</label>
       <input class="form-control" id="filter_username">
     </div>
-    <div class="form-group name-form flex1">
+    <div class="form-group col-sm-2">
       <label>세션</label>
       <select class="form-control" id="filter_session" name="filter_session">
         <option value="0">선택하세요</option>
@@ -177,7 +30,7 @@
         <option value="2">2 세션</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>개월수</label>
       <select class="form-control" id="filter_month" name="filter_month">
         <option value="0">선택하세요</option>
@@ -186,7 +39,7 @@
         <option value="12">12 개월</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>상태</label>
       <select class="form-control" id="filter_status" name="filter_status">
         <option value="0">전체</option>
@@ -196,13 +49,13 @@
         <option value="Z">환불</option>
       </select>
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>요청(시작) [<=]</label>
-      <input class="form-control" id="filter_regist_start">
+      <input id="filter_regist_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
     </div>
-    <div class="form-group flex1">
+    <div class="form-group col-sm-2">
       <label>요청(종료) [<]</label>
-      <input class="form-control" id="filter_regist_end">
+      <input id="filter_regist_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
     </div>
   </div>
 
@@ -212,7 +65,7 @@
       <i class="fa fa-search mr5"></i>
       등록하기
     </button>
-    <button class="btn btn-fw primary" onclick="click_search()">
+    <button class="btn btn-fw primary" onclick="reload_data()">
       <i class="fa fa-search mr5"></i>
       검색하기
     </button>
@@ -226,7 +79,6 @@
           <th>번호</th>
           <th>이메일</th>
           <th>사용자명</th>
-          <th>연락처</th>
           <th>세션</th>
           <th>개월수</th>
           <th>금액</th>
@@ -244,505 +96,9 @@
       </tbody>
     </table>
   </div>
-
 </div>
 </%block>
 
 <%block name="js">
-
-<script>
-    function enroll_ready(){
-      var csrf_token = $('#csrf_token').html();
-      Swal.fire({
-          title: '결제요청 등록',
-          html: '' +
-          '<div style="margin-top: 10px;">사용자이메일</div>'+
-          '<input type="text" class="form-control" id="note_email">'+
-          '<div style="margin-top: 10px;">세션</div>'+
-          '<select class="form-control" id="note_session">'+
-          '  <option value="1">1 세션</option>'+
-          '  <option value="2">2 세션</option>'+
-          '</select>'+
-          '<div style="margin-top: 10px;">개월수</div>'+
-          '<select class="form-control" id="note_month">'+
-          '  <option value="1">1 개월</option>'+
-          '  <option value="6">6 개월</option>'+
-          '  <option value="12">12 개월</option>'+
-          '</select>'+
-          '<div style="margin-top: 10px;">결제방식</div>'+
-          '<select class="form-control" id="note_type">'+
-          '  <option value="M">무통장</option>'+
-          '  <option value="W">위쳇페이</option>'+
-          '</select>',
-          confirmButtonColor: '#8938ff',
-          showCancelButton: true,
-          confirmButtonText: '등록',
-          cancelButtonText: "닫기"
-      }).then(function (result){
-          if (result.value) {
-              var note_email = $('#note_email').val();
-              var note_session = $('#note_session').val();
-              var note_month = $('#note_month').val();
-              var note_type = $('#note_type').val();
-
-              console.log("note_email -> ", note_email);
-              console.log("note_session -> ", note_session);
-              console.log("note_month -> ", note_month);
-              console.log("note_type -> ", note_type);
-
-              $.post("/api_create_sh", {
-                  csrfmiddlewaretoken: csrf_token,
-                  note_email: note_email,
-                  note_session: note_session,
-                  note_month: note_month,
-                  note_type: note_type,
-              })
-              .done(function (data) {
-                  if (data.result == 200) {
-                      Swal.fire({
-                          title: '알림',
-                          text: data.msg,
-                          type: 'success',
-                          confirmButtonColor: swalColor('success')
-                      });
-                      click_search();
-                  } else {
-                    Swal.fire({
-                        title: '알림',
-                        text: data.msg,
-                        type: 'error',
-                        confirmButtonColor: swalColor('error')
-                    });
-                  }
-              })
-          }
-      })
-    }
-
-    function click_search(){
-        datatable.ajax.reload();
-        load_sum();
-    }
-
-    $('#filter_regist_start').val(getNow());
-    $('#filter_regist_end').val(getTomorrow());
-
-    var csrf_token = $('#csrf_token').html();
-    var datatable = $('#price-inform').DataTable({
-      dom: '<"top"Blf>rtp<"bottom"i>',
-      paging: true,
-      ordering: true,
-      info: false,
-      filter: false,
-      lengthChange: false,
-      order: [[0, "desc"]],
-      stateSave: false,
-      pagingType: "full_numbers",
-      scrollX: false,
-      scrollCollapse: false,
-      processing: true,
-      serverSide: true,
-      drawCallback: function () {},
-      ajax: {
-          url: "/api_read_ah",
-          type: "POST",
-          dataType: "json",
-          data: {
-              csrfmiddlewaretoken: csrf_token,
-              number: function() { return $('#filter_number').val() },
-              email: function() { return $('#filter_email').val() },
-              username: function() { return $('#filter_username').val() },
-              session: function() { return $('#filter_session').val() },
-              month: function() { return $('#filter_month').val() },
-              status: function() { return $('#filter_status').val() },
-              regist_start: function() {
-                  var filter_regist_start = $('#filter_regist_start').val();
-                  var filter_regist_end = $('#filter_regist_end').val();
-                  if(filter_regist_start == ''){
-                    $('#filter_regist_start').val(getNow());
-                  } else if(filter_regist_start > filter_regist_end){
-                      $('#filter_regist_start').val(getNow());
-                  }
-                  return filter_regist_start;
-              },
-              regist_end: function() {
-                  var filter_regist_start = $('#filter_regist_start').val();
-                  var filter_regist_end = $('#filter_regist_end').val();
-                  if(filter_regist_end == ''){
-                    $('#filter_regist_end').val(getTomorrow());
-                  } else if(filter_regist_start > filter_regist_end){
-                      $('#filter_regist_end').val(getTomorrow());
-                  }
-                  return filter_regist_end;
-              },
-          },
-      },
-      columns: [
-          {data: "id"},
-          {data: "email"},
-          {data: "username"},
-          {data: "phone"},
-          {data: "session"},
-          {data: "month_type"},
-          {data: "krw"},
-          {data: "status"},
-          {data: "cancel"},
-          {data: "cancel_date"},
-          {data: "accept"},
-          {data: "accept_date"},
-          {data: "refund"},
-          {data: "refund_date"},
-          {data: "type"},
-      ],
-      columnDefs: [
-          {
-            targets: 0,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 1,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 2,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 3,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 4,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 5,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 6,
-            visible: true,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 7,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              var data = data.split('@');
-              var status = data[0];
-              var id = data[1];
-              if (status == 'R') {
-                  return '<button class="md-btn md-flat mb-2 w-xs text-primary">대기</button>'
-              } else if (status == 'C') {
-                  return '<button class="md-btn md-flat mb-2 w-xs">취소</button>'
-              } else if (status == 'A') {
-                  return '<button class="md-btn md-flat mb-2 w-xs text-success">승인</button>'
-              } else if (status == 'Z') {
-                  return '<button class="md-btn md-flat mb-2 w-xs text-danger">환불</button>'
-              }
-            }
-          },
-          {
-            targets: 8,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              var data = data.split('@');
-              var status = data[0];
-              var id = data[1];
-              var username = data[2];
-              var product_name = data[3];
-              var krw = data[4];
-              if (status == 'R') {
-                return '<button onclick="call_cancel(\''+id+'\', \''+username+'\', \''+product_name+'\', \''+krw+'\')" class="btn btn-outline b-warning text-warning">취소</button>';
-              } else {
-                return '';
-              }
-            }
-          },
-          {
-            targets: 9,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 10,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              var data = data.split('@');
-              var status = data[0];
-              var id = data[1];
-              var username = data[2];
-              var product_name = data[3];
-              var krw = data[4];
-              if (status == 'R') {
-                return '<button onclick="call_accept(\''+id+'\', \''+username+'\', \''+product_name+'\', \''+krw+'\')" class="btn btn-outline b-success text-success">승인</button>';
-              } else {
-                return '';
-              }
-            }
-          },
-          {
-            targets: 11,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 12,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              var data = data.split('@');
-              var status = data[0];
-              var id = data[1];
-              var username = data[2];
-              var product_name = data[3];
-              var krw = data[4];
-              if (status == 'A') {
-                return '<button onclick="call_refund(\''+id+'\', \''+username+'\', \''+product_name+'\', \''+krw+'\')" class="btn btn-outline b-danger text-danger">환불</button>';
-              } else {
-                return '';
-              }
-            }
-          },
-          {
-            targets: 13,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              return data;
-            }
-          },
-          {
-            targets: 14,
-            visible: true,
-            orderable: false,
-            render: function (data) {
-              if (data == 'M') {
-                return '무통장';
-              } else if (data == 'W') {
-                return '위쳇페이';
-              } else {
-                return '';
-              }
-            }
-          }
-      ],
-      language: {
-          lengthMenu: "Display _MENU_ records per page",
-          zeroRecords: "데이터가 존재하지 않습니다",
-          info: "Showing page _PAGE_ of _PAGES_",
-          infoEmpty: "No records available",
-          infoFiltered: "(filtered from _MAX_ total records)",
-          paginate: {
-              first: '처음',
-              last: '끝',
-              previous: "이전",
-              next: "다음"
-          }
-      },
-    });
-
-  $( document ).ready(function() {
-    load_sum();
-  });
-
-  function load_sum() {
-        var csrf_token = $('#csrf_token').html();
-        $.post( "/api_read_sum", {
-          csrfmiddlewaretoken: csrf_token,
-          number: function() { return $('#filter_number').val() },
-          email: function() { return $('#filter_email').val() },
-          username: function() { return $('#filter_username').val() },
-          session: function() { return $('#filter_session').val() },
-          month: function() { return $('#filter_month').val() },
-          status: function() { return $('#filter_status').val() },
-          regist_start: function() {
-              var filter_regist_start = $('#filter_regist_start').val();
-              var filter_regist_end = $('#filter_regist_end').val();
-              if(filter_regist_start == ''){
-                $('#filter_regist_start').val(getNow());
-              } else if(filter_regist_start > filter_regist_end){
-                  $('#filter_regist_start').val(getNow());
-              }
-              return filter_regist_start;
-          },
-          regist_end: function() {
-              var filter_regist_start = $('#filter_regist_start').val();
-              var filter_regist_end = $('#filter_regist_end').val();
-              if(filter_regist_end == ''){
-                $('#filter_regist_end').val(getTomorrow());
-              } else if(filter_regist_start > filter_regist_end){
-                  $('#filter_regist_end').val(getTomorrow());
-              }
-              return filter_regist_end;
-          },
-         })
-        .done(function( data ) {
-          $('#accept_krw').html(data.accept_krw);
-          $('#refund_krw').html(data.refund_krw);
-          $('#accept_cnt').html(data.accept_cnt);
-          $('#refund_cnt').html(data.refund_cnt);
-          $('#wait_cnt').html(data.wait_cnt);
-      });
-  }
-
-  function getNow(){
-      var dt = new Date();
-      var y = dt.getFullYear();
-      var m = ("00" + (dt.getMonth()+1)).slice(-2);
-      var d = ("00" + dt.getDate()).slice(-2);
-      var result = y + "-" + m + "-" + d;
-      return result;
-  }
-  function getTomorrow(){
-      var dt = new Date();
-      dt.setDate(dt.getDate() + 1);
-      var y = dt.getFullYear();
-      var m = ("00" + (dt.getMonth()+1)).slice(-2);
-      var d = ("00" + dt.getDate()).slice(-2);
-      var result = y + "-" + m + "-" + d;
-      return result;
-  }
-
-  function call_cancel(id, username, product_name, krw){
-    var csrf_token = $('#csrf_token').html();
-    Swal.fire({
-        title: '결제요청 취소',
-        html: '' +
-        '<div style="font-size: 12px; margin-top: 10px;">사용자명</div>' +
-        '<div style="font-weight: bold; color: red;">'+username+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">상품명</div>' +
-        '<div style="font-weight: bold; color: red;">'+product_name+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">가격</div>' +
-        '<div style="font-weight: bold; color: red;">'+krw+'원</div>' +
-        '<div style="margin-top: 10px;">결제요청을 취소하시겠습니까?</div>',
-        confirmButtonColor: '#8938ff',
-        showCancelButton: true,
-        confirmButtonText: '취소처리',
-        cancelButtonText: "닫기"
-    }).then(function (result){
-        if (result.value) {
-            $.post("/api_set_status", {
-                csrfmiddlewaretoken: csrf_token,
-                id: id,
-                type: 'C'
-            })
-            .done(function (data) {
-                if (data.result == 200) {
-                    Swal.fire({
-                        title: '알림',
-                        text: '처리되었습니다',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    });
-                    click_search();
-                }
-            })
-        }
-    })
-  }
-  function call_accept(id, username, product_name, krw){
-    var csrf_token = $('#csrf_token').html();
-    Swal.fire({
-        title: '결제요청 승인',
-        html: '' +
-        '<div style="font-size: 12px; margin-top: 10px;">사용자명</div>' +
-        '<div style="font-weight: bold; color: red;">'+username+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">상품명</div>' +
-        '<div style="font-weight: bold; color: red;">'+product_name+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">가격</div>' +
-        '<div style="font-weight: bold; color: red;">'+krw+'원</div>' +
-        '<div style="margin-top: 10px;">결제요청을 승인하시겠습니까?</div>',
-        confirmButtonColor: '#28a745',
-        showCancelButton: true,
-        confirmButtonText: '승인처리',
-        cancelButtonText: "닫기"
-    }).then(function (result){
-        if (result.value) {
-            $.post("/api_set_status", {
-                csrfmiddlewaretoken: csrf_token,
-                id: id,
-                type: 'A'
-            })
-            .done(function (data) {
-                if (data.result == 200) {
-                    Swal.fire({
-                        title: '알림',
-                        text: '처리되었습니다',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    });
-                    click_search();
-                }
-            })
-        }
-    })
-  }
-  function call_refund(id, username, product_name, krw){
-    var csrf_token = $('#csrf_token').html();
-    Swal.fire({
-        title: '결제 환불',
-        html: '' +
-        '<div style="font-size: 12px; margin-top: 10px;">사용자명</div>' +
-        '<div style="font-weight: bold; color: red;">'+username+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">상품명</div>' +
-        '<div style="font-weight: bold; color: red;">'+product_name+'</div>' +
-        '<div style="font-size: 12px; margin-top: 10px;">가격</div>' +
-        '<div style="font-weight: bold; color: red;">'+krw+'원</div>' +
-        '<div style="margin-top: 10px;">결제를 환불하시겠습니까?</div>',
-        confirmButtonColor: '#dc3545',
-        showCancelButton: true,
-        confirmButtonText: '환불처리',
-        cancelButtonText: "닫기"
-    }).then(function (result){
-        if (result.value) {
-            $.post("/api_set_status", {
-                csrfmiddlewaretoken: csrf_token,
-                id: id,
-                type: 'Z'
-            })
-            .done(function (data) {
-                if (data.result == 200) {
-                    Swal.fire({
-                        title: '알림',
-                        text: '처리되었습니다',
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                    });
-                    click_search();
-                }
-            })
-        }
-    })
-  }
-</script>
+<script src="/static/admin/js/bank.js"></script>
 </%block>

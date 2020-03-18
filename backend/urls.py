@@ -46,24 +46,22 @@ urlpatterns = [
     # [render] 서비스 내역
     path('service', ServiceViews.service, name='service'),
 
-    # [api] 로그인
-    path('api_login', LoginViews.api_login, name='api_login'),
+    # [api v1] 로그인
+    path('api/v1/login', LoginViews.api_login, name='api_login'),
 
-    # [api] 로그아웃
-    path('api_logout', LoginViews.api_logout, name='api_logout'),
+    # [api v1] 로그아웃
+    path('api/v1/logout', LoginViews.api_logout, name='api_logout'),
 
-
-
-    # [api v1] 회원관리 데이터테이블즈 데이터를 반홥합니다
+    # [api v1] 회원관리 데이터테이블즈 데이터를 반환합니다
     path('api/v1/read/user_datatables', UserViews.api_read_user_datatables, name='api_read_user_datatables'),
 
     # [api v1] 회원정보 상세정보를 반환합니다
     path('api/v1/read/user_detail', UserViews.api_read_user_detail, name='api_read_user_detail'),
 
-    # [api v1] 사용자 서비스 시간을 radcheck 에서 조회해서 반홥합니다
+    # [api v1] 사용자 서비스 시간을 radcheck 에서 조회해서 반환합니다
     path('api/v1/read/user_service_time', UserViews.api_read_user_service_time, name='api_read_user_service_time'),
 
-    # [api v1] 사용자 세션을 radcheck 에서 조회해서 반홥합니다
+    # [api v1] 사용자 세션을 radcheck 에서 조회해서 반환합니다
     path('api/v1/read/user_session', UserViews.api_read_user_session, name='api_read_user_session'),
 
     # [api v1] 사용자 서비스 시간을 radcheck 에서 수정합니다
@@ -81,32 +79,30 @@ urlpatterns = [
     # [api v1] 사용자를 탈퇴시킵니다
     path('api/v1/delete/user', UserViews.api_delete_user, name='api_delete_user'),
 
+    # [api v1] 결제모듈 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/payment', PriceViews.api_read_payment, name='api_read_payment'),
 
+    # [api v1] 결제모듈에 대해 환불을 진행합니다
+    path('api/v1/update/refund', PriceViews.api_update_refund, name='api_update_refund'),
 
-    # [api] 결제 데이터 로드
-    path('api_price_read', PriceViews.api_price_read, name='api_price_read'),
+    # [api v1] 변경 내역 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/change_history', ServiceViews.api_read_change_history, name='api_read_change_history'),
 
-    # [api] 환불
-    path('api_price_refund', PriceViews.api_price_refund, name='api_price_refund'),
+    # [api v1] 계좌관리 입금주, 은행이름, 은행계좌번호를 반환합니다
+    path('api/v1/read/account', PriceViews.api_read_account, name='api_read_account'),
 
-    # [api] 무통장내역 조회
-    path('api_read_ah', PriceViews.api_read_ah, name='api_read_ah'),
+    # [api v1] 계좌관리 입금주, 은행이름, 은행계좌번호를 수정합니다
+    path('api/v1/update/account', PriceViews.api_update_account, name='api_update_account'),
 
-    # [api] 무통장내역 상태변경
-    path('api_set_status', PriceViews.api_set_status, name='api_set_status'),
+    # [api v1] 무통장 결제 요청 건수를 반홥합니다
+    path('api/v1/read/ready_count', PriceViews.api_read_ready_count, name='api_read_ready_count'),
 
-    # [api] 무통장내역 통계
-    path('api_read_sum', PriceViews.api_read_sum, name='api_read_sum'),
+    #  [api v1] 무통장 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/bank', PriceViews.api_read_bank, name='api_read_bank'),
 
-    # [api] 무통장내역 등록
-    path('api_create_sh', PriceViews.api_create_sh, name='api_create_sh'),
+    # [api v1] 무통장 결제 데이터 상태를 변경합니다
+    path('api/v1/update/bank', PriceViews.api_update_bank, name='api_update_bank'),
 
-    # [api] 계좌관리 내용 로드
-    path('api_read_bank', PriceViews.api_read_bank, name='api_read_bank'),
-
-    # [api] 계좌관리 내용 편집
-    path('api_update_bank', PriceViews.api_update_bank, name='api_update_bank'),
-
-    # [api] 서비스 내역 로드
-    path('api_service_time_read', ServiceViews.api_service_time_read, name='api_service_time_read'),
+    # [api v1] 무통장 결제 데이터를 생성합니다
+    path('api/v1/create/bank', PriceViews.api_create_bank, name='api_create_bank'),
 ]

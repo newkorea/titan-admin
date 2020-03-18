@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import connections
 from django.conf import settings
 from backend.djangoapps.common.views import *
+from backend.djangoapps.common.swal import get_swal
 from backend.models import *
 from backend.models_radius import *
 import datetime
@@ -20,7 +21,7 @@ def service(request):
 
 # (2020-03-18)
 @allow_admin
-def api_service_time_read(request):
+def api_read_change_history(request):
     start = int(request.POST.get('start'))
     length = int(request.POST.get('length'))
     draw = int(request.POST.get('draw'))

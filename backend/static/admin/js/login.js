@@ -9,7 +9,7 @@ function adminLogin(){
     var login_id = $('#login_id').val();
     var login_pw = $('#login_pw').val();
 
-    $.post( "/api_login", {
+    $.post( "/api/v1/login", {
        csrfmiddlewaretoken: csrf_token,
        input_id: login_id,
        input_pw: login_pw
