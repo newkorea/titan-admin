@@ -230,7 +230,7 @@ def api_update_user_session(request):
                 prev_time_rad = '',
                 after_time = after_session,
                 after_time_rad = '',
-                diff = '세션변경',
+                diff = '세션 변경',
                 reason = change_reason,
                 regist_date = datetime.datetime.now())
             st.save()
@@ -242,3 +242,102 @@ def api_update_user_session(request):
     else:
         title, text = get_swal('NOT_SESSION_FORMAT')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+
+# (2020-03-17)
+@allow_admin
+def api_update_user_password(request):
+    change_password = request.POST.get('change_password')
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+
+    # 비밀번호 8자리 이상 체크
+    if len(change_password) < 8:
+        title, text = get_swal('NOT_PASSWORD_RULE')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 비밀번호 2조합 이상 체크
+    rule_cnt = 0
+    sp_txt = re.findall("[\!\@\#\$\%\^\&\*\(\)\-\=\_\+\~]", change_password)
+    if len(sp_txt) > 0:
+        rule_cnt += 1
+    ap_txt = re.findall("[a-zA-Z]", change_password)
+    if len(ap_txt) > 0:
+        rule_cnt += 1
+    dg_txt = re.findall("[0-9]", change_password)
+    if len(dg_txt) > 0:
+        rule_cnt += 1
+    if rule_cnt < 2:
+        title, text = get_swal('NOT_PASSWORD_RULE')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    prev_password = user.password
+    user.password = hashText(change_password)
+    user.save()
+
+    st = TblServiceTime(
+        user_id = user_id,
+        prev_time = '비공개',
+        prev_time_rad = '',
+        after_time = '비공개',
+        after_time_rad = '',
+        diff = '비밀번호 변경',
+        reason = change_reason,
+        regist_date = datetime.datetime.now())
+    st.save()
+    title, text = get_swal('SUCCESS_PASSWORD')
+    return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# (2020-03-17)
+@allow_admin
+def api_update_user_active(request):
+    change_active = request.POST.get('change_active')
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+
+    prev_is_active = user.is_active
+    user.is_active = change_active
+    user.save()
+
+    st = TblServiceTime(
+        user_id = user_id,
+        prev_time = get_active_txt(prev_is_active),
+        prev_time_rad = '',
+        after_time = get_active_txt(change_active),
+        after_time_rad = '',
+        diff = '활성화 변경',
+        reason = change_reason,
+        regist_date = datetime.datetime.now())
+    st.save()
+
+    title, text = get_swal('SUCCESS_ACTIVE')
+    return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# (2020-03-17)
+@allow_admin
+def api_delete_user(request):
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+
+    user.email = 'delete__' + user.email + '#' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    user.delete_yn = 'Y'
+    user.save()
+
+    st = TblServiceTime(
+        user_id = user_id,
+        prev_time = '',
+        prev_time_rad = '',
+        after_time = '',
+        after_time_rad = '',
+        diff = '회원탈퇴',
+        reason = change_reason,
+        regist_date = datetime.datetime.now())
+    st.save()
+
+    title, text = get_swal('SUCCESS_DELETE_USER')
+    return JsonResponse({'result': 200, 'title': title, 'text': text})

@@ -92,3 +92,15 @@ def get_swal(type):
         title = '알림'
         text = '세션이 변경되었습니다'
         return title, text
+    elif type == 'SUCCESS_PASSWORD':
+        title = '알림'
+        text = '비밀번호가 변경되었습니다'
+        return title, text
+    elif type == 'SUCCESS_ACTIVE':
+        title = '알림'
+        text = '활성화 상태가 변경되었습니다'
+        return title, text
+    elif type == 'SUCCESS_DELETE_USER':
+        title = '알림'
+        text = '회원 탈퇴 처리가 완료되었습니다'
+        return title, text

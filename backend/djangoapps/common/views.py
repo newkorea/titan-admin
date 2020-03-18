@@ -90,7 +90,15 @@ def allow_dealer(func):
 
     return wrapper
 
-    
+
+# 활성화 값을 텍스트로 반환 (2020-03-18)
+def get_active_txt(status):
+    if status == '1':
+        return '활성화'
+    else:
+        return '비활성화'
+
+
 # 요금 초기화 함수 (2019.11.14 14.33)
 def initServiceTime(user_id):
 

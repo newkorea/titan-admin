@@ -72,6 +72,15 @@ urlpatterns = [
     # [api v1] 사용자 세션을 radcheck 에서 수정합니다
     path('api/v1/update/user_session', UserViews.api_update_user_session, name='api_update_user_session'),
 
+    # [api v1] 사용자 비밀번호를 변경합니다
+    path('api/v1/update/user_password', UserViews.api_update_user_password, name='api_update_user_password'),
+
+    # [api v1] 사용자 활성화 상태를 변경합니다
+    path('api/v1/update/user_active', UserViews.api_update_user_active, name='api_update_user_active'),
+
+    # [api v1] 사용자를 탈퇴시킵니다
+    path('api/v1/delete/user', UserViews.api_delete_user, name='api_delete_user'),
+
 
 
     # [api] 결제 데이터 로드

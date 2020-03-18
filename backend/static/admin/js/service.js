@@ -84,7 +84,7 @@ var datatable = $('#user-inform').DataTable({
         visible: true,
         render: function (data) {
           console.log('diff_data', data);
-          if(data == '세션변경'){
+          if(data == '세션 변경' || data == '비밀번호 변경' || data == '활성화 변경' || data == '회원탈퇴'){
               return data;
           } else {
               if (data < 0){
