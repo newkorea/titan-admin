@@ -433,6 +433,34 @@ function call_refund(id, username, product_name, krw){
     })
 }
 
+// 처리되지 않은 일감 클릭
+function ready_list() {
+    $.post("/api/v1/read/ready_data", {
+        csrfmiddlewaretoken: csrf_token
+    })
+    .done(function (data) {
+        var ready_list = data.ready_list;
+        var total = data.total;
+        swal.fire({
+            title: '처리되지 않은 일감',
+            html: ''+
+                  '<div class="form-group tal">'+
+                  '<label class="fz12">번호</label>'+
+                  '<input type="text" class="form-control" value="' + ready_list + '" readonly>'+
+                  '</div>'+
+                  '<div class="form-group tal">'+
+                  '<label class="fz12">처리되지 않은 일감 수</label>'+
+                  '<input type="text" class="form-control" value="' + total + ' 건" readonly>'+
+                  '</div>'+
+                  '<div">'+
+                  '<label class="fz12">담당자님께서는 처리되지 않은 일감이 없도록 처리해주세요!</label>'+
+                  '</div>'+
+                  '',
+            confirmButtonColor: swalColor('base'),
+        }).then(function () { /* pass */ });
+    });
+}
+
 // 검색하기 버튼 클릭
 function reload_data(){
     datatable.ajax.reload();

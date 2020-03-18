@@ -511,3 +511,14 @@ def api_update_bank(request):
     except BaseException as err:
         title, text = get_swal('UNKNOWN_ERROR')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+
+# (2020-03-18)
+@allow_admin
+def api_read_ready_data(request):
+    ready_list = ''
+    history = TblSendHistory.objects.filter(status='R')
+    total = len(history)
+    for h in history:
+        ready_list += str(h.id) + '  '
+    return JsonResponse({'result': 200, 'ready_list': ready_list, 'total': total})

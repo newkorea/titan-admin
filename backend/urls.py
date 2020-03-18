@@ -105,4 +105,7 @@ urlpatterns = [
 
     # [api v1] 무통장 결제 데이터를 생성합니다
     path('api/v1/create/bank', PriceViews.api_create_bank, name='api_create_bank'),
+
+    # [api v1] 무통장 결제 데이터를 생성합니다
+    path('api/v1/read/ready_data', PriceViews.api_read_ready_data, name='api_read_ready_data'),
 ]
