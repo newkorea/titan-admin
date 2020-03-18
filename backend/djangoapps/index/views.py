@@ -12,7 +12,7 @@ from backend.djangoapps.common.swal import get_swal
 @login_check
 def index(request):
     # 시스템 관리자 리다이렉트 설정
-    return redirect('/user')
+    return redirect('/dashboard')
     """
     if request.session['is_staff'] == 1:
         return redirect('/dashboard')
