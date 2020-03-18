@@ -53,11 +53,13 @@ def api_login(request):
     print('INFO -> login_ip : ', login_ip)
 
     # allow ip 체크
+    """
     try:
         allow_ip = TblAllowIp.objects.get(ip=login_ip)
     except BaseException as err:
         title, text = get_swal('NOT_ALLOW_IP')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
+    """
 
     # 입력 파라미터 공백 유효성 체크
     if login_email == '':
