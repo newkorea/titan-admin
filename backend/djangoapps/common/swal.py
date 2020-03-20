@@ -83,7 +83,7 @@ def get_swal(type):
     elif type == 'SUCCESS_SERVICE_TIME':
         title = '알림'
         text = '서비스 시간이 변경되었습니다'
-        return title,
+        return title, text
     elif type == 'NOT_SESSION_FORMAT':
         title = '알림'
         text = '유효하지 않은 세션값입니다'
