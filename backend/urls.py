@@ -115,4 +115,7 @@ urlpatterns = [
 
     # [api v1] 무통장 결제 데이터를 생성합니다
     path('api/v1/read/ready_data', PriceViews.api_read_ready_data, name='api_read_ready_data'),
+
+    # [api v1] 일별 가입자 수 차트의 데이터를 반환합니다.
+    path('api/v1/read/dd_user_chart', ChartViews.api_read_dd_user_chart, name='api_read_dd_user_chart'),
 ]

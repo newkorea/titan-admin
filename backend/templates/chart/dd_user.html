@@ -11,24 +11,38 @@
   <div class="row">
     <div class="form-group col-sm-2">
       <label>월</label>
-      <select class="form-control" id="filter_delete" name="filter_delete">
+      <select class="form-control" id="month_selectbox">
         <option value="">선택하세요</option>
-          <option value="jan">1월</option>
-          <option value="fab">2월</option>
-          <option value="mar">3월</option>
-          <option value="apr">4월</option>
-          <option value="may">5월</option>
-          <option value="jun">6월</option>
-          <option value="jul">7월</option>
-          <option value="aug">8월</option>
-          <option value="sep">9월</option>
-          <option value="oct">10월</option>
-          <option value="nov">11월</option>
-          <option value="dec">12월</option>
+          <option value="1">1월</option>
+          <option value="2">2월</option>
+          <option value="3">3월</option>
+          <option value="4">4월</option>
+          <option value="5">5월</option>
+          <option value="6">6월</option>
+          <option value="7">7월</option>
+          <option value="8">8월</option>
+          <option value="9">9월</option>
+          <option value="10">10월</option>
+          <option value="11">11월</option>
+          <option value="12">12월</option>
       </select>
     </div>
   </div>
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+        검색하기
+    </button>
+  </div>
+  <body>
+  <div class="chart-box">
+    <canvas id="lineChart" height="450" width="1500"></canvas>
+  </div>
+</body>
 </%block>
 
 <%block name="js">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.js"></script>
+<script src="/static/chart/js/dd_user.js"></script>
 </%block>
