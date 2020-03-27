@@ -1,0 +1,34 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">일별 가입계정 및 활성계정 통계</%block>
+<%block name="subtitle">TITAN VPN에 일별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다.</%block>
+
+<%block name="content">
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>월</label>
+      <select class="form-control" id="filter_delete" name="filter_delete">
+        <option value="">선택하세요</option>
+          <option value="jan">1월</option>
+          <option value="fab">2월</option>
+          <option value="mar">3월</option>
+          <option value="apr">4월</option>
+          <option value="may">5월</option>
+          <option value="jun">6월</option>
+          <option value="jul">7월</option>
+          <option value="aug">8월</option>
+          <option value="sep">9월</option>
+          <option value="oct">10월</option>
+          <option value="nov">11월</option>
+          <option value="dec">12월</option>
+      </select>
+    </div>
+  </div>
+</%block>
+
+<%block name="js">
+</%block>

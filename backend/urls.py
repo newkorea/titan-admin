@@ -8,6 +8,7 @@ from .djangoapps.dashboard import views as DashboardViews
 from .djangoapps.user import views as UserViews
 from .djangoapps.price import views as PriceViews
 from .djangoapps.service import views as ServiceViews
+from .djangoapps.chart import views as ChartViews
 
 
 # 개발 시 필독
@@ -45,6 +46,12 @@ urlpatterns = [
 
     # [render] 서비스 내역
     path('service', ServiceViews.service, name='service'),
+
+    # [render] 일별 통계 (가입계정 및 활성계정)
+    path('dd_user', ChartViews.dd_user, name='dd_user'),
+
+    # [render] 월별 통계 (가입계정 및 활성계정)
+    path('mm_user', ChartViews.mm_user, name='mm_user'),
 
     # [api v1] 로그인
     path('api/v1/login', LoginViews.api_login, name='api_login'),

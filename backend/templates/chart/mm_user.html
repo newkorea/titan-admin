@@ -1,0 +1,23 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">월별 가입계정 및 활성계정 통계</%block>
+<%block name="subtitle">TITAN VPN에 월별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다.</%block>
+
+<%block name="content">
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>년도</label>
+      <select class="form-control" id="filter_delete" name="filter_delete">
+        <option value="">선택하세요</option>
+          <option value="jan">2020년</option>
+      </select>
+    </div>
+  </div>
+</%block>
+
+<%block name="js">
+</%block>
