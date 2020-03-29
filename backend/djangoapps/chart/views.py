@@ -75,7 +75,7 @@ def api_read_dd_user_chart(request):
     # 특정 일의 가입된 사용자의 수를 가져오는 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-            SELECT date_format(regist_date, "%e") as day, count(id) as value
+            SELECT day(regist_date), count(id) as value
             FROM tbl_user
             WHERE Month(regist_date) = {month} and date_format(regist_date, "%Y") = {year}
             GROUP BY day(regist_date);
