@@ -451,6 +451,7 @@ class TblUser(models.Model):
     regist_ip = models.CharField(max_length=100, blank=True, null=True)
     regist_date = models.DateTimeField()
     modify_date = models.DateTimeField(blank=True, null=True)
+    active_date = models.DateTimeField(blank=True, null=True)
     is_active = models.IntegerField(blank=True, null=True)
     is_staff = models.IntegerField(blank=True, null=True)
     delete_yn = models.CharField(max_length=1, blank=True, null=True)
