@@ -118,4 +118,7 @@ urlpatterns = [
 
     # [api v1] 일별 가입자 수 차트의 데이터를 반환합니다.
     path('api/v1/read/dd_user_chart', ChartViews.api_read_dd_user_chart, name='api_read_dd_user_chart'),
+
+    # [api v1] 월별 가입자 수 차트의 데이터를 반환합니다.
+    path('api/v1/read/mm_user_chart', ChartViews.api_read_mm_user_chart, name='api_read_mm_user_chart'),
 ]

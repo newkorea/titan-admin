@@ -22,38 +22,88 @@ from django.conf import settings
 from calendar import monthrange
 
 
-# 일일 통계 (가입계정 및 활성계정) (2020-03-27)
-def dd_user(request):
+# 검색필터 생성 [ 2019 ~ 현재 yyyy ]
+def make_yaer_list():
     year_list = []
     this_year = datetime.datetime.now().year
     for years in range(2019, this_year + 1):
       year_list.append(years)
+    return year_list
+
+
+# x축 생성 (일별통계)
+def make_axisX_dd(year, month):
+    days = monthrange(year, month)[1]
+    list_day = []
+    for day in range(1, days+1):
+        day = str(day) + "일"
+        list_day.append(day)
+    return list_day
+
+
+# x축 생성 (월별통계)
+def make_axisX_mm():
+    return ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+
+
+# y축 리스트 시리얼라이즈
+def serialize_rows(rows):
+    y_axis = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    for row in rows:
+        if row['mm'] == '01':
+            y_axis[0] = row['cnt']
+        if row['mm'] == '02':
+            y_axis[1] = row['cnt']
+        if row['mm'] == '03':
+            y_axis[2] = row['cnt']
+        if row['mm'] == '04':
+            y_axis[3] = row['cnt']
+        if row['mm'] == '05':
+            y_axis[4] = row['cnt']
+        if row['mm'] == '06':
+            y_axis[5] = row['cnt']
+        if row['mm'] == '07':
+            y_axis[6] = row['cnt']
+        if row['mm'] == '08':
+            y_axis[7] = row['cnt']
+        if row['mm'] == '09':
+            y_axis[8] = row['cnt']
+        if row['mm'] == '10':
+            y_axis[9] = row['cnt']
+        if row['mm'] == '11':
+            y_axis[10] = row['cnt']
+        if row['mm'] == '12':
+            y_axis[11] = row['cnt']
+        return y_axis
+
+
+# 일일 통계 (가입계정 및 활성계정) 렌더 (2020-03-27)
+def dd_user(request):
     context = {}
-    context['year_list'] = year_list
+    context['year_list'] = make_yaer_list()
     return render(request, 'chart/dd_user.html', context)
 
 
-# 월별 통계 (가입계정 및 활성계정) (2020-03-27)
+# 월별 통계 (가입계정 및 활성계정) 렌더 (2020-03-27)
 def mm_user(request):
-    return render(request, 'chart/mm_user.html')
+    context = {}
+    context['year_list'] = make_yaer_list()
+    return render(request, 'chart/mm_user.html', context)
 
 
-# 일일 통계 (가입계정 및 활성계정) 데이터 반환 함수 (2020-03-27)
+# 일일 통계 (가입계정 및 활성계정) 데이터 반환 (2020-03-27)
 def api_read_dd_user_chart(request):
-
-    # 특정 달의 마지막 일을 가져온다
+    # 입력 파라미터
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
-    days = monthrange(year, month)[1]
 
-    list_day = []
+    # 초기화
+    x_axis = make_axisX_dd(year, month)
     regist = []
     active = []
 
     # y축 생성 / x축 초기화
-    for day in range(1, days+1):
-        day = str(day) + "일"
-        list_day.append(day)
+    for n in x_axis:
         regist.append(0)
         active.append(0)
 
@@ -62,7 +112,8 @@ def api_read_dd_user_chart(request):
         query = '''
             SELECT day(regist_date), count(id) as value
             FROM tbl_user
-            WHERE Month(regist_date) = {month} and date_format(regist_date, "%Y") = {year}
+            WHERE Month(regist_date) = {month} 
+            AND date_format(regist_date, "%Y") = {year}
             GROUP BY day(regist_date);
         '''.format(
               month=month,
@@ -78,7 +129,8 @@ def api_read_dd_user_chart(request):
         query = '''
             SELECT day(active_date), count(id) as value
             FROM tbl_user
-            WHERE Month(active_date) = {month} and date_format(active_date, "%Y") = {year}
+            WHERE Month(active_date) = {month} 
+            AND date_format(active_date, "%Y") = {year}
             GROUP BY day(active_date);
         '''.format(
               month=month,
@@ -93,4 +145,51 @@ def api_read_dd_user_chart(request):
         'regist': regist,
         'active': active
     }
-    return JsonResponse({"x_axis": list_day, "y_axis": y_axis})
+    return JsonResponse({"x_axis": x_axis, "y_axis": y_axis})
+
+
+# 일일 통계 (가입계정 및 활성계정) 데이터 반환 (2020-03-30)
+def api_read_mm_user_chart(request):
+    # 입력 파라미터
+    year = int(request.POST.get('year'))
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            select *
+            from (
+                select yyyy, mm, count(*) as cnt
+                from (
+                    select  date_format(regist_date, "%Y") as yyyy, 
+                            date_format(regist_date, "%m") as mm
+                    from tbl_user
+                ) x
+                group by yyyy, mm
+            ) y
+            where y.yyyy = '{year}'
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        regist = serialize_rows(rows)
+
+        query = '''
+            select *
+            from (
+                select yyyy, mm, count(*) as cnt
+                from (
+                    select  date_format(active_date, "%Y") as yyyy, 
+                            date_format(active_date, "%m") as mm
+                    from tbl_user
+                ) x
+                group by yyyy, mm
+            ) y
+            where y.yyyy = '{year}'
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        active = serialize_rows(rows)
+
+    y_axis = {
+        'regist': regist,
+        'active': active
+    }
+    return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
