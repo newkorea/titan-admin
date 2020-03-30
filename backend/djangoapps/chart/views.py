@@ -74,7 +74,7 @@ def serialize_rows(rows):
             y_axis[10] = row['cnt']
         if row['mm'] == '12':
             y_axis[11] = row['cnt']
-        return y_axis
+    return y_axis
 
 
 # 일일 통계 (가입계정 및 활성계정) 렌더 (2020-03-27)
