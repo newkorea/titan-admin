@@ -22,6 +22,13 @@ from django.conf import settings
 from calendar import monthrange
 
 
+LINE_COLOR_BLUE = 'rgba(0, 123, 255, 1)'
+LINE_COLOR_RED = 'rgba(255, 99, 132, 1)'
+LINE_COLOR_YELLOW = 'rgba(255, 193, 7, 1)'
+LINE_COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
+
+
+
 # 검색필터 생성 [ 2019 ~ 현재 yyyy ]
 def make_yaer_list():
     year_list = []
@@ -46,68 +53,190 @@ def make_axisX_mm():
     return ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
 
-# y축 리스트 시리얼라이즈
-def serialize_rows(rows):
-    y_axis = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# y축 리스트 시리얼라이즈 (일별통계)
+def serialize_rows_dd(rows, x_axis):
+    template = [0] * len(x_axis)
     for row in rows:
-        if row['mm'] == '01':
-            y_axis[0] = row['cnt']
-        if row['mm'] == '02':
-            y_axis[1] = row['cnt']
-        if row['mm'] == '03':
-            y_axis[2] = row['cnt']
-        if row['mm'] == '04':
-            y_axis[3] = row['cnt']
-        if row['mm'] == '05':
-            y_axis[4] = row['cnt']
-        if row['mm'] == '06':
-            y_axis[5] = row['cnt']
-        if row['mm'] == '07':
-            y_axis[6] = row['cnt']
-        if row['mm'] == '08':
-            y_axis[7] = row['cnt']
-        if row['mm'] == '09':
-            y_axis[8] = row['cnt']
-        if row['mm'] == '10':
-            y_axis[9] = row['cnt']
-        if row['mm'] == '11':
-            y_axis[10] = row['cnt']
-        if row['mm'] == '12':
-            y_axis[11] = row['cnt']
-    return y_axis
+        template[int(row[0])-1] = row[1]
+    return template
 
 
-# 일일 통계 (가입계정 및 활성계정) 렌더 (2020-03-27)
-def dd_user(request):
+# y축 리스트 시리얼라이즈 (월별통계)
+def serialize_rows_mm(rows, use):
+    y_axis1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    y_axis2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    y_axis3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    y_axis4 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    idx = 0
+    for row in rows:
+        for mm in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
+            if row['mm'] == mm:
+                if use in [4, 3, 2, 1]:
+                    y_axis1[idx] = row['cnt1']
+                if use in [4, 3, 2]:
+                    y_axis2[idx] = row['cnt2']
+                if use == [4, 3]:
+                    y_axis3[idx] = row['cnt3']
+                if use == [4]:
+                    y_axis4[idx] = row['cnt4']
+                idx += 1
+    if use == 1:
+        return y_axis1
+    elif use == 2:
+        return y_axis1, y_axis2
+    elif use == 3:
+        return y_axis1, y_axis2, y_axis3
+    elif use == 4:
+        return y_axis1, y_axis2, y_axis3, y_axis4
+
+
+# 헤더 텍스트 생성
+def make_html_title(type, main):
+    if main == 'mm':
+        if type == 'user':
+            title = '월별 가입계정 및 활성계정 통계'
+            desc = 'TITAN VPN에 월별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다'
+        elif type == 'money':
+            title = '월별 결제금액 통계'
+            desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'    
+    elif main == 'dd':
+        if type == 'user':
+            title = '일별 가입계정 및 활성계정 통계'
+            desc = 'TITAN VPN에 일별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다'
+        elif type == 'money':
+            title = '일별 결제금액 통계'
+            desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
+    endpoint = '/api/v1/read/{main}/{type}'.format(type=type, main=main)
+    return title, desc, endpoint
+
+
+# 일별 통계 공통 렌더
+def dd(request, type):
+    title, desc, endpoint = make_html_title(type, 'dd')
     context = {}
     context['year_list'] = make_yaer_list()
-    return render(request, 'chart/dd_user.html', context)
+    context['box_title'] = title
+    context['box_desc'] = desc
+    context['endpoint'] = endpoint
+    return render(request, 'chart/dd.html', context)
 
 
-# 월별 통계 (가입계정 및 활성계정) 렌더 (2020-03-27)
-def mm_user(request):
+# 월별 통계 공통 렌더
+def mm(request, type):
+    title, desc, endpoint = make_html_title(type, 'mm')
     context = {}
     context['year_list'] = make_yaer_list()
-    return render(request, 'chart/mm_user.html', context)
+    context['box_title'] = title
+    context['box_desc'] = desc
+    context['endpoint'] = endpoint
+    return render(request, 'chart/mm.html', context)
 
 
-# 일일 통계 (가입계정 및 활성계정) 데이터 반환 (2020-03-27)
-def api_read_dd_user_chart(request):
-    # 입력 파라미터
+# 일별 통계 공통 엔드포인트
+def api_dd(request, type):
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
-
-    # 초기화
     x_axis = make_axisX_dd(year, month)
-    regist = []
-    active = []
 
-    # y축 생성 / x축 초기화
-    for n in x_axis:
-        regist.append(0)
-        active.append(0)
+    # 분기 포인트
+    if type == 'user':
+        y_axis = [
+            {
+                'label': '가입자',
+                'data': get_dd_regist(year, month, x_axis),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '활성화',
+                'data': get_dd_active(year, month, x_axis),
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            }
+        ]
+    elif type == 'money':
+        y_axis = [
+            {
+                'label': '무통장(krw)',
+                'data': get_dd_send(year, month, x_axis),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(krw)',
+                'data': get_dd_payment(year, month, x_axis, 'krw'),
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(usd)',
+                'data': get_dd_payment(year, month, x_axis, 'usd'),
+                'borderColor': LINE_COLOR_YELLOW,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(cny)',
+                'data': get_dd_payment(year, month, x_axis, 'cny'),
+                'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            }
+        ]  
 
-    # y축 - 가입자 수
+    return JsonResponse({"x_axis": x_axis, "y_axis": y_axis})
+
+
+# 월별 통계 공통 엔드포인트
+def api_mm(request, type):
+    year = int(request.POST.get('year'))
+
+    # 분기 포인트
+    if type == 'user':
+        y_axis = [
+            {
+                'label': '가입자',
+                'data': get_mm_regist(year),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '활성화',
+                'data': get_mm_active(year),
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            }
+        ]
+    elif type == 'money':
+        y_axis = [
+            {
+                'label': '무통장(krw)',
+                'data': get_mm_send(year),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(krw)',
+                'data': get_mm_payment(year)[0],
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(usd)',
+                'data': get_mm_payment(year)[1],
+                'borderColor': LINE_COLOR_YELLOW,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(cny)',
+                'data': get_mm_payment(year)[1],
+                'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            }
+        ]  
+    return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
+
+
+# 코어 / 일별 / 가입자
+def get_dd_regist(year, month, x_axis):
     with connections['default'].cursor() as cur:
         query = '''
             SELECT day(regist_date), count(id) as value
@@ -115,16 +244,15 @@ def api_read_dd_user_chart(request):
             WHERE Month(regist_date) = {month} 
             AND date_format(regist_date, "%Y") = {year}
             GROUP BY day(regist_date);
-        '''.format(
-              month=month,
-              year=year
-            )
+        '''.format(month=month, year=year)
         cur.execute(query)
         rows = cur.fetchall()
-        for row in rows:
-            regist[int(row[0])-1] = row[1]
+        regist = serialize_rows_dd(rows, x_axis)
+    return regist
 
-    # y축 - 활성화 수
+
+# 코어 / 일별 / 활성화
+def get_dd_active(year, month, x_axis):
     with connections['default'].cursor() as cur:
         query = '''
             SELECT day(active_date), count(id) as value
@@ -132,32 +260,54 @@ def api_read_dd_user_chart(request):
             WHERE Month(active_date) = {month} 
             AND date_format(active_date, "%Y") = {year}
             GROUP BY day(active_date);
-        '''.format(
-              month=month,
-              year=year
-            )
+        '''.format(month=month, year=year)
         cur.execute(query)
         rows = cur.fetchall()
-        for row in rows:
-            active[int(row[0])-1] = row[1]
-
-    y_axis = {
-        'regist': regist,
-        'active': active
-    }
-    return JsonResponse({"x_axis": x_axis, "y_axis": y_axis})
+        active = serialize_rows_dd(rows, x_axis)
+    return active
 
 
-# 일일 통계 (가입계정 및 활성계정) 데이터 반환 (2020-03-30)
-def api_read_mm_user_chart(request):
-    # 입력 파라미터
-    year = int(request.POST.get('year'))
-
+# 코어 / 일별 / 무통장
+def get_dd_send(year, month, x_axis):
     with connections['default'].cursor() as cur:
         query = '''
-            select *
+            select day(accept_date), sum(krw) as value
+            from tbl_send_history
+            where status = 'A'
+            and Month(accept_date) = {month} 
+            and date_format(accept_date, "%Y") = {year}
+            GROUP BY day(accept_date);
+        '''.format(month=month, year=year)
+        cur.execute(query)
+        rows = cur.fetchall()
+        send = serialize_rows_dd(rows, x_axis)
+    return send
+
+
+# 코어 / 일별 / 결제모듈(krw)
+def get_dd_payment(year, month, x_axis, type):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select day(accept_date), sum({type}) as value
+            from tbl_send_history
+            where status = 'A'
+            and Month(accept_date) = 01
+            and date_format(accept_date, "%Y") = 2020
+            GROUP BY day(accept_date);
+        '''.format(month=month, year=year, type=type)
+        cur.execute(query)
+        rows = cur.fetchall()
+        payment = serialize_rows_dd(rows, x_axis)
+    return payment
+
+
+# 코어 / 월별 / 가입자
+def get_mm_regist(year):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  mm, cnt1
             from (
-                select yyyy, mm, count(*) as cnt
+                select yyyy, mm, count(*) as cnt1
                 from (
                     select  date_format(regist_date, "%Y") as yyyy, 
                             date_format(regist_date, "%m") as mm
@@ -169,12 +319,17 @@ def api_read_mm_user_chart(request):
         '''.format(year=year)
         cur.execute(query)
         rows = dictfetchall(cur)
-        regist = serialize_rows(rows)
+        regist = serialize_rows_mm(rows, 1)
+    return regist
 
+
+# 코어 / 월별 / 활성화
+def get_mm_active(year):
+    with connections['default'].cursor() as cur:
         query = '''
-            select *
+            select  mm, cnt1
             from (
-                select yyyy, mm, count(*) as cnt
+                select yyyy, mm, count(*) as cnt1
                 from (
                     select  date_format(active_date, "%Y") as yyyy, 
                             date_format(active_date, "%m") as mm
@@ -186,10 +341,53 @@ def api_read_mm_user_chart(request):
         '''.format(year=year)
         cur.execute(query)
         rows = dictfetchall(cur)
-        active = serialize_rows(rows)
+        active = serialize_rows_mm(rows, 1)
+    return active
 
-    y_axis = {
-        'regist': regist,
-        'active': active
-    }
-    return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
+
+# 코어 / 월별 / 무통장
+def get_mm_send(year):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  mm, 
+                    sum(krw) as cnt1
+            from (
+                select  date_format(accept_date, "%Y") as yyyy, 
+                        date_format(accept_date, "%m") as mm, 
+                        krw
+                from tbl_send_history
+                where status = 'A'
+            ) x
+            where x.yyyy = '{year}'
+            group by mm;
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        send = serialize_rows_mm(rows, 1)
+    return send
+
+
+# 코어 / 월별 / 무통장
+def get_mm_payment(year):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  mm, 
+                    ifnull(sum(krw), 0) as cnt1, 
+                    ifnull(sum(usd), 0) as cnt2, 
+                    ifnull(sum(cny), 0) as cnt3
+            from (
+                select  date_format(regist_date, "%Y") as yyyy, 
+                        date_format(regist_date, "%m") as mm, 
+                        krw,
+                        usd,
+                        cny
+                from tbl_price_history
+                where refund_yn = 'N'
+            ) x
+            where x.yyyy = '{year}'
+            group by mm;
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        krw, usd, cny = serialize_rows_mm(rows, 3)
+    return krw, usd, cny

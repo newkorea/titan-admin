@@ -13,22 +13,7 @@ function draw_chart(id, url, param){
             type: 'line',
             data: {
                 labels: x_axis,
-                datasets: [
-                    {
-                        label: '가입자',
-                        data: y_axis.regist,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: '활성화',
-                        data: y_axis.active,
-                        backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                        borderColor: 'rgba(0, 123, 255, 1)',
-                        borderWidth: 1
-                    }
-                ]
+                datasets: y_axis
             },
             options: {
                 responsive: true,
@@ -66,7 +51,6 @@ function draw_chart(id, url, param){
                         ticks: {
                             suggestedMin: 0,
                             suggestedMax: 10,
-                            stepSize: 1
                         }
 					}]
 				}

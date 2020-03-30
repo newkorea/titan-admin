@@ -47,11 +47,11 @@ urlpatterns = [
     # [render] 서비스 내역
     path('service', ServiceViews.service, name='service'),
 
-    # [render] 일별 통계 (가입계정 및 활성계정)
-    path('dd_user', ChartViews.dd_user, name='dd_user'),
+    # [render] 일별 통계 
+    path('dd/<type>', ChartViews.dd, name='dd'),
 
-    # [render] 월별 통계 (가입계정 및 활성계정)
-    path('mm_user', ChartViews.mm_user, name='mm_user'),
+    # [render] 월별 통계 
+    path('mm/<type>', ChartViews.mm, name='mm'),
 
     # [api v1] 로그인
     path('api/v1/login', LoginViews.api_login, name='api_login'),
@@ -116,9 +116,9 @@ urlpatterns = [
     # [api v1] 무통장 결제 데이터를 생성합니다
     path('api/v1/read/ready_data', PriceViews.api_read_ready_data, name='api_read_ready_data'),
 
-    # [api v1] 일별 가입자 수 차트의 데이터를 반환합니다.
-    path('api/v1/read/dd_user_chart', ChartViews.api_read_dd_user_chart, name='api_read_dd_user_chart'),
+    # [api v1] 일별 통계 공통 엔드포인트
+    path('api/v1/read/dd/<type>', ChartViews.api_dd, name='api_dd'),
 
-    # [api v1] 월별 가입자 수 차트의 데이터를 반환합니다.
-    path('api/v1/read/mm_user_chart', ChartViews.api_read_mm_user_chart, name='api_read_mm_user_chart'),
+    # [api v1] 월별 통계 공통 엔드포인트
+    path('api/v1/read/mm/<type>', ChartViews.api_mm, name='api_mm'),
 ]
