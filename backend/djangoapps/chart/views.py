@@ -287,7 +287,7 @@ def api_mm(request, type):
 
 
 # 코어 / 일별 / 가입자
-def get_dd_regist(year, month, x_axis, add_type, rec):
+def get_dd_regist(year, month, x_axis, add_type='', rec=''):
     with connections['default'].cursor() as cur:
         if add_type == 'saler':
             add_query = "AND regist_rec = '{rec}'".format(rec=rec)
@@ -308,7 +308,7 @@ def get_dd_regist(year, month, x_axis, add_type, rec):
 
 
 # 코어 / 일별 / 활성화
-def get_dd_active(year, month, x_axis, add_type, rec):
+def get_dd_active(year, month, x_axis, add_type='', rec=''):
     with connections['default'].cursor() as cur:
         if add_type == 'saler':
             add_query = "AND regist_rec = '{rec}'".format(rec=rec)
@@ -329,7 +329,7 @@ def get_dd_active(year, month, x_axis, add_type, rec):
 
 
 # 코어 / 일별 / 무통장
-def get_dd_send(year, month, x_axis, add_type, rec):
+def get_dd_send(year, month, x_axis, add_type='', rec=''):
     with connections['default'].cursor() as cur:
         if add_type == 'saler':
             add_query = "AND regist_rec = '{rec}'".format(rec=rec)
@@ -353,7 +353,7 @@ def get_dd_send(year, month, x_axis, add_type, rec):
 
 
 # 코어 / 일별 / 결제모듈(krw)
-def get_dd_payment(year, month, x_axis, type, add_type, rec):
+def get_dd_payment(year, month, x_axis, type, add_type='', rec=''):
     with connections['default'].cursor() as cur:
         if add_type == 'saler':
             add_query = "AND regist_rec = '{rec}'".format(rec=rec)
