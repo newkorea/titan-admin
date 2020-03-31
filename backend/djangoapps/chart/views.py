@@ -106,6 +106,12 @@ def make_html_title(type, main):
         elif type == 'money':
             title = '일별 결제금액 통계'
             desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
+        if type == 'saler_user':
+            title = '[추천인] 일별 가입계정 및 활성계정 통계'
+            desc = 'TITAN VPN에 일별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다'
+        elif type == 'saler_money':
+            title = '[추천인] 일별 결제금액 통계'
+            desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
     endpoint = '/api/v1/read/{main}/{type}'.format(type=type, main=main)
     return title, desc, endpoint
 
@@ -118,6 +124,7 @@ def dd(request, type):
     context['box_title'] = title
     context['box_desc'] = desc
     context['endpoint'] = endpoint
+    context['type'] = type
     return render(request, 'chart/dd.html', context)
 
 
@@ -129,11 +136,13 @@ def mm(request, type):
     context['box_title'] = title
     context['box_desc'] = desc
     context['endpoint'] = endpoint
+    context['type'] = type
     return render(request, 'chart/mm.html', context)
 
 
 # 일별 통계 공통 엔드포인트
 def api_dd(request, type):
+    rec = request.session['rec']
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
     x_axis = make_axisX_dd(year, month)
@@ -177,6 +186,48 @@ def api_dd(request, type):
             {
                 'label': '결제모듈(cny)',
                 'data': get_dd_payment(year, month, x_axis, 'cny'),
+                'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            }
+        ]  
+    if type == 'saler_user':
+        y_axis = [
+            {
+                'label': '가입자',
+                'data': get_dd_regist(year, month, x_axis, 'saler', rec),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '활성화',
+                'data': get_dd_active(year, month, x_axis, 'saler', rec),
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            }
+        ]
+    elif type == 'saler_money':
+        y_axis = [
+            {
+                'label': '무통장(krw)',
+                'data': get_dd_send(year, month, x_axis, 'saler', rec),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(krw)',
+                'data': get_dd_payment(year, month, x_axis, 'krw', 'saler', rec),
+                'borderColor': LINE_COLOR_BLUE,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(usd)',
+                'data': get_dd_payment(year, month, x_axis, 'usd', 'saler', rec),
+                'borderColor': LINE_COLOR_YELLOW,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제모듈(cny)',
+                'data': get_dd_payment(year, month, x_axis, 'cny', 'saler', rec),
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
             }
@@ -236,15 +287,20 @@ def api_mm(request, type):
 
 
 # 코어 / 일별 / 가입자
-def get_dd_regist(year, month, x_axis):
+def get_dd_regist(year, month, x_axis, add_type, rec):
     with connections['default'].cursor() as cur:
+        if add_type == 'saler':
+            add_query = "AND regist_rec = '{rec}'".format(rec=rec)
+        else:
+            add_query = ''
         query = '''
             SELECT day(regist_date), count(id) as value
             FROM tbl_user
             WHERE Month(regist_date) = {month} 
             AND date_format(regist_date, "%Y") = {year}
+            {add_query}
             GROUP BY day(regist_date);
-        '''.format(month=month, year=year)
+        '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
         regist = serialize_rows_dd(rows, x_axis)
@@ -252,15 +308,20 @@ def get_dd_regist(year, month, x_axis):
 
 
 # 코어 / 일별 / 활성화
-def get_dd_active(year, month, x_axis):
+def get_dd_active(year, month, x_axis, add_type, rec):
     with connections['default'].cursor() as cur:
+        if add_type == 'saler':
+            add_query = "AND regist_rec = '{rec}'".format(rec=rec)
+        else:
+            add_query = ''
         query = '''
             SELECT day(active_date), count(id) as value
             FROM tbl_user
             WHERE Month(active_date) = {month} 
             AND date_format(active_date, "%Y") = {year}
+            {add_query}
             GROUP BY day(active_date);
-        '''.format(month=month, year=year)
+        '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
         active = serialize_rows_dd(rows, x_axis)
@@ -268,16 +329,23 @@ def get_dd_active(year, month, x_axis):
 
 
 # 코어 / 일별 / 무통장
-def get_dd_send(year, month, x_axis):
+def get_dd_send(year, month, x_axis, add_type, rec):
     with connections['default'].cursor() as cur:
+        if add_type == 'saler':
+            add_query = "AND regist_rec = '{rec}'".format(rec=rec)
+        else:
+            add_query = ''
         query = '''
-            select day(accept_date), sum(krw) as value
-            from tbl_send_history
+            select day(x.accept_date), sum(krw) as value
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
             where status = 'A'
-            and Month(accept_date) = {month} 
-            and date_format(accept_date, "%Y") = {year}
-            GROUP BY day(accept_date);
-        '''.format(month=month, year=year)
+            and Month(x.accept_date) = {month} 
+            and date_format(x.accept_date, "%Y") = {year}
+            {add_query}
+            GROUP BY day(x.accept_date);
+        '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
         send = serialize_rows_dd(rows, x_axis)
@@ -285,18 +353,30 @@ def get_dd_send(year, month, x_axis):
 
 
 # 코어 / 일별 / 결제모듈(krw)
-def get_dd_payment(year, month, x_axis, type):
+def get_dd_payment(year, month, x_axis, type, add_type, rec):
     with connections['default'].cursor() as cur:
+        if add_type == 'saler':
+            add_query = "AND regist_rec = '{rec}'".format(rec=rec)
+        else:
+            add_query = ''
         query = '''
-            select day(accept_date), sum({type}) as value
-            from tbl_send_history
-            where status = 'A'
-            and Month(accept_date) = 01
-            and date_format(accept_date, "%Y") = 2020
-            GROUP BY day(accept_date);
-        '''.format(month=month, year=year, type=type)
+            select day(x.regist_date), ifnull(sum({type}), 0) as value
+            from tbl_price_history x
+            join tbl_user y
+            on x.user_id = y.id
+            where refund_yn = 'N'
+            and Month(x.regist_date) = {month} 
+            and date_format(x.regist_date, "%Y") = {year}
+            {add_query}
+            GROUP BY day(x.regist_date);
+        '''.format(month=month, year=year, type=type, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
+        print('-----------------------')
+        print('type = ', type)
+        for row in rows:
+            print('row = ', row)
+        print('-----------------------')
         payment = serialize_rows_dd(rows, x_axis)
     return payment
 

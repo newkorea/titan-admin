@@ -9,6 +9,7 @@ from .djangoapps.user import views as UserViews
 from .djangoapps.price import views as PriceViews
 from .djangoapps.service import views as ServiceViews
 from .djangoapps.chart import views as ChartViews
+from .djangoapps.saler import views as SalerViews
 
 
 # 개발 시 필독
@@ -52,6 +53,9 @@ urlpatterns = [
 
     # [render] 월별 통계 
     path('mm/<type>', ChartViews.mm, name='mm'),
+
+    # [render] 회원관리
+    path('saler/user', SalerViews.saler_user, name='saler_user'),
 
     # [api v1] 로그인
     path('api/v1/login', LoginViews.api_login, name='api_login'),
@@ -121,4 +125,7 @@ urlpatterns = [
 
     # [api v1] 월별 통계 공통 엔드포인트
     path('api/v1/read/mm/<type>', ChartViews.api_mm, name='api_mm'),
+
+    # [api v1] 월별 통계 공통 엔드포인트
+    path('api/v1/read/saler_user', SalerViews.api_read_saler_user, name='api_read_saler_user'),
 ]

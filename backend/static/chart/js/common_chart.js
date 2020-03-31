@@ -38,14 +38,14 @@ function draw_chart(id, url, param){
 					xAxes: [{
 						display: true,
 						scaleLabel: {
-							display: true,
+							display: false,
 							labelString: '월'
 						}
 					}],
 					yAxes: [{
 						display: true,
 						scaleLabel: {
-							display: true,
+							display: false,
 							labelString: '명'
 						},
                         ticks: {

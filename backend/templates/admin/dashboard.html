@@ -6,6 +6,7 @@
 <%block name="css"></%block>
 
 <%block name="content">
+% if request.session['is_staff'] in [1]:
 <div>
   안녕하세요 담당 개발자입니다<br>
   <br>
@@ -16,6 +17,22 @@
   감사합니다<br>
   <br>
 </div>
+% endif
+
+% if request.session['is_staff'] in [3]:
+<div>
+  안녕하세요 총판님<br>
+  <br>
+  TITAN VPN 담당 개발자입니다<br>
+  <br>
+  타이탄 관리자 사이트에 오신걸 환영합니다<br>
+  <br>
+  마케팅에 필요한 기능들을 지속적으로 추가할 예정입니다<br>
+  <br>
+  이용해주셔서 감사합니다<br>
+  <br>
+</div>
+% endif
 </%block>
 
 <%block name="js">

@@ -111,7 +111,7 @@
 											<span class="nav-icon">
 												<i class="fa fa-sort-numeric-asc"></i>
 											</span>
-											<span class="nav-text">월별 통계</span>
+											<span class="nav-text">월별 통계 (버그)</span>
 										</a>
 										<ul class="nav-sub">
 											<li>
@@ -140,17 +140,39 @@
 										<ul class="nav-sub">
 											<li>
 												<a href="#" onclick="location.href='/'">
-													<span class="nav-text">tbl_user</span>
-												</a>
-											</li>
-											<li>
-												<a href="#" onclick="location.href='/'">
-													<span class="nav-text">radcheck</span>
+													<span class="nav-text">설계중</span>
 												</a>
 											</li>
 										</ul>
 									</li>
 									% endif
+
+                                    % if request.session['is_staff'] in [3]:
+                                    <li>
+										<a href="#" onclick="location.href='/saler/user'">
+											<span class="nav-icon">
+												<i class="fa fa-check"></i>
+											</span>
+											<span class="nav-text">회원조회</span>
+										</a>
+									</li>
+                                    <li>
+										<a href="#" onclick="location.href='/dd/saler_user'">
+											<span class="nav-icon">
+												<i class="fa fa-check"></i>
+											</span>
+											<span class="nav-text">가입통계</span>
+										</a>
+									</li>
+                                    <li>
+										<a href="#" onclick="location.href='/dd/saler_money'">
+											<span class="nav-icon">
+												<i class="fa fa-check"></i>
+											</span>
+											<span class="nav-text">수익통계</span>
+										</a>
+									</li>
+                                    % endif
 		          </ul>
 		        </div>
 					</div>

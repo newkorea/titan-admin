@@ -12,14 +12,11 @@ from backend.djangoapps.common.swal import get_swal
 @login_check
 def index(request):
     # 시스템 관리자 리다이렉트 설정
-    return redirect('/dashboard')
-    """
     if request.session['is_staff'] == 1:
         return redirect('/dashboard')
     # CS 관리자 리다이렉트 설정
-    elif request.session['is_staff'] == 2:
-        return redirect('/dashboard')
+    # elif request.session['is_staff'] == 2:
+    #    return redirect('/dashboard')
     # 총판 리다이렉트 설정
     elif request.session['is_staff'] == 3:
         return redirect('/dashboard')
-    """

@@ -79,6 +79,11 @@ def api_login(request):
     user_password = u1.password
     user_id = u1.id
 
+    # 권한 체크
+    if u1.is_staff == 0:
+        title, text = get_swal('NOT_SESSION')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
     # 로그인횟수 존재 여부 확인
     try:
         u2 = TblUserLogin.objects.get(user_id=user_id)
@@ -109,6 +114,7 @@ def api_login(request):
                 request.session['email'] = u1.email
                 request.session['username'] = u1.username
                 request.session['is_staff'] = u1.is_staff
+                request.session['rec'] = u1.rec
                 print("INFO -> Login Success")
                 return JsonResponse({'result': 200})
         except BaseException as err:

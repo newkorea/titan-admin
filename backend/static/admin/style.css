@@ -46,3 +46,9 @@ table > tbody > tr {
     margin-left: 5px;
     color: #ffffff !important;
 }
+.chart-txt {
+    margin-top: 20px;
+}
+.chart-tt {
+    font-weight: bold;
+}
