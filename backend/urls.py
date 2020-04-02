@@ -54,6 +54,9 @@ urlpatterns = [
     # [render] 월별 통계 
     path('mm/<type>', ChartViews.mm, name='mm'),
 
+    # [render] 월별 통계 
+    path('total/<type>', ChartViews.total, name='total'),
+
     # [render] 회원관리
     path('saler/user', SalerViews.saler_user, name='saler_user'),
 
@@ -126,6 +129,6 @@ urlpatterns = [
     # [api v1] 월별 통계 공통 엔드포인트
     path('api/v1/read/mm/<type>', ChartViews.api_mm, name='api_mm'),
 
-    # [api v1] 월별 통계 공통 엔드포인트
-    path('api/v1/read/saler_user', SalerViews.api_read_saler_user, name='api_read_saler_user'),
+    # [api v1] 전체 통계 공통 엔드포인트
+    path('api/v1/read/total/<type>', ChartViews.api_total, name='api_total'),
 ]

@@ -23,9 +23,16 @@ from calendar import monthrange
 
 
 LINE_COLOR_BLUE = 'rgba(0, 123, 255, 1)'
+BACK_COLOR_BLUE = 'rgba(0, 123, 255, 0.2)'
+
 LINE_COLOR_RED = 'rgba(255, 99, 132, 1)'
+BACK_COLOR_RED = 'rgba(255, 99, 132, 0.2)'
+
 LINE_COLOR_YELLOW = 'rgba(255, 193, 7, 1)'
+BACK_COLOR_YELLOW = 'rgba(255, 193, 7, 0.2)'
+
 LINE_COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
+BACK_COLOR_PURPLE = 'rgba(136, 80, 255, 0.2)'
 
 
 
@@ -106,12 +113,16 @@ def make_html_title(type, main):
         elif type == 'money':
             title = '일별 결제금액 통계'
             desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
-        if type == 'saler_user':
+        elif type == 'saler_user':
             title = '[추천인] 일별 가입계정 및 활성계정 통계'
             desc = 'TITAN VPN에 일별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다'
         elif type == 'saler_money':
             title = '[추천인] 일별 결제금액 통계'
             desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
+    elif main == 'total':
+        if type == 'rec':
+            title = '추천인 보유수 통계'
+            desc = 'TITAN VPN 회원 중 추천인 보유수가 높은 순서대로 보여줍니다'
     endpoint = '/api/v1/read/{main}/{type}'.format(type=type, main=main)
     return title, desc, endpoint
 
@@ -138,6 +149,21 @@ def mm(request, type):
     context['endpoint'] = endpoint
     context['type'] = type
     return render(request, 'chart/mm.html', context)
+
+
+# 월별 통계 공통 렌더
+def total(request, type):
+    print('type = ', type)
+    title, desc, endpoint = make_html_title(type, 'total')
+    print('title = ', title)
+    print('desc = ', desc)
+    print('endpoint = ', endpoint)
+    context = {}
+    context['box_title'] = title
+    context['box_desc'] = desc
+    context['endpoint'] = endpoint
+    context['type'] = type
+    return render(request, 'chart/total.html', context)
 
 
 # 일별 통계 공통 엔드포인트
@@ -284,6 +310,57 @@ def api_mm(request, type):
             }
         ]  
     return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
+
+
+# 전체 통계 공통 엔드포인트
+def api_total(request, type):
+
+    # 분기 포인트
+    if type == 'rec':
+        x_axis = get_total_rec()[0]
+        y_axis = [
+            {   
+                'label': '추천인 보유수',
+                'data': get_total_rec()[1],
+                'borderColor': LINE_COLOR_PURPLE,
+                'backgroundColor': BACK_COLOR_PURPLE,
+                'borderWidth': 1,
+                'barThickness': 20
+            }
+        ]
+
+    return JsonResponse({"x_axis": x_axis, "y_axis": y_axis})
+
+
+# 코어 / 일별 / 추천인 랭킹
+def get_total_rec():
+    with connections['default'].cursor() as cur:
+        query = '''
+            select *
+            from (
+                select regist_rec, count(*) as cnt
+                from tbl_user
+                where LOWER(regist_rec) != 'kok'
+                group by regist_rec
+                union
+                select regist_rec, count(*) as cnt
+                from tbl_user
+                where LOWER(regist_rec) = 'kok'
+                group by regist_rec
+            ) x
+            where regist_rec != ''
+            and cnt > 1
+            order by cnt desc
+            limit 20
+        '''
+        cur.execute(query)
+        rows = dictfetchall(cur)
+    x_axis = []
+    y_axis = []
+    for row in rows:
+        x_axis.append(row['regist_rec'])
+        y_axis.append(row['cnt'])
+    return x_axis, y_axis
 
 
 # 코어 / 일별 / 가입자

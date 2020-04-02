@@ -16,7 +16,7 @@ function click_search(){
         year: year
     }
     destroy_chart('chart_box', 'userChart');
-    draw_chart('userChart', endpoint, param);
+    draw_chart('userChart', endpoint, param, 'line');
 }
 
 // 초기화 영역

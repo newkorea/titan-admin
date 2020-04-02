@@ -3,14 +3,14 @@ function destroy_chart(box_id, chart_id){
     $('#' + box_id).append('<canvas id="' + chart_id + '" height="450" width="1500"></canvas>');
 }
 
-function draw_chart(id, url, param){
+function draw_chart(id, url, param, chart_type){
     $.post( url, param)
     .done(function( data ) {
         var x_axis = data.x_axis;
         var y_axis = data.y_axis;
         var ctx = document.getElementById(id).getContext('2d');
         var myChart = new Chart(ctx, {
-            type: 'line',
+            type: chart_type,
             data: {
                 labels: x_axis,
                 datasets: y_axis
