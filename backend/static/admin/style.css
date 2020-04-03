@@ -52,3 +52,9 @@ table > tbody > tr {
 .chart-tt {
     font-weight: bold;
 }
+.null-txt {
+    text-align: center;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    display: none;
+}

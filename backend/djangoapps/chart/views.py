@@ -45,6 +45,14 @@ def make_yaer_list():
     return year_list
 
 
+# 검색필터 생성 [ 2019 ~ 현재 yyyy ]
+def make_day_list():
+    day_list = []
+    for day in range(1, 32):
+      day_list.append(day)
+    return day_list
+
+
 # x축 생성 (일별통계)
 def make_axisX_dd(year, month):
     days = monthrange(year, month)[1]
@@ -125,6 +133,43 @@ def make_html_title(type, main):
             desc = 'TITAN VPN 회원 중 추천인 보유수가 높은 순서대로 보여줍니다'
     endpoint = '/api/v1/read/{main}/{type}'.format(type=type, main=main)
     return title, desc, endpoint
+
+
+# 트래픽 사용량 렌더
+def use_traffic(request):
+    context = {}
+    context['year_list'] = make_yaer_list()
+    context['day_list'] = make_day_list()
+    return render(request, 'chart/use_traffic.html', context)
+
+
+# 트래픽 사용량 API
+def api_use_traffic(request):
+    year = request.POST.get('year')
+    month = request.POST.get('month')
+    day = request.POST.get('day')
+
+    if len(month) == 1:
+        month = '0' + month
+    if len(day) == 1:
+        day = '0' + day
+
+    with connections['default'].cursor() as cur:
+        query = '''
+            SELECT  username,
+                    DATE_FORMAT(acctstarttime, "%Y-%m-%d %H:%i:%S") as acctstarttime,
+                    DATE_FORMAT(acctstoptime, "%Y-%m-%d %H:%i:%S") as acctstoptime,
+                    nasipaddress,
+                    callingstationid,
+                    acctoutputoctets/1e+9 as acctoutputoctets
+            FROM radius.radacct 
+            where acctstarttime like  "{year}-{month}-{day}%" 
+            order by acctoutputoctets desc;
+        '''.format(year=year, month=month, day=day)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+
+    return JsonResponse({'result': rows})
 
 
 # 일별 통계 공통 렌더

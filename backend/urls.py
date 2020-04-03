@@ -57,6 +57,9 @@ urlpatterns = [
     # [render] 월별 통계 
     path('total/<type>', ChartViews.total, name='total'),
 
+    # [render] 월별 통계 
+    path('use_traffic', ChartViews.use_traffic, name='use_traffic'),
+
     # [render] 회원관리
     path('saler/user', SalerViews.saler_user, name='saler_user'),
 
@@ -134,4 +137,7 @@ urlpatterns = [
 
     # [api v1] 동시 접속자 수를 반환합니다
     path('api/v1/read/use_user', UserViews.api_use_user, name='api_use_user'),
+    
+    # [api v1] 일별 트래픽 사용량을 반환합니다
+    path('api/v1/read/use_traffic', ChartViews.api_use_traffic, name='api_use_traffic'),
 ]

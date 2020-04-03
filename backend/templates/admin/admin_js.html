@@ -92,6 +92,22 @@
         return result;
     }
 
+    // 오늘 dd
+    function current_day(type){
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        if(type == 'year'){
+            return Number(y);
+        } else if(type == 'month'){
+            return Number(m);
+        } else if(type == 'day'){
+            return Number(d);
+        }
+    }
+
     // 초기화 실행
     ready_count();
     use_count();
