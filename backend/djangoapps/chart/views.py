@@ -136,6 +136,7 @@ def make_html_title(type, main):
 
 
 # 트래픽 사용량 렌더
+@allow_admin
 def use_traffic(request):
     context = {}
     context['year_list'] = make_yaer_list()
@@ -144,6 +145,7 @@ def use_traffic(request):
 
 
 # 트래픽 사용량 API
+@allow_admin
 def api_use_traffic(request):
     year = request.POST.get('year')
     month = request.POST.get('month')
@@ -173,6 +175,7 @@ def api_use_traffic(request):
 
 
 # 일별 통계 공통 렌더
+@allow_dealer
 def dd(request, type):
     title, desc, endpoint = make_html_title(type, 'dd')
     context = {}
@@ -185,6 +188,7 @@ def dd(request, type):
 
 
 # 월별 통계 공통 렌더
+@allow_dealer
 def mm(request, type):
     title, desc, endpoint = make_html_title(type, 'mm')
     context = {}
@@ -197,6 +201,7 @@ def mm(request, type):
 
 
 # 월별 통계 공통 렌더
+@allow_dealer
 def total(request, type):
     print('type = ', type)
     title, desc, endpoint = make_html_title(type, 'total')
@@ -212,6 +217,7 @@ def total(request, type):
 
 
 # 일별 통계 공통 엔드포인트
+@allow_dealer
 def api_dd(request, type):
     rec = request.session['rec']
     year = int(request.POST.get('year'))
@@ -308,6 +314,7 @@ def api_dd(request, type):
 
 
 # 월별 통계 공통 엔드포인트
+@allow_dealer
 def api_mm(request, type):
     year = int(request.POST.get('year'))
 
@@ -358,6 +365,7 @@ def api_mm(request, type):
 
 
 # 전체 통계 공통 엔드포인트
+@allow_dealer
 def api_total(request, type):
 
     # 분기 포인트
