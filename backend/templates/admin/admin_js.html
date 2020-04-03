@@ -57,6 +57,20 @@
         });
     }
 
+    // 현재 가입자 수
+    function ready_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api/v1/read/use_user", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                var use_count = data.use_count;
+                $('#use_count').html(use_count);
+            }
+        });
+    }
+
     // 오늘 날짜 yyyy-mm-dd
     function getNow(){
         var dt = new Date();

@@ -6,7 +6,11 @@
         <a class="navbar-brand" onclick="location.href='/dashboard'">
             <span class="hidden-folded d-inline logo-title">TITAN Admin</span>
         </a>
-        % if request.session['is_staff'] == 3:
+        % if request.session['is_staff'] == 1:
+        <span class="hidden-folded d-inline logo-title">
+            현재 동시접속자 : <b id="use_count">0</b> 명
+        </span>
+        % elif request.session['is_staff'] == 3:
         <span class="hidden-folded d-inline logo-title">
             추천코드 : <b>${request.session['rec']}</b>
         </span>

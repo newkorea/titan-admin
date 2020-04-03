@@ -341,3 +341,21 @@ def api_delete_user(request):
 
     title, text = get_swal('SUCCESS_DELETE_USER')
     return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# (2020-03-17)
+@allow_admin
+def api_use_user(request):
+    with connections['default'].cursor() as cur:
+        query = '''
+            SELECT count(*) as cnt
+            FROM radius.radacct 
+            where  acctstoptime is null
+        '''
+        try:
+            cur.execute(query)
+            rows = dictfetchall(cur)
+            use_count = rows[0]['cnt']
+        except BaseException as err:
+            use_count = 0
+    return JsonResponse({'result': 200, 'use_count': use_count})
