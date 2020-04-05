@@ -82,19 +82,22 @@ def serialize_rows_mm(rows, use):
     y_axis2 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     y_axis3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     y_axis4 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    idx = 0
+    
+
     for row in rows:
+        idx = -1
         for mm in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
+            idx += 1
             if row['mm'] == mm:
                 if use in [4, 3, 2, 1]:
                     y_axis1[idx] = row['cnt1']
                 if use in [4, 3, 2]:
                     y_axis2[idx] = row['cnt2']
-                if use == [4, 3]:
+                if use in [4, 3]:
                     y_axis3[idx] = row['cnt3']
                 if use == [4]:
                     y_axis4[idx] = row['cnt4']
-                idx += 1
+                
     if use == 1:
         return y_axis1
     elif use == 2:
@@ -356,7 +359,7 @@ def api_mm(request, type):
             },
             {
                 'label': '결제모듈(cny)',
-                'data': get_mm_payment(year)[1],
+                'data': get_mm_payment(year)[2],
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
             }
