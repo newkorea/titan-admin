@@ -132,3 +132,7 @@ def get_swal(type):
         title = '알림'
         text = '프로세스가 정상적으로 등록되었습니다'
         return title, text
+    elif type == 'SUCCESS_BLOCK':
+        title = '알림'
+        text = '테이블 내에 있는 사용자들 전부 차단 완료되었습니다'
+        return title, text

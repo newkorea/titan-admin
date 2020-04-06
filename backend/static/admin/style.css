@@ -58,3 +58,8 @@ table > tbody > tr {
     padding-bottom: 50px;
     display: none;
 }
+.real_step {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}

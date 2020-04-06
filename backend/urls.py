@@ -36,6 +36,9 @@ urlpatterns = [
     # [render] 회원관리
     path('user', UserViews.user, name='user'),
 
+    # [render] 회원관리
+    path('block_user', UserViews.block_user, name='block_user'),
+
     # [render] 결제관리
     path('price', PriceViews.price, name='price'),
 
@@ -57,8 +60,11 @@ urlpatterns = [
     # [render] 월별 통계 
     path('total/<type>', ChartViews.total, name='total'),
 
-    # [render] 월별 통계 
+    # [render] 일별 트래픽
     path('use_traffic', ChartViews.use_traffic, name='use_traffic'),
+
+    # [render] 실시간 사용자
+    path('realtime_user', ChartViews.realtime_user, name='realtime_user'),
 
     # [render] 회원관리
     path('saler/user', SalerViews.saler_user, name='saler_user'),
@@ -95,6 +101,12 @@ urlpatterns = [
 
     # [api v1] 사용자를 탈퇴시킵니다
     path('api/v1/delete/user', UserViews.api_delete_user, name='api_delete_user'),
+
+    # [api v1] 차단될 사용자를 검증합니다
+    path('api/v1/read/block_user', UserViews.api_read_block_user, name='api_read_block_user'),
+
+    # [api v1] 검증된 사용자를 차단합니다
+    path('api/v1/update/block_user', UserViews.api_update_block_user, name='api_update_block_user'),
 
     # [api v1] 결제모듈 데이터테이블즈 데이터를 반환합니다
     path('api/v1/read/payment', PriceViews.api_read_payment, name='api_read_payment'),
@@ -140,4 +152,7 @@ urlpatterns = [
     
     # [api v1] 일별 트래픽 사용량을 반환합니다
     path('api/v1/read/use_traffic', ChartViews.api_use_traffic, name='api_use_traffic'),
+
+    # [api v1] 실시간 사용자 데이터를 반환합니다
+    path('api/v1/read/realtime_user', ChartViews.api_realtime_user, name='api_realtime_user'),
 ]

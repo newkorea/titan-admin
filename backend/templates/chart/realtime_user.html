@@ -1,0 +1,31 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">실시간 사용자</%block>
+<%block name="subtitle">TITAN VPN을 사용하는 사용자들을 실시간으로 보여줍니다</%block>
+
+<%block name="content">
+  <table class="table table-bordered">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">세션ID</th>
+        <th scope="col">이메일</th>
+        <th scope="col">VPN 서버 IP</th>
+        <th scope="col">시작시간</th>
+        <th scope="col">사용자 IP</th> 
+        <th scope="col">사설 IP</th> 
+      </tr>
+    </thead>
+    <tbody id="add_point">
+    </tbody>
+  </table>
+  <div class="null-txt" id="null_txt">
+    조건에 해당하는 데이터가 존재하지 않습니다
+  </div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/realtime_user.js"></script>
+</%block>

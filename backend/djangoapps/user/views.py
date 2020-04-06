@@ -24,6 +24,74 @@ def user(request):
     return render(request, 'admin/user.html', context)
 
 
+# (2020-04-06)
+@allow_admin
+def block_user(request):
+    context = {}
+    return render(request, 'admin/block_user.html', context)
+
+
+def is_active_str(is_active):
+    if is_active == 1:
+        return '활성화'
+    else:
+        return '비활성화'
+    
+
+# (2020-04-06)
+def api_read_block_user(request):
+    user_list = request.POST.get('user_list')
+    try:
+        user_list = user_list.split(',')
+    except ValueError as err:
+        return JsonResponse({'result': []})
+
+    return_list = []
+    for user in user_list:
+        user = user.strip()
+        tmp = {}
+        if user.find('@') == -1: # 번호
+            try:
+                user = TblUser.objects.get(id=int(user))
+                tmp = {
+                    'id': user.id,
+                    'email': user.email,
+                    'regist_date': user.regist_date,
+                    'regist_ip': user.regist_ip,
+                    'is_active': is_active_str(user.is_active)
+                }
+                return_list.append(tmp)
+            except BaseException as err:
+                continue
+        else:                    # 이메일
+            try:
+                user = TblUser.objects.get(email=user)
+                tmp = {
+                    'id': user.id,
+                    'email': user.email,
+                    'regist_date': user.regist_date,
+                    'regist_ip': user.regist_ip,
+                    'is_active': is_active_str(user.is_active)
+                }
+                return_list.append(tmp)
+            except BaseException as err:
+                continue
+    return JsonResponse({'result': return_list})
+
+
+# (2020-04-06)
+def api_update_block_user(request):
+    try:
+        block_list = request.POST.getlist('block_list[]')
+        for user in block_list:
+            initServiceTime(user)
+        title, text = get_swal('SUCCESS_BLOCK')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+
 # (2020-03-16)
 @allow_admin
 def api_read_user_datatables(request):

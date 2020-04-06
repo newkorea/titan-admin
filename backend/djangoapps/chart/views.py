@@ -138,6 +138,30 @@ def make_html_title(type, main):
     return title, desc, endpoint
 
 
+# 실시간 사용자 렌더
+def realtime_user(request):
+    context = {}
+    return render(request, 'chart/realtime_user.html', context)
+
+
+# 실시간 사용자 API
+def api_realtime_user(request):
+    with connections['default'].cursor() as cur:
+        query = '''
+            SELECT acctsessionid    AS sessionid, 
+                username            AS email, 
+                nasipaddress        AS agent_ip,  
+                DATE_FORMAT(acctstarttime, "%Y-%m-%d %H:%i:%S") as starttime,
+                callingstationid    AS client_ip, 
+                framedipaddress     AS private_ip 
+            FROM   radius.radacct 
+            WHERE  acctstoptime IS NULL; 
+        '''.format()
+        cur.execute(query)
+        rows = dictfetchall(cur)
+    return JsonResponse({'result': rows})
+
+
 # 트래픽 사용량 렌더
 @allow_admin
 def use_traffic(request):

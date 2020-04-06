@@ -1,0 +1,61 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">사용자 차단</%block>
+<%block name="subtitle">TITAN VPN을 악의적으로 사용하는 사용자를 차단할 수 있습니다</%block>
+
+<%block name="content">
+
+<div class="real_step">
+    <span class="badge badge-pill warn">Step1</span> 차단할 사용자를 입력해주십시오
+</div>
+<div class="form-group">
+    <label for="exampleInputEmail1">차단할 사용자</label>
+    <textarea id="user_list" class="form-control" rows="5" placeholder="hackx@naver.com, 93immm@naver.com, 13, 17"></textarea>
+    <div style="margin-top: 10px;">
+        * 차단할 사용자를 쉼표(,) 구분으로 입력해주십시오<br>
+        * 이메일 또는 회원번호를 입력하십시오<br>
+        * 이메일과 회원번호를 섞어서 사용할 수 있습니다<br>
+        * 전부 입력하신 후에 "검증" 버튼을 클릭하여 차단할 수 있는지 확인하십시오
+    </div>
+</div>
+<div class="text-right">
+    <button class="btn btn-fw warn" onclick="click_validate()">검증</button>
+</div>
+<div class="real_step">
+    <span class="badge badge-pill warn">Step2</span> 차단 될 사용자를 검토 후에 차단처리하십시오
+</div>
+<div style="margin-top: 20px;">
+    <table class="table">
+        <thead class="thead-light">
+            <tr>
+            <th>회원번호</th>
+            <th>이메일</th>
+            <th>가입일자</th>
+            <th>가입아이피</th>
+            <th>활성화여부</th>
+            </tr>
+        </thead>
+        <tbody id="add_point">
+        </tbody>
+    </table>
+    <div class="null-txt" id="null_txt" style="display: block">
+        조건에 해당하는 데이터가 존재하지 않습니다
+    </div>
+    <div style="margin-top: 10px;">
+        * 이메일 또는 회원번호가 없는 경우나 오류인 경우는 테이블 내에 포함되지 않습니다<br>
+        * 테이블 내에 표기된 데이터가 실질적으로 차단 처리되는 데이터입니다<br>
+        * 차단은 사용시간이 2010-01-01 로 변경되면서 이용할 수 없도록 만드는 프로세스입니다<br>
+    </div>
+</div>
+<div class="text-right">
+    <button class="btn btn-fw danger" onclick="click_block()">차단</button>
+</div>
+
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/block_user.js"></script>
+</%block>
