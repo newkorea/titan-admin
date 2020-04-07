@@ -126,7 +126,7 @@ def api_create_event_code(request):
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     event = TblEventCode(
-        event_code=event_code,
+        event_code=event_code.upper(),
         start=event_start,
         end=event_end,
         free_day=event_free_day,
