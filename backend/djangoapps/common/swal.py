@@ -136,3 +136,35 @@ def get_swal(type):
         title = '알림'
         text = '테이블 내에 있는 사용자들 전부 차단 완료되었습니다'
         return title, text
+    elif type == 'EXIST_EVENT_CODE':
+        title = '알림'
+        text = '이미 등록된 이력이 있는 이벤트 코드는 등록할 수 없습니다'
+        return title, text
+    elif type == 'EXIST_EVENT_CODE_USER':
+        title = '알림'
+        text = '이미 사용중인 추천인코드로 이벤트 코드로 등록할 수 없습니다'
+        return title, text
+    elif type == 'SUCCESS_EVENT_CODE':
+        title = '알림'
+        text = '이벤트 코드 등록 처리가 완료되었습니다'
+        return title, text
+    elif type == 'SUCCESS_EVENT_CODE_DEL':
+        title = '알림'
+        text = '이벤트 코드 삭제 처리가 완료되었습니다'
+        return title, text
+    elif type == 'FAIL_TIME_FORMAT':
+        title = '알림'
+        text = '입력하신 시간 포맷이 정상적이지 않습니다'
+        return title, text
+    elif type == 'FAIL_FREE_DAY':
+        title = '알림'
+        text = '입력하신 무료체험일 값이 정상적이지 않습니다'
+        return title, text
+    elif type == 'FAIL_START_END':
+        title = '알림'
+        text = '종료일 보다 시작일이 미래일 수 없습니다'
+        return title, text
+    elif type == 'FAIL_CURRENT':
+        title = '알림'
+        text = '시작일이 현재보다 과거일 수 없습니다'
+        return title, text

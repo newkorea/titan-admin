@@ -10,6 +10,7 @@ from .djangoapps.price import views as PriceViews
 from .djangoapps.service import views as ServiceViews
 from .djangoapps.chart import views as ChartViews
 from .djangoapps.saler import views as SalerViews
+from .djangoapps.event import views as EventViews
 
 
 # 개발 시 필독
@@ -65,6 +66,12 @@ urlpatterns = [
 
     # [render] 실시간 사용자
     path('realtime_user', ChartViews.realtime_user, name='realtime_user'),
+
+    # [render] 이벤트 코드 
+    path('event_code', EventViews.event_code, name='event_code'),
+
+    # [render] 광역 스킬
+    path('event_all', EventViews.event_all, name='event_all'),
 
     # [render] 회원관리
     path('saler/user', SalerViews.saler_user, name='saler_user'),
@@ -155,4 +162,11 @@ urlpatterns = [
 
     # [api v1] 실시간 사용자 데이터를 반환합니다
     path('api/v1/read/realtime_user', ChartViews.api_realtime_user, name='api_realtime_user'),
+
+    # [api v1] 이벤트 코드 등록 API
+    path('api/v1/create/event_code', EventViews.api_create_event_code, name='api_create_event_code'),
+
+    # [api v1] 이벤트 코드 삭제 API
+    path('api/v1/delete/event_code', EventViews.api_delete_event_code, name='api_delete_event_code'),
 ]
+

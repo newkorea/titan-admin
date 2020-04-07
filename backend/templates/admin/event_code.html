@@ -1,0 +1,67 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">이벤트 코드</%block>
+<%block name="subtitle">TITAN VPN 이벤트 코드를 관리할 수 있습니다</%block>
+
+<%block name="content">
+
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw success" onclick="add_event()">
+      <i class="fa fa-plus mr5"></i>
+      이벤트 등록하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="event_code"" class="table display">
+      <thead>
+        <tr>
+          <th>이벤트 코드</th>
+          <th>적용 시작일시</th>
+          <th>적용 종료일시</th>
+          <th>무료체험일</th>
+          <th>적용 상태</th>
+          <th>등록일시</th>
+          <th>삭제일시</th>
+          <th>삭제여부</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        % for row in rows:
+        <tr>
+            <th>${row['event_code']}</th>
+            <td>${row['start']}</td>
+            <td>${row['end']}</td>
+            <td>${row['free_day']}</td>
+            <td>${row['status']}</td>
+            <td>${row['regist_date']}</td>
+            <td>${row['delete_date']}</td>
+            <td>${row['delete_yn']}</td>
+            <td>
+                <button onclick="delete_event('${row['event_code']}')" class="btn btn-outline b-danger text-danger">삭제</button>
+            </td>
+        </tr>
+        % endfor
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 10px;">
+      * 적용 시작일시는 현재시간보다 과거일 수 없습니다 (트랜잭션 오류 가능성)<br>
+      * 적용 시작일시는 적용 종료일시보다 미래일 수 없습니다<br>
+      * 삭제여부가 "삭제"인 이벤트는 적용되지 않습니다<br>
+      * 이벤트 코드는 대소문자 구분을 하지않고 적용됩니다<br>
+      * 사용자 추천인 코드와 중복되지 않도록 프로세스가 적용되어있습니다<br>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/event.js"></script>
+</%block>

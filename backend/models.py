@@ -240,6 +240,20 @@ class TblDownloadManage(models.Model):
         db_table = 'tbl_download_manage'
 
 
+class TblEventCode(models.Model):
+    event_code = models.CharField(primary_key=True, max_length=100)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    free_day = models.IntegerField()
+    regist_date = models.DateTimeField(blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+    delete_yn = models.CharField(max_length=1, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_event_code'
+
+
 class TblFakeEvent(models.Model):
     fake_code = models.CharField(max_length=255)
     fake_cnt = models.IntegerField()
