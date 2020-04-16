@@ -117,6 +117,9 @@ def make_html_title(type, main):
         elif type == 'money':
             title = '월별 결제금액 통계'
             desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'    
+        elif type == 'money_cnt':
+            title = '월별 결제건수 통계'
+            desc = 'TITAN VPN에 결제한 건수 통계를 차트로 확인할 수 있습니다'    
     elif main == 'dd':
         if type == 'user':
             title = '일별 가입계정 및 활성계정 통계'
@@ -124,6 +127,9 @@ def make_html_title(type, main):
         elif type == 'money':
             title = '일별 결제금액 통계'
             desc = 'TITAN VPN에 결제한 금액 통계를 차트로 확인할 수 있습니다'
+        elif type == 'money_cnt':
+            title = '일별 결제건수 통계'
+            desc = 'TITAN VPN에 결제한 건수 통계를 차트로 확인할 수 있습니다'
         elif type == 'saler_user':
             title = '[추천인] 일별 가입계정 및 활성계정 통계'
             desc = 'TITAN VPN에 일별 가입계정 및 활성계정 통계를 차트로 확인할 수 있습니다'
@@ -294,6 +300,21 @@ def api_dd(request, type):
                 'borderWidth': 1
             }
         ]  
+    elif type == 'money_cnt':
+        y_axis = [
+            {
+                'label': '결제건수 (수동)',
+                'data': get_dd_send_cnt(year, month, x_axis),
+                'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제건수 (결제모듈)',
+                'data': get_dd_payment_cnt(year, month, x_axis),
+                'borderColor': LINE_COLOR_RED,
+                'borderWidth': 1
+            }
+        ]
     if type == 'saler_user':
         y_axis = [
             {
@@ -385,6 +406,21 @@ def api_mm(request, type):
                 'label': '결제모듈(cny)',
                 'data': get_mm_payment(year)[2],
                 'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            }
+        ]  
+    elif type == 'money_cnt':
+        y_axis = [
+            {
+                'label': '결제건수 (수동)',
+                'data': get_mm_send_cnt(year),
+                'borderColor': LINE_COLOR_PURPLE,
+                'borderWidth': 1
+            },
+            {
+                'label': '결제건수 (결제모듈)',
+                'data': get_mm_payment_cnt(year),
+                'borderColor': LINE_COLOR_RED,
                 'borderWidth': 1
             }
         ]  
@@ -483,6 +519,44 @@ def get_dd_active(year, month, x_axis, add_type='', rec=''):
         rows = cur.fetchall()
         active = serialize_rows_dd(rows, x_axis)
     return active
+
+
+# 코어 / 일별 / 무통장 건수
+def get_dd_send_cnt(year, month, x_axis):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select day(x.accept_date), count(x.id) as value
+            from tbl_send_history x
+            join tbl_user y
+            on x.user_id = y.id
+            where status = 'A'
+            and Month(x.accept_date) = {month} 
+            and date_format(x.accept_date, "%Y") = {year}
+            GROUP BY day(x.accept_date);
+        '''.format(month=month, year=year)
+        cur.execute(query)
+        rows = cur.fetchall()
+        send = serialize_rows_dd(rows, x_axis)
+    return send
+
+
+# 코어 / 일별 / 결제모듈 건수
+def get_dd_payment_cnt(year, month, x_axis):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select day(x.regist_date), count(x.id) as value
+            from tbl_price_history x
+            join tbl_user y
+            on x.user_id = y.id
+            where refund_yn = 'N'
+            and Month(x.regist_date) = {month} 
+            and date_format(x.regist_date, "%Y") = {year}
+            GROUP BY day(x.regist_date);
+        '''.format(month=month, year=year)
+        cur.execute(query)
+        rows = cur.fetchall()
+        send = serialize_rows_dd(rows, x_axis)
+    return send
 
 
 # 코어 / 일별 / 무통장
@@ -604,7 +678,7 @@ def get_mm_send(year):
     return send
 
 
-# 코어 / 월별 / 무통장
+# 코어 / 월별 / 결제모듈
 def get_mm_payment(year):
     with connections['default'].cursor() as cur:
         query = '''
@@ -628,3 +702,48 @@ def get_mm_payment(year):
         rows = dictfetchall(cur)
         krw, usd, cny = serialize_rows_mm(rows, 3)
     return krw, usd, cny
+
+
+# 코어 / 월별 / 무통장 건수
+def get_mm_send_cnt(year):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  mm, 
+                    count(krw) as cnt1
+            from (
+                select  date_format(accept_date, "%Y") as yyyy, 
+                        date_format(accept_date, "%m") as mm, 
+                        krw
+                from tbl_send_history
+                where status = 'A'
+            ) x
+            where x.yyyy = '{year}'
+            group by mm;
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        send = serialize_rows_mm(rows, 1)
+    return send
+
+
+# 코어 / 월별 / 결제모듈 건수
+def get_mm_payment_cnt(year):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  mm, count(*) as cnt1
+            from (
+                select  date_format(regist_date, "%Y") as yyyy, 
+                        date_format(regist_date, "%m") as mm, 
+                        krw,
+                        usd,
+                        cny
+                from tbl_price_history
+                where refund_yn = 'N'
+            ) x
+            where x.yyyy = '{year}'
+            group by mm;
+        '''.format(year=year)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+        ret = serialize_rows_mm(rows, 1)
+    return ret
