@@ -76,6 +76,9 @@ urlpatterns = [
     # [render] 회원관리
     path('saler/user', SalerViews.saler_user, name='saler_user'),
 
+    # [render] 무료체험 어뷰징 유저 
+    path('abuse_user', UserViews.abuse_user, name='abuse_user'),
+
     # [api v1] 로그인
     path('api/v1/login', LoginViews.api_login, name='api_login'),
 
@@ -168,5 +171,11 @@ urlpatterns = [
 
     # [api v1] 이벤트 코드 삭제 API
     path('api/v1/delete/event_code', EventViews.api_delete_event_code, name='api_delete_event_code'),
+
+    # [api v1] 무료체험 어뷰징 모니터링 API
+    path('api/v1/read/abuse_user', UserViews.api_read_abuse_user, name='api_read_abuse_user'),
+
+    # [api v1] 무료체험 어뷰징 모니터링 API
+    path('api/v1/read/abuse_user_detail', UserViews.api_read_abuse_user_detail, name='api_read_abuse_user_detail'),
 ]
 

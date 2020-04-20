@@ -31,6 +31,14 @@ def block_user(request):
     return render(request, 'admin/block_user.html', context)
 
 
+# (2020-04-06)
+@allow_admin
+def abuse_user(request):
+    context = {}
+    return render(request, 'admin/abuse_user.html', context)
+
+
+
 def is_active_str(is_active):
     if is_active == 1:
         return '활성화'
@@ -38,7 +46,21 @@ def is_active_str(is_active):
         return '비활성화'
     
 
+# (2020-04-20)
+@allow_admin
+def api_read_abuse_user_detail(request):
+    input_ip = request.POST.get('input_ip')
+    
+    users = TblUser.objects.filter(regist_ip=input_ip)
+    result = []
+    for user in users:
+        tmp = { 'email': user.email }
+        result.append(tmp)
+    return JsonResponse({'result': result})
+
+
 # (2020-04-06)
+@allow_admin
 def api_read_block_user(request):
     user_list = request.POST.get('user_list')
     try:
@@ -79,7 +101,29 @@ def api_read_block_user(request):
     return JsonResponse({'result': return_list})
 
 
+# (2020-04-20)
+@allow_admin
+def api_read_abuse_user(request):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select @rownum:=@rownum+1 as row, w.*
+            from (
+                select regist_ip, count(*) as cnt
+                from tbl_user
+                group by regist_ip
+            ) w, (SELECT @rownum:=0) TMP
+            where cnt > 1
+            order by cnt desc;
+        '''.format()
+        # print('DEBUG -> query : ', query)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+
+    return JsonResponse({'result': rows})
+
+
 # (2020-04-06)
+@allow_admin
 def api_update_block_user(request):
     try:
         block_list = request.POST.getlist('block_list[]')
