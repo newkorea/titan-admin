@@ -157,6 +157,9 @@ urlpatterns = [
     # [api v1] 전체 통계 공통 엔드포인트
     path('api/v1/read/total/<type>', ChartViews.api_total, name='api_total'),
 
+    # [api v1] 총판 회원 조회
+    path('api/v1/read/saler_user', SalerViews.api_read_saler_user, name='api_read_saler_user'),
+
     # [api v1] 동시 접속자 수를 반환합니다
     path('api/v1/read/use_user', UserViews.api_use_user, name='api_use_user'),
     
