@@ -126,3 +126,82 @@ function add_event(){
         }
     })
 }
+
+// 이벤트 수정하기
+function modify_event(event_code){
+    $.post( "api/v1/read/event_code", {
+        csrfmiddlewaretoken: csrf_token,
+        event_code: event_code
+    }).done(function( data ) {
+        if (data.resCode === 200) {
+            var event = data.resData;
+            var event_code = event.event_code;
+            var start = event.start;
+            var end = event.end;
+            var free_day = event.free_day;
+            swal.fire({
+            title: '이벤트 코드',
+            html: ''+
+                '<div class="form-group tal">'+
+                '<label class="fz12">이벤트 코드</label>'+
+                '<input readonly id="input_event_code" type="text" class="form-control" value="'+event_code+'">'+
+                '</div>'+
+                '<div class="form-group tal">'+
+                '<label class="fz12">적용 시작일시 (yyyy-mm-dd hh:mm:ss)</label>'+
+                '<input placeholder="yyyy-mm-dd hh:mm:ss" id="input_event_start" type="text" class="form-control" value="'+start+'">'+
+                '</div>'+
+                '<div class="form-group tal">'+
+                '<label class="fz12">적용 종료일시 (yyyy-mm-dd hh:mm:ss)</label>'+
+                '<input placeholder="yyyy-mm-dd hh:mm:ss" id="input_event_end" type="text" class="form-control" value="'+end+'">'+
+                '</div>'+
+                '<div class="form-group tal">'+
+                '<label class="fz12">무료체험일</label>'+
+                '<input placeholder="숫자만 입력하십시오" id="input_event_free_day" type="text" class="form-control" value="'+free_day+'">'+
+                '</div>'+
+                '<div style="font-size: 14px;">'+
+                '* 삭제 된 이벤트를 수정할 경우 복구 처리 됩니다'+
+                '</div>',
+                confirmButtonText: '수정',
+                cancelButtonText: '취소',
+                confirmButtonColor: swalColor('base'),
+                showCancelButton: true
+            }).then(function (result) {
+                if (result.value) {
+                    var event_code = $("#input_event_code").val();
+                    var event_start = $("#input_event_start").val();
+                    var event_end = $("#input_event_end").val();
+                    var event_free_day = $("#input_event_free_day").val();
+                    console.log('event_code = ', event_code)
+                    console.log('event_start = ', event_start)
+                    console.log('event_end = ', event_end)
+                    console.log('event_free_day = ', event_free_day)
+                    $.post( "api/v1/update/event_code", {
+                        csrfmiddlewaretoken: csrf_token,
+                        event_code: event_code,
+                        event_start: event_start,
+                        event_end: event_end,
+                        event_free_day: event_free_day
+                    }).done(function( data ) {
+                    if (data.result == 200) {
+                            Swal.fire({
+                                title: data.title,
+                                text: data.text,
+                                type: 'success',
+                                confirmButtonColor: swalColor('success')
+                            })
+                            location.reload();
+                        }
+                        else {
+                            Swal.fire({
+                                title: data.title,
+                                text: data.text,
+                                type: 'error',
+                                confirmButtonColor: swalColor('error')
+                            })
+                        }
+                    });
+                }
+            })
+        }
+    })
+}

@@ -49,6 +49,27 @@ def event_all(request):
     return render(request, 'admin/event_all.html', context)
 
 
+# (2020-04-23)
+@allow_admin
+def api_read_event_code(request):
+    event_code = request.POST.get('event_code')
+    event = TblEventCode.objects.get(event_code=event_code)
+    start = event.start.strftime("%Y-%m-%d %H:%M:%S")
+    end = event.end.strftime("%Y-%m-%d %H:%M:%S")
+    print('### start = ', start)
+    res = {
+        'event_code': event.event_code,
+        'start': start,
+        'end': end,
+        'free_day': event.free_day
+    }
+    return JsonResponse({
+        'resCode': 200, 
+        'resMsg': '0000',
+        'resData': res
+    })
+
+
 # (2020-04-07)
 @allow_admin
 def api_delete_event_code(request):
@@ -56,13 +77,18 @@ def api_delete_event_code(request):
 
     try:
         event = TblEventCode.objects.get(event_code=event_code)
+        if event.delete_yn == 'Y':
+            title, text = get_swal('ALEADY_EVENT')
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
         event.delete_yn = 'Y'
+        event.delete_date = datetime.datetime.now()
         event.save()
         title, text = get_swal('SUCCESS_EVENT_CODE_DEL')
         return JsonResponse({'result': 200, 'title': title, 'text': text})
     except BaseException as err:
         title, text = get_swal('UNKNOWN_ERROR')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
+
 
 # (2020-04-07)
 @allow_admin
@@ -137,4 +163,67 @@ def api_create_event_code(request):
     event.save()
 
     title, text = get_swal('SUCCESS_EVENT_CODE')
+    return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# (2020-04-23)
+@allow_admin
+def api_update_event_code(request):
+
+    event_code = request.POST.get('event_code')
+    event_start = request.POST.get('event_start')
+    event_end = request.POST.get('event_end')
+    event_free_day = request.POST.get('event_free_day')
+
+    print('event_code = ', event_code)
+    print('event_start = ', event_start)
+    print('event_end = ', event_end)
+    print('event_free_day = ', event_free_day)
+
+    # 2. 적용 시작일시 유효성 체크
+    try:
+        event_start = datetime.datetime.strptime(event_start, '%Y-%m-%d %H:%M:%S')
+    except BaseException:
+        title, text = get_swal('FAIL_TIME_FORMAT')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+    print('event_start = ', event_start)
+    print('event_start = ', type(event_start))
+
+    # 3. 적용 종료일시 유효성 체크
+    try:
+        event_end = datetime.datetime.strptime(event_end, '%Y-%m-%d %H:%M:%S')
+    except BaseException:
+        title, text = get_swal('FAIL_TIME_FORMAT')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 4. 무료체험일 유효성 체크
+    try:
+        event_free_day = int(event_free_day)
+        if event_free_day > 0:
+            pass
+        else:
+            raise
+    except BaseException:
+        title, text = get_swal('FAIL_FREE_DAY')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 5. 적용일시 유효성체크
+    if event_start > event_end:
+        title, text = get_swal('FAIL_START_END')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 6. 적용일시 유효성체크
+    if datetime.datetime.now() > event_start:
+        title, text = get_swal('FAIL_CURRENT')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    event = TblEventCode.objects.get(event_code=event_code)
+    event.start = event_start
+    event.end = event_end
+    event.free_day = event_free_day
+    event.delete_date = None
+    event.delete_yn = 'N'
+    event.save()
+
+    title, text = get_swal('SUCCESS_EVENT_CODE_MOD')
     return JsonResponse({'result': 200, 'title': title, 'text': text})

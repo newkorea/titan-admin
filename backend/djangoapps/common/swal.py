@@ -148,6 +148,10 @@ def get_swal(type):
         title = '알림'
         text = '이벤트 코드 등록 처리가 완료되었습니다'
         return title, text
+    elif type == 'SUCCESS_EVENT_CODE_MOD':
+        title = '알림'
+        text = '이벤트 코드 수정/복구 처리가 완료되었습니다'
+        return title, text
     elif type == 'SUCCESS_EVENT_CODE_DEL':
         title = '알림'
         text = '이벤트 코드 삭제 처리가 완료되었습니다'
@@ -167,4 +171,8 @@ def get_swal(type):
     elif type == 'FAIL_CURRENT':
         title = '알림'
         text = '시작일이 현재보다 과거일 수 없습니다'
+        return title, text
+    elif type == 'ALEADY_EVENT':
+        title = '알림'
+        text = '이미 삭제된 이벤트입니다'
         return title, text

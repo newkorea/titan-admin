@@ -172,8 +172,14 @@ urlpatterns = [
     # [api v1] 이벤트 코드 등록 API
     path('api/v1/create/event_code', EventViews.api_create_event_code, name='api_create_event_code'),
 
+    # [api v1] 이벤트 코드 수정 API
+    path('api/v1/update/event_code', EventViews.api_update_event_code, name='api_update_event_code'),
+
     # [api v1] 이벤트 코드 삭제 API
     path('api/v1/delete/event_code', EventViews.api_delete_event_code, name='api_delete_event_code'),
+
+    # [api v1] 이벤트 코드 등록 API
+    path('api/v1/read/event_code', EventViews.api_read_event_code, name='api_read_event_code'),
 
     # [api v1] 무료체험 어뷰징 모니터링 API
     path('api/v1/read/abuse_user', UserViews.api_read_abuse_user, name='api_read_abuse_user'),

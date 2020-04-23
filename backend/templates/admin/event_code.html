@@ -30,6 +30,7 @@
           <th>삭제일시</th>
           <th>삭제여부</th>
           <th>삭제</th>
+          <th>수정</th>
         </tr>
       </thead>
       <tbody>
@@ -45,6 +46,9 @@
             <td>${row['delete_yn']}</td>
             <td>
                 <button onclick="delete_event('${row['event_code']}')" class="btn btn-outline b-danger text-danger">삭제</button>
+            </td>
+            <td>
+                <button onclick="modify_event('${row['event_code']}')" class="btn btn-outline b-primary text-primary">수정</button>
             </td>
         </tr>
         % endfor
