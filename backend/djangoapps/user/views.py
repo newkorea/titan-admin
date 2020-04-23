@@ -435,11 +435,22 @@ def api_delete_user(request):
     change_reason = request.POST.get('change_reason')
     user_id = request.POST.get('user_id')
     user = TblUser.objects.get(id = user_id)
+    
+    # 이메일
+    email = user.email
 
-    user.email = 'delete__' + user.email + '#' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    # 이메일(삭제)
+    delete_email = 'delete__' + user.email + '#' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+
+    # racheck 처리
+    Radcheck.objects.using('radius').filter(username=email).update(username=delete_email)
+
+    # tbl_user 처리
+    user.email = delete_email
     user.delete_yn = 'Y'
     user.save()
 
+    # 내역 기록
     st = TblServiceTime(
         user_id = user_id,
         prev_time = '',
