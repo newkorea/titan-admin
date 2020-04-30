@@ -24,6 +24,38 @@ def user(request):
     return render(request, 'admin/user.html', context)
 
 
+# (2020-03-16)
+@allow_admin
+def regist_ban(request):
+    with connections['default'].cursor() as cur:
+        query = '''
+            select  id, 
+                    case 
+                        when type = 'DM'
+                        then '도메인'
+                        else '아이피'
+                    end type,
+                    content, 
+                    reason, 
+                    case 
+                        when delete_yn = 'Y'
+                        then '삭제'
+                        else '정상'
+                    end delete_yn,
+                    ifnull(regist_date, '') as regist_date, 
+                    ifnull(modify_date, '') as modify_date, 
+                    ifnull(delete_date, '') as delete_date
+            from tbl_regist_ban
+        '''.format()
+        print(query)
+        cur.execute(query)
+        rows = dictfetchall(cur)
+
+    context = {}
+    context['rows'] = rows
+    return render(request, 'admin/regist_ban.html', context)
+
+
 # (2020-04-06)
 @allow_admin
 def block_user(request):
@@ -482,3 +514,88 @@ def api_use_user(request):
         except BaseException as err:
             use_count = 0
     return JsonResponse({'result': 200, 'use_count': use_count})
+
+
+# (2020-03-17)
+@allow_admin
+def api_create_regist_ban(request):
+    ban_type = request.POST.get('ban_type')
+    ban_content = request.POST.get('ban_content')
+    ban_reason = request.POST.get('ban_reason')
+    try:
+        rb = TblRegistBan(
+            type=ban_type,
+            content=ban_content,
+            reason=ban_reason,
+            delete_yn='N',
+            regist_date=datetime.datetime.now()
+        )
+        rb.save()
+
+        title, text = get_swal('SUCCESS_REGIST_BAN')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        print('err => ', err)
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+    
+
+# (2020-03-17)
+@allow_admin
+def api_update_regist_ban(request):
+    seq = request.POST.get('seq')
+    ban_type = request.POST.get('ban_type')
+    ban_content = request.POST.get('ban_content')
+    ban_reason = request.POST.get('ban_reason')
+
+    try:
+        tb = TblRegistBan.objects.get(id=seq)
+        tb.type = ban_type
+        tb.content = ban_content
+        tb.reason = ban_reason
+        tb.modify_date = datetime.datetime.now()
+        tb.delete_date = None
+        tb.delete_yn = 'N'
+        tb.save()
+
+        title, text = get_swal('SUCCESS_REGIST_BAN')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        print('err => ', err)
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+
+# (2020-03-17)
+@allow_admin
+def api_delete_regist_ban(request):
+    seq = request.POST.get('seq')
+    try:
+        tb = TblRegistBan.objects.get(id=seq)
+        tb.delete_yn = 'Y'
+        tb.delete_date = datetime.datetime.now()
+        tb.save()
+        title, text = get_swal('SUCCESS_REGIST_BAN_DEL')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        print('err => ', err)
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+    
+
+
+# (2020-03-17)
+@allow_admin
+def api_read_regist_ban(request):
+    seq = request.POST.get('seq')
+    tb = TblRegistBan.objects.get(id=seq)
+    res = {
+        'type': tb.type,
+        'content': tb.content,
+        'reason': tb.reason
+    }
+    return JsonResponse({
+        'resCode': 200,
+        'resMsg': 'success',
+        'resData': res
+    })

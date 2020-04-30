@@ -70,6 +70,9 @@ urlpatterns = [
     # [render] 이벤트 코드 
     path('event_code', EventViews.event_code, name='event_code'),
 
+    # [render] 회원가입 차단
+    path('regist_ban', UserViews.regist_ban, name='regist_ban'),
+
     # [render] 광역 스킬
     path('event_all', EventViews.event_all, name='event_all'),
 
@@ -178,7 +181,7 @@ urlpatterns = [
     # [api v1] 이벤트 코드 삭제 API
     path('api/v1/delete/event_code', EventViews.api_delete_event_code, name='api_delete_event_code'),
 
-    # [api v1] 이벤트 코드 등록 API
+    # [api v1] 이벤트 코드 읽기 API
     path('api/v1/read/event_code', EventViews.api_read_event_code, name='api_read_event_code'),
 
     # [api v1] 무료체험 어뷰징 모니터링 API
@@ -186,5 +189,17 @@ urlpatterns = [
 
     # [api v1] 무료체험 어뷰징 모니터링 API
     path('api/v1/read/abuse_user_detail', UserViews.api_read_abuse_user_detail, name='api_read_abuse_user_detail'),
+
+    # [api v1] 사용자 차단 룰 등록 API
+    path('api/v1/create/regist_ban', UserViews.api_create_regist_ban, name='api_create_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 수정 API
+    path('api/v1/update/regist_ban', UserViews.api_update_regist_ban, name='api_update_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 삭제 API
+    path('api/v1/delete/regist_ban', UserViews.api_delete_regist_ban, name='api_delete_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 읽기 API
+    path('api/v1/read/regist_ban', UserViews.api_read_regist_ban, name='api_read_regist_ban'),
 ]
 

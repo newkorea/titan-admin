@@ -176,3 +176,11 @@ def get_swal(type):
         title = '알림'
         text = '이미 삭제된 이벤트입니다'
         return title, text
+    elif type == 'SUCCESS_REGIST_BAN':
+        title = '알림'
+        text = '회원가입 차단 룰이 정상적으로 추가되었습니다'
+        return title, text
+    elif type == 'SUCCESS_REGIST_BAN_DEL':
+        title = '알림'
+        text = '회원가입 차단 룰이 정상적으로 삭제되었습니다'
+        return title, text

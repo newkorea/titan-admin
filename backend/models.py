@@ -376,6 +376,20 @@ class TblPriceHistory(models.Model):
         db_table = 'tbl_price_history'
 
 
+class TblRegistBan(models.Model):
+    type = models.CharField(max_length=10)
+    content = models.CharField(unique=True, max_length=255)
+    reason = models.CharField(max_length=255, blank=True, null=True)
+    delete_yn = models.CharField(max_length=10, blank=True, null=True)
+    regist_date = models.DateTimeField(blank=True, null=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+    delete_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_regist_ban'
+
+
 class TblReview(models.Model):
     language = models.CharField(max_length=10)
     star = models.IntegerField()

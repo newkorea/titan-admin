@@ -1,0 +1,70 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">회원가입 차단</%block>
+<%block name="subtitle">TITAN VPN 회원가입 시 도메인 및 아이피를 차단할 수 있습니다</%block>
+
+<%block name="content">
+
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw success" onclick="add_role()">
+      <i class="fa fa-plus mr5"></i>
+      차단 추가하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="event_code"" class="table display">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>차단타입</th>
+          <th>차단내용</th>
+          <th>차단이유</th>
+          <th>삭제여부</th>
+          <th>등록일시</th>
+          <th>수정일시</th>
+          <th>삭제일시</th>
+          <th>삭제</th>
+          <th>수정</th>
+        </tr>
+      </thead>
+      <tbody>
+        % for row in rows:
+        <tr>
+            <th>${row['id']}</th>
+            <td>${row['type']}</td>
+            <td>${row['content']}</td>
+            <td>${row['reason']}</td>
+            <td>${row['delete_yn']}</td>
+            <td>${row['regist_date']}</td>
+            <td>${row['modify_date']}</td>
+            <td>${row['delete_date']}</td>
+            <td>
+                <button onclick="delete_role('${row['id']}')" class="btn btn-outline b-danger text-danger">삭제</button>
+            </td>
+            <td>
+                <button onclick="modify_role('${row['id']}')" class="btn btn-outline b-primary text-primary">수정</button>
+            </td>
+        </tr>
+        % endfor
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 10px;">
+      * 차단타입이 도메인인 경우 가입 이메일 기준 '@' 뒤에 문자열이 일치한 경우 차단됩니다<br>
+      * 차단타입이 아이피인 경우 가입 아이피 기준으로 차단됩니다<br>
+      * 삭제여부가 "삭제"인 룰은 회원가입 시 룰이 적용되지 않습니다<br>
+      * "삭제"된 룰은 수정을 통해 정상으로 변경할 수 있습니다<br>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/regist_ban.js"></script>
+</%block>
