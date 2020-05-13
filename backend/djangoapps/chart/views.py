@@ -462,6 +462,8 @@ def get_total_rec():
                 select regist_rec, count(*) as cnt
                 from tbl_user
                 where LOWER(regist_rec) = 'kok'
+                and delete_yn = 'N'
+                and is_active = 0 
                 group by regist_rec
             ) x
             where regist_rec != ''
