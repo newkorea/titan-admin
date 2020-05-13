@@ -463,7 +463,7 @@ def get_total_rec():
                 from tbl_user
                 where LOWER(regist_rec) = 'kok'
                 and delete_yn = 'N'
-                and is_active = 0 
+                and is_active = 1
                 group by regist_rec
             ) x
             where regist_rec != ''
