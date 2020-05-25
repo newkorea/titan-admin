@@ -185,6 +185,7 @@ def api_read_user_datatables(request):
     delete = request.POST.get('delete')
     active = request.POST.get('active')
     staff = request.POST.get('staff')
+    regist_ip = request.POST.get('regist_ip')
 
     # where 조건 동적 연산
     wc = ""
@@ -194,6 +195,8 @@ def api_read_user_datatables(request):
         wc += " and x.email like '%" + email + "%'"
     if username != '':
         wc += " and x.username like '%" + username + "%'"
+    if regist_ip != '':
+        wc += " and x.regist_ip like '%" + regist_ip + "%'"
     if delete != '':
         wc += " and x.delete_yn = '" + delete + "'"
     if active != '':
@@ -237,7 +240,8 @@ def api_read_user_datatables(request):
             			DATE_FORMAT(x.regist_date, "%Y-%m-%d %H:%i:%s") as regist_date,
             			b.name as is_active,
             			c.name as is_staff,
-            			a.name as delete_yn
+            			a.name as delete_yn,
+                        x.regist_ip
             	from tbl_user x
             	join tbl_code_detail a
             	on x.delete_yn = a.code

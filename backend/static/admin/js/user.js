@@ -25,6 +25,7 @@ var datatable = $('#user-inform').DataTable({
             username: function() { return $('#filter_name').val() },
             delete: function() { return $('#filter_delete').val() },
             active: function() { return $('#filter_active').val() },
+            regist_ip: function() { return $('#filter_ip').val() },
             staff: function() { return $('#filter_staff').val() }
         },
     },
@@ -35,6 +36,7 @@ var datatable = $('#user-inform').DataTable({
         {data: "delete_yn"},
         {data: "is_active"},
         {data: "is_staff"},
+        {data: "regist_ip"},
         {data: "regist_date"},
         {data: "id"},
         {data: "id"},
@@ -96,9 +98,8 @@ var datatable = $('#user-inform').DataTable({
         {
             targets: 7,
             visible: true,
-            orderable: false,
             render: function (data) {
-                return '<button onclick="view_user_detail('+ data +')" class="btn btn-outline b-primary text-primary">정보</button>';
+                return data;
             }
         },
         {
@@ -106,7 +107,7 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="manage_service_time('+ data +')" class="btn btn-outline b-info text-info">서비스</button>';
+                return '<button onclick="view_user_detail('+ data +')" class="btn btn-outline b-primary text-primary">정보</button>';
             }
         },
         {
@@ -114,15 +115,15 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="manage_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
-            },
+                return '<button onclick="manage_service_time('+ data +')" class="btn btn-outline b-info text-info">서비스</button>';
+            }
         },
         {
             targets: 10,
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="change_password('+ data +')" class="btn btn-outline b-warning text-warning">비번</button>';
+                return '<button onclick="manage_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
             },
         },
         {
@@ -130,11 +131,19 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="change_active('+ data +')" class="btn btn-outline b-success text-success">활성</button>';
+                return '<button onclick="change_password('+ data +')" class="btn btn-outline b-warning text-warning">비번</button>';
             },
         },
         {
             targets: 12,
+            visible: true,
+            orderable: false,
+            render: function (data) {
+                return '<button onclick="change_active('+ data +')" class="btn btn-outline b-success text-success">활성</button>';
+            },
+        },
+        {
+            targets: 13,
             visible: true,
             orderable: false,
             render: function (data) {
