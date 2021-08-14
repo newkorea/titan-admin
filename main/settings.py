@@ -74,17 +74,17 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'titan',
-        'USER': 'hello',
-        'PASSWORD': 'password',
-        'HOST': 'devtitan.iptime.org',
+        'USER': 'titan',
+        'PASSWORD': 'xkdlxks12!@',
+        'HOST': '15.165.156.213',
         'PORT': '3306',
     },
     'radius': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'radius',
-        'USER': 'hello',
-        'PASSWORD': 'password',
-        'HOST': 'devtitan.iptime.org',
+        'USER': 'titan',
+        'PASSWORD': 'xkdlxks12!@',
+        'HOST': '15.165.156.213',
         'PORT': '3306',
     }
 }
