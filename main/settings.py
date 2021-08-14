@@ -76,7 +76,7 @@ DATABASES = {
         'NAME': 'titan',
         'USER': 'titan',
         'PASSWORD': 'xkdlxks12!@',
-        'HOST': '15.165.156.213',
+        'HOST': '172.26.5.47',
         'PORT': '3306',
     },
     'radius': {
@@ -84,7 +84,7 @@ DATABASES = {
         'NAME': 'radius',
         'USER': 'titan',
         'PASSWORD': 'xkdlxks12!@',
-        'HOST': '15.165.156.213',
+        'HOST': '172.26.5.47',
         'PORT': '3306',
     }
 }
