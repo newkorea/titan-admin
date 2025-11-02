@@ -1,0 +1,241 @@
+from django.urls import path
+from django.conf.urls import url
+
+from .djangoapps.sample import views as SampleViews
+from .djangoapps.login import views as LoginViews
+from .djangoapps.index import views as IndexViews
+from .djangoapps.dashboard import views as DashboardViews
+from .djangoapps.user import views as UserViews
+from .djangoapps.price import views as PriceViews
+from .djangoapps.service import views as ServiceViews
+from .djangoapps.chart import views as ChartViews
+from .djangoapps.saler import views as SalerViews
+from .djangoapps.event import views as EventViews
+
+
+# 개발 시 필독
+# 신규 리뉴얼 개발 이후부터 아래와 같은 명명 규칙을 따라주십시오
+# 또한 주석으로 기능을 상세하게 명시하십시오
+# api/v1/['read', 'update', 'create', 'delete']/기능명
+# ex) api/v1/read/user_detail
+# v1이 아닌 'api_' 는 as-is 함수입니다
+
+
+urlpatterns = [
+    # [redirect] 권한 별 인덱스페이지 지정
+    path('', IndexViews.index, name='index'),
+
+    # [render] 샘플
+    path('sample', SampleViews.sample, name='sample'),
+
+    # [render] 로그인
+    path('login', LoginViews.login, name='login'),
+
+    # [render] 대쉬보드
+    path('dashboard', DashboardViews.dashboard, name='dashboard'),
+
+    # [render] 회원관리
+    path('user', UserViews.user, name='user'),
+
+    # [render] 회원관리
+    path('block_user', UserViews.block_user, name='block_user'),
+
+    # [render] 결제관리
+    path('price', PriceViews.price, name='price'),
+
+    # [render] 무통장내역
+    path('account_history', PriceViews.account_history, name='account_history'),
+
+    # [render] 계좌관리
+    path('account_setting', PriceViews.account_setting, name='account_setting'),
+
+    # [render] 서비스 내역
+    path('service', ServiceViews.service, name='service'),
+
+    # [render] 일별 통계 
+    path('dd/<type>', ChartViews.dd, name='dd'),
+
+    # [render] 월별 통계 
+    path('mm/<type>', ChartViews.mm, name='mm'),
+
+    # [render] 월별 통계 
+    path('total/<type>', ChartViews.total, name='total'),
+
+    # [render] 일별 트래픽
+    path('use_traffic', ChartViews.use_traffic, name='use_traffic'),
+
+	# [render] 일별 트래픽
+    path('use_traffic_sum', ChartViews.use_traffic_sum, name='use_traffic_sum'),
+
+    # [render] 일별 트래픽
+    path('use_traffic_monthsum', ChartViews.use_traffic_monthsum, name='use_traffic_monthsum'),
+
+    # [render] 실시간 사용자
+    path('realtime_user', ChartViews.realtime_user, name='realtime_user'),
+
+	 # [render] 실시간 사용자
+    path('realtime_user2', ChartViews.realtime_user2, name='realtime_user2'),
+
+	 # [render] 실시간 사용자
+    path('realtime_user3', ChartViews.realtime_user3, name='realtime_user3'),
+    
+    # [render] Login Device
+    path('device_info', ChartViews.device_info, name='device_info'),
+
+    # [render] 이벤트 코드 
+    path('event_code', EventViews.event_code, name='event_code'),
+
+    # [render] 회원가입 차단
+    path('regist_ban', UserViews.regist_ban, name='regist_ban'),
+
+    # [render] 광역 스킬
+    path('event_all', EventViews.event_all, name='event_all'),
+
+    # [render] 회원관리
+    path('saler/user', SalerViews.saler_user, name='saler_user'),
+
+    # [render] 무료체험 어뷰징 유저 
+    path('abuse_user', UserViews.abuse_user, name='abuse_user'),
+
+    # [api v1] 로그인
+    path('api/v1/login', LoginViews.api_login, name='api_login'),
+
+    # [api v1] 로그아웃
+    path('api/v1/logout', LoginViews.api_logout, name='api_logout'),
+
+    # [api v1] 회원관리 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/user_datatables', UserViews.api_read_user_datatables, name='api_read_user_datatables'),
+
+    # [api v1] 회원정보 상세정보를 반환합니다
+    path('api/v1/read/user_detail', UserViews.api_read_user_detail, name='api_read_user_detail'),
+
+    # [api v1] 사용자 서비스 시간을 radcheck 에서 조회해서 반환합니다
+    path('api/v1/read/user_service_time', UserViews.api_read_user_service_time, name='api_read_user_service_time'),
+
+    # [api v1] 사용자 세션을 radcheck 에서 조회해서 반환합니다
+    path('api/v1/read/user_session', UserViews.api_read_user_session, name='api_read_user_session'),
+
+    # [api v1] 사용자 서비스 시간을 radcheck 에서 수정합니다
+    path('api/v1/update/user_service_time', UserViews.api_update_user_service_time, name='api_update_user_service_time'),
+
+    # [api v1] 사용자 세션을 radcheck 에서 수정합니다
+    path('api/v1/update/user_session', UserViews.api_update_user_session, name='api_update_user_session'),
+
+    # [api v1] 사용자 비밀번호를 변경합니다
+    path('api/v1/update/user_password', UserViews.api_update_user_password, name='api_update_user_password'),
+
+    # [api v1] 사용자 비밀번호를 변경합니다
+    path('api/v1/read/user_password', UserViews.api_read_user_password, name='api_read_user_password'),
+
+    # [api v1] 사용자 활성화 상태를 변경합니다
+    path('api/v1/update/user_active', UserViews.api_update_user_active, name='api_update_user_active'),
+
+    # [api v1] 사용자를 탈퇴시킵니다
+    path('api/v1/delete/user', UserViews.api_delete_user, name='api_delete_user'),
+
+    # [api v1] 차단될 사용자를 검증합니다
+    path('api/v1/read/block_user', UserViews.api_read_block_user, name='api_read_block_user'),
+
+    # [api v1] 검증된 사용자를 차단합니다
+    path('api/v1/update/block_user', UserViews.api_update_block_user, name='api_update_block_user'),
+
+    # [api v1] 결제모듈 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/payment', PriceViews.api_read_payment, name='api_read_payment'),
+
+    # [api v1] 결제모듈에 대해 환불을 진행합니다
+    path('api/v1/update/refund', PriceViews.api_update_refund, name='api_update_refund'),
+
+    # [api v1] 변경 내역 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/change_history', ServiceViews.api_read_change_history, name='api_read_change_history'),
+
+    # [api v1] 계좌관리 입금주, 은행이름, 은행계좌번호를 반환합니다
+    path('api/v1/read/account', PriceViews.api_read_account, name='api_read_account'),
+
+    # [api v1] 계좌관리 입금주, 은행이름, 은행계좌번호를 수정합니다
+    path('api/v1/update/account', PriceViews.api_update_account, name='api_update_account'),
+
+    # [api v1] 무통장 결제 요청 건수를 반홥합니다
+    path('api/v1/read/ready_count', PriceViews.api_read_ready_count, name='api_read_ready_count'),
+
+    #  [api v1] 무통장 데이터테이블즈 데이터를 반환합니다
+    path('api/v1/read/bank', PriceViews.api_read_bank, name='api_read_bank'),
+
+    #  [api v1] Login History 데이터를 반환합니다
+    path('api/v1/read/device', ChartViews.api_read_device, name='api_read_device'),
+
+    # [api v1] 무통장 결제 데이터 상태를 변경합니다
+    path('api/v1/update/bank', PriceViews.api_update_bank, name='api_update_bank'),
+
+    # [api v1] 무통장 결제 데이터를 생성합니다
+    path('api/v1/create/bank', PriceViews.api_create_bank, name='api_create_bank'),
+
+    # [api v1] 무통장 결제 데이터를 생성합니다
+    path('api/v1/read/ready_data', PriceViews.api_read_ready_data, name='api_read_ready_data'),
+
+    # [api v1] 일별 통계 공통 엔드포인트
+    path('api/v1/read/dd/<type>', ChartViews.api_dd, name='api_dd'),
+
+    # [api v1] 월별 통계 공통 엔드포인트
+    path('api/v1/read/mm/<type>', ChartViews.api_mm, name='api_mm'),
+
+    # [api v1] 전체 통계 공통 엔드포인트
+    path('api/v1/read/total/<type>', ChartViews.api_total, name='api_total'),
+
+    # [api v1] 총판 회원 조회
+    path('api/v1/read/saler_user', SalerViews.api_read_saler_user, name='api_read_saler_user'),
+
+    # [api v1] 동시 접속자 수를 반환합니다
+    path('api/v1/read/use_user', UserViews.api_use_user, name='api_use_user'),
+    
+    # [api v1] 일별 트래픽 사용량을 반환합니다
+    path('api/v1/read/use_traffic_sum', ChartViews.api_use_traffic_sum, name='api_use_traffic_sum'),
+
+    # [api v1] 월별 트래픽 사용량을 반환합니다
+    path('api/v1/read/use_traffic_monthsum', ChartViews.api_use_traffic_monthsum, name='api_use_traffic_monthsum'),
+
+    # [api v1] 실시간 사용자 데이터를 반환합니다
+    path('api/v1/read/realtime_user', ChartViews.api_realtime_user2, name='api_realtime_user'),
+
+	    # [api v1] 실시간 사용자 데이터를 반환합니다
+    path('api/v1/read/realtime_user2', ChartViews.api_realtime_user2, name='api_realtime_user2'),
+
+	    # [api v1] 실시간 사용자 데이터를 반환합니다
+    path('api/v1/read/realtime_user3', ChartViews.api_realtime_user3, name='api_realtime_user3'),
+
+    # [api v1] 이벤트 코드 등록 API
+    path('api/v1/create/event_code', EventViews.api_create_event_code, name='api_create_event_code'),
+
+    # [api v1] 이벤트 코드 수정 API
+    path('api/v1/update/event_code', EventViews.api_update_event_code, name='api_update_event_code'),
+
+    # [api v1] 이벤트 코드 삭제 API
+    path('api/v1/delete/event_code', EventViews.api_delete_event_code, name='api_delete_event_code'),
+
+    # [api v1] 이벤트 코드 읽기 API
+    path('api/v1/read/event_code', EventViews.api_read_event_code, name='api_read_event_code'),
+
+    # [api v1] 무료체험 어뷰징 모니터링 API
+    path('api/v1/read/abuse_user', UserViews.api_read_abuse_user, name='api_read_abuse_user'),
+
+    # [api v1] 무료체험 어뷰징 모니터링 API
+    path('api/v1/read/abuse_user_detail', UserViews.api_read_abuse_user_detail, name='api_read_abuse_user_detail'),
+
+    # [api v1] 사용자 차단 룰 등록 API
+    path('api/v1/create/regist_ban', UserViews.api_create_regist_ban, name='api_create_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 수정 API
+    path('api/v1/update/regist_ban', UserViews.api_update_regist_ban, name='api_update_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 삭제 API
+    path('api/v1/delete/regist_ban', UserViews.api_delete_regist_ban, name='api_delete_regist_ban'),
+
+    # [api v1] 사용자 차단 룰 읽기 API
+    path('api/v1/read/regist_ban', UserViews.api_read_regist_ban, name='api_read_regist_ban'),
+
+    # [api v1] Update DB(set current time to acctstoptime)
+    path('api/v1/update/user_status', ChartViews.api_update_status, name='api_update_status'),
+
+    # [api v1] Force Disconnect
+    path('api/v1/update/user_disconnect', ChartViews.api_user_disconnect, name='api_user_disconnect'),
+]
+

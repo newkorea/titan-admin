@@ -1,0 +1,81 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">강제종료로그</%block>
+<%block name="subtitle">You can see user force disconnect logs</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_username">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>사용자 세션</label>
+      <select class="form-control" id="filter_session" name="filter_session">
+        <option value="">선택하세요</option>
+        <option value="1">1 세션</option>
+        <option value="2">2 세션</option>
+        <option value="3">3 세션</option>
+        <option value="4">4 세션</option>
+        <option value="5">5 세션</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>연결된 장치수</label>
+      <input class="form-control" id="filter_connected">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>강제 종료된 프로토콜</label>
+      <input class="form-control" id="filter_protocol">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>종료 시간[From]</label>
+      <input id="filter_acctstarttime_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>종료 시간[To]</label>
+      <input id="filter_acctstarttime_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+  </div>
+<div class='btn-store'>
+<button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="disconnection-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>사용자 세션</th>
+          <th>연결된 장치수</th>
+          <th>강제 종료된 프로토콜</th>
+          <th>종료 시간</th>
+          <th>old ip</th>
+          <th>new ip</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/disconnection_info.js"></script>
+</%block>

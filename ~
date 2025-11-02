@@ -1,0 +1,6 @@
+[Service]
+WorkingDirectory=/home/ubuntu/project/titan-admin
+Environment="PYTHONPATH=/home/ubuntu/project/titan-admin"
+ExecStart=/home/ubuntu/project/titan-admin/.venv/bin/gunicorn main.wsgi:application \
+  --bind 127.0.0.1:8000 --workers 4 --timeout 120
+

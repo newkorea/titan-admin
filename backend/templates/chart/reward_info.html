@@ -1,0 +1,80 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">이벤트로그</%block>
+<%block name="subtitle">You can see user reward logs</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>추천인 이메일[like]</label>
+      <input class="form-control" id="filter_refferer_email">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>추천인 이름[like]</label>
+      <input class="form-control" id="filter_refferer_name">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>추천인 코드[=]</label>
+      <input class="form-control" id="filter_code">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>등록인 이메일[like]</label>
+      <input class="form-control" id="filter_register_email">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>등록인 이름[like]</label>
+      <input class="form-control" id="filter_register_name">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>등록일[From]</label>
+      <input id="filter_start_time" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>등록일[To]</label>
+      <input id="filter_end_time" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+  </div>
+
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="reward-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>추천인 이메일</th>
+          <th>추천인 이름</th>
+          <th>코드</th>
+          <th>등록인 이메일</th>
+          <th>등록인 이름</th>
+          <th>내역</th>
+          <th>유형</th>
+          <th>등록일</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/reward_info.js"></script>
+</%block>

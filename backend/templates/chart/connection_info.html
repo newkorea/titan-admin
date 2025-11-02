@@ -1,0 +1,85 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">서버접속로그</%block>
+<%block name="subtitle">You can see user server connection logs</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_username">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>Nasipaddress</label>
+      <input class="form-control" id="filter_nasipaddress">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>Nastype[=]</label>
+      <input class="form-control" id="filter_nasporttype">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>calledstationid[Like]</label>
+      <input class="form-control" id="filter_calledstationid">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>callingstationid[Like]</label>
+      <input class="form-control" id="filter_callingstationid">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>framedipaddress[Like]</label>
+      <input class="form-control" id="filter_framedipaddress">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>접속 시간[From]</label>
+      <input id="filter_acctstarttime_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>접속 시간[To]</label>
+      <input id="filter_acctstarttime_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+  </div>
+<div class='btn-store'>
+<button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="connection-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>Nasipaddress</th>
+          <th>Nasporttype</th>
+          <th>Acctstarttime</th>
+          <th>Acctstoptime</th>
+          <th>Acctinputoctets</th>
+          <th>Acctoutputoctets</th>
+          <th>Calledstationid</th>
+          <th>Callingstationid</th>
+          <th>Framedipaddress</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/connection_info.js"></script>
+</%block>

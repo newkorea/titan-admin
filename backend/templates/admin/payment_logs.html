@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">API 결제 승인 로그</h2>
+  <table id="paymentLogsTable" class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>요청시각</th>
+        <th>결제유형</th>
+        <th>금액</th>
+        <th>결제시각</th>
+        <th>IP</th>
+        <th>상태</th>
+        <th>결과</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css" />
+
+<script>
+$(document).ready(function() {
+  $('#paymentLogsTable').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      url: "/admin/payment_logs/",
+      type: "GET"
+    },
+    columns: [
+      { data: "id" },
+      { data: "request_time" },
+      { data: "payment_type" },
+      { data: "payment_amount" },
+      { data: "payment_time" },
+      { data: "ip_address" },
+      { data: "status" },
+      { data: "result_message" }
+    ]
+  });
+});
+</script>
+{% endblock %}
