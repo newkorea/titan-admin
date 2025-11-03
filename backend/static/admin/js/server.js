@@ -42,36 +42,26 @@ var serverDT = $('#server-table').DataTable({
     { data: 'hostdomain' },
     { data: 'hostip' },
     { data: 'telecom' },
+    { data: 'protocol' },
     { data: 'is_active' },
     { data: 'is_status' },
-    { data: 'username' },
-    { data: 'password' },
     { data: null }
   ],
   columnDefs: [
     {
-      targets: 5,
+      targets: 6,
       render: function (data) {
         return (String(data) === '1' || data === 1) ? '<span class="text-success">Y</span>' : '<span class="text-muted">N</span>';
       }
     },
     {
-      targets: 6,
+      targets: 7,
       render: function (data) {
         return (String(data) === '1' || data === 1) ? '<span class="text-success">정상</span>' : '<span class="text-danger">중지</span>';
       }
     },
     {
       targets: 8,
-      render: function (data) {
-        // 비밀번호는 목록에서는 마스킹 처리
-        if (!data) return '';
-        var len = String(data).length;
-        return Array(Math.min(len, 8) + 1).join('•');
-      }
-    },
-    {
-      targets: 9,
       orderable: false,
       render: function (_, __, row) {
         var payload = encodeURIComponent(JSON.stringify(row));
@@ -118,6 +108,10 @@ function editAgent(payload) {
     '<input id="edit_telecom" type="text" class="form-control" value="'+(row.telecom||'')+'">'+
     '</div>'+
     '<div class="form-group tal">'+
+    '<label class="fz12">프로토콜</label>'+
+    '<input id="edit_protocol" type="text" class="form-control" value="'+(row.protocol||'')+'" placeholder="예: OPENVPN/SSTP/IKEV2">'+
+    '</div>'+
+    '<div class="form-group tal">'+
     '<label class="fz12">접속계정</label>'+
     '<input id="edit_username" type="text" class="form-control" value="'+(row.username||'')+'">'+
     '</div>'+
@@ -158,6 +152,7 @@ function editAgent(payload) {
         hostdomain: $('#edit_hostdomain').val(),
         hostip: $('#edit_hostip').val(),
         telecom: $('#edit_telecom').val(),
+        protocol: $('#edit_protocol').val(),
         username: $('#edit_username').val(),
         password: $('#edit_password').val(),
         is_active: $('#edit_is_active').val(),
