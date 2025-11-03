@@ -1,0 +1,65 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="title">서버관리</%block>
+<%block name="subtitle">NAS 서버 목록을 조회하고 수정할 수 있습니다</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-3">
+      <label>호스트(IP/도메인) [like]</label>
+      <input class="form-control" id="filter_host">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>통신사</label>
+      <input class="form-control" id="filter_telecom" placeholder="예: EM, KT, SK">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>활성화</label>
+      <select class="form-control" id="filter_active">
+        <option value="">전체</option>
+        <option value="1">활성</option>
+        <option value="0">비활성</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>상태</label>
+      <select class="form-control" id="filter_status">
+        <option value="">전체</option>
+        <option value="1">정상</option>
+        <option value="0">중지</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-3" style="display:flex; align-items:flex-end; gap:8px;">
+      <button class="btn btn-fw primary" onclick="reload_servers()">
+        <i class="fa fa-search mr5"></i>검색하기
+      </button>
+    </div>
+  </div>
+
+  <div class="user-table">
+    <table id="server-table" class="display table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>이름</th>
+          <th>도메인</th>
+          <th>IP</th>
+          <th>통신사</th>
+          <th>활성</th>
+          <th>상태</th>
+              <th>자동</th>
+              <th>프로토콜</th>
+          <th>수정</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/server.js"></script>
+</%block>

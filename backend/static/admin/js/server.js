@@ -132,7 +132,7 @@ function editAgent(payload) {
      '    <option value="0"'+((String(row.is_auto)!=='1')?' selected':'')+'>0</option>'+
      '  </select>'+
      ' </div>'+
-    '</div>';
+    '</div>'+
 
   Swal.fire({
     title: '서버 수정 (#'+row.id+')',

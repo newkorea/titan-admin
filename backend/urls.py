@@ -1,5 +1,7 @@
 from django.urls import path
 from django.conf.urls import url
+from .djangoapps.price.views import approve_payment_api  # ✅ `backend.` 추가
+
 
 from .djangoapps.sample import views as SampleViews
 from .djangoapps.login import views as LoginViews
@@ -16,6 +18,8 @@ from .djangoapps.event import views as EventViews
 from .djangoapps.reward import views as RewardViews
 #from .djangoapps.admin import views as AdminViews
 from .djangoapps.saler import views as SalerViews
+from django.urls import path
+from .djangoapps.price import views as PriceViews
 
 # 개발 시 필독
 # 신규 리뉴얼 개발 이후부터 아래와 같은 명명 규칙을 따라주십시오
@@ -111,6 +115,9 @@ urlpatterns = [
     
     # [render] 서버접속로그
     path('reward_info', ChartViews.reward_info, name='reward_info'),
+
+    # [render] 서버관리 (NAS 서버 리스트/수정)
+    path('server_admin', ChartViews.server_admin, name='server_admin'),
 
     # [render] 2023-05-24 Added By Zhao
     path('notification', NotificationViews.notification, name='notification'),
@@ -225,6 +232,10 @@ urlpatterns = [
     
     #  [api v1] 서버접속로그 데이터를 반환합니다
     path('api/v1/read/reward', ChartViews.api_read_reward, name='api_read_reward'),
+
+    # [api v1] 서버관리
+    path('api/v1/read/agents', ChartViews.api_read_agents, name='api_read_agents'),
+    path('api/v1/update/agent', ChartViews.api_update_agent, name='api_update_agent'),
 
     # [api v1] 무통장 결제 데이터 상태를 변경합니다
     path('api/v1/update/bank', PriceViews.api_update_bank, name='api_update_bank'),
