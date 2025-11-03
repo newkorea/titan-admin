@@ -181,6 +181,165 @@ def failed_info(request):
 def reward_info(request):
     context = {}
     return render(request, 'chart/reward_info.html', context)
+
+# 서버관리 (NAS 서버 리스트/수정)
+@allow_admin
+def server_admin(request):
+    context = {}
+    return render(request, 'admin/server.html', context)
+
+@allow_admin
+def api_read_agents(request):
+    # Params with safe defaults (supporting GET/POST)
+    def _gp(key, default=None):
+        return request.POST.get(key) or request.GET.get(key) or default
+
+    try:
+        start = int(_gp('start', 0) or 0)
+    except Exception:
+        start = 0
+    try:
+        length = int(_gp('length', 10) or 10)
+    except Exception:
+        length = 10
+    try:
+        draw = int(_gp('draw', 1) or 1)
+    except Exception:
+        draw = 1
+    try:
+        orderby_col = int(_gp('order[0][column]', 0) or 0)
+    except Exception:
+        orderby_col = 0
+    orderby_opt = (_gp('order[0][dir]', 'desc') or 'desc').lower()
+    if orderby_opt not in ['asc', 'desc']:
+        orderby_opt = 'desc'
+
+    # Filters
+    host = (_gp('host', '') or '').strip()
+    telecom = (_gp('telecom', '') or '').strip()
+    is_active = (_gp('is_active', '') or '').strip()
+    is_status = (_gp('is_status', '') or '').strip()
+
+    # where clause
+    wc = ' where 1=1 '
+    if host:
+        wc += " and (hostip like '%{h}%' or hostdomain like '%{h}%') ".format(h=host)
+    if telecom:
+        wc += " and telecom = '{tel}' ".format(tel=telecom)
+    if is_active in ['0','1']:
+        wc += " and is_active = {v} ".format(v=is_active)
+    if is_status in ['0','1']:
+        wc += " and is_status = {v} ".format(v=is_status)
+
+    column_name = [
+        'id',
+        'name',
+        'hostdomain',
+        'hostip',
+        'telecom',
+        'is_active',
+        'is_status',
+        'is_auto',
+        'protocol'
+    ]
+    if orderby_col < 0 or orderby_col >= len(column_name):
+        orderby_col = 0
+
+    # count
+    with connections['default'].cursor() as cur:
+        cur.execute('''
+            SELECT count(*) FROM titan.tbl_agent3 {wc}
+        '''.format(wc=wc))
+        total = cur.fetchall()[0][0]
+
+    # main: try full schema first (with config/v2config), fallback otherwise
+    with connections['default'].cursor() as cur:
+        query_full = '''
+            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, is_auto, protocol,
+                   config, v2config, username, password
+            FROM titan.tbl_agent3
+            {wc}
+            ORDER BY {orderby_col} {orderby_opt}
+            LIMIT {start}, {length}
+        '''.format(
+            wc=wc,
+            orderby_col=column_name[orderby_col],
+            orderby_opt=orderby_opt,
+            start=start,
+            length=length
+        )
+        try:
+            cur.execute(query_full)
+            rows = dictfetchall(cur)
+        except Exception:
+            query_fb = '''
+                SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, is_auto, protocol,
+                       username, password
+                FROM titan.tbl_agent3
+                {wc}
+                ORDER BY {orderby_col} {orderby_opt}
+                LIMIT {start}, {length}
+            '''.format(
+                wc=wc,
+                orderby_col=column_name[orderby_col],
+                orderby_opt=orderby_opt,
+                start=start,
+                length=length
+            )
+            cur.execute(query_fb)
+            rows = dictfetchall(cur)
+            for r in rows:
+                r['config'] = r.get('config', '')
+                r['v2config'] = r.get('v2config', '')
+
+    return JsonResponse({
+        'recordsTotal': total,
+        'recordsFiltered': total,
+        'draw': draw,
+        'data': rows
+    })
+
+@allow_admin
+def api_update_agent(request):
+    id = request.POST.get('id')
+    name = request.POST.get('name')
+    hostdomain = request.POST.get('hostdomain')
+    hostip = request.POST.get('hostip')
+    telecom = request.POST.get('telecom')
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    is_active = request.POST.get('is_active')
+    is_status = request.POST.get('is_status')
+    is_auto = request.POST.get('is_auto')
+    protocol = request.POST.get('protocol')
+    config = request.POST.get('config')
+    v2config = request.POST.get('v2config')
+
+    try:
+        with connections['default'].cursor() as cur:
+            try:
+                # try new schema with config/v2config
+                cur.execute('''
+                    UPDATE titan.tbl_agent3
+                    SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                        username=%s, password=%s, is_active=%s, is_status=%s,
+                        is_auto=%s, protocol=%s,
+                        config=%s, v2config=%s
+                    WHERE id=%s
+                ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, is_auto, protocol, config, v2config, id])
+            except Exception:
+                # fallback to old schema (no config/v2config)
+                cur.execute('''
+                    UPDATE titan.tbl_agent3
+                    SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                        username=%s, password=%s, is_active=%s, is_status=%s,
+                        is_auto=%s, protocol=%s
+                    WHERE id=%s
+                ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, is_auto, protocol, id])
+        return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
+    except Exception:
+        print('api_update_agent failed:', traceback.format_exc())
+        return JsonResponse({'result': 500, 'title': 'Failed', 'text': '수정 중 오류가 발생했습니다'})
     
 # (2022-08-08)
 @allow_admin

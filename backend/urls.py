@@ -1,7 +1,5 @@
 from django.urls import path
 from django.conf.urls import url
-from .djangoapps.price.views import approve_payment_api  # ✅ `backend.` 추가
-
 
 from .djangoapps.sample import views as SampleViews
 from .djangoapps.login import views as LoginViews
@@ -18,8 +16,6 @@ from .djangoapps.event import views as EventViews
 from .djangoapps.reward import views as RewardViews
 #from .djangoapps.admin import views as AdminViews
 from .djangoapps.saler import views as SalerViews
-from django.urls import path
-from .djangoapps.price import views as PriceViews
 
 # 개발 시 필독
 # 신규 리뉴얼 개발 이후부터 아래와 같은 명명 규칙을 따라주십시오
