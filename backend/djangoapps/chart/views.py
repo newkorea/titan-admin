@@ -40,6 +40,7 @@ BACK_COLOR_YELLOW = 'rgba(255, 193, 7, 0.2)'
 
 LINE_COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
 BACK_COLOR_PURPLE = 'rgba(136, 80, 255, 0.2)'
+LINE_COLOR_BLACK = 'rgba(0, 0, 0, 1)'
 
 COLOR_BLUE = 'rgba(0, 0, 255, 1)'
 COLOR_RED = 'rgba(255, 0, 0, 1)'
@@ -116,6 +117,15 @@ def serialize_rows_mm(rows, use):
         return y_axis1, y_axis2, y_axis3
     elif use == 4:
         return y_axis1, y_axis2, y_axis3, y_axis4
+
+
+# 벡터 합산 유틸 (동일 길이 배열 합산)
+def _sum_series(a, b):
+    n = max(len(a), len(b))
+    # 길이가 다르면 부족한 부분을 0으로 채움
+    a2 = list(a) + [0] * (n - len(a))
+    b2 = list(b) + [0] * (n - len(b))
+    return [a2[i] + b2[i] for i in range(n)]
 
 
 # 헤더 텍스트 생성
@@ -1012,6 +1022,12 @@ def api_dd(request, type):
     rec = request.session['rec']
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
+    # DEBUG: incoming params
+    if type in ['money', 'money_cnt']:
+        try:
+            print('[DEBUG][api_dd] type={}, year={}, month={}'.format(type, year, month))
+        except Exception:
+            pass
     x_axis = make_axisX_dd(year, month)
 
     # 분기 포인트
@@ -1055,6 +1071,12 @@ def api_dd(request, type):
                 'data': get_dd_payment(year, month, x_axis, 'cny'),
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
+            },
+            {
+                'label': '전체(krw)',
+                'data': get_dd_total_krw(year, month, x_axis),
+                'borderColor': LINE_COLOR_BLACK,
+                'borderWidth': 2
             }
         ]  
     elif type == 'money_cnt':
@@ -1070,6 +1092,12 @@ def api_dd(request, type):
                 'data': get_dd_payment_cnt(year, month, x_axis),
                 'borderColor': LINE_COLOR_RED,
                 'borderWidth': 1
+            },
+            {
+                'label': '전체 건수',
+                'data': get_dd_total_cnt(year, month, x_axis),
+                'borderColor': LINE_COLOR_BLACK,
+                'borderWidth': 2
             }
         ]
     if type == 'saler_user':
@@ -1122,6 +1150,12 @@ def api_dd(request, type):
 @allow_dealer
 def api_mm(request, type):
     year = int(request.POST.get('year'))
+    # DEBUG: incoming params
+    if type in ['money', 'money_cnt']:
+        try:
+            print('[DEBUG][api_mm] type={}, year={}'.format(type, year))
+        except Exception:
+            pass
 
     # 분기 포인트
     if type == 'user':
@@ -1164,6 +1198,12 @@ def api_mm(request, type):
                 'data': get_mm_payment(year)[2],
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
+            },
+            {
+                'label': '전체(krw)',
+                'data': get_mm_total_krw(year),
+                'borderColor': LINE_COLOR_BLACK,
+                'borderWidth': 2
             }
         ]  
     elif type == 'money_cnt':
@@ -1179,6 +1219,12 @@ def api_mm(request, type):
                 'data': get_mm_payment_cnt(year),
                 'borderColor': LINE_COLOR_RED,
                 'borderWidth': 1
+            },
+            {
+                'label': '전체 건수',
+                'data': get_mm_total_cnt(year),
+                'borderColor': LINE_COLOR_BLACK,
+                'borderWidth': 2
             }
         ]  
     return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
@@ -1377,6 +1423,22 @@ def get_dd_send_cnt(year, month, x_axis):
         '''.format(month=month, year=year)
         cur.execute(query)
         rows = cur.fetchall()
+        # DEBUG: status breakdown for this month (counts)
+        try:
+            cur.execute('''
+                SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c
+                FROM tbl_send_history x
+                JOIN tbl_user y ON x.user_id = y.id
+                WHERE Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = %s
+                  AND date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = %s
+                GROUP BY s ORDER BY c DESC;
+            ''', [month, str(year)])
+            dbg_rows = cur.fetchall()
+            print('[DEBUG][get_dd_send_cnt] year-month = {}-{:02d}, status breakdown (count):'.format(year, month))
+            for r in dbg_rows:
+                print('  status={}, count={}'.format(r[0], r[1]))
+        except Exception as _:
+            pass
         send = serialize_rows_dd(rows, x_axis)
     return send
 
@@ -1407,6 +1469,10 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
             add_query = "AND regist_rec = '{rec}'".format(rec=rec)
         else:
             add_query = ''
+        try:
+            print('[DEBUG][get_dd_send] building query for year={}, month={}'.format(year, month))
+        except Exception:
+            pass
         query = '''
             select day(COALESCE(x.accept_date, x.api_date, x.regist_date)) as d, sum(krw) as value
             from tbl_send_history x
@@ -1420,6 +1486,22 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
         '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
+        # DEBUG: status breakdown for this month (sum krw)
+        try:
+            cur.execute('''
+                SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c, IFNULL(SUM(krw),0) AS sum_krw
+                FROM tbl_send_history x
+                JOIN tbl_user y ON x.user_id = y.id
+                WHERE Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = %s
+                  AND date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = %s
+                GROUP BY s ORDER BY c DESC;
+            ''', [month, str(year)])
+            dbg_rows = cur.fetchall()
+            print('[DEBUG][get_dd_send] year-month = {}-{:02d}, status breakdown (count,sum_krw):'.format(year, month))
+            for r in dbg_rows:
+                print('  status={}, count={}, sum_krw={}'.format(r[0], r[1], r[2]))
+        except Exception as _:
+            pass
         send = serialize_rows_dd(rows, x_axis)
     return send
 
@@ -1451,6 +1533,20 @@ def get_dd_payment(year, month, x_axis, type, add_type='', rec=''):
         print('-----------------------')
         payment = serialize_rows_dd(rows, x_axis)
     return payment
+
+
+# 코어 / 일별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
+def get_dd_total_krw(year, month, x_axis):
+    send_krw = get_dd_send(year, month, x_axis)
+    pay_krw = get_dd_payment(year, month, x_axis, 'krw')
+    return _sum_series(send_krw, pay_krw)
+
+
+# 코어 / 일별 / 전체 건수 = 무통장 건수 + 결제모듈 건수
+def get_dd_total_cnt(year, month, x_axis):
+    send_cnt = get_dd_send_cnt(year, month, x_axis)
+    pay_cnt = get_dd_payment_cnt(year, month, x_axis)
+    return _sum_series(send_cnt, pay_cnt)
 
 
 # 코어 / 월별 / 가입자
@@ -1515,6 +1611,20 @@ def get_mm_send(year):
         '''.format(year=year)
         cur.execute(query)
         rows = dictfetchall(cur)
+        # DEBUG: status breakdown by status this year
+        try:
+            cur.execute('''
+                SELECT UPPER(TRIM(status)) AS s, COUNT(*) c, IFNULL(SUM(krw),0) sum_krw
+                FROM tbl_send_history
+                WHERE date_format(COALESCE(accept_date, api_date, regist_date), "%Y") = %s
+                GROUP BY s ORDER BY c DESC;
+            ''', [str(year)])
+            dbg_rows = cur.fetchall()
+            print('[DEBUG][get_mm_send] year = {}, status breakdown (count,sum_krw):'.format(year))
+            for r in dbg_rows:
+                print('  status={}, count={}, sum_krw={}'.format(r[0], r[1], r[2]))
+        except Exception as _:
+            pass
         send = serialize_rows_mm(rows, 1)
     return send
 
@@ -1543,6 +1653,20 @@ def get_mm_payment(year):
         rows = dictfetchall(cur)
         krw, usd, cny = serialize_rows_mm(rows, 3)
     return krw, usd, cny
+
+
+# 코어 / 월별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
+def get_mm_total_krw(year):
+    send = get_mm_send(year)
+    krw, _, _ = get_mm_payment(year)
+    return _sum_series(send, krw)
+
+
+# 코어 / 월별 / 전체 건수 = 무통장 건수 + 결제모듈 건수
+def get_mm_total_cnt(year):
+    send_cnt = get_mm_send_cnt(year)
+    pay_cnt = get_mm_payment_cnt(year)
+    return _sum_series(send_cnt, pay_cnt)
 
 
 # 코어 / 월별 / 무통장 건수
