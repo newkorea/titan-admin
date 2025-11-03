@@ -228,14 +228,25 @@ def api_read_agents(request):
     if is_status in ['0','1']:
         wc += " and is_status = {v} ".format(v=is_status)
 
+    # Detect optional columns
+    with connections['default'].cursor() as cur:
+        cur.execute("SHOW COLUMNS FROM titan.tbl_agent3 LIKE 'protocol';")
+        has_protocol = len(cur.fetchall()) > 0
+        if not has_protocol:
+            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3 LIKE 'server_protocol';")
+            has_server_protocol = len(cur.fetchall()) > 0
+        else:
+            has_server_protocol = False
+
     # Column order must match DataTables columns (excluding hidden payload fields)
+    # Use alias 'protocol' so ORDER BY works regardless of underlying column
     column_name = [
         'id',           # 0
         'name',         # 1
         'hostdomain',   # 2
         'hostip',       # 3
         'telecom',      # 4
-        'protocol',     # 5
+        'protocol',     # 5 (aliased)
         'is_active',    # 6
         'is_status'     # 7
         # 8 is action button (not orderable on client)
@@ -250,8 +261,11 @@ def api_read_agents(request):
 
     # main
     with connections['default'].cursor() as cur:
-        query = '''
-            SELECT id, name, hostdomain, hostip, telecom, protocol, is_active, is_status, username, password
+        protocol_expr = "protocol AS protocol" if has_protocol else (
+            "server_protocol AS protocol" if has_server_protocol else "'' AS protocol"
+        )
+        query = f'''
+            SELECT id, name, hostdomain, hostip, telecom, {protocol_expr}, is_active, is_status, username, password
             FROM titan.tbl_agent3
             {wc}
             ORDER BY {orderby_col} {orderby_opt}
@@ -289,12 +303,37 @@ def api_update_agent(request):
 
     try:
         with connections['default'].cursor() as cur:
-            cur.execute('''
-                UPDATE titan.tbl_agent3
-                SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
-                    protocol=%s, username=%s, password=%s, is_active=%s, is_status=%s
-                WHERE id=%s
-            ''', [name, hostdomain, hostip, telecom, protocol, username, password, is_active, is_status, id])
+            # Detect which protocol column exists (if any)
+            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3 LIKE 'protocol';")
+            has_protocol = len(cur.fetchall()) > 0
+            if not has_protocol:
+                cur.execute("SHOW COLUMNS FROM titan.tbl_agent3 LIKE 'server_protocol';")
+                has_server_protocol = len(cur.fetchall()) > 0
+            else:
+                has_server_protocol = False
+
+            if has_protocol:
+                cur.execute('''
+                    UPDATE titan.tbl_agent3
+                    SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                        protocol=%s, username=%s, password=%s, is_active=%s, is_status=%s
+                    WHERE id=%s
+                ''', [name, hostdomain, hostip, telecom, protocol, username, password, is_active, is_status, id])
+            elif has_server_protocol:
+                cur.execute('''
+                    UPDATE titan.tbl_agent3
+                    SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                        server_protocol=%s, username=%s, password=%s, is_active=%s, is_status=%s
+                    WHERE id=%s
+                ''', [name, hostdomain, hostip, telecom, protocol, username, password, is_active, is_status, id])
+            else:
+                # No protocol column -> update other fields only
+                cur.execute('''
+                    UPDATE titan.tbl_agent3
+                    SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                        username=%s, password=%s, is_active=%s, is_status=%s
+                    WHERE id=%s
+                ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, id])
         return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
     except Exception as e:
         logger.exception('api_update_agent failed')
