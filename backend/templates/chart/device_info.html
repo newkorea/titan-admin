@@ -1,0 +1,101 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">로그인로그</%block>
+<%block name="subtitle">You can see user login logs</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_email">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>앱 버전[=]</label>
+      <input class="form-control" id="filter_app_version">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>장치 IP[like]</label>
+      <input class="form-control" id="filter_device_ip">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>나라[like]</label>
+      <input class="form-control" id="filter_country">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>도시[like]</label>
+      <input class="form-control" id="filter_city">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>장치</label>
+      <select class="form-control" id="filter_device" name="filter_device">
+        <option value="All">All</option>
+        <option value="Windows">Windows</option>
+        <option value="MacOS">MacOS</option>
+        <option value="Android">Android</option>
+        <option value="iOS">iOS</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>API URL[=]</label>
+      <input class="form-control" id="filter_api">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>Load Balancer[=]</label>
+      <input class="form-control" id="filter_load">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>로그인 시간 [From]</label>
+      <input id="filter_start_time" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>로그인 시간 [To]</label>
+      <input id="filter_end_time" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+  </div>
+
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="device-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>앱 버전</th>
+          <th>장치</th>
+          <th>장치 IP</th>
+          <th>장치 ID</th>
+          <th>나라</th>
+          <th>도시</th>
+          <th>ISP</th>
+          <th>API URL</th>
+          <th>Load Balancer</th>
+          <th>로그인 시간</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/device_info.js"></script>
+</%block>

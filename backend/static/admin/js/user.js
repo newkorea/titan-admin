@@ -1,4 +1,5 @@
 var csrf_token = $('#csrf_token').html();
+getUserCount();
 var datatable = $('#user-inform').DataTable({
     dom: '<"top"Blf>rtp<"bottom"i>',
     paging: true,
@@ -35,6 +36,7 @@ var datatable = $('#user-inform').DataTable({
         {data: "username"},
         {data: "delete_yn"},
         {data: "is_active"},
+        {data: "black_yn"},
         {data: "is_staff"},
         {data: "regist_ip"},
         {data: "regist_date"},
@@ -43,6 +45,7 @@ var datatable = $('#user-inform').DataTable({
         {data: "id"},
         {data: "id"},
         {data: "id"},
+	    {data: "id"},
         {data: "id"}
     ],
     columnDefs: [
@@ -85,7 +88,13 @@ var datatable = $('#user-inform').DataTable({
             targets: 5,
             visible: true,
             render: function (data) {
-                return data;
+            	if(data == "Y") {
+            		return "차단"
+            	} else if(data == "X") {
+            		return "연장불가"
+            	} else {
+                	return "정상";
+            	}
             }
         },
         {
@@ -105,9 +114,8 @@ var datatable = $('#user-inform').DataTable({
         {
             targets: 8,
             visible: true,
-            orderable: false,
             render: function (data) {
-                return '<button onclick="view_user_detail('+ data +')" class="btn btn-outline b-primary text-primary">정보</button>';
+                return data;
             }
         },
         {
@@ -115,7 +123,7 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="manage_service_time('+ data +')" class="btn btn-outline b-info text-info">서비스</button>';
+                return '<button onclick="view_user_detail('+ data +')" class="btn btn-outline b-primary text-primary">정보</button>';
             }
         },
         {
@@ -123,15 +131,15 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="manage_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
-            },
+                return '<button onclick="manage_service_time('+ data +')" class="btn btn-outline b-info text-info">서비스</button>';
+            }
         },
         {
             targets: 11,
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="change_password('+ data +')" class="btn btn-outline b-warning text-warning">비번</button>';
+                return '<button onclick="manage_session('+ data +')" class="btn btn-outline b-accent text-accent">세션</button>';
             },
         },
         {
@@ -139,7 +147,7 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="change_active('+ data +')" class="btn btn-outline b-success text-success">활성</button>';
+                return '<button onclick="change_password('+ data +')" class="btn btn-outline b-warning text-warning">비번</button>';
             },
         },
         {
@@ -147,9 +155,25 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
+                return '<button onclick="change_active('+ data +')" class="btn btn-outline b-success text-success">활성</button>';
+            },
+        },
+        {
+            targets: 14,
+            visible: true,
+            orderable: false,
+            render: function (data) {
                 return '<button onclick="delete_user('+ data +')" class="btn btn-outline b-danger text-danger">탈퇴</button>';
             },
-        }
+        },
+	          {
+           targets: 15,
+           visible: true,
+           orderable: false,
+           render: function (data) {
+           return '<button onclick="force_logout(' + data + ')" class="btn btn-outline b-danger text-danger">퇴출</button>';
+       },
+    }
     ],
     language: {
         lengthMenu: "Display _MENU_ records per page",
@@ -166,6 +190,22 @@ var datatable = $('#user-inform').DataTable({
     },
 });
 
+function getUserCount(){
+    $.post( "/api/v1/read/user_count", {
+        csrfmiddlewaretoken: csrf_token
+    }).done(function (data) {
+        var countData = data.result;
+        $("#active_users").html("구매한 회원수: " + countData.purchase_user + "명");
+        $("#session_one_users").html("1세션: " + countData.session_one_user + "명");
+        $("#session_two_users").html("2세션: " + countData.session_two_user + "명");
+        $("#session_three_users").html("3세션: " + countData.session_three_user + "명");
+        $("#session_four_users").html("4세션: " + countData.session_four_user + "명");
+        $("#session_five_users").html("5세션: " + countData.session_five_user + "명");
+        $("#session_six_users").html("6세션: " + countData.session_six_user + "명");
+        $("#expired_users").html("만료: " + countData.expired_user + "명");
+        $("#deleted_users").html("삭제: " + countData.deleted_user + "명");
+    });
+}
 // 정보 버튼 클릭
 function view_user_detail(user_id){
     $.post( "/api/v1/read/user_detail", {
@@ -275,6 +315,10 @@ function manage_session(user_id){
                   '<select id="change_session" class="form-control">'+
                     '<option value="1">1</option>'+
                     '<option value="2">2</option>'+
+                    '<option value="3">3</option>'+
+                    '<option value="4">4</option>'+
+                    '<option value="5">5</option>'+
+                    '<option value="6">6</option>'+
                   '</select>'+
                   '</div>'+
                   '<div class="form-group tal">'+
@@ -319,52 +363,62 @@ function manage_session(user_id){
 
 // 비번 버튼 클릭
 function change_password(user_id){
-    swal.fire({
-        title: '비밀번호 변경',
-        html: ''+
-              '<div class="form-group tal">'+
-              '<label class="fz12">변경할 비밀번호</label>'+
-              '<input id="change_password" type="text" class="form-control" value="">'+
-              '</div>'+
-              '<div class="form-group tal">'+
-              '<label class="fz12">변경 사유</label>'+
-              '<input id="change_reason" type="text" class="form-control" value="">'+
-              '</div>',
-            confirmButtonText: '수정',
-            cancelButtonText: '취소',
-            confirmButtonColor: swalColor('base'),
-            showCancelButton: true
-      }).then(function (result) {
-          if (result.value) {
-              var change_password = $("#change_password").val();
-              var change_reason = $("#change_reason").val();
-              $.post("/api/v1/update/user_password", {
-                  csrfmiddlewaretoken: csrf_token,
-                  user_id: user_id,
-                  change_password: change_password,
-                  change_reason: change_reason
-              }).done(function (data) {
-                  if (data.result == 200) {
-                      Swal.fire({
-                        title: data.title,
-                        text: data.text,
-                        type: 'success',
-                        confirmButtonColor: swalColor('success')
-                      })
-                  }
-                  else {
-                      Swal.fire({
-                        title: data.title,
-                        text: data.text,
-                        type: 'error',
-                        confirmButtonColor: swalColor('error')
-                      })
-                  }
-              })
-          }
-      })
-}
+    $.post( "/api/v1/read/user_password", {
+        csrfmiddlewaretoken: csrf_token,
+        user_id: user_id
+    }).done(function (data) {
+        var password = data.result;
+    	swal.fire({
+            title: '비밀번호 변경',
+            html: ''+
+                  '<div class="form-group tal">'+
+              	  '<label class="fz12">변경할 비밀번호</label>'+
+              	  '<input id="change_password" type="text" class="form-control" value="">'+
+                  '</div>'+
+                  '<div class="form-group tal">'+
+                  '<label class="fz12">변경 사유</label>'+
+                  '<input id="change_reason" type="text" class="form-control" value="">'+
+                  '</div>'+
+                  '<div class="form-group tal">'+
+                  '<label class="fz12">encrypted Password</label>'+
+                  '<input type="text" class="form-control" value="' + password + '" readonly>'+
+                  '</div>',
+                confirmButtonText: '수정',
+                cancelButtonText: '취소',
+                confirmButtonColor: swalColor('base'),
+                showCancelButton: true
+          }).then(function (result) {
+              if (result.value) {
+                  var change_password = $("#change_password").val();
+                  var change_reason = $("#change_reason").val();
+                  $.post("/api/v1/update/user_password", {
+                      csrfmiddlewaretoken: csrf_token,
+                      user_id: user_id,
+                      change_password: change_password,
+                      change_reason: change_reason
+                  }).done(function (data) {
+                      if (data.result == 200) {
+                          Swal.fire({
+                            title: data.title,
+                            text: data.text,
+                            type: 'success',
+                            confirmButtonColor: swalColor('success')
+                          })
+                      }  
+                      else {
+                          Swal.fire({
+                            title: data.title,
+                            text: data.text,
+                            type: 'error',
+                            confirmButtonColor: swalColor('error')
+                          })
 
+                      }
+                  })
+              }
+          })
+    })
+}
 // 활성화 버튼 클릭
 function change_active(user_id){
     swal.fire({
@@ -464,4 +518,72 @@ function delete_user(user_id){
 // 검색하기 버튼 클릭
 function reload_data(){
     datatable.ajax.reload();
+}
+
+function force_logout(user_id) {
+    $.post("/api/v1/read/user_detail", {
+        csrfmiddlewaretoken: csrf_token,
+        user_id: user_id
+    }).done(function (data) {
+        var user = data.result;
+
+        $.post("/api/v1/read/session_list", {
+            csrfmiddlewaretoken: csrf_token,
+            email: user.email
+        }).done(function (res) {
+            let html = '';
+
+            res.sessions.forEach(function(sess) {
+                const mins = sess.remaining_seconds ? Math.floor(sess.remaining_seconds/60) : 0;
+                html += `
+                  <div class="form-group tal">
+                    <label class="fz12">세션키: ${sess.key}</label><br>
+                    <span class="badge badge-info mr-2">만료: ${sess.expire}</span>
+                    <small class="text-muted">(남은 ${mins}분)</small>
+                    <button class="btn btn-sm btn-danger ml-2" onclick="delete_session('${sess.key}')">퇴출</button>
+                  </div>`;
+            });
+
+            // 모든 세션 퇴출 버튼 추가
+            if (res.sessions.length > 0) {
+                html += `
+                  <div class="text-center mt-3">
+                    <button class="btn btn-danger" onclick="delete_all_sessions('${user.email}')">모든 세션 퇴출</button>
+                  </div>`;
+            }
+
+            Swal.fire({
+                title: user.email + ' - 세션 목록',
+                html: html || '세션 없음',
+                confirmButtonText: '닫기',
+                confirmButtonColor: swalColor('base')
+            });
+        });
+    });
+}
+
+function delete_session(key) {
+    $.post("/api/v1/delete/session", {
+        csrfmiddlewaretoken: csrf_token,
+        session_key: key
+    }).done(function (res) {
+        if (res.result === 200) {
+            Swal.fire('성공', '세션 퇴출 완료', 'success');
+        } else {
+            Swal.fire('오류', '삭제 실패', 'error');
+        }
+    });
+}
+
+function delete_all_sessions(email) {
+    $.post("/api/v1/delete/all_sessions", {
+        csrfmiddlewaretoken: csrf_token,
+        email: email
+    }).done(function (res) {
+        if (res.result === 200) {
+            Swal.fire('성공', '총 ' + res.deleted + '개의 세션을 퇴출했습니다.', 'success');
+        } else {
+            Swal.fire('오류', '모든 세션 삭제 실패', 'error');
+        }
+    });
 }

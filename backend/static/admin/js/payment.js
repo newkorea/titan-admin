@@ -28,6 +28,7 @@ var datatable = $('#price-inform').DataTable({
             session: function() { return $('#filter_session').val() },
             month: function() { return $('#filter_month').val() },
             refund: function() { return $('#filter_refund').val() },
+            type: function() { return $('#filter_type').val() },
             regist_start: function() { return $('#filter_regist_start').val() },
             regist_end: function() { return $('#filter_regist_end').val() }
         },
@@ -131,7 +132,8 @@ var datatable = $('#price-inform').DataTable({
             render: function (data) {
                 var id = data.split('+')[0]
                 var refund_yn = data.split('+')[1]
-                if (refund_yn == 'Y') {
+                var pgcode = data.split('+')[2]
+                if (refund_yn == 'Y' || pgcode == 'apple') {
                     return ''
                 } else {
                     return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';

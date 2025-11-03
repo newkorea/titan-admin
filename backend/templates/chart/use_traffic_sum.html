@@ -1,0 +1,70 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">일일 트래픽 사용량(합산자료)</%block>
+<%block name="subtitle">TITAN VPN 일일 트래픽 사용량을 확인할 수 있습니다</%block>
+
+<%block name="content">
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>년도</label>
+      <select class="form-control" id="year_selectbox">
+        % for year in year_list:
+          <option value="${ year }">${ year }년</option>
+        % endfor
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>월</label>
+      <select class="form-control" id="month_selectbox">
+          <option value="1">1월</option>
+          <option value="2">2월</option>
+          <option value="3">3월</option>
+          <option value="4">4월</option>
+          <option value="5">5월</option>
+          <option value="6">6월</option>
+          <option value="7">7월</option>
+          <option value="8">8월</option>
+          <option value="9">9월</option>
+          <option value="10">10월</option>
+          <option value="11">11월</option>
+          <option value="12">12월</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>일</label>
+      <select class="form-control" id="day_selectbox">
+        % for day in day_list:
+          <option value="${ day }">${ day }일</option>
+        % endfor
+      </select>
+    </div>
+  </div>
+  <div class='btn-store'>
+    <button class="btn btn-fw primary" onclick="click_search()">
+      <i class="fa fa-search mr5"></i>
+        검색하기
+    </button>
+  </div>
+  <table class="table table-bordered">
+    <thead class="thead-light">
+      <tr>
+        <th scope="col">이메일</th>
+        <th scope="col">다운로드</th>
+        <th scope="col">업로드</th>		
+      </tr>
+    </thead>
+    <tbody id="add_point">
+    </tbody>
+  </table>
+  <div class="null-txt" id="null_txt">
+    조건에 해당하는 데이터가 존재하지 않습니다
+  </div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/use_traffic_sum.js"></script>
+</%block>

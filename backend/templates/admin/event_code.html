@@ -10,6 +10,10 @@
 
   <!-- 버튼 -->
   <div class='btn-store'>
+    <button class="btn btn-fw success mr-2" onclick="add_default_setting()">
+      <i class="fa fa-plus mr5"></i>
+      Default Reward 설정
+    </button>
     <button class="btn btn-fw success" onclick="add_event()">
       <i class="fa fa-plus mr5"></i>
       이벤트 등록하기
@@ -18,13 +22,14 @@
 
   <!-- 데이터테이블즈 -->
   <div class="user-table">
-    <table id="event_code"" class="table display">
+    <table id="event_code" class="table display">
       <thead>
         <tr>
           <th>이벤트 코드</th>
           <th>적용 시작일시</th>
           <th>적용 종료일시</th>
           <th>무료체험일</th>
+          <th>Reward Percent</th>
           <th>적용 상태</th>
           <th>등록일시</th>
           <th>삭제일시</th>
@@ -40,6 +45,7 @@
             <td>${row['start']}</td>
             <td>${row['end']}</td>
             <td>${row['free_day']}</td>
+            <td>${row['reward_percent']}</td>
             <td>${row['status']}</td>
             <td>${row['regist_date']}</td>
             <td>${row['delete_date']}</td>

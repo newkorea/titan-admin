@@ -15,6 +15,12 @@
             추천코드 : <b>${request.session['rec']}</b>
         </span>
         % endif
+    <!-- ✅ 여기 추가: 요금표 링크 버튼 -->
+    <a href="https://titan.jobjapan.com/price_table"
+       target="_blank" rel="noopener"
+       class="btn btn-sm btn-outline-light ml-3 d-none d-md-inline-flex align-items-center">
+      <i class="fas fa-dollar-sign mr-1"></i> 요금표
+    </a>
         <ul class="nav flex-row order-lg-2">
             <li class="dropdown d-flex align-items-center">
                 <span class="avatar w-32">

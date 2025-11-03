@@ -3,7 +3,7 @@
 <%block name="css">
 </%block>
 
-<%block name="title">일일 트래픽 사용량</%block>
+<%block name="title">일일 트래픽 사용량(접속별자료)</%block>
 <%block name="subtitle">TITAN VPN 일일 트래픽 사용량을 확인할 수 있습니다</%block>
 
 <%block name="content">
@@ -44,25 +44,23 @@
     </div>
   </div>
   <div class='btn-store'>
-    <button class="btn btn-fw primary" onclick="click_search()">
+    <button class="btn btn-fw primary" onclick="reload_data()">
       <i class="fa fa-search mr5"></i>
         검색하기
     </button>
   </div>
-  <table class="table table-bordered">
-    <thead class="thead-light">
-      <tr>
-        <th scope="col">이메일</th>
-        <th scope="col">시작</th>
-        <th scope="col">종료</th>
-        <th scope="col">아이피</th>
-        <th scope="col">콜링</th> 
-        <th scope="col">트래픽</th> 
-      </tr>
-    </thead>
-    <tbody id="add_point">
-    </tbody>
-  </table>
+  <table id="use-traffic" class="table display">
+      <thead>
+        <tr>
+          <th>이메일</th>
+          <th>다운로드</th>
+          <th>업로드</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  
   <div class="null-txt" id="null_txt">
     조건에 해당하는 데이터가 존재하지 않습니다
   </div>

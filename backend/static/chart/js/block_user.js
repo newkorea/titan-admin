@@ -27,6 +27,7 @@ function click_validate(){
                 '    <td>'+value.id+'</td>'+
                 '    <th>'+value.email+'</th>'+
                 '    <td>'+value.regist_date+'</td>'+
+                '    <td>'+value.expire_date+'</td>'+
                 '    <td>'+value.regist_ip+'</td>'+
                 '    <td>'+value.is_active+'</td>'+
                 '</tr>'

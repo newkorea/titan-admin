@@ -7,6 +7,24 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 
+# 원격 승인요청프로그램을 위한 API용 2025-02-19
+class TblPaymentRequest(models.Model):
+    PAYMENT_TYPES = [
+        ('alipay', 'Alipay'),
+        ('wechat', 'WeChat'),
+    ]
+
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPES)
+    payment_time = models.TimeField()  # HH:MM
+    payment_amount = models.IntegerField()
+    status = models.CharField(max_length=20, default="pending")  # pending, approved, rejected
+    created_at = models.DateTimeField(auto_now_add=True)
+    api_date = models.DateTimeField(auto_now_add=True)  # ✅ 추가된 필드
+#    regist_date = models.DateTimeField(auto_now_add=True)  # ✅ 추가된 필드
+
+    class Meta:
+        managed = False  # 기존 DB 테이블과 연동
+        db_table = 'tbl_send_history'  # 실제 DB의 테이블 이름
 
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
@@ -142,6 +160,32 @@ class TblAgent(models.Model):
         managed = False
         db_table = 'tbl_agent'
 
+#2023-07-19 Added By Zhao
+class TblAgentFailed(models.Model):
+    username = models.CharField(max_length=255, blank=True, null=True)
+    platform = models.CharField(max_length=255, blank=True, null=True)
+    app_version = models.CharField(max_length=255, blank=True, null=True)
+    server_name = models.CharField(max_length=255, blank=True, null=True)
+    server_domain = models.CharField(max_length=255, blank=True, null=True)
+    server_protocol = models.CharField(max_length=255, blank=True, null=True)
+    user_ip = models.CharField(max_length=50, blank=True, null=True)
+    user_location = models.CharField(max_length=200, blank=True, null=True)
+    device_info = models.CharField(max_length=200, blank=True, null=True)
+    failed_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_agent_failed'
+
+class TblChinaApp(models.Model):
+    app_name = models.CharField(max_length=200)
+    package_name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_china_app'
+
 
 class TblAllowIp(models.Model):
     ip = models.CharField(primary_key=True, max_length=255)
@@ -245,6 +289,7 @@ class TblEventCode(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     free_day = models.IntegerField()
+    reward_percent = models.IntegerField()
     regist_date = models.DateTimeField(blank=True, null=True)
     delete_date = models.DateTimeField(blank=True, null=True)
     delete_yn = models.CharField(max_length=1, blank=True, null=True)
@@ -252,6 +297,27 @@ class TblEventCode(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_event_code'
+
+
+class TblRewardSetting(models.Model):
+    percent = models.IntegerField()
+    register_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_reward_setting'
+
+
+class TblRewardLog(models.Model):
+    rewarder_id = models.IntegerField()
+    registrant_id = models.IntegerField()
+    reward_days = models.IntegerField()
+    type = models.IntegerField()
+    register_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_reward_log'
 
 
 class TblFakeEvent(models.Model):
@@ -293,16 +359,12 @@ class TblMenuManage(models.Model):
 
 
 class TblNotice(models.Model):
-    title_en = models.CharField(max_length=255, blank=True, null=True)
-    title_ko = models.CharField(max_length=255, blank=True, null=True)
-    title_ja = models.CharField(max_length=255, blank=True, null=True)
-    title_zh = models.CharField(max_length=255, blank=True, null=True)
     content_en = models.TextField(blank=True, null=True)
     content_ko = models.TextField(blank=True, null=True)
-    content_ja = models.TextField(blank=True, null=True)
     content_zh = models.TextField(blank=True, null=True)
+    platform = models.TextField(blank=True, null=True)
     regist_date = models.DateTimeField(blank=True, null=True)
-    modify_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     delete_date = models.DateTimeField(blank=True, null=True)
     delete_yn = models.CharField(max_length=10, blank=True, null=True)
 
@@ -310,6 +372,15 @@ class TblNotice(models.Model):
         managed = False
         db_table = 'tbl_notice'
 
+#2023-05-26 Added by Zhao
+class TblNoticeUser(models.Model):
+    notice_id = models.IntegerField()
+    user_id = models.IntegerField()
+    regist_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_notice_user'
 
 class TblOsxVersion(models.Model):
     ver_code = models.CharField(max_length=255, blank=True, null=True)
@@ -419,6 +490,7 @@ class TblSendHistory(models.Model):
     status = models.CharField(max_length=10, blank=True, null=True)
     type = models.CharField(max_length=10, blank=True, null=True)
     regist_date = models.DateTimeField(blank=True, null=True)
+    api_date  = models.DateTimeField(blank=True, null=True)
     accept_date = models.DateTimeField(blank=True, null=True)
     cancel_date = models.DateTimeField(blank=True, null=True)
     refund_date = models.DateTimeField(blank=True, null=True)
@@ -508,3 +580,18 @@ class TblWindowsVersion(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_windows_version'
+
+class TblPaymentApiLog(models.Model):
+    payment_type = models.CharField(max_length=20, null=True, blank=True)
+    payment_amount = models.CharField(max_length=20, null=True, blank=True)
+    payment_time = models.CharField(max_length=20, null=True, blank=True)
+    ip_address = models.CharField(max_length=100, null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    raw_payload = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, default='PENDING')
+    result_message = models.TextField(null=True, blank=True)
+    request_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tbl_payment_api_log'
+        managed = False

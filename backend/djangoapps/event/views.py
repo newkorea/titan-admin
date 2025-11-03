@@ -19,6 +19,7 @@ def event_code(request):
                     start, 
                     end, 
                     free_day, 
+                    reward_percent,
                     case
                     when start < now() and now() < end
                     then '적용중'
@@ -33,7 +34,6 @@ def event_code(request):
                     end as delete_yn
             from tbl_event_code
         '''.format()
-        print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
     
@@ -61,6 +61,7 @@ def api_read_event_code(request):
         'event_code': event.event_code,
         'start': start,
         'end': end,
+        'reward_percent': event.reward_percent,
         'free_day': event.free_day
     }
     return JsonResponse({
@@ -98,6 +99,7 @@ def api_create_event_code(request):
     event_start = request.POST.get('event_start')
     event_end = request.POST.get('event_end')
     event_free_day = request.POST.get('event_free_day')
+    event_reward_percent = request.POST.get('event_reward_percent')
 
     print('event_code = ', event_code)
     print('event_start = ', event_start)
@@ -105,10 +107,10 @@ def api_create_event_code(request):
     print('event_free_day = ', event_free_day)
 
     # 1. 이벤트 코드 유효성 체크
-    user = TblUser.objects.filter(rec=event_code).count()
-    if user > 0:
-        title, text = get_swal('EXIST_EVENT_CODE_USER')
-        return JsonResponse({'result': 500, 'title': title, 'text': text})
+    #user = TblUser.objects.filter(rec=event_code).count()
+    #if user > 0:
+    #    title, text = get_swal('EXIST_EVENT_CODE_USER')
+    #    return JsonResponse({'result': 500, 'title': title, 'text': text})
     event_cnt = TblEventCode.objects.filter(event_code=event_code).count()
     if event_cnt > 0:
         title, text = get_swal('EXIST_EVENT_CODE')
@@ -152,10 +154,11 @@ def api_create_event_code(request):
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
     event = TblEventCode(
-        event_code=event_code.upper(),
+        event_code=event_code,
         start=event_start,
         end=event_end,
         free_day=event_free_day,
+        reward_percent=event_reward_percent,
         regist_date=datetime.datetime.now(),
         delete_date=None,
         delete_yn='N'
@@ -174,11 +177,13 @@ def api_update_event_code(request):
     event_start = request.POST.get('event_start')
     event_end = request.POST.get('event_end')
     event_free_day = request.POST.get('event_free_day')
+    event_reward_percent = request.POST.get('event_reward_setting')
 
     print('event_code = ', event_code)
     print('event_start = ', event_start)
     print('event_end = ', event_end)
     print('event_free_day = ', event_free_day)
+    print('event_reward_percent = ', event_reward_percent)
 
     # 2. 적용 시작일시 유효성 체크
     try:
@@ -221,6 +226,7 @@ def api_update_event_code(request):
     event.start = event_start
     event.end = event_end
     event.free_day = event_free_day
+    event.reward_percent = event_reward_percent
     event.delete_date = None
     event.delete_yn = 'N'
     event.save()

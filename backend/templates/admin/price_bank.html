@@ -28,6 +28,10 @@
         <option value="0">선택하세요</option>
         <option value="1">1 세션</option>
         <option value="2">2 세션</option>
+        <option value="3">3 세션</option>
+        <option value="4">4 세션</option>
+        <option value="5">5 세션</option>
+		<option value="6">6 세션</option>
       </select>
     </div>
     <div class="form-group col-sm-2">
@@ -35,6 +39,8 @@
       <select class="form-control" id="filter_month" name="filter_month">
         <option value="0">선택하세요</option>
         <option value="1">1 개월</option>
+        <option value="2">2 개월</option>
+        <option value="3">3 개월</option>
         <option value="6">6 개월</option>
         <option value="12">12 개월</option>
       </select>
@@ -45,7 +51,8 @@
         <option value="0">전체</option>
         <option value="R">대기</option>
         <option value="A">승인</option>
-        <option value="C">취소</option>
+        <option value="C">관리자취소</option>
+        <option value="U">사용자취소</option>
         <option value="Z">환불</option>
       </select>
     </div>
@@ -60,20 +67,32 @@
   </div>
 
   <!-- 버튼 -->
-  <div class='btn-store'>
-    <button class="btn btn-fw accent" onclick="ready_list()">
-      <i class="fa fa-question mr5"></i>
-      처리되지 않은 일감
-    </button>
-    <button class="btn btn-fw success" onclick="enroll_ready()">
-      <i class="fa fa-plus mr5"></i>
-      등록하기
-    </button>
-    <button class="btn btn-fw primary" onclick="reload_data()">
-      <i class="fa fa-search mr5"></i>
-      검색하기
-    </button>
-  </div>
+ <div class='btn-store'>
+  <button class="btn btn-fw accent" onclick="ready_list()">
+    <i class="fa fa-question mr5"></i>
+    처리되지 않은 일감
+  </button>
+  <button class="btn btn-fw success" onclick="enroll_ready()">
+    <i class="fa fa-plus mr5"></i>
+    등록하기
+  </button>
+  <button class="btn btn-fw primary" onclick="reload_data()">
+    <i class="fa fa-search mr5"></i>
+    검색하기
+  </button>
+
+  <!-- ✅ 추가 버튼 -->
+  <button class="btn btn-fw danger" onclick="deleteByStatus('R')">
+    요청삭제
+  </button>
+  <button class="btn btn-fw warning" onclick="deleteByStatus('C')">
+    관리자취소삭제
+  </button>
+  <button class="btn btn-fw info" onclick="deleteByStatus('U')">
+    사용자취소삭제
+  </button>
+</div>
+
 
   <!-- 데이터테이블즈 -->
   <div class="user-table">
@@ -83,10 +102,12 @@
           <th>번호</th>
           <th>이메일</th>
           <th>사용자명</th>
+          <th>지불번호</th>
           <th>세션</th>
           <th>개월수</th>
           <th>금액</th>
-          <th>상태표기</th>
+          <th>상태</th>
+          <th>요청시간</th>
           <th>취소</th>
           <th>취소시간</th>
           <th>승인</th>

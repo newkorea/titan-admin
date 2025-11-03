@@ -70,7 +70,7 @@ function add_event(){
         html: ''+
               '<div class="form-group tal">'+
               '<label class="fz12">이벤트 코드</label>'+
-              '<input id="input_event_code" type="text" class="form-control" value="test">'+
+              '<input id="input_event_code" type="text" class="form-control">'+
               '</div>'+
               '<div class="form-group tal">'+
               '<label class="fz12">적용 시작일시 (yyyy-mm-dd hh:mm:ss)</label>'+
@@ -82,7 +82,11 @@ function add_event(){
               '</div>'+
               '<div class="form-group tal">'+
               '<label class="fz12">무료체험일</label>'+
-              '<input placeholder="숫자만 입력하십시오" id="input_event_free_day" type="text" class="form-control" value="5">'+
+              '<input placeholder="숫자만 입력하십시오" id="input_event_free_day" type="number" class="form-control">'+
+              '</div>'+
+              '<div class="form-group tal">'+
+              '<label class="fz12">Reward Percent(%)</label>'+
+              '<input placeholder="숫자만 입력하십시오" id="input_event_percent" type="number" class="form-control">'+
               '</div>',
             confirmButtonText: '등록',
             cancelButtonText: '취소',
@@ -94,35 +98,42 @@ function add_event(){
             var event_start = $("#input_event_start").val();
             var event_end = $("#input_event_end").val();
             var event_free_day = $("#input_event_free_day").val();
-            console.log('event_code = ', event_code)
-            console.log('event_start = ', event_start)
-            console.log('event_end = ', event_end)
-            console.log('event_free_day = ', event_free_day)
-            $.post( "api/v1/create/event_code", {
-                 csrfmiddlewaretoken: csrf_token,
-                 event_code: event_code,
-                 event_start: event_start,
-                 event_end: event_end,
-                 event_free_day: event_free_day
-            }).done(function( data ) {
-               if (data.result == 200) {
-                    Swal.fire({
-                        title: data.title,
-                        text: data.text,
-                        type: 'success',
+            var event_percent = $("#input_event_percent").val();
+	        if(event_percent == '' || 0 > event_percent) {
+	        	Swal.fire({
+                        title: "알림",
+                        text: "Please inpurt correct percentage",
+                        type: 'error',
                         confirmButtonColor: swalColor('success')
                     })
-                    location.reload();
-                }
-                else {
-                    Swal.fire({
-                        title: data.title,
-                        text: data.text,
-                        type: 'error',
-                        confirmButtonColor: swalColor('error')
-                    })
-                }
-            });
+	        } else {
+	        	$.post( "api/v1/create/event_code", {
+	                 csrfmiddlewaretoken: csrf_token,
+	                 event_code: event_code,
+	                 event_start: event_start,
+	                 event_end: event_end,
+	                 event_free_day: event_free_day,
+	                 event_reward_percent: event_percent
+	            }).done(function( data ) {
+	               if (data.result == 200) {
+	                    Swal.fire({
+	                        title: data.title,
+	                        text: data.text,
+	                        type: 'success',
+	                        confirmButtonColor: swalColor('success')
+	                    })
+	                    location.reload();
+	                }
+	                else {
+	                    Swal.fire({
+	                        title: data.title,
+	                        text: data.text,
+	                        type: 'error',
+	                        confirmButtonColor: swalColor('error')
+	                    })
+	                }
+	            });
+	        }            
         }
     })
 }
@@ -138,6 +149,7 @@ function modify_event(event_code){
             var event_code = event.event_code;
             var start = event.start;
             var end = event.end;
+            var reward_percent = event.reward_percent;
             var free_day = event.free_day;
             swal.fire({
             title: '이벤트 코드',
@@ -156,7 +168,11 @@ function modify_event(event_code){
                 '</div>'+
                 '<div class="form-group tal">'+
                 '<label class="fz12">무료체험일</label>'+
-                '<input placeholder="숫자만 입력하십시오" id="input_event_free_day" type="text" class="form-control" value="'+free_day+'">'+
+                '<input placeholder="숫자만 입력하십시오" id="input_event_free_day" type="number" class="form-control" value="'+free_day+'">'+
+                '</div>'+
+                '<div class="form-group tal">'+
+                '<label class="fz12">Reward Percent(%)</label>'+
+                '<input placeholder="숫자만 입력하십시오" id="input_reward_setting" type="number" class="form-control" value="'+reward_percent+'">'+
                 '</div>'+
                 '<div style="font-size: 14px;">'+
                 '* 삭제 된 이벤트를 수정할 경우 복구 처리 됩니다'+
@@ -171,37 +187,109 @@ function modify_event(event_code){
                     var event_start = $("#input_event_start").val();
                     var event_end = $("#input_event_end").val();
                     var event_free_day = $("#input_event_free_day").val();
+                    var event_reward_setting = $("#input_reward_setting").val();
                     console.log('event_code = ', event_code)
                     console.log('event_start = ', event_start)
                     console.log('event_end = ', event_end)
                     console.log('event_free_day = ', event_free_day)
-                    $.post( "api/v1/update/event_code", {
-                        csrfmiddlewaretoken: csrf_token,
-                        event_code: event_code,
-                        event_start: event_start,
-                        event_end: event_end,
-                        event_free_day: event_free_day
-                    }).done(function( data ) {
-                    if (data.result == 200) {
-                            Swal.fire({
-                                title: data.title,
-                                text: data.text,
-                                type: 'success',
-                                confirmButtonColor: swalColor('success')
-                            })
-                            location.reload();
-                        }
-                        else {
-                            Swal.fire({
-                                title: data.title,
-                                text: data.text,
-                                type: 'error',
-                                confirmButtonColor: swalColor('error')
-                            })
-                        }
-                    });
+                    if(event_reward_setting == '' || 0 > event_reward_setting) {
+				    	Swal.fire({
+				                title: "알림",
+				                text: "Please inpurt correct percentage",
+				                type: 'error',
+				                confirmButtonColor: swalColor('success')
+				            })
+				    } else {
+				    	$.post( "api/v1/update/event_code", {
+	                        csrfmiddlewaretoken: csrf_token,
+	                        event_code: event_code,
+	                        event_start: event_start,
+	                        event_end: event_end,
+	                        event_free_day: event_free_day,
+	                        event_reward_setting: event_reward_setting
+	                    }).done(function( data ) {
+	                    if (data.result == 200) {
+	                            Swal.fire({
+	                                title: data.title,
+	                                text: data.text,
+	                                type: 'success',
+	                                confirmButtonColor: swalColor('success')
+	                            })
+	                            location.reload();
+	                        }
+	                        else {
+	                            Swal.fire({
+	                                title: data.title,
+	                                text: data.text,
+	                                type: 'error',
+	                                confirmButtonColor: swalColor('error')
+	                            })
+	                        }
+	                    });
+				    }
                 }
             })
         }
+    })
+}
+
+function add_default_setting(){
+    $.post( "api/v1/read/reward_setting", {
+        csrfmiddlewaretoken: csrf_token
+    }).done(function( data ) {
+        var reward = data.resData;
+        var percent = data.resCode == 200?reward.reward_percent:0;
+        var id = data.resCode == 200?reward.id:0;
+        
+        swal.fire({
+        title: 'Default Reward Setting',
+        html: ''+
+            '<div class="form-group tal">'+
+            '<label class="fz12">Reward Percent (%)</label>'+
+            '<input placeholder="숫자만 입력하십시오" id="input_reward_setting" type="number" class="form-control" value="' + percent + '">'+
+            '<input id="input_reward_id" type="hidden" class="form-control" value="'+id+'">'+
+            '</div>',
+            confirmButtonText: '설정',
+            cancelButtonText: '취소',
+            confirmButtonColor: swalColor('base'),
+            showCancelButton: true
+        }).then(function (result) {
+            if (result.value) {
+                var percent = $("#input_reward_setting").val();
+                var reward_id = $("#input_reward_id").val();
+                if(percent == '' || 0 > percent) {
+			    	Swal.fire({
+		                title: "알림",
+		                text: "Please inpurt correct percentage",
+		                type: 'error',
+		                confirmButtonColor: swalColor('success')
+		            })
+			    } else {
+			    	$.post( "api/v1/update/reward_setting", {
+	                    csrfmiddlewaretoken: csrf_token,
+	                    percent: percent,
+	                    reward_id: reward_id
+	                }).done(function( data ) {
+	                if (data.result == 200) {
+	                        Swal.fire({
+	                            title: data.title,
+	                            text: data.text,
+	                            type: 'success',
+	                            confirmButtonColor: swalColor('success')
+	                        })
+	                        location.reload();
+	                    }
+	                    else {
+	                        Swal.fire({
+	                            title: data.title,
+	                            text: data.text,
+	                            type: 'error',
+	                            confirmButtonColor: swalColor('error')
+	                        })
+	                    }
+	                });
+			    }
+            }
+        })
     })
 }

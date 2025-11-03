@@ -1,6 +1,8 @@
+#원격승인 500,600 설치바로전코드
 import json
 import datetime
 import smtplib
+from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
@@ -22,6 +24,264 @@ from django.utils import translation
 from backend.djangoapps.common.payletter import Payletter
 from backend.djangoapps.common.payletter_global import PayletterGlobal
 from backend.djangoapps.common.paybox import Paybox
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
+
+#원격 자동승인프로그램용 API 25-02-19
+from django.http import JsonResponse
+import json
+import os
+# from datetime import datetime, timedelta
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings  # ✅ settings.py에서 API_SECRET_KEY 가져오기
+from backend.models import TblPaymentRequest  # ✅ `backend.` 추가 
+from django.test import RequestFactory
+from importlib import import_module  # ✅ 동적 import 사용
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.contrib.sessions.backends.db import SessionStore  # ✅ 세션 저장소 추가
+import pytz
+from django.utils.timezone import now
+
+
+@csrf_exempt
+def approve_payment_api(request):
+    if request.method == "POST":
+        try:
+            raw_body = request.body.decode('utf-8')
+            data = json.loads(raw_body)
+            ip_address = request.META.get('REMOTE_ADDR')
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+            payment_type = data.get("payment_type")
+            payment_amount = data.get("payment_amount")
+            payment_time = data.get("payment_time")
+
+            log_entry = TblPaymentApiLog.objects.create(
+                payment_type=payment_type,
+                payment_amount=payment_amount,
+                payment_time=payment_time,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                raw_payload=raw_body,
+                result_message='수신 대기 중',
+                status='PENDING',
+                request_time=datetime.datetime.now()
+            )
+        except Exception as e:
+            TblPaymentApiLog.objects.create(
+                payment_type=None,
+                payment_amount=None,
+                payment_time=None,
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                raw_payload=request.body.decode('utf-8'),
+                result_message=str(e),
+                status='ERROR',
+                request_time=datetime.datetime.now()
+            )
+            return JsonResponse({"status": "error", "message": f"서버 오류: {str(e)}"}, status=500)
+
+        try:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header != f"Bearer {settings.API_SECRET_KEY}":
+                log_entry.result_message = "인증 실패"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "인증 실패"}, status=403)
+
+            type_mapping = {"alipay": "A", "wechat": "W"}
+            mapped_type = type_mapping.get(payment_type.lower())
+            if not mapped_type:
+                log_entry.result_message = "잘못된 결제 유형"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "잘못된 결제 유형"}, status=400)
+
+            cst = pytz.timezone('Asia/Shanghai')
+            kst = pytz.timezone('Asia/Seoul')
+            today_cst = datetime.datetime.now(cst).date()
+
+            try:
+                api_datetime_cst = datetime.datetime.combine(
+                    today_cst,
+                    datetime.datetime.strptime(payment_time, "%H:%M").time()
+                )
+            except ValueError:
+                log_entry.result_message = f"잘못된 시간 형식: {payment_time}"
+                log_entry.status = "ERROR"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "잘못된 시간 형식"}, status=501)
+
+            api_datetime_cst = cst.localize(api_datetime_cst)
+            api_datetime_kst = api_datetime_cst.astimezone(kst)
+            api_datetime_naive = api_datetime_kst.replace(tzinfo=None)
+
+            now_naive = datetime.datetime.now()
+            if api_datetime_naive > now_naive:
+                api_datetime_naive -= datetime.timedelta(days=1)
+
+            existing_payment = TblSendHistory.objects.filter(
+                type=mapped_type,
+                krw=str(payment_amount),
+                api_date=api_datetime_naive,
+                status="A"
+            ).exists()
+
+            if existing_payment:
+                log_entry.result_message = "이미 승인된 결제 정보입니다."
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "이미 승인된 결제 정보입니다."}, status=400)
+
+            payment_request = TblSendHistory.objects.filter(
+                type=mapped_type,
+                krw=str(payment_amount),
+                status="R"
+            ).order_by('-regist_date').first()
+
+            if not payment_request:
+                same_amount_diff_time = TblSendHistory.objects.filter(
+                    type=mapped_type,
+                    krw=str(payment_amount),
+                    status="R"
+                ).exclude(regist_date__minute=api_datetime_naive.minute).exists()
+
+                if same_amount_diff_time:
+                    log_entry.result_message = "같은 금액의 승인대기 있지만 시간이 다름"
+                    log_entry.save()
+                    return JsonResponse({"status": "error", "message": "같은 금액의 승인대기 있지만 시간이 다름"}, status=501)
+
+                same_time_diff_amount = TblSendHistory.objects.filter(
+                    type=mapped_type,
+                    status="R",
+                    regist_date__minute=api_datetime_naive.minute
+                ).exclude(krw=str(payment_amount)).exists()
+
+                if same_time_diff_amount:
+                    log_entry.result_message = "같은 시간의 승인대기 있지만 금액 다름"
+                    log_entry.save()
+                    return JsonResponse({"status": "error", "message": "같은 시간의 승인대기 있지만 금액 다름"}, status=502)
+
+                completely_different = TblSendHistory.objects.filter(
+                    type=mapped_type,
+                    status="R"
+                ).exclude(krw=str(payment_amount)).exclude(regist_date__minute=api_datetime_naive.minute).exists()
+
+                if completely_different:
+                    log_entry.result_message = "금액과 시간이 모두 다름"
+                    log_entry.save()
+                    return JsonResponse({"status": "error", "message": "금액과 시간이 모두 다름"}, status=503)
+
+                other_type = TblSendHistory.objects.exclude(type=mapped_type).filter(status="R")
+                for other in other_type:
+                    time_match = other.regist_date.minute == api_datetime_naive.minute
+                    amount_match = other.krw == str(payment_amount)
+
+                    if time_match and amount_match:
+                        log_entry.result_message = "시간·금액 동일하지만 결제방식 다름"
+                        log_entry.save()
+                        return JsonResponse({"status": "error", "message": "시간·금액 동일하지만 결제방식 다름"}, status=510)
+                    if not time_match and amount_match:
+                        log_entry.result_message = "금액은 같지만 시간이 다르고 결제방식도 다름"
+                        log_entry.save()
+                        return JsonResponse({"status": "error", "message": "시간 다르고 결제방식도 다름"}, status=511)
+                    if time_match and not amount_match:
+                        log_entry.result_message = "시간은 같지만 금액 다르고 결제방식도 다름"
+                        log_entry.save()
+                        return JsonResponse({"status": "error", "message": "금액 다르고 결제방식도 다름"}, status=512)
+                    if not time_match and not amount_match:
+                        log_entry.result_message = "시간·금액·방식 모두 다름"
+                        log_entry.save()
+                        return JsonResponse({"status": "error", "message": "시간·금액·방식 모두 다름"}, status=513)
+
+                log_entry.result_message = "일치하는 결제 요청 없음"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "승인대기하는 결제 요청 없음"}, status=404)
+
+            db_payment_time = payment_request.regist_date
+            time_difference = (api_datetime_naive - db_payment_time).total_seconds()
+
+            if time_difference < -90:
+                log_entry.result_message = "결제 시간이 DB보다 90초 이상 빠름"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "결제 시간이 DB보다 90초 이상 빠를 수 없습니다."}, status=400)
+
+            if time_difference > 180:
+                log_entry.result_message = "결제 시간이 DB보다 3분 초과 늦음"
+                log_entry.save()
+                return JsonResponse({"status": "error", "message": "결제 시간이 DB보다 3분 초과로 늦습니다."}, status=400)
+
+            user_id = payment_request.user_id
+            session = str(payment_request.session)
+            month_type = str(payment_request.month_type)
+
+            with transaction.atomic():
+                giveServiceTime(user_id, session, month_type)
+                payment_request.status = "A"
+                payment_request.accept_date = datetime.datetime.now()
+                payment_request.api_date = api_datetime_naive
+                payment_request.save()
+
+                log_entry.status = "APPROVED"
+                log_entry.result_message = "결제 승인 완료"
+                log_entry.save()
+
+            return JsonResponse({"status": "success", "message": "결제 승인 완료"})
+
+        except Exception as e:
+            log_entry.result_message = f"서버 오류: {str(e)}"
+            log_entry.status = "ERROR"
+            log_entry.save()
+            return JsonResponse({"status": "error", "message": f"서버 오류: {str(e)}"}, status=500)
+
+    return JsonResponse({"status": "error", "message": "잘못된 요청 방식"}, status=405)
+
+# 관리자 페이지에서 API 로그 확인 뷰(26-06-05)
+# 기존 API: JSON 반환용 => 유지합니다
+@allow_admin
+def api_view_payment_logs(request):
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 10))
+    draw = int(request.GET.get('draw', 1))
+
+    logs = TblPaymentApiLog.objects.all().order_by('-request_time')
+    total = logs.count()
+    logs = logs[start:start+length]
+
+    data = []
+    for log in logs:
+        data.append({
+            'id': log.id,
+            'request_time': log.request_time.strftime("%Y-%m-%d %H:%M:%S"),
+            'payment_type': log.payment_type,
+            'payment_amount': log.payment_amount,
+            'payment_time': log.payment_time,
+            'ip_address': log.ip_address,
+            'status': log.status,
+            'result_message': log.result_message,
+            'user_agent': log.user_agent[:100],
+        })
+
+    return JsonResponse({
+        "draw": draw,
+        "recordsTotal": total,
+        "recordsFiltered": total,
+        "data": data
+    })
+
+    # 관리자 HTML 페이지 반환용 => 신규 추가
+
+# views.py (예시)
+# backend/djangoapps/price/views.py
+
+from django.shortcuts import render
+from backend.models import TblPaymentApiLog  # 또는 정확한 경로
+
+def admin_payment_logs_page(request):
+    logs = TblPaymentApiLog.objects.all().order_by('-request_time')
+    return render(request, 'admin/view_payment_logs.html', {'logs': logs})
+
+
+
 
 
 # 무통장내역 렌더링 (2020-03-18)
@@ -58,23 +318,24 @@ def api_read_payment(request):
     session = request.POST.get('session')
     month = request.POST.get('month')
     refund = request.POST.get('refund')
+    type = request.POST.get('type')
     regist_start = request.POST.get('regist_start')
     regist_end = request.POST.get('regist_end')
 
     # 로깅 (datatables 기본 파라미터)
-    print('DEBUG -> start : ', start)
-    print('DEBUG -> length : ', length)
-    print('DEBUG -> draw : ', draw)
-    print('DEBUG -> orderby_col : ', orderby_col)
-    print('DEBUG -> orderby_opt : ', orderby_opt)
+    #print('DEBUG -> start : ', start)
+    #print('DEBUG -> length : ', length)
+    #print('DEBUG -> draw : ', draw)
+    #print('DEBUG -> orderby_col : ', orderby_col)
+    #print('DEBUG -> orderby_opt : ', orderby_opt)
 
     # 로깅 (검색필터 파라미터)
-    print('DEBUG -> email : ', email)
-    print('DEBUG -> session : ', session)
-    print('DEBUG -> month : ', month)
-    print('DEBUG -> refund : ', refund)
-    print('DEBUG -> regist_start : ', regist_start)
-    print('DEBUG -> regist_end : ', regist_end)
+    #print('DEBUG -> email : ', email)
+    #print('DEBUG -> session : ', session)
+    #print('DEBUG -> month : ', month)
+    #print('DEBUG -> refund : ', refund)
+    #print('DEBUG -> regist_start : ', regist_start)
+    #print('DEBUG -> regist_end : ', regist_end)
 
     # where 절 필터링 생성
     wc = ' where 1=1 '
@@ -84,6 +345,8 @@ def api_read_payment(request):
         wc += " and x.session = '{session}' ".format(session=session)
     if month != '0':
         wc += " and x.month_type = '{month}' ".format(month=month)
+    if type != '':
+        wc += " and x.pgcode = '{type}' ".format(type=type)
     if refund != '0':
         wc += " and x.refund_yn = '{refund}' ".format(refund=refund)
     if regist_start != '':
@@ -119,7 +382,6 @@ def api_read_payment(request):
             on x.user_id = y.id
             {wc}
         '''.format(wc=wc)
-        # print(query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
@@ -143,7 +405,7 @@ def api_read_payment(request):
             		x.regist_date,
             		x.refund_date,
             		x.auto_end_date,
-                    concat(x.id, '+', x.refund_yn) as refund
+                    concat(x.id, '+', x.refund_yn, '+', x.pgcode) as refund
             from tbl_price_history x
             join tbl_user y
             on x.user_id = y.id
@@ -157,7 +419,6 @@ def api_read_payment(request):
             start=start,
             end=start+length-1
         )
-        print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
@@ -185,7 +446,11 @@ def api_update_refund(request):
     tid = tph.tid
     user_id = tph.user_id
     pgcode = tph.pgcode
-
+    
+    session = str(tph.session)
+    month_type = str(tph.month_type)
+    user_id = tph.user_id
+    
     # 파라미터 로깅
     print('DEBUG -> id : ', id)
     print('DEBUG -> krw : ', krw)
@@ -208,7 +473,9 @@ def api_update_refund(request):
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.datetime.now()
             tph.save()
-            initServiceTime(user_id)
+            #initServiceTime(user_id)
+            print("National Refund: ", "TRUE")
+            refundPayment(user_id, session, month_type)
             title, text = get_swal('PAYMENT_SUCCESS')
             return JsonResponse({'result': 200, 'title': title, 'text': text})
         else:
@@ -224,7 +491,9 @@ def api_update_refund(request):
             tph.refund_yn = 'Y'
             tph.refund_date = datetime.datetime.now()
             tph.save()
-            initServiceTime(user_id)
+            #initServiceTime(user_id)
+            print("National Refund: ", "FALSE")
+            refundPayment(user_id, session, month_type)
             title, text = get_swal('PAYMENT_SUCCESS')
             return JsonResponse({'result': 200, 'title': title, 'text': text})
         elif res == 400:
@@ -246,7 +515,8 @@ def api_update_refund(request):
                 tph.refund_yn = 'Y'
                 tph.refund_date = datetime.datetime.now()
                 tph.save()
-                initServiceTime(user_id)
+                #initServiceTime(user_id)
+                refundPayment(user_id, session, month_type)
                 title, text = get_swal('PAYMENT_SUCCESS')
                 return JsonResponse({'result': 200, 'title': title, 'text': text})
             else:
@@ -307,7 +577,7 @@ def api_read_ready_count(request):
     return JsonResponse({'result': 200, 'ready_count': ready_count})
 
 
-# (2020-03-18)
+# (2020-03-18) 2025-08-25 D를 안보이게 처리
 @allow_admin
 def api_read_bank(request):
 
@@ -328,25 +598,15 @@ def api_read_bank(request):
     regist_start = request.POST.get('regist_start')
     regist_end = request.POST.get('regist_end')
 
-    # 로깅 (datatables 기본 파라미터)
-    print('DEBUG -> start : ', start)
-    print('DEBUG -> length : ', length)
-    print('DEBUG -> draw : ', draw)
-    print('DEBUG -> orderby_col : ', orderby_col)
-    print('DEBUG -> orderby_opt : ', orderby_opt)
-
-    # 로깅 (검색필터 파라미터)
-    print('DEBUG -> number : ', number)
-    print('DEBUG -> email : ', email)
-    print('DEBUG -> username : ', username)
-    print('DEBUG -> session : ', session)
-    print('DEBUG -> month : ', month)
-    print('DEBUG -> status : ', status)
-    print('DEBUG -> regist_start : ', regist_start)
-    print('DEBUG -> regist_end : ', regist_end)
-
     # where 절 필터링 생성
     wc = ' where 1=1 '
+
+    # ✅ 기본은 D 숨김
+    if status == '0' or status == '' or status is None:
+        wc += ' and x.status <> "D" '
+    else:
+        wc += " and x.status = '{status}' ".format(status=status)
+
     if number != '':
         wc += " and x.id = '{number}' ".format(number=number)
     if email != '':
@@ -357,16 +617,10 @@ def api_read_bank(request):
         wc += " and x.session = '{session}' ".format(session=session)
     if month != '0':
         wc += " and x.month_type = '{month}' ".format(month=month)
-    if status != '0':
-        wc += " and x.status = '{status}' ".format(status=status)
     if regist_start != '':
-        wc += '''
-            and x.regist_date >= '{regist_start}'
-        '''.format(regist_start=regist_start)
+        wc += " and x.regist_date >= '{regist_start}' ".format(regist_start=regist_start)
     if regist_end != '':
-        wc += '''
-            and x.regist_date < '{regist_end}'
-        '''.format(regist_end=regist_end)
+        wc += " and x.regist_date < '{regist_end}' ".format(regist_end=regist_end)
 
     # order by 리스트
     column_name = [
@@ -387,42 +641,42 @@ def api_read_bank(request):
             on x.user_id = y.id
             {wc}
         '''.format(wc=wc)
-        # print(query)
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
-        # print('DEBUG -> total : ', total)
 
     # 데이터테이블즈 - 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
             select  x.id,
-            		y.email,
-            		y.username,
-            		x.session,
-            		x.month_type,
-            		x.krw,
-            		x.status as status,
-            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as cancel,
+                    y.email,
+                    y.username,
+                    DATE_FORMAT(y.regist_date, "%Y-%m-%d %H:%i:%S") as regist_date,
+                    DATE_FORMAT(x.regist_date, "%Y-%m-%d %H:%i:%S") as request_date,
+                    x.session,
+                    x.month_type,
+                    x.krw,
+                    x.status as status,
+                    concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as cancel,
                     DATE_FORMAT(x.cancel_date, "%Y-%m-%d %H:%i:%S") as cancel_date,
-            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as accept,
+                    concat(x.status, '&', x.id, '&', y.username, '&', x.product_name, '&', x.krw, '&', x.session, '&', y.email, '&', y.black_yn) as accept,
                     DATE_FORMAT(x.accept_date, "%Y-%m-%d %H:%i:%S") as accept_date,
-            		concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
+                    concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
                     DATE_FORMAT(x.refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-            		x.type
+                    UPPER(TRIM(x.type)) as type
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
             {wc}
             order by {orderby_col} {orderby_opt}
-            limit {start}, 10
+            limit {start}, {length}
         '''.format(
             wc=wc,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
-            start=start
+            start=start,
+            length=length
         )
-        print(query)
         cur.execute(query)
         rows = dictfetchall(cur)
 
@@ -435,13 +689,15 @@ def api_read_bank(request):
     return JsonResponse(ret)
 
 
-# (2020-03-18)
+# (2020-03-18) 25-08-25 수정 
 @allow_admin
 def api_create_bank(request):
     note_email = request.POST.get('note_email')
     note_session = request.POST.get('note_session')
     note_month = request.POST.get('note_month')
-    note_type = request.POST.get('note_type')
+    note_type = (request.POST.get('note_type') or '').strip().upper()   # ✅ 정규화
+    if note_type not in ('A', 'W', 'M', 'V'):
+        note_type = 'M'  # ✅ 기본 무통장
 
     print("note_email -> ", note_email)
     print("note_session -> ", note_session)
@@ -453,26 +709,27 @@ def api_create_bank(request):
     except BaseException as err:
         title, text = get_swal('NOT_USER')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
-
+        
     price = getProductPirce(note_session, note_month, 'KRW')
     product_name = makeProductName(note_session, note_month)
 
     try:
         sh = TblSendHistory(
-            user_id = user.id,
-            product_name = product_name,
-            session = note_session,
-            month_type = note_month,
-            krw = price,
-            usd = None,
-            jpy = None,
-            cny = None,
-            status = 'R',
-            type = note_type,
-            regist_date = datetime.datetime.now(),
-            accept_date = None,
-            cancel_date = None,
-            refund_date = None)
+            user_id=user.id,
+            product_name=product_name,
+            session=note_session,
+            month_type=note_month,
+            krw=price,
+            usd=None,
+            jpy=None,
+            cny=None,
+            status='R',
+            type=note_type,
+            regist_date=datetime.datetime.now(),
+            accept_date=None,
+            cancel_date=None,
+            refund_date=None
+        )
         sh.save()
         title, text = get_swal('SUCCESS_BANK')
         return JsonResponse({'result': 200, 'title': title, 'text': text})
@@ -481,12 +738,12 @@ def api_create_bank(request):
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 
+
 # (2020-03-18)
 @allow_admin
 def api_update_bank(request):
     id = request.POST.get('id')
     type = request.POST.get('type')
-
     try:
         history = TblSendHistory.objects.get(id=id)
         session = str(history.session)
@@ -496,14 +753,15 @@ def api_update_bank(request):
         history.status = type
         if type == 'C':
             history.cancel_date = datetime.datetime.now()
-        elif type == 'A':
+        elif type == 'A' or type == 'S':
             history.accept_date = datetime.datetime.now()
             # 시간충전
             giveServiceTime(user_id, session, month_type)
         elif type == 'Z':
             history.refund_date = datetime.datetime.now()
             # 시간초기화
-            initServiceTime(user_id)
+            #initServiceTime(user_id)
+            refundPayment(user_id, session, month_type)
         history.save()
 
         title, text = get_swal('SUCCESS_COMMON')
@@ -512,7 +770,271 @@ def api_update_bank(request):
         title, text = get_swal('UNKNOWN_ERROR')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
+# (2025-08-25) 무통장관리페이지에서  C R U 를 모두 D로 변경해서 관리자에서 안보이게함
+@allow_admin
+@require_POST
+def api_delete_by_status(request):
+    status = request.POST.get('status', '').strip().upper()
+    valid = {'R', 'C', 'U'}
+    if status not in valid:
+        return JsonResponse({'result': 400, 'text': f'허용되지 않은 status: {status}'})
 
+    try:
+        # 삭제 대신 status='D' 로 업데이트
+        q = TblSendHistory.objects.filter(status=status)
+        count = q.count()
+        q.update(status='D', cancel_date=datetime.datetime.now())
+
+        return JsonResponse({
+            'result': 200,
+            'text': f'status={status} 항목 {count}건 → D(삭제처리)로 변경 완료'
+        })
+    except Exception as e:
+        return JsonResponse({'result': 500, 'text': f'업데이트 중 오류: {str(e)}'})
+
+
+# (2022-08-08)
+def refundPayment(user_id, session, month_type):
+    # 유저객체 획득
+    print("================ User Refund ===============", "")
+    u1 = TblUser.objects.get(id = user_id)
+    email = u1.email
+
+    # Radcheck의 session 변경 (merge 로직)
+    rc = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Simultaneous-Use'
+    )
+
+    print("Email               ====> ", email)
+    # Radcheck의 time 변경 (merge 로직)
+    rce = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Expiration'
+    )
+    my_time = my_expire_time(email, 'datetime')
+    print("My Time             ====> ", my_time)
+    if len(rce) == 0:
+        rcei = Radcheck(
+            username = email,
+            attribute = 'Expiration',
+            op = ':=',
+            value = '01 Jan 2010 00:00:00 KST'
+        )
+        rcei.save(using='radius')
+        prev_time = ''
+        prev_time_rad = ''
+    else:
+        if my_time > datetime.datetime.now():
+            rcu = rc.first()
+            if int(rcu.value) == 1:
+                if int(session) == 1:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 2:
+                    new_days = int(int(month_type) * 30.4 * 140 / 83) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 3:
+                    new_days = int(int(month_type) * 30.4 * 220 / 83) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 4:
+                    new_days = int(int(month_type) * 30.4 * 280 / 83) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 5:
+                    new_days = int(int(month_type) * 30.4 * 350 / 83) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 6:
+                    new_days = int(int(month_type) * 30.4 * 433 / 83) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+            elif int(rcu.value) == 2:
+                if int(session) == 1:
+                    new_days = int(int(month_type) * 30.4 * 83 / 140) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 2:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 3:
+                    new_days = int(int(month_type) * 30.4 * 220 / 140) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 4:
+                    new_days = int(int(month_type) * 30.4 * 280 / 140) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 5:
+                    new_days = int(int(month_type) * 30.4 * 350 / 140) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 6:
+                    new_days = int(int(month_type) * 30.4 * 433 / 140) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+            elif int(rcu.value) == 3:
+                if int(session) == 1:
+                    new_days = int(int(month_type) * 30.4 * 83 / 220) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 2:
+                    new_days = int(int(month_type) * 30.4 * 140 / 220) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 3:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 4:
+                    new_days = int(int(month_type) * 30.4 * 280 / 220) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 5:
+                    new_days = int(int(month_type) * 30.4 * 350 / 220) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 6:
+                    new_days = int(int(month_type) * 30.4 * 433 / 220) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+            elif int(rcu.value) == 4:
+                if int(session) == 1:
+                    new_days = int(int(month_type) * 30.4 * 83 / 280) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 2:
+                    new_days = int(int(month_type) * 30.4 * 140 / 280) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 3:
+                    new_days = int(int(month_type) * 30.4 * 220 / 280) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 4:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 5:
+                    new_days = int(int(month_type) * 30.4 * 350 / 280) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 6:
+                    new_days = int(int(month_type) * 30.4 * 433 / 280) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+            elif int(rcu.value) == 5:
+                if int(session) == 1:
+                    new_days = int(int(month_type) * 30.4 * 83 / 350) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 2:
+                    new_days = int(int(month_type) * 30.4 * 140 / 350) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 3:
+                    new_days = int(int(month_type) * 30.4 * 220 / 350) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 4:
+                    new_days = int(int(month_type) * 30.4 * 280 / 350) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 5:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 6:
+                    new_days = int(int(month_type) * 30.4 * 433 / 350) 
+                    add_time = get_time_other_session(my_time, new_days)
+            elif int(rcu.value) == 6:
+                if int(session) == 1:
+                    new_days = int(int(month_type) * 30.4 * 83 / 433) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 2:
+                    new_days = int(int(month_type) * 30.4 * 140 / 433) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 3:
+                    new_days = int(int(month_type) * 30.4 * 220 / 433) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 4:
+                    new_days = int(int(month_type) * 30.4 * 280 / 433) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                elif int(session) == 6:
+                    add_time = get_old_time(my_time, month_type)
+                    print("Deleted Months        ====> ", month_type)
+                elif int(session) == 5:
+                    new_days = int(int(month_type) * 30.4 * 350 / 433) 
+                    add_time = get_time_other_session(my_time, new_days)
+                    print("Deleted Days        ====> ", new_days)
+                
+            print("User Session        ====> ", rcu.value)
+            print("Refund Session        ====> ", session)
+            
+            print("New Time            ====> ", add_time)
+            rceu = rce.first()
+            prev_time_rad = rceu.value
+            prev_time = dec_radius_time(rceu.value)
+            after_time = add_time
+            after_time_rad = change_date(add_time)
+            
+            rceu.value = change_date(add_time)
+            rceu.save(using='radius')
+        else :
+            print("Expired             ====> ", "TRUE")
+            rceu = rce.first()
+            prev_time_rad = rceu.value
+            prev_time = dec_radius_time(rceu.value)
+            after_time = '2010-01-01 00:00:00'
+            after_time_rad = '01 Jan 2010 00:00:00 KST'
+            
+            rceu.value = '01 Jan 2010 00:00:00 KST'
+            rceu.save(using='radius')
+            
+    #time_diff = after_time - prev_time
+    #time_diff = round((time_diff).total_seconds()/60)
+    
+    reason = "환불"
+    st = TblServiceTime(
+        user_id = user_id,
+        prev_time = prev_time,
+        prev_time_rad = prev_time_rad,
+        after_time = after_time,
+        after_time_rad = after_time_rad,
+        diff = reason,
+        reason = reason,
+        regist_date = datetime.datetime.now())
+    st.save()
+    
+    print("=============== User Refund END ============", "")
+    
+
+# (2022-08-08)
+def change_date(old_date):
+    try:
+        return old_date.strftime("%d %b %Y %H:%M:%S") + " KST"
+    except BaseException:
+        return None
+
+# (2022.08.08)
+def my_expire_time(email, return_type):
+    try:
+        r = Radcheck.objects.using('radius').get(
+            username=email,
+            attribute='Expiration'
+        )
+        expire_time = r.value
+        expire_time = dec_radius_time(expire_time)
+        if return_type == 'datetime':
+            return expire_time
+        elif return_type == 'str':
+            return expire_time.strftime("%Y-%m-%d %H:%M:%S")
+    except BaseException:
+        return None
+        
 # (2020-03-18)
 @allow_admin
 def api_read_ready_data(request):
@@ -522,3 +1044,22 @@ def api_read_ready_data(request):
     for h in history:
         ready_list += str(h.id) + '  '
     return JsonResponse({'result': 200, 'ready_list': ready_list, 'total': total})
+
+# (2020-03-18)
+@allow_admin
+def api_check_session(request):
+    email = request.POST.get('email')
+    session = request.POST.get('session')
+    rc = Radcheck.objects.using('radius').filter(
+        username = email,
+        attribute = 'Simultaneous-Use'
+    )
+    if len(rc) == 0:
+        print("New User")
+        return JsonResponse({'result': 400})
+    else:
+        rcu = rc.first()
+        if rcu.value != session :
+            return JsonResponse({'result': 200, 'old_session':rcu.value})
+        else :
+            return JsonResponse({'result': 400})  

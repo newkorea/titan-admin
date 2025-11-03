@@ -62,6 +62,11 @@ def block_user(request):
     context = {}
     return render(request, 'admin/block_user.html', context)
 
+# (2024-04-15)
+@allow_admin
+def block_extend(request):
+    context = {}
+    return render(request, 'admin/block_extend.html', context)
 
 # (2020-04-06)
 @allow_admin
@@ -107,10 +112,19 @@ def api_read_block_user(request):
         if user.find('@') == -1: # 번호
             try:
                 user = TblUser.objects.get(id=int(user))
+                rce = Radcheck.objects.using('radius').filter(
+                    username = user.email,
+                    attribute = 'Expiration'
+                )
+                radius_time = ''
+                if len(rce) != 0:
+                    rceu = rce.first()
+                    radius_time = dec_radius_time(rceu.value)
                 tmp = {
                     'id': user.id,
                     'email': user.email,
                     'regist_date': user.regist_date,
+                    'expire_date': radius_time,
                     'regist_ip': user.regist_ip,
                     'is_active': is_active_str(user.is_active)
                 }
@@ -120,10 +134,19 @@ def api_read_block_user(request):
         else:                    # 이메일
             try:
                 user = TblUser.objects.get(email=user)
+                rce = Radcheck.objects.using('radius').filter(
+                    username = user.email,
+                    attribute = 'Expiration'
+                )
+                radius_time = ''
+                if len(rce) != 0:
+                    rceu = rce.first()
+                    radius_time = dec_radius_time(rceu.value)
                 tmp = {
                     'id': user.id,
                     'email': user.email,
                     'regist_date': user.regist_date,
+                    'expire_date': radius_time,
                     'regist_ip': user.regist_ip,
                     'is_active': is_active_str(user.is_active)
                 }
@@ -167,6 +190,22 @@ def api_update_block_user(request):
         title, text = get_swal('UNKNOWN_ERROR')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
+# (2020-04-06)
+@allow_admin
+def api_update_block_extend(request):
+    try:
+        block_list = request.POST.getlist('block_list[]')
+        for user in block_list:
+            print("==================" + user)
+            u1 = TblUser.objects.get(id = user)
+            print("TEST" + u1.email)
+            u1.black_yn = "X"
+            u1.save()
+        title, text = get_swal('SUCCESS_BLOCK')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except BaseException as err:
+        title, text = get_swal('UNKNOWN_ERROR')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 # (2020-03-16)
 @allow_admin
@@ -239,6 +278,7 @@ def api_read_user_datatables(request):
             			x.username,
             			DATE_FORMAT(x.regist_date, "%Y-%m-%d %H:%i:%s") as regist_date,
             			b.name as is_active,
+            		    x.black_yn,
             			c.name as is_staff,
             			a.name as delete_yn,
                         x.regist_ip
@@ -275,7 +315,7 @@ def api_read_user_datatables(request):
     return JsonResponse(returnData)
 
 
-# (2020-03-17)
+# (2020-03-17) 회원관리안 추가정보(번호id, 이메일email, 본인추천인코드rec, 가입시입력한추천인코드regist_rec)
 @allow_admin
 def api_read_user_detail(request):
     user_id = request.POST.get('user_id')
@@ -283,11 +323,64 @@ def api_read_user_detail(request):
     ret = {
         'id': user.id,
         'email': user.email,
-        'rec': user.rec,
+#        'rec': user.rec,
         'regist_rec': user.regist_rec,
     }
     return JsonResponse({'result': ret})
 
+# (2023-05-04) Added By Zhao Get User Count
+@allow_admin
+def api_read_user_count(request):
+    # 카운팅 쿼리
+    with connections['default'].cursor() as cur:
+        query = '''
+            SELECT 
+            sum(case when username like 'delete%' then 1 else 0 end) AS deleted_user,
+            sum(case when STR_TO_DATE(value, "%d %M %Y %T") >= '{today}' then 1 else 0 end) AS purchase_user,
+            sum(case when STR_TO_DATE(value, "%d %M %Y %T") < '{today}' then 1 else 0 end) AS expired_user
+            FROM radius.radcheck
+        '''.format(
+            today=datetime.datetime.now())
+        cur.execute(query)
+        rows = cur.fetchall()
+        deleted_user = rows[0][0]/3
+        purchase_user = rows[0][1]
+        expired_user = rows[0][2]
+        
+        query = '''
+            SELECT  sum(case when rad.value = '2' then 1 else 0 end) AS session_two_user,
+            sum(case when rad.value = '1' then 1 else 0 end) AS session_one_user,
+            sum(case when rad.value = '3' then 1 else 0 end) AS session_three_user,
+            sum(case when rad.value = '4' then 1 else 0 end) AS session_four_user,
+            sum(case when rad.value = '5' then 1 else 0 end) AS session_five_user,
+            sum(case when rad.value = '6' then 1 else 0 end) AS session_six_user  
+            FROM radius.radcheck rad
+            JOIN (SELECT *
+            FROM radius.radcheck 
+            WHERE STR_TO_DATE( value, "%d %M %Y %T" ) >= '{today}') rc ON rad.username = rc.username
+        '''.format(
+            today=datetime.datetime.now())
+        cur.execute(query)
+        rows = cur.fetchall()
+        session_two_user = rows[0][0]
+        session_one_user = rows[0][1]
+        session_three_user = rows[0][2]
+        session_four_user = rows[0][3]
+        session_five_user = rows[0][4]
+        session_six_user = rows[0][5]
+        
+        ret = {
+            'session_one_user': session_one_user,
+            'session_two_user': session_two_user,
+            'session_three_user': session_three_user,
+            'session_four_user': session_four_user,
+            'session_five_user': session_five_user,
+            'session_six_user': session_six_user,
+            'deleted_user': deleted_user,
+            'purchase_user': purchase_user,
+            'expired_user': expired_user
+        }
+        return JsonResponse({'result': ret})
 
 # (2020-03-17)
 @allow_admin
@@ -309,6 +402,16 @@ def api_read_user_session(request):
         session = 'ERROR'
     return JsonResponse({'result': session})
 
+# (2020-03-17)
+@allow_admin
+def api_read_user_password(request):
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id = user_id)
+    try:
+         password = Radcheck.objects.using('radius').get(username = user.email, attribute = 'Cleartext-Password').value
+    except BaseException as err:
+         password = 'ERROR'
+    return JsonResponse({'result': password})
 
 # (2020-03-17)
 @allow_admin
@@ -365,7 +468,7 @@ def api_update_user_session(request):
     user_id = request.POST.get('user_id')
     user = TblUser.objects.get(id = user_id)
 
-    if change_session == '1' or change_session == '2':
+    if change_session == '6' or change_session == '1' or change_session == '2' or change_session == '3' or change_session == '4' or change_session == '5':
         try:
             session = Radcheck.objects.using('radius').get(username = user.email, attribute = 'Simultaneous-Use')
             prev_session = session.value
@@ -603,3 +706,88 @@ def api_read_regist_ban(request):
         'resMsg': 'success',
         'resData': res
     })
+
+# (2025-05-02)(modified on 08/24)  Read user data from django_session for killing app login session
+@allow_admin
+def api_read_session_list(request):
+    from django.contrib.sessions.models import Session
+    from django.utils import timezone
+    import base64, json
+    from datetime import timedelta
+
+    email = request.POST.get('email')
+    now = timezone.now()
+    result = []
+
+    # 성능: 필요한 컬럼만 select
+    sessions = Session.objects.filter(expire_date__gt=now).only(
+        'session_key', 'session_data', 'expire_date'
+    )
+
+    for s in sessions:
+        try:
+            # django_session.session_data: base64(b'salt:{"...json..."}')
+            decoded = base64.b64decode(s.session_data)
+            sep = decoded.find(b':')
+            if sep == -1:
+                continue
+
+            json_data = decoded[sep + 1:]
+            data = json.loads(json_data.decode('utf-8'))
+
+            if data.get('email') == email:
+                expire = s.expire_date
+                remaining = (expire - now).total_seconds()
+                result.append({
+                    'key': s.session_key,
+                    # 프런트에서 바로 표기 가능하도록 ISO8601 문자열도 제공
+                    'expire': expire.isoformat(),     # 예: "2025-09-24T21:15:00+09:00"
+                    'expire_unix': int(expire.timestamp()),
+                    'remaining_seconds': int(remaining),  # 남은시간(초)
+                })
+        except Exception:
+            continue
+
+    # 만료 임박한 순으로 정렬(선택)
+    result.sort(key=lambda x: x['expire_unix'])
+
+    return JsonResponse({'sessions': result})
+
+
+# (2025-05-02)  Kill user session from django_session for User App kill after changing user password
+@allow_admin
+def api_delete_session(request):
+    from django.contrib.sessions.models import Session
+
+    session_key = request.POST.get('session_key')
+    try:
+        Session.objects.get(session_key=session_key).delete()
+        return JsonResponse({'result': 200})
+    except Session.DoesNotExist:
+        return JsonResponse({'result': 404})
+
+# (2025-08-24)  Kill ALL sessions for a user
+@allow_admin
+def api_delete_all_sessions(request):
+    from django.contrib.sessions.models import Session
+    from django.utils import timezone
+    import base64, json
+
+    email = request.POST.get('email')
+    count = 0
+
+    sessions = Session.objects.filter(expire_date__gt=timezone.now())
+    for s in sessions:
+        try:
+            decoded = base64.b64decode(s.session_data)
+            sep = decoded.find(b':')
+            if sep == -1:
+                continue
+            data = json.loads(decoded[sep + 1:].decode('utf-8'))
+            if data.get('email') == email:
+                s.delete()
+                count += 1
+        except Exception:
+            continue
+
+    return JsonResponse({'result': 200, 'deleted': count})

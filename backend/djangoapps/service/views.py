@@ -43,26 +43,20 @@ def api_read_change_history(request):
         wc += " and a.regist_date < '" + regist_date_end + "'"
     if type != '':
         if type == 'session':
-            wc += " and a.diff = '세션 변경' "
+            wc += " and a.diff like '%세션 변경%' "
         elif type == 'password':
             wc += " and a.diff = '비밀번호 변경' "
+        elif type == 'refund':
+            wc += " and a.diff = '환불' "
         elif type == 'active':
             wc += " and a.diff = '활성화 변경' "
         elif type == 'delete':
             wc += " and a.diff = '회원탈퇴' "
         elif type == 'service':
-            wc += " and a.diff not in ('세션 변경', '비밀번호 변경', '활성화 변경', '회원탈퇴') "
-
+            wc += " and a.diff not in ('세션 변경', '환불', '비밀번호 변경', '활성화 변경', '회원탈퇴') "
 
     # order by 컬럼 생성
     column_name = ['id', 'email', 'prev_time', 'prev_time_rad', 'after_time', 'after_time_rad', 'diff', 'regist_date']
-
-    # 디버그 로깅
-    print('DEBUG -> start : ', start)
-    print('DEBUG -> length : ', length)
-    print('DEBUG -> draw : ', draw)
-    print('DEBUG -> orderby_col : ', orderby_col)
-    print('DEBUG -> orderby_opt : ', orderby_opt)
 
     # 카운팅 쿼리
     with connections['default'].cursor() as cur:
@@ -106,7 +100,7 @@ def api_read_change_history(request):
             orderby_opt=orderby_opt,
             start=start,
             wc = wc)
-        print('DEBUG -> query : ', query)
+        #print('DEBUG -> query : ', query)
         cur.execute(query)
         rows = dictfetchall(cur)
 

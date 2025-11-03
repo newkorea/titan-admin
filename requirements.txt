@@ -5,6 +5,7 @@ django-extensions==2.2.1
 ipython==7.8.0
 PyMySQL==0.9.3
 requests==2.22.0  
+paramiko==2.7.1
 # pycrypto==2.6.1
 # pip install pycrypto-2.6.1-cp36-cp36m-win_amd64.whl
 # venv\lib\site-packages\Crypto\Random\OSRNG\nt.py

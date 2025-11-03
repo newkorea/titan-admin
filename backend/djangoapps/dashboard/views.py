@@ -1,5 +1,5 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import render  # ✅ djangomako 제거
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from django.db import connections
@@ -8,7 +8,6 @@ from backend.djangoapps.common.views import *
 from backend.djangoapps.common.swal import get_swal
 from backend.models import *
 from datetime import datetime, timedelta
-
 
 # 대쉬보드 렌더링 (2020-03-16)
 # @allow_admin

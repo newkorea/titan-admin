@@ -13,7 +13,7 @@ server {
     }
 
     location /static/ {
-        alias /home/ubuntu/project/titan-admin/backend/static/;
+        alias /www/wwwroot/tiadmintansk1.titanvpn.kr/backend/static/;
         expires -1;
     }
 

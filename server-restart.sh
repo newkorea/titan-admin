@@ -1,6 +1,6 @@
 #!/bin/bash
 
 sudo rm -rf /tmp/titan-admin.sock
-. /home/ubuntu/project/titan-admin/venv/bin/activate
-uwsgi --ini /home/ubuntu/project/titan-admin/titan-admin.ini
+. /www/wwwroot/tiadmintansk1.titanvpn.kr/venv/bin/activate
+uwsgi --ini /www/wwwroot/tiadmintansk1.titanvpn.kr/titan-admin.ini
 deactivate

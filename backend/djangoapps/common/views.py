@@ -6,6 +6,7 @@ import base64
 import re
 import datetime
 from pytz import timezone
+from dateutil.relativedelta import relativedelta
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -155,14 +156,27 @@ def initServiceTime(user_id):
         rceu.value = '01 Jan 2010 00:00:00 KST'
         rceu.save(using='radius')
 
+#(2022-08-10)
+def change_date_style(old_date):
+    try:
+        return old_date.strftime("%Y-%m-%d %H:%M:%S")
+    except BaseException:
+        return None
+def change_date(old_date):
+    try:
+        return old_date.strftime("%d %b %Y %H:%M:%S") + " KST"
+    except BaseException:
+        return None
 
 # 요금 충전 공통함수 (2019.09.21 12:57 점검완료)
 def giveServiceTime(user_id, session, month_type):
-
     # 유저객체 획득
+    print("============= User Subscription ============", "")
     u1 = TblUser.objects.get(id = user_id)
     email = u1.email
-
+    update_session = False
+    old_session = 1
+    print("User Email=> ", email)
     # Radcheck의 Cleartext-Password가 없을 경우 생성
     rr = Radcheck.objects.using('radius').filter(
         username = email,
@@ -191,35 +205,107 @@ def giveServiceTime(user_id, session, month_type):
         rci.save(using='radius')
     else:
         rcu = rc.first()
+        if rcu.value != session :
+            update_session = True
+            old_session = int(rcu.value)
         rcu.value = int(session)
         rcu.save(using='radius')
 
-    # Radcheck의 time 변경 (merge 로직)
-    ph = TblPriceHistory.objects.filter(user_id=user_id, refund_yn='N')
-    sh = TblSendHistory.objects.filter(user_id=user_id, status='A')
-    st = TblServiceTime.objects.filter(user_id=user_id)
     my_time = my_radius_time(email, 'datetime')
-
-    if len(ph) == 0 and len(sh) == 0 and len(st) == 0 and (my_time > datetime.datetime.now()):
-        if month_type == '1':
-            add_time = my_time + datetime.timedelta(30)
-        if month_type == '6':
-            add_time = my_time + datetime.timedelta(180)
-        if month_type == '12':
-            add_time = my_time + datetime.timedelta(360)
+    
+    print("Old Time        => ", my_time)
+    if my_time != None and my_time > datetime.datetime.now():
+        if update_session :
+            print("Update Session => ", update_session)
+            diff = my_time - datetime.datetime.now()
+            new_days = 0
+            print("Time Diff => ", diff.days + 1)
+            if int(session) == 1:
+                if old_session == 2 :
+                    new_days = int(diff.days * 140 / 83)
+                elif old_session == 3:
+                    new_days = int(diff.days * 220 / 83)
+                elif old_session == 4:
+                    new_days = int(diff.days * 280 / 83)
+                elif old_session == 5:
+                    new_days = int(diff.days * 350 / 83)
+                elif old_session == 6:
+                    new_days = int(diff.days * 433 / 83)
+            elif int(session) == 2:
+                if old_session == 1 :
+                    new_days = int(diff.days * 83 / 140)
+                elif old_session == 3:
+                    new_days = int(diff.days * 220 / 140)
+                elif old_session == 4:
+                    new_days = int(diff.days * 280 / 140)
+                elif old_session == 5:
+                    new_days = int(diff.days * 350 / 140)
+                elif old_session == 6:
+                    new_days = int(diff.days * 433 / 140)
+            elif int(session) == 3:
+                if old_session == 1 :
+                    new_days = int(diff.days * 83 / 220)
+                elif old_session == 2:
+                    new_days = int(diff.days * 140 / 220)
+                elif old_session == 4:
+                    new_days = int(diff.days * 280 / 220)
+                elif old_session == 5:
+                    new_days = int(diff.days * 350 / 220)
+                elif old_session == 6:
+                    new_days = int(diff.days * 433 / 220)
+            elif int(session) == 4:
+                if old_session == 1 :
+                    new_days = int(diff.days * 83 / 280)
+                elif old_session == 2:
+                    new_days = int(diff.days * 140 / 280)
+                elif old_session == 3:
+                    new_days = int(diff.days * 220 / 280)
+                elif old_session == 5:
+                    new_days = int(diff.days * 350 / 280)
+                elif old_session == 6:
+                    new_days = int(diff.days * 433 / 280)
+            elif int(session) == 5:
+                if old_session == 1 :
+                    new_days = int(diff.days * 83 / 350)
+                elif old_session == 2:
+                    new_days = int(diff.days * 140 / 350)
+                elif old_session == 3:
+                    new_days = int(diff.days * 220 / 350)
+                elif old_session == 4:
+                    new_days = int(diff.days * 280 / 350)
+                elif old_session == 6:
+                    new_days = int(diff.days * 280 / 433)
+            elif int(session) == 6:
+                if old_session == 1 :
+                    new_days = int(diff.days * 83 / 433)
+                elif old_session == 2:
+                    new_days = int(diff.days * 140 / 433)
+                elif old_session == 3:
+                    new_days = int(diff.days * 220 / 433)
+                elif old_session == 4:
+                    new_days = int(diff.days * 280 / 433)
+                elif old_session == 5:
+                    new_days = int(diff.days * 350 / 433)
+            # Calculate Correct Time
+            print("Time Diff(Converted) => ", new_days)
+            print("Old Session => ", old_session)
+            print("New Session => ", session)
+            print("New Months  => ", month_type)
+            add_time = get_add_time(datetime.datetime.now(timezone('Asia/Seoul')), month_type, new_days)
+        else:
+            print("New Months  => ", month_type)
+            add_time = get_add_time(my_time, month_type, 0)
     else:
-        if month_type == '1':
-            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(30)
-        if month_type == '6':
-            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(180)
-        if month_type == '12':
-            add_time = datetime.datetime.now(timezone('Asia/Seoul')) + datetime.timedelta(360)
-
-    print("###############################")
-    print("add_time => ", add_time)
-    print("###############################")
+        print("New Months  => ", month_type)
+        add_time = get_add_time(datetime.datetime.now(timezone('Asia/Seoul')), month_type, 0)
 
     radius_time = enc_radius_time(add_time)
+    
+    if update_session:
+        rcu = rc.first()
+        rcu.value = int(session)
+        rcu.save(using='radius')
+        
     rce = Radcheck.objects.using('radius').filter(
         username = email,
         attribute = 'Expiration'
@@ -232,22 +318,177 @@ def giveServiceTime(user_id, session, month_type):
             value = radius_time
         )
         rcei.save(using='radius')
+        prev_time_rad = ''
+        prev_time = ''
     else:
-        rceu = rce.first()
+        rceu = rce.first()        
+        prev_time_rad = rceu.value
+        prev_time = dec_radius_time(rceu.value)
         rceu.value = radius_time
         rceu.save(using='radius')
+    time_diff = dec_radius_time(radius_time) - prev_time
+    time_diff = round((time_diff).total_seconds()/60)
+    
+    print("New Time        => ", add_time)
+    print("Radius New Time => ", radius_time)
+    reason = "구매"
+    if update_session :
+        reason = "구매 + 세션 변경(" + str(old_session) + "->" + session + ")"
+    else :
+    	reason = time_diff
+    st = TblServiceTime(
+        user_id = user_id,
+        prev_time = prev_time,
+        prev_time_rad = prev_time_rad,
+        after_time = dec_radius_time(radius_time),
+        after_time_rad = radius_time,
+        diff = reason,
+        reason = '',
+        regist_date = datetime.datetime.now())
+    st.save()
+    
+    print("============ User Subscription END =========", "")
+    # Reward Time Calculate
+    with connections['default'].cursor() as cur:
+        sql = '''
+            SELECT tu.*, te.* FROM tbl_user tu 
+            JOIN tbl_event_code te ON tu.rec = te.event_code
+            WHERE  te.event_code = '{event_code}' 
+        '''.format(event_code=u1.regist_rec)
+        cur.execute(sql)
+        rows = dictfetchall(cur)
+        referrer_email = ""
+        referrer_code = ""
+        rewarder_id = 0
+        if len(rows) == 0 :
+            reward_percent = get_reward_percent()
+            if reward_percent != 0 :
+                sql = '''
+                    SELECT * FROM tbl_user 
+                    WHERE  rec = '{rec}' 
+                '''.format(rec=u1.regist_rec)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                if len(rows) != 0 :
+                    referrer_email = rows[0]['email']
+                    rewarder_id = rows[0]['id']
+                    referrer_code = rows[0]['rec']
+        else :
+            reward_percent =  get_reward_percent()
+            if datetime.datetime.now() > rows[0]['start'] and datetime.datetime.now() < rows[0]['end']:
+                reward_percent =  rows[0]['reward_percent']
+            
+            if reward_percent != 0 :
+                referrer_email = rows[0]['email']
+                rewarder_id = rows[0]['id']
+                referrer_code = rows[0]['rec']
+        if referrer_email != "" :
+            print("================== Rewarder ================", "")
+            referrer_session = 0
+            referrer_time = my_radius_time(referrer_email, 'datetime')
+            rc = Radcheck.objects.using('radius').filter(
+                username = referrer_email,
+                attribute = 'Simultaneous-Use'
+            )
+            if len(rc) != 0:
+                rcu = rc.first()
+                referrer_session = int(rcu.value)
+            
+            print("Rewarder Old Date====> ", referrer_time)
+            reward_times = 0
+            if referrer_time != None and referrer_time > datetime.datetime.now():
+                print("No Expired===========> ", "True")
+                reward_times = round(int(month_type) * 30 * 24 * 60* reward_percent * int(session) / (100 * referrer_session))
+                print("Reward Minutes=======> ", month_type + "*30*" + str(reward_percent) + "*" + session +"/(100 * " + str(referrer_session) + ")")
+                print("Reward Minutes=======> ", reward_times)
+                add_referrer_time = get_referrer_time(referrer_time, month_type, reward_times)
+            else :
+                print("Expired===========> ", "True")
+                reward_times = round(int(month_type) * 30 * 24 * 60* reward_percent * int(session) /(100 * referrer_session))
+                print("Reward Minutes:======> ", month_type + "*30*" + str(reward_percent) +  "*" + session + "/(100 * " + str(referrer_session) + ")")
+                print("Reward Minutes:======> ",reward_times)
+                add_referrer_time = get_referrer_time(datetime.datetime.now(timezone('Asia/Seoul')), month_type, reward_times)
+            
+            referrer_radius_time = enc_radius_time(add_referrer_time)
+            print("Referrer New Date====> ", referrer_radius_time)
+            rce = Radcheck.objects.using('radius').filter(
+                username = referrer_email,
+                attribute = 'Expiration'
+            )
+            
+            referrer_time_rad = ''
+            if len(rce) == 0:
+                rcei = Radcheck(
+                    username = email,
+                    attribute = 'Expiration',
+                    op = ':=',
+                    value = referrer_radius_time
+                )
+                rcei.save(using='radius')
+            else:
+                rceu = rce.first()
+                referrer_time_rad = rceu.value
+                rceu.value = referrer_radius_time
+                rceu.save(using='radius')
+            
+            print("Rewarder Email:=======> ", referrer_email)
+            print("Rewarder ID===========> ", rewarder_id)
+            print("Register ID===========> ",  user_id)
+            print("Reward Times:=========> ", reward_times)
+            sql = '''
+                INSERT INTO tbl_reward_log (rewarder_id, registrant_id, reward_days, type, event_code, register_date)
+                VALUES ({rewarder_id}, {user_id}, {reward_days}, 1, '{event_code}', '{date}')
+            '''.format(rewarder_id=rewarder_id, user_id=user_id, reward_days=reward_times, event_code=referrer_code, date = datetime.datetime.now())
+            cur.execute(sql)
+            st = TblServiceTime(
+                user_id = rewarder_id,
+                prev_time = referrer_time,
+                prev_time_rad = referrer_time_rad,
+                after_time = add_referrer_time,
+                after_time_rad = referrer_radius_time,
+                diff = reward_times,
+                reason = '추천보상',
+                regist_date = datetime.datetime.now())
+            st.save()
+            print("=============== Rewarder END ===============", "")
+    
+def get_old_time(old_time, month_type):
+    add_time = old_time - relativedelta(months=int(month_type))
+    return add_time
+def get_time_other_session(old_time, new_days):
+    add_time = old_time - datetime.timedelta(int(new_days))
+    return add_time
+    
+def get_referrer_time(old_time, month_type, reward_times):
+    referrer_add_time = old_time + datetime.timedelta(minutes=reward_times)
+    return referrer_add_time
 
+def get_add_time(old_time, month_type, new_days):
+    add_time = old_time + relativedelta(months=int(month_type)) + datetime.timedelta(new_days)
+    return add_time
+
+def get_reward_percent():
+    with connections['default'].cursor() as cur:
+        sql = '''
+            SELECT * FROM tbl_reward_setting 
+        '''.format()
+        cur.execute(sql)
+        rows = dictfetchall(cur)
+        if len(rows) == 0 :
+            return 0
+        else :
+            return rows[0]['percent']
 
 # python datetime 자료형을 radius 자료형으로 변경하는 함수 (2019.09.09 12:53 점검완료)
 def enc_radius_time(obj):
-    print('DEBUG -> enc_radius_time / obj : ', obj)
+    #print('DEBUG -> enc_radius_time / obj : ', obj)
     radius_time = obj.strftime('%d') + ' ' + \
                   obj.strftime('%B')[:3] + ' ' + \
                   obj.strftime('%Y') + ' ' + \
                   obj.strftime('%H') + ':' + \
                   obj.strftime('%M') + ':' + \
                   obj.strftime('%S') + ' KST'
-    print('DEBUG -> enc_radius_time / radius_time : ', radius_time)
+    #print('DEBUG -> enc_radius_time / radius_time : ', radius_time)
     return radius_time
 
 
@@ -295,18 +536,69 @@ def makeProductName(session, month_type):
     if session == '1':
         if month_type == '1':
             return settings.SESSION_MONTH_1_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_1_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_1_3
         elif month_type == '6':
             return settings.SESSION_MONTH_1_6
         elif month_type == '12':
             return settings.SESSION_MONTH_1_12
     elif session == '2':
         if month_type == '1':
-            return settings.SESSION_MONTH_1_1
+            return settings.SESSION_MONTH_2_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_2_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_2_3
         elif month_type == '6':
             return settings.SESSION_MONTH_2_6
         elif month_type == '12':
             return settings.SESSION_MONTH_2_12
-
+    elif session == '3':
+        if month_type == '1':
+            return settings.SESSION_MONTH_3_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_3_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_3_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_3_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_3_12
+    elif session == '4':
+        if month_type == '1':
+            return settings.SESSION_MONTH_4_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_4_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_4_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_4_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_4_12
+    elif session == '5':
+        if month_type == '1':
+            return settings.SESSION_MONTH_5_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_5_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_5_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_5_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_5_12
+    elif session == '6':
+        if month_type == '1':
+            return settings.SESSION_MONTH_6_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_6_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_6_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_6_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_6_12
 
 # 해당 이메일의 세션 수를 반환하는 함수 (2019.09.09 12:53 점검완료)
 def my_radius_session(email):

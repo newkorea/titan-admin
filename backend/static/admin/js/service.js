@@ -84,7 +84,7 @@ var datatable = $('#user-inform').DataTable({
             targets: 6,
             visible: true,
             render: function (data) {
-                if (data == '세션 변경' || data == '비밀번호 변경' || data == '활성화 변경' || data == '회원탈퇴') {
+                if (data.includes('세션 변경') || data == '환불' || data == '비밀번호 변경' || data == '활성화 변경' || data == '회원탈퇴') {
                     return data;
                 } else {
                     if (data < 0){
@@ -114,7 +114,8 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
-                return '<button onclick="view_reason(\'' + data + '\')" type="button" class="btn btn-outline b-primary text-primary">사유</button>';
+                //return '<button onclick="view_reason(\'' + data + '\')" type="button" class="btn btn-outline b-primary text-primary">사유</button>';
+            	return data;
             }
         }
     ],
