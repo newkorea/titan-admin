@@ -204,18 +204,35 @@ def server_admin(request):
 
 @allow_admin
 def api_read_agents(request):
-    # DataTables params
-    start = int(request.POST.get('start'))
-    length = int(request.POST.get('length'))
-    draw = int(request.POST.get('draw'))
-    orderby_col = int(request.POST.get('order[0][column]'))
-    orderby_opt = request.POST.get('order[0][dir]')
+    # DataTables params (robust to GET/POST and missing values)
+    def _gp(key, default=None):
+        return request.POST.get(key) or request.GET.get(key) or default
+
+    try:
+        start = int(_gp('start', 0) or 0)
+    except Exception:
+        start = 0
+    try:
+        length = int(_gp('length', 10) or 10)
+    except Exception:
+        length = 10
+    try:
+        draw = int(_gp('draw', 1) or 1)
+    except Exception:
+        draw = 1
+    try:
+        orderby_col = int(_gp('order[0][column]', 0) or 0)
+    except Exception:
+        orderby_col = 0
+    orderby_opt = (_gp('order[0][dir]', 'desc') or 'desc').lower()
+    if orderby_opt not in ['asc', 'desc']:
+        orderby_opt = 'desc'
 
     # Filters
-    host = (request.POST.get('host') or '').strip()
-    telecom = (request.POST.get('telecom') or '').strip()
-    is_active = (request.POST.get('is_active') or '').strip()
-    is_status = (request.POST.get('is_status') or '').strip()
+    host = (_gp('host', '') or '').strip()
+    telecom = (_gp('telecom', '') or '').strip()
+    is_active = (_gp('is_active', '') or '').strip()
+    is_status = (_gp('is_status', '') or '').strip()
 
     # where clause
     wc = ' where 1=1 '
@@ -239,6 +256,9 @@ def api_read_agents(request):
         'username',
         'password'
     ]
+    # Fallback if client requests a column index out of range
+    if orderby_col < 0 or orderby_col >= len(column_name):
+        orderby_col = 0
 
     # count
     with connections['default'].cursor() as cur:
