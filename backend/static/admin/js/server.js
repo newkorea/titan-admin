@@ -42,24 +42,12 @@ var serverDT = $('#server-table').DataTable({
     { data: 'hostdomain' },
     { data: 'hostip' },
     { data: 'telecom' },
-    { data: 'protocol' },
     { data: 'is_active' },
     { data: 'is_status' },
+    { data: 'username' },
     { data: null }
   ],
   columnDefs: [
-    {
-      targets: 6,
-      render: function (data) {
-        return (String(data) === '1' || data === 1) ? '<span class="text-success">Y</span>' : '<span class="text-muted">N</span>';
-      }
-    },
-    {
-      targets: 7,
-      render: function (data) {
-        return (String(data) === '1' || data === 1) ? '<span class="text-success">정상</span>' : '<span class="text-danger">중지</span>';
-      }
-    },
     {
       targets: 8,
       orderable: false,
@@ -108,16 +96,8 @@ function editAgent(payload) {
     '<input id="edit_telecom" type="text" class="form-control" value="'+(row.telecom||'')+'">'+
     '</div>'+
     '<div class="form-group tal">'+
-    '<label class="fz12">프로토콜</label>'+
-    '<input id="edit_protocol" type="text" class="form-control" value="'+(row.protocol||'')+'" placeholder="예: OPENVPN/SSTP/IKEV2">'+
-    '</div>'+
-    '<div class="form-group tal">'+
     '<label class="fz12">접속계정</label>'+
     '<input id="edit_username" type="text" class="form-control" value="'+(row.username||'')+'">'+
-    '</div>'+
-    '<div class="form-group tal">'+
-    '<label class="fz12">비밀번호</label>'+
-    '<input id="edit_password" type="text" class="form-control" value="'+(row.password||'')+'">'+
     '</div>'+
     '<div class="row">'+
     ' <div class="form-group col-sm-6 tal">'+
@@ -152,9 +132,9 @@ function editAgent(payload) {
         hostdomain: $('#edit_hostdomain').val(),
         hostip: $('#edit_hostip').val(),
         telecom: $('#edit_telecom').val(),
-        protocol: $('#edit_protocol').val(),
         username: $('#edit_username').val(),
-        password: $('#edit_password').val(),
+        // 비밀번호는 항목에서 제거하되 기존 값을 유지하기 위해 그대로 전달
+        password: row.password,
         is_active: $('#edit_is_active').val(),
         is_status: $('#edit_is_status').val()
       }).done(function (data) {
