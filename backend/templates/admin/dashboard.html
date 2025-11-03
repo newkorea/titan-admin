@@ -11,82 +11,13 @@
     <div class="card">
       <div class="card-body">
         <div>안녕하세요. 관리자 대시보드입니다.</div>
-        <div>최근 무통장 결제 현황을 요약해서 보여드립니다.</div>
+        <div>최근 24시간 운영 현황을 요약해서 보여드립니다: 로그인 시도, 서버 접속 실패, 강제 종료 Top 10.</div>
       </div>
     </div>
   </div>
-</div>
-
-<div class="row">
-  <!-- 요청 대기 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>요청 대기 (최근 10건)</b></div>
-      <div class="card-body p-2">
-        <ul class="list-group list-group-flush">
-          % for r in (list_pending or []):
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <div><b>${r['username'] or r['email']}</b></div>
-              <small>${r['product_name']} / ${r['dt']}</small>
-            </div>
-            <div><span class="badge badge-secondary">${r['krw']}</span></div>
-          </li>
-          % endfor
-          % if not list_pending:
-          <li class="list-group-item">데이터가 없습니다</li>
-          % endif
-        </ul>
-      </div>
-    </div>
   </div>
 
-  <!-- 승인 완료 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>승인 완료 (최근 10건)</b></div>
-      <div class="card-body p-2">
-        <ul class="list-group list-group-flush">
-          % for r in (list_approved or []):
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <div><b>${r['username'] or r['email']}</b></div>
-              <small>${r['product_name']} / ${r['dt']}</small>
-            </div>
-            <div><span class="badge badge-success">${r['krw']}</span></div>
-          </li>
-          % endfor
-          % if not list_approved:
-          <li class="list-group-item">데이터가 없습니다</li>
-          % endif
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- 취소/환불 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>취소/환불 (최근 10건)</b></div>
-      <div class="card-body p-2">
-        <ul class="list-group list-group-flush">
-          % for r in (list_canceled or []):
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-              <div><b>${r['username'] or r['email']}</b></div>
-              <small>${r['product_name']} / ${r['dt']}</small>
-            </div>
-            <div><span class="badge badge-danger">${r['krw']}</span></div>
-          </li>
-          % endfor
-          % if not list_canceled:
-          <li class="list-group-item">데이터가 없습니다</li>
-          % endif
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- 결제 요약 섹션 제거 (요구사항에 따라 비활성화) -->
 
 <!-- 최근 24시간 Top 10 통계 -->
 <div class="row mt-3">
@@ -107,7 +38,7 @@
             % for i, r in enumerate(top_login_24h or [], start=1):
             <tr>
               <td>${i}</td>
-              <td>${r['email']}</td>
+              <td><a href="/device_info" target="_blank">${r['email']}</a></td>
               <td class="text-right">${r['cnt']}</td>
             </tr>
             % endfor
@@ -137,7 +68,7 @@
             % for i, r in enumerate(top_failed_24h or [], start=1):
             <tr>
               <td>${i}</td>
-              <td>${r['email']}</td>
+              <td><a href="/failed_info" target="_blank">${r['email']}</a></td>
               <td class="text-right">${r['cnt']}</td>
             </tr>
             % endfor
@@ -167,7 +98,7 @@
             % for i, r in enumerate(top_force_24h or [], start=1):
             <tr>
               <td>${i}</td>
-              <td>${r['email']}</td>
+              <td><a href="/disconnection_info" target="_blank">${r['email']}</a></td>
               <td class="text-right">${r['cnt']}</td>
             </tr>
             % endfor

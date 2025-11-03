@@ -20,64 +20,7 @@ def _dictfetchall(cur):
 def dashboard(request):
     context = {}
 
-    # 최근 무통장 결제 내역 3개 리스트 (요청/승인/취소·환불)
-    with connections['default'].cursor() as cur:
-        # 요청 대기 (R)
-        cur.execute(
-            '''
-            SELECT  x.id,
-                    y.username,
-                    y.email,
-                    x.product_name,
-                    x.krw,
-                    DATE_FORMAT(x.regist_date, "%Y-%m-%d %H:%i") AS dt,
-                    UPPER(TRIM(x.status)) AS status
-            FROM tbl_send_history x
-            JOIN tbl_user y ON x.user_id = y.id
-            WHERE UPPER(TRIM(x.status)) = 'R'
-            ORDER BY x.regist_date DESC
-            LIMIT 10;
-            '''
-        )
-        context['list_pending'] = _dictfetchall(cur)
-
-        # 승인 완료 (A,S)
-        cur.execute(
-            '''
-            SELECT  x.id,
-                    y.username,
-                    y.email,
-                    x.product_name,
-                    x.krw,
-                    DATE_FORMAT(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y-%m-%d %H:%i") AS dt,
-                    UPPER(TRIM(x.status)) AS status
-            FROM tbl_send_history x
-            JOIN tbl_user y ON x.user_id = y.id
-            WHERE UPPER(TRIM(x.status)) IN ('A','S')
-            ORDER BY COALESCE(x.accept_date, x.api_date, x.regist_date) DESC
-            LIMIT 10;
-            '''
-        )
-        context['list_approved'] = _dictfetchall(cur)
-
-        # 취소 / 환불 (C,Z)
-        cur.execute(
-            '''
-            SELECT  x.id,
-                    y.username,
-                    y.email,
-                    x.product_name,
-                    x.krw,
-                    DATE_FORMAT(COALESCE(x.cancel_date, x.refund_date, x.regist_date), "%Y-%m-%d %H:%i") AS dt,
-                    UPPER(TRIM(x.status)) AS status
-            FROM tbl_send_history x
-            JOIN tbl_user y ON x.user_id = y.id
-            WHERE UPPER(TRIM(x.status)) IN ('C','Z')
-            ORDER BY COALESCE(x.cancel_date, x.refund_date, x.regist_date) DESC
-            LIMIT 10;
-            '''
-        )
-        context['list_canceled'] = _dictfetchall(cur)
+    # NOTE: 결제 요약 섹션은 요구사항과 맞지 않아 제거했습니다.
 
     # Top 10 (last 24h) — 로그인 시도, 접속 실패, 강제 종료
     with connections['default'].cursor() as cur:
