@@ -2,6 +2,17 @@
 // $('#filter_regist_start').val(getNow());
 // $('#filter_regist_end').val(getTomorrow());
 
+// URL 파라미터에서 email 가져와 초기 필터에 반영 (예: /account_history?email=user@domain)
+try {
+    var __qs = new URLSearchParams(window.location.search);
+    var __initEmail = __qs.get('email') || '';
+    if (__initEmail) {
+        $('#filter_email').val(__initEmail);
+    }
+} catch (e) {
+    // no-op: 구형 브라우저 등 예외는 무시
+}
+
 var csrf_token = $('#csrf_token').html();
 var datatable = $('#price-inform').DataTable({
     dom: '<"top"Blf>rtp<"bottom"i>',
@@ -53,6 +64,17 @@ var datatable = $('#price-inform').DataTable({
         {data: "type"},
     ],
     columnDefs: [
+        {
+            // 이메일 칼럼을 클릭 시 해당 이메일로 필터링되도록 링크 처리
+            targets: 1,
+            visible: true,
+            orderable: true,
+            render: function (data) {
+                if (!data) return '';
+                var safeEmail = (data + '').replace(/"/g, '&quot;');
+                return '<a href="#" class="js-email-filter" data-email="' + safeEmail + '">' + safeEmail + '</a>';
+            }
+        },
     	{
             targets: 7,
             visible: true,
@@ -170,6 +192,24 @@ var datatable = $('#price-inform').DataTable({
             next: "다음"
         }
     },
+});
+
+// 이메일 클릭시 해당 이메일로 필터 적용 후 재조회
+$('#price-inform').on('click', 'a.js-email-filter', function (e) {
+    e.preventDefault();
+    var email = $(this).data('email') || '';
+    $('#filter_email').val(email);
+    // URL에도 반영 (history replace)
+    try {
+        var url = new URL(window.location.href);
+        if (email) {
+            url.searchParams.set('email', email);
+        } else {
+            url.searchParams.delete('email');
+        }
+        window.history.replaceState({}, '', url.toString());
+    } catch (e2) { /* ignore */ }
+    reload_data();
 });
 
 // 결제 등록
