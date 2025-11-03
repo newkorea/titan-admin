@@ -195,6 +195,108 @@ def failed_info(request):
 def reward_info(request):
     context = {}
     return render(request, 'chart/reward_info.html', context)
+
+# 서버관리 (NAS 서버 리스트/수정)
+@allow_admin
+def server_admin(request):
+    context = {}
+    return render(request, 'admin/server.html', context)
+
+@allow_admin
+def api_read_agents(request):
+    # DataTables params
+    start = int(request.POST.get('start'))
+    length = int(request.POST.get('length'))
+    draw = int(request.POST.get('draw'))
+    orderby_col = int(request.POST.get('order[0][column]'))
+    orderby_opt = request.POST.get('order[0][dir]')
+
+    # Filters
+    host = (request.POST.get('host') or '').strip()
+    telecom = (request.POST.get('telecom') or '').strip()
+    is_active = (request.POST.get('is_active') or '').strip()
+    is_status = (request.POST.get('is_status') or '').strip()
+
+    # where clause
+    wc = ' where 1=1 '
+    if host:
+        wc += " and (hostip like '%{h}%' or hostdomain like '%{h}%') ".format(h=host)
+    if telecom:
+        wc += " and telecom = '{tel}' ".format(tel=telecom)
+    if is_active in ['0','1']:
+        wc += " and is_active = {v} ".format(v=is_active)
+    if is_status in ['0','1']:
+        wc += " and is_status = {v} ".format(v=is_status)
+
+    column_name = [
+        'id',
+        'name',
+        'hostdomain',
+        'hostip',
+        'telecom',
+        'is_active',
+        'is_status',
+        'username',
+        'password'
+    ]
+
+    # count
+    with connections['default'].cursor() as cur:
+        cur.execute('''
+            SELECT count(*) FROM titan.tbl_agent3 {wc}
+        '''.format(wc=wc))
+        total = cur.fetchall()[0][0]
+
+    # main
+    with connections['default'].cursor() as cur:
+        query = '''
+            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, username, password
+            FROM titan.tbl_agent3
+            {wc}
+            ORDER BY {orderby_col} {orderby_opt}
+            LIMIT {start}, {length}
+        '''.format(
+            wc=wc,
+            orderby_col=column_name[orderby_col],
+            orderby_opt=orderby_opt,
+            start=start,
+            length=length
+        )
+        cur.execute(query)
+        rows = dictfetchall(cur)
+
+    return JsonResponse({
+        'recordsTotal': total,
+        'recordsFiltered': total,
+        'draw': draw,
+        'data': rows
+    })
+
+@allow_admin
+def api_update_agent(request):
+    # Expected fields
+    id = request.POST.get('id')
+    name = request.POST.get('name')
+    hostdomain = request.POST.get('hostdomain')
+    hostip = request.POST.get('hostip')
+    telecom = request.POST.get('telecom')
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    is_active = request.POST.get('is_active')
+    is_status = request.POST.get('is_status')
+
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute('''
+                UPDATE titan.tbl_agent3
+                SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
+                    username=%s, password=%s, is_active=%s, is_status=%s
+                WHERE id=%s
+            ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, id])
+        return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
+    except Exception as e:
+        logger.exception('api_update_agent failed')
+        return JsonResponse({'result': 500, 'title': 'Failed', 'text': '수정 중 오류가 발생했습니다'})
     
 # (2022-08-08)
 @allow_admin

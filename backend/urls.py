@@ -116,6 +116,9 @@ urlpatterns = [
     # [render] 서버접속로그
     path('reward_info', ChartViews.reward_info, name='reward_info'),
 
+    # [render] 서버관리 (NAS 서버 리스트/수정)
+    path('server_admin', ChartViews.server_admin, name='server_admin'),
+
     # [render] 2023-05-24 Added By Zhao
     path('notification', NotificationViews.notification, name='notification'),
 
@@ -229,6 +232,10 @@ urlpatterns = [
     
     #  [api v1] 서버접속로그 데이터를 반환합니다
     path('api/v1/read/reward', ChartViews.api_read_reward, name='api_read_reward'),
+
+    # [api v1] 서버관리
+    path('api/v1/read/agents', ChartViews.api_read_agents, name='api_read_agents'),
+    path('api/v1/update/agent', ChartViews.api_update_agent, name='api_update_agent'),
 
     # [api v1] 무통장 결제 데이터 상태를 변경합니다
     path('api/v1/update/bank', PriceViews.api_update_bank, name='api_update_bank'),
