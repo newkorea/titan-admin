@@ -44,12 +44,13 @@ var serverDT = $('#server-table').DataTable({
     { data: 'telecom' },
     { data: 'is_active' },
     { data: 'is_status' },
-    { data: 'username' },
+    { data: 'is_auto' },
+    { data: 'protocol' },
     { data: null }
   ],
   columnDefs: [
     {
-      targets: 8,
+      targets: 9,
       orderable: false,
       render: function (_, __, row) {
         var payload = encodeURIComponent(JSON.stringify(row));
@@ -95,10 +96,10 @@ function editAgent(payload) {
     '<label class="fz12">통신사</label>'+
     '<input id="edit_telecom" type="text" class="form-control" value="'+(row.telecom||'')+'">'+
     '</div>'+
-    '<div class="form-group tal">'+
-    '<label class="fz12">접속계정</label>'+
-    '<input id="edit_username" type="text" class="form-control" value="'+(row.username||'')+'">'+
-    '</div>'+
+  '<div class="form-group tal">'+
+  '<label class="fz12">프로토콜</label>'+
+  '<input id="edit_protocol" type="text" class="form-control" value="'+(row.protocol||'')+'">'+
+  '</div>'+
     '<div class="row">'+
     ' <div class="form-group col-sm-6 tal">'+
     '  <label class="fz12">활성화 (1/0)</label>'+
@@ -115,6 +116,15 @@ function editAgent(payload) {
     '  </select>'+
     ' </div>'+
     '</div>';
+  '<div class="row">'+
+   ' <div class="form-group col-sm-6 tal">'+
+   '  <label class="fz12">자동 (1/0)</label>'+
+   '  <select id="edit_is_auto" class="form-control">'+
+   '    <option value="1"'+((String(row.is_auto)==='1')?' selected':'')+'>1</option>'+
+   '    <option value="0"'+((String(row.is_auto)!=='1')?' selected':'')+'>0</option>'+
+   '  </select>'+
+   ' </div>'+
+  '</div>'+
 
   Swal.fire({
     title: '서버 수정 (#'+row.id+')',
@@ -132,11 +142,14 @@ function editAgent(payload) {
         hostdomain: $('#edit_hostdomain').val(),
         hostip: $('#edit_hostip').val(),
         telecom: $('#edit_telecom').val(),
-        username: $('#edit_username').val(),
-        // 비밀번호는 항목에서 제거하되 기존 값을 유지하기 위해 그대로 전달
+        // 접속계정은 UI에서 제거. 기존 값 유지 위해 그대로 전달(백엔드 호환)
+        username: row.username,
+        // 비밀번호는 UI에서 제거. 기존 값 유지 위해 그대로 전달(백엔드 호환)
         password: row.password,
         is_active: $('#edit_is_active').val(),
-        is_status: $('#edit_is_status').val()
+        is_status: $('#edit_is_status').val(),
+        is_auto: $('#edit_is_auto').val(),
+        protocol: $('#edit_protocol').val()
       }).done(function (data) {
         if (data.result == 200) {
           Swal.fire({

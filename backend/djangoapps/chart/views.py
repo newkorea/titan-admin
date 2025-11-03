@@ -253,8 +253,8 @@ def api_read_agents(request):
         'telecom',
         'is_active',
         'is_status',
-        'username',
-        'password'
+        'is_auto',
+        'protocol'
     ]
     # Fallback if client requests a column index out of range
     if orderby_col < 0 or orderby_col >= len(column_name):
@@ -270,7 +270,7 @@ def api_read_agents(request):
     # main
     with connections['default'].cursor() as cur:
         query = '''
-            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, username, password
+            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, is_auto, protocol, username, password
             FROM titan.tbl_agent3
             {wc}
             ORDER BY {orderby_col} {orderby_opt}
@@ -302,6 +302,8 @@ def api_update_agent(request):
     telecom = request.POST.get('telecom')
     username = request.POST.get('username')
     password = request.POST.get('password')
+    is_auto = request.POST.get('is_auto')
+    protocol = request.POST.get('protocol')
     is_active = request.POST.get('is_active')
     is_status = request.POST.get('is_status')
 
@@ -310,9 +312,10 @@ def api_update_agent(request):
             cur.execute('''
                 UPDATE titan.tbl_agent3
                 SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
-                    username=%s, password=%s, is_active=%s, is_status=%s
+                    username=%s, password=%s, is_active=%s, is_status=%s,
+                    is_auto=%s, protocol=%s
                 WHERE id=%s
-            ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, id])
+            ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, is_auto, protocol, id])
         return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
     except Exception as e:
         logger.exception('api_update_agent failed')
