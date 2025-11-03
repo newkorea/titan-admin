@@ -37,18 +37,19 @@ var datatable = $('#price-inform').DataTable({
         url: "/api/v1/read/bank",
         type: "POST",
         dataType: "json",
-        data: {
-            csrfmiddlewaretoken: csrf_token,
-            number: function() { return $('#filter_number').val() },
-            email: function() { return $('#filter_email').val() },
-            username: function() { return $('#filter_username').val() },
-            session: function() { return $('#filter_session').val() },
-            month: function() { return $('#filter_month').val() },
-            status: function() { return $('#filter_status').val() },
-            type: function() { return ($('#filter_type').val() || '').toUpperCase() },
-            regist_start: function() { return $('#filter_regist_start').val() },
-            regist_end: function() { return $('#filter_regist_end').val() }
-        },
+        // Datatables에서 페이지 이동/정렬 시마다 항상 현재 필터 상태를 서버에 전달
+        data: function (d) {
+            d.csrfmiddlewaretoken = csrf_token;
+            d.number = $('#filter_number').val();
+            d.email = $('#filter_email').val();
+            d.username = $('#filter_username').val();
+            d.session = $('#filter_session').val();
+            d.month = $('#filter_month').val();
+            d.status = $('#filter_status').val();
+            d.type = ($('#filter_type').val() || '').toUpperCase();
+            d.regist_start = $('#filter_regist_start').val();
+            d.regist_end = $('#filter_regist_end').val();
+        }
     },
     columns: [
         {data: "id"},
