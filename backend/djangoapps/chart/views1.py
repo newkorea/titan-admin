@@ -713,11 +713,11 @@ def get_mm_send_cnt(year):
             select  mm, 
                     count(krw) as cnt1
             from (
-                select  date_format(accept_date, "%Y") as yyyy, 
-                        date_format(accept_date, "%m") as mm, 
+                select  date_format(COALESCE(accept_date, api_date, regist_date), "%Y") as yyyy, 
+                        date_format(COALESCE(accept_date, api_date, regist_date), "%m") as mm, 
                         krw
                 from tbl_send_history
-                where status = 'A'
+                where UPPER(TRIM(status)) in ('A','S')
             ) x
             where x.yyyy = '{year}'
             group by mm;

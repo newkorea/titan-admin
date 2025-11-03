@@ -691,14 +691,14 @@ def get_dd_active(year, month, x_axis, add_type='', rec=''):
 def get_dd_send_cnt(year, month, x_axis):
     with connections['default'].cursor() as cur:
         query = '''
-            select day(x.accept_date), count(x.id) as value
+            select day(COALESCE(x.accept_date, x.api_date, x.regist_date)) as d, count(x.id) as value
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
-            where status = 'A'
-            and Month(x.accept_date) = {month} 
-            and date_format(x.accept_date, "%Y") = {year}
-            GROUP BY day(x.accept_date);
+            where UPPER(TRIM(x.status)) in ('A','S')
+            and Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = {month} 
+            and date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = {year}
+            GROUP BY d;
         '''.format(month=month, year=year)
         cur.execute(query)
         rows = cur.fetchall()
@@ -733,15 +733,15 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
         else:
             add_query = ''
         query = '''
-            select day(x.accept_date), sum(krw) as value
+            select day(COALESCE(x.accept_date, x.api_date, x.regist_date)) as d, sum(krw) as value
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
-            where status = 'A'
-            and Month(x.accept_date) = {month} 
-            and date_format(x.accept_date, "%Y") = {year}
+            where UPPER(TRIM(x.status)) in ('A','S')
+            and Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = {month} 
+            and date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = {year}
             {add_query}
-            GROUP BY day(x.accept_date);
+            GROUP BY d;
         '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
@@ -829,11 +829,11 @@ def get_mm_send(year):
             select  mm, 
                     sum(krw) as cnt1
             from (
-                select  date_format(accept_date, "%Y") as yyyy, 
-                        date_format(accept_date, "%m") as mm, 
+                select  date_format(COALESCE(accept_date, api_date, regist_date), "%Y") as yyyy, 
+                        date_format(COALESCE(accept_date, api_date, regist_date), "%m") as mm, 
                         krw
                 from tbl_send_history
-                where status = 'A'
+                where UPPER(TRIM(status)) in ('A','S')
             ) x
             where x.yyyy = '{year}'
             group by mm;
@@ -877,11 +877,11 @@ def get_mm_send_cnt(year):
             select  mm, 
                     count(krw) as cnt1
             from (
-                select  date_format(accept_date, "%Y") as yyyy, 
-                        date_format(accept_date, "%m") as mm, 
+                select  date_format(COALESCE(accept_date, api_date, regist_date), "%Y") as yyyy, 
+                        date_format(COALESCE(accept_date, api_date, regist_date), "%m") as mm, 
                         krw
                 from tbl_send_history
-                where status = 'A'
+                where UPPER(TRIM(status)) in ('A','S')
             ) x
             where x.yyyy = '{year}'
             group by mm;
