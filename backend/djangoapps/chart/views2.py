@@ -532,7 +532,7 @@ def get_dd_send_cnt(year, month, x_axis):
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
-            where status in ('A','S')
+            where x.status in ('A','S')
             and Month(x.accept_date) = {month} 
             and date_format(x.accept_date, "%Y") = {year}
             GROUP BY day(x.accept_date);
@@ -574,7 +574,7 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
-            where status in ('A','S')
+            where x.status in ('A','S')
             and Month(x.accept_date) = {month} 
             and date_format(x.accept_date, "%Y") = {year}
             {add_query}
