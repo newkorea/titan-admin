@@ -267,19 +267,42 @@ def api_read_agents(request):
         '''.format(wc=wc))
         total = cur.fetchall()[0][0]
 
+    # Detect available columns to avoid SQL errors on missing optional fields
+    with connections['default'].cursor() as cur:
+        cur.execute("SHOW COLUMNS FROM titan.tbl_agent3")
+        cols = set([r[0] for r in cur.fetchall()])
+
+    def sel(col):
+        # return column or empty alias if missing
+        if col in cols:
+            return col
+        return "'' AS {c}".format(c=col)
+
+    # If requested order column is not physically present, fallback to id
+    orderby_col_name = column_name[orderby_col]
+    if orderby_col_name not in cols:
+        orderby_col_name = 'id'
+
     # main
     with connections['default'].cursor() as cur:
         query = '''
-            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, is_auto, protocol,
-                   config, v2config,
-                   username, password
+            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
+                   {is_auto}, {protocol},
+                   {config}, {v2config},
+                   {username}, {password}
             FROM titan.tbl_agent3
             {wc}
             ORDER BY {orderby_col} {orderby_opt}
             LIMIT {start}, {length}
         '''.format(
+            is_auto=sel('is_auto'),
+            protocol=sel('protocol'),
+            config=sel('config'),
+            v2config=sel('v2config'),
+            username=sel('username'),
+            password=sel('password'),
             wc=wc,
-            orderby_col=column_name[orderby_col],
+            orderby_col=orderby_col_name,
             orderby_opt=orderby_opt,
             start=start,
             length=length
@@ -316,15 +339,41 @@ def api_update_agent(request):
     v2config = request.POST.get('v2config')
 
     try:
+        # Build dynamic update only for existing columns
         with connections['default'].cursor() as cur:
-            cur.execute('''
+            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3")
+            cols = set([r[0] for r in cur.fetchall()])
+
+            sets = [
+                ('name', name),
+                ('hostdomain', hostdomain),
+                ('hostip', hostip),
+                ('telecom', telecom),
+                ('is_active', is_active),
+                ('is_status', is_status),
+            ]
+            # optional columns
+            if 'username' in cols:
+                sets.append(('username', username))
+            if 'password' in cols:
+                sets.append(('password', password))
+            if 'is_auto' in cols:
+                sets.append(('is_auto', is_auto))
+            if 'protocol' in cols:
+                sets.append(('protocol', protocol))
+            if 'config' in cols:
+                sets.append(('config', config))
+            if 'v2config' in cols:
+                sets.append(('v2config', v2config))
+
+            set_clause = ', '.join([f"{k}=%s" for k, _ in sets])
+            params = [v for _, v in sets] + [id]
+            sql = f"""
                 UPDATE titan.tbl_agent3
-                SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
-                    username=%s, password=%s, is_active=%s, is_status=%s,
-                    is_auto=%s, protocol=%s,
-                    config=%s, v2config=%s
+                SET {set_clause}
                 WHERE id=%s
-            ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, is_auto, protocol, config, v2config, id])
+            """
+            cur.execute(sql, params)
         return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
     except Exception as e:
         logger.exception('api_update_agent failed')
