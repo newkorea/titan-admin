@@ -7,6 +7,7 @@ import traceback
 import re
 import uuid
 import requests
+import logging
 import time
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -46,6 +47,9 @@ COLOR_BLUE = 'rgba(0, 0, 255, 1)'
 COLOR_RED = 'rgba(255, 0, 0, 1)'
 COLOR_YELLOW = 'rgba(255, 255, 0, 1)'
 COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
+
+# module logger
+logger = logging.getLogger(__name__)
 
 # 검색필터 생성 [ 2019 ~ 현재 yyyy ]
 def make_yaer_list():
@@ -1022,10 +1026,10 @@ def api_dd(request, type):
     rec = request.session['rec']
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
-    # DEBUG: incoming params
+    # DEBUG: incoming params (quieted to debug level)
     if type in ['money', 'money_cnt']:
         try:
-            print('[DEBUG][api_dd] type={}, year={}, month={}'.format(type, year, month))
+            logger.debug('[api_dd] type=%s, year=%s, month=%s', type, year, month)
         except Exception:
             pass
     x_axis = make_axisX_dd(year, month)
@@ -1150,10 +1154,10 @@ def api_dd(request, type):
 @allow_dealer
 def api_mm(request, type):
     year = int(request.POST.get('year'))
-    # DEBUG: incoming params
+    # DEBUG: incoming params (quieted to debug level)
     if type in ['money', 'money_cnt']:
         try:
-            print('[DEBUG][api_mm] type={}, year={}'.format(type, year))
+            logger.debug('[api_mm] type=%s, year=%s', type, year)
         except Exception:
             pass
 
@@ -1423,7 +1427,7 @@ def get_dd_send_cnt(year, month, x_axis):
         '''.format(month=month, year=year)
         cur.execute(query)
         rows = cur.fetchall()
-        # DEBUG: status breakdown for this month (counts)
+        # DEBUG: status breakdown for this month (counts) -> logger.debug
         try:
             cur.execute('''
                 SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c
@@ -1434,10 +1438,8 @@ def get_dd_send_cnt(year, month, x_axis):
                 GROUP BY s ORDER BY c DESC;
             ''', [month, str(year)])
             dbg_rows = cur.fetchall()
-            print('[DEBUG][get_dd_send_cnt] year-month = {}-{:02d}, status breakdown (count):'.format(year, month))
-            for r in dbg_rows:
-                print('  status={}, count={}'.format(r[0], r[1]))
-        except Exception as _:
+            logger.debug('[get_dd_send_cnt] %s-%02d status breakdown (count): %s', year, month, dbg_rows)
+        except Exception:
             pass
         send = serialize_rows_dd(rows, x_axis)
     return send
@@ -1470,7 +1472,7 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
         else:
             add_query = ''
         try:
-            print('[DEBUG][get_dd_send] building query for year={}, month={}'.format(year, month))
+            logger.debug('[get_dd_send] building query for year=%s, month=%s', year, month)
         except Exception:
             pass
         query = '''
@@ -1486,7 +1488,7 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
         '''.format(month=month, year=year, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
-        # DEBUG: status breakdown for this month (sum krw)
+        # DEBUG: status breakdown for this month (sum krw) -> logger.debug
         try:
             cur.execute('''
                 SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c, IFNULL(SUM(krw),0) AS sum_krw
@@ -1497,10 +1499,8 @@ def get_dd_send(year, month, x_axis, add_type='', rec=''):
                 GROUP BY s ORDER BY c DESC;
             ''', [month, str(year)])
             dbg_rows = cur.fetchall()
-            print('[DEBUG][get_dd_send] year-month = {}-{:02d}, status breakdown (count,sum_krw):'.format(year, month))
-            for r in dbg_rows:
-                print('  status={}, count={}, sum_krw={}'.format(r[0], r[1], r[2]))
-        except Exception as _:
+            logger.debug('[get_dd_send] %s-%02d status breakdown (count,sum_krw): %s', year, month, dbg_rows)
+        except Exception:
             pass
         send = serialize_rows_dd(rows, x_axis)
     return send
@@ -1526,11 +1526,11 @@ def get_dd_payment(year, month, x_axis, type, add_type='', rec=''):
         '''.format(month=month, year=year, type=type, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
-        print('-----------------------')
-        print('type = ', type)
-        for row in rows:
-            print('row = ', row)
-        print('-----------------------')
+        # quiet debug: avoid logging each row to reduce noise
+        try:
+            logger.debug('[get_dd_payment] type=%s, year=%s, month=%s, rows=%d', type, year, month, len(rows))
+        except Exception:
+            pass
         payment = serialize_rows_dd(rows, x_axis)
     return payment
 
@@ -1611,7 +1611,7 @@ def get_mm_send(year):
         '''.format(year=year)
         cur.execute(query)
         rows = dictfetchall(cur)
-        # DEBUG: status breakdown by status this year
+        # DEBUG: status breakdown by status this year -> logger.debug
         try:
             cur.execute('''
                 SELECT UPPER(TRIM(status)) AS s, COUNT(*) c, IFNULL(SUM(krw),0) sum_krw
@@ -1620,10 +1620,8 @@ def get_mm_send(year):
                 GROUP BY s ORDER BY c DESC;
             ''', [str(year)])
             dbg_rows = cur.fetchall()
-            print('[DEBUG][get_mm_send] year = {}, status breakdown (count,sum_krw):'.format(year))
-            for r in dbg_rows:
-                print('  status={}, count={}, sum_krw={}'.format(r[0], r[1], r[2]))
-        except Exception as _:
+            logger.debug('[get_mm_send] year=%s status breakdown (count,sum_krw): %s', year, dbg_rows)
+        except Exception:
             pass
         send = serialize_rows_mm(rows, 1)
     return send
