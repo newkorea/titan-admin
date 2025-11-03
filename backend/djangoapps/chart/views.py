@@ -7,7 +7,6 @@ import traceback
 import re
 import uuid
 import requests
-import logging
 import time
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -41,15 +40,11 @@ BACK_COLOR_YELLOW = 'rgba(255, 193, 7, 0.2)'
 
 LINE_COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
 BACK_COLOR_PURPLE = 'rgba(136, 80, 255, 0.2)'
-LINE_COLOR_BLACK = 'rgba(0, 0, 0, 1)'
 
 COLOR_BLUE = 'rgba(0, 0, 255, 1)'
 COLOR_RED = 'rgba(255, 0, 0, 1)'
 COLOR_YELLOW = 'rgba(255, 255, 0, 1)'
 COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
-
-# module logger
-logger = logging.getLogger(__name__)
 
 # 검색필터 생성 [ 2019 ~ 현재 yyyy ]
 def make_yaer_list():
@@ -123,15 +118,6 @@ def serialize_rows_mm(rows, use):
         return y_axis1, y_axis2, y_axis3, y_axis4
 
 
-# 벡터 합산 유틸 (동일 길이 배열 합산)
-def _sum_series(a, b):
-    n = max(len(a), len(b))
-    # 길이가 다르면 부족한 부분을 0으로 채움
-    a2 = list(a) + [0] * (n - len(a))
-    b2 = list(b) + [0] * (n - len(b))
-    return [a2[i] + b2[i] for i in range(n)]
-
-
 # 헤더 텍스트 생성
 def make_html_title(type, main):
     if main == 'mm':
@@ -195,131 +181,6 @@ def failed_info(request):
 def reward_info(request):
     context = {}
     return render(request, 'chart/reward_info.html', context)
-
-# 서버관리 (NAS 서버 리스트/수정)
-@allow_admin
-def server_admin(request):
-    context = {}
-    return render(request, 'admin/server.html', context)
-
-@allow_admin
-def api_read_agents(request):
-    # DataTables params (robust to GET/POST and missing values)
-    def _gp(key, default=None):
-        return request.POST.get(key) or request.GET.get(key) or default
-
-    try:
-        start = int(_gp('start', 0) or 0)
-    except Exception:
-        start = 0
-    try:
-        length = int(_gp('length', 10) or 10)
-    except Exception:
-        length = 10
-    try:
-        draw = int(_gp('draw', 1) or 1)
-    except Exception:
-        draw = 1
-    try:
-        orderby_col = int(_gp('order[0][column]', 0) or 0)
-    except Exception:
-        orderby_col = 0
-    orderby_opt = (_gp('order[0][dir]', 'desc') or 'desc').lower()
-    if orderby_opt not in ['asc', 'desc']:
-        orderby_opt = 'desc'
-
-    # Filters
-    host = (_gp('host', '') or '').strip()
-    telecom = (_gp('telecom', '') or '').strip()
-    is_active = (_gp('is_active', '') or '').strip()
-    is_status = (_gp('is_status', '') or '').strip()
-
-    # where clause
-    wc = ' where 1=1 '
-    if host:
-        wc += " and (hostip like '%{h}%' or hostdomain like '%{h}%') ".format(h=host)
-    if telecom:
-        wc += " and telecom = '{tel}' ".format(tel=telecom)
-    if is_active in ['0','1']:
-        wc += " and is_active = {v} ".format(v=is_active)
-    if is_status in ['0','1']:
-        wc += " and is_status = {v} ".format(v=is_status)
-
-    column_name = [
-        'id',
-        'name',
-        'hostdomain',
-        'hostip',
-        'telecom',
-        'is_active',
-        'is_status',
-        'is_auto',
-        'protocol'
-    ]
-    # Fallback if client requests a column index out of range
-    if orderby_col < 0 or orderby_col >= len(column_name):
-        orderby_col = 0
-
-    # count
-    with connections['default'].cursor() as cur:
-        cur.execute('''
-            SELECT count(*) FROM titan.tbl_agent3 {wc}
-        '''.format(wc=wc))
-        total = cur.fetchall()[0][0]
-
-    # main
-    with connections['default'].cursor() as cur:
-        query = '''
-            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status, is_auto, protocol, username, password
-            FROM titan.tbl_agent3
-            {wc}
-            ORDER BY {orderby_col} {orderby_opt}
-            LIMIT {start}, {length}
-        '''.format(
-            wc=wc,
-            orderby_col=column_name[orderby_col],
-            orderby_opt=orderby_opt,
-            start=start,
-            length=length
-        )
-        cur.execute(query)
-        rows = dictfetchall(cur)
-
-    return JsonResponse({
-        'recordsTotal': total,
-        'recordsFiltered': total,
-        'draw': draw,
-        'data': rows
-    })
-
-@allow_admin
-def api_update_agent(request):
-    # Expected fields
-    id = request.POST.get('id')
-    name = request.POST.get('name')
-    hostdomain = request.POST.get('hostdomain')
-    hostip = request.POST.get('hostip')
-    telecom = request.POST.get('telecom')
-    username = request.POST.get('username')
-    password = request.POST.get('password')
-    is_auto = request.POST.get('is_auto')
-    protocol = request.POST.get('protocol')
-    is_active = request.POST.get('is_active')
-    is_status = request.POST.get('is_status')
-
-    try:
-        with connections['default'].cursor() as cur:
-            cur.execute('''
-                UPDATE titan.tbl_agent3
-                SET name=%s, hostdomain=%s, hostip=%s, telecom=%s,
-                    username=%s, password=%s, is_active=%s, is_status=%s,
-                    is_auto=%s, protocol=%s
-                WHERE id=%s
-            ''', [name, hostdomain, hostip, telecom, username, password, is_active, is_status, is_auto, protocol, id])
-        return JsonResponse({'result': 200, 'title': 'Success', 'text': '수정되었습니다'})
-    except Exception as e:
-        logger.exception('api_update_agent failed')
-        return JsonResponse({'result': 500, 'title': 'Failed', 'text': '수정 중 오류가 발생했습니다'})
     
 # (2022-08-08)
 @allow_admin
@@ -1151,12 +1012,6 @@ def api_dd(request, type):
     rec = request.session['rec']
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))
-    # DEBUG: incoming params (quieted to debug level)
-    if type in ['money', 'money_cnt']:
-        try:
-            logger.debug('[api_dd] type=%s, year=%s, month=%s', type, year, month)
-        except Exception:
-            pass
     x_axis = make_axisX_dd(year, month)
 
     # 분기 포인트
@@ -1200,12 +1055,6 @@ def api_dd(request, type):
                 'data': get_dd_payment(year, month, x_axis, 'cny'),
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
-            },
-            {
-                'label': '전체(krw)',
-                'data': get_dd_total_krw(year, month, x_axis),
-                'borderColor': LINE_COLOR_BLACK,
-                'borderWidth': 2
             }
         ]  
     elif type == 'money_cnt':
@@ -1221,12 +1070,6 @@ def api_dd(request, type):
                 'data': get_dd_payment_cnt(year, month, x_axis),
                 'borderColor': LINE_COLOR_RED,
                 'borderWidth': 1
-            },
-            {
-                'label': '전체 건수',
-                'data': get_dd_total_cnt(year, month, x_axis),
-                'borderColor': LINE_COLOR_BLACK,
-                'borderWidth': 2
             }
         ]
     if type == 'saler_user':
@@ -1279,12 +1122,6 @@ def api_dd(request, type):
 @allow_dealer
 def api_mm(request, type):
     year = int(request.POST.get('year'))
-    # DEBUG: incoming params (quieted to debug level)
-    if type in ['money', 'money_cnt']:
-        try:
-            logger.debug('[api_mm] type=%s, year=%s', type, year)
-        except Exception:
-            pass
 
     # 분기 포인트
     if type == 'user':
@@ -1327,12 +1164,6 @@ def api_mm(request, type):
                 'data': get_mm_payment(year)[2],
                 'borderColor': LINE_COLOR_PURPLE,
                 'borderWidth': 1
-            },
-            {
-                'label': '전체(krw)',
-                'data': get_mm_total_krw(year),
-                'borderColor': LINE_COLOR_BLACK,
-                'borderWidth': 2
             }
         ]  
     elif type == 'money_cnt':
@@ -1348,12 +1179,6 @@ def api_mm(request, type):
                 'data': get_mm_payment_cnt(year),
                 'borderColor': LINE_COLOR_RED,
                 'borderWidth': 1
-            },
-            {
-                'label': '전체 건수',
-                'data': get_mm_total_cnt(year),
-                'borderColor': LINE_COLOR_BLACK,
-                'borderWidth': 2
             }
         ]  
     return JsonResponse({"x_axis": make_axisX_mm(), "y_axis": y_axis})
@@ -1540,33 +1365,19 @@ def get_dd_active(year, month, x_axis, add_type='', rec=''):
 # 코어 / 일별 / 무통장 건수
 def get_dd_send_cnt(year, month, x_axis):
     with connections['default'].cursor() as cur:
-        query = '''
-            select day(COALESCE(x.accept_date, x.api_date, x.regist_date)) as d, count(x.id) as value
-            from tbl_send_history x
-            join tbl_user y
-            on x.user_id = y.id
-            where UPPER(TRIM(x.status)) in ('A','S')
-            and Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = {month} 
-            and date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = {year}
-            GROUP BY d;
-        '''.format(month=month, year=year)
-        cur.execute(query)
+        query = """
+            SELECT DAY(x.accept_date) AS d, COUNT(*) AS value
+            FROM tbl_send_history x
+            JOIN tbl_user y ON x.user_id = y.id
+            WHERE x.status IN ('A','S')
+              AND MONTH(x.accept_date) = %s
+              AND YEAR(x.accept_date)  = %s
+            GROUP BY DAY(x.accept_date)
+            ORDER BY d
+        """
+        cur.execute(query, [month, year])  # ✅ 파라미터 바인딩
         rows = cur.fetchall()
-        # DEBUG: status breakdown for this month (counts) -> logger.debug
-        try:
-            cur.execute('''
-                SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c
-                FROM tbl_send_history x
-                JOIN tbl_user y ON x.user_id = y.id
-                WHERE Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = %s
-                  AND date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = %s
-                GROUP BY s ORDER BY c DESC;
-            ''', [month, str(year)])
-            dbg_rows = cur.fetchall()
-            logger.debug('[get_dd_send_cnt] %s-%02d status breakdown (count): %s', year, month, dbg_rows)
-        except Exception:
-            pass
-        send = serialize_rows_dd(rows, x_axis)
+        send = serialize_rows_dd(rows, x_axis)  # (day, value) -> x_axis 정렬
     return send
 
 
@@ -1592,43 +1403,29 @@ def get_dd_payment_cnt(year, month, x_axis):
 # 코어 / 일별 / 무통장
 def get_dd_send(year, month, x_axis, add_type='', rec=''):
     with connections['default'].cursor() as cur:
-        if add_type == 'saler':
-            add_query = "AND regist_rec = '{rec}'".format(rec=rec)
-        else:
-            add_query = ''
-        try:
-            logger.debug('[get_dd_send] building query for year=%s, month=%s', year, month)
-        except Exception:
-            pass
-        query = '''
-            select day(COALESCE(x.accept_date, x.api_date, x.regist_date)) as d, sum(krw) as value
-            from tbl_send_history x
-            join tbl_user y
-            on x.user_id = y.id
-            where UPPER(TRIM(x.status)) in ('A','S')
-            and Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = {month} 
-            and date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = {year}
-            {add_query}
-            GROUP BY d;
-        '''.format(month=month, year=year, add_query=add_query)
-        cur.execute(query)
-        rows = cur.fetchall()
-        # DEBUG: status breakdown for this month (sum krw) -> logger.debug
-        try:
-            cur.execute('''
-                SELECT UPPER(TRIM(x.status)) AS s, COUNT(*) AS c, IFNULL(SUM(krw),0) AS sum_krw
-                FROM tbl_send_history x
-                JOIN tbl_user y ON x.user_id = y.id
-                WHERE Month(COALESCE(x.accept_date, x.api_date, x.regist_date)) = %s
-                  AND date_format(COALESCE(x.accept_date, x.api_date, x.regist_date), "%Y") = %s
-                GROUP BY s ORDER BY c DESC;
-            ''', [month, str(year)])
-            dbg_rows = cur.fetchall()
-            logger.debug('[get_dd_send] %s-%02d status breakdown (count,sum_krw): %s', year, month, dbg_rows)
-        except Exception:
-            pass
+        extra = ""
+        params = [month, year]
+
+        if add_type == 'saler' and rec:
+            extra = "AND y.regist_rec = %s"
+            params.append(rec)
+
+        query = f"""
+            SELECT DAY(x.accept_date) AS d, SUM(COALESCE(x.krw, 0)) AS value
+            FROM tbl_send_history x
+            JOIN tbl_user y ON x.user_id = y.id
+            WHERE x.status IN ('A','S')
+              AND MONTH(x.accept_date) = %s 
+              AND YEAR(x.accept_date)  = %s
+              {extra}
+            GROUP BY DAY(x.accept_date)
+            ORDER BY d
+        """
+        cur.execute(query, params)
+        rows = cur.fetchall()  # [(day, value), ...]
         send = serialize_rows_dd(rows, x_axis)
     return send
+
 
 
 # 코어 / 일별 / 결제모듈(krw)
@@ -1651,27 +1448,13 @@ def get_dd_payment(year, month, x_axis, type, add_type='', rec=''):
         '''.format(month=month, year=year, type=type, add_query=add_query)
         cur.execute(query)
         rows = cur.fetchall()
-        # quiet debug: avoid logging each row to reduce noise
-        try:
-            logger.debug('[get_dd_payment] type=%s, year=%s, month=%s, rows=%d', type, year, month, len(rows))
-        except Exception:
-            pass
+        print('-----------------------')
+        print('type = ', type)
+        for row in rows:
+            print('row = ', row)
+        print('-----------------------')
         payment = serialize_rows_dd(rows, x_axis)
     return payment
-
-
-# 코어 / 일별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
-def get_dd_total_krw(year, month, x_axis):
-    send_krw = get_dd_send(year, month, x_axis)
-    pay_krw = get_dd_payment(year, month, x_axis, 'krw')
-    return _sum_series(send_krw, pay_krw)
-
-
-# 코어 / 일별 / 전체 건수 = 무통장 건수 + 결제모듈 건수
-def get_dd_total_cnt(year, month, x_axis):
-    send_cnt = get_dd_send_cnt(year, month, x_axis)
-    pay_cnt = get_dd_payment_cnt(year, month, x_axis)
-    return _sum_series(send_cnt, pay_cnt)
 
 
 # 코어 / 월별 / 가입자
@@ -1719,38 +1502,27 @@ def get_mm_active(year):
 
 
 # 코어 / 월별 / 무통장
-def get_mm_send(year):
+def get_mm_send(year: int):
+    start = date(year, 1, 1)
+    end   = date(year + 1, 1, 1)
+
     with connections['default'].cursor() as cur:
-        query = '''
-            select  mm, 
-                    sum(krw) as cnt1
-            from (
-                select  date_format(COALESCE(accept_date, api_date, regist_date), "%Y") as yyyy, 
-                        date_format(COALESCE(accept_date, api_date, regist_date), "%m") as mm, 
-                        krw
-                from tbl_send_history
-                where UPPER(TRIM(status)) in ('A','S')
-            ) x
-            where x.yyyy = '{year}'
-            group by mm;
-        '''.format(year=year)
-        cur.execute(query)
-        rows = dictfetchall(cur)
-        # DEBUG: status breakdown by status this year -> logger.debug
-        try:
-            cur.execute('''
-                SELECT UPPER(TRIM(status)) AS s, COUNT(*) c, IFNULL(SUM(krw),0) sum_krw
-                FROM tbl_send_history
-                WHERE date_format(COALESCE(accept_date, api_date, regist_date), "%Y") = %s
-                GROUP BY s ORDER BY c DESC;
-            ''', [str(year)])
-            dbg_rows = cur.fetchall()
-            logger.debug('[get_mm_send] year=%s status breakdown (count,sum_krw): %s', year, dbg_rows)
-        except Exception:
-            pass
+        query = """
+            SELECT
+                MONTH(accept_date) AS mm,                  -- 1~12 (int)
+                SUM(COALESCE(krw, 0)) AS cnt1
+            FROM tbl_send_history
+            WHERE status IN ('A', 'S')
+              AND accept_date >= %s AND accept_date < %s
+            GROUP BY MONTH(accept_date)
+            ORDER BY mm
+        """
+        cur.execute(query, [start, end])
+        rows = dictfetchall(cur)           # [{'mm':1,'cnt1':...}, ...]
+        # ✅ serializer가 '01'~'12'를 기대한다면 아래 변환
+        rows = [{'mm': f'{r["mm"]:02d}', 'cnt1': r['cnt1']} for r in rows]
         send = serialize_rows_mm(rows, 1)
     return send
-
 
 # 코어 / 월별 / 결제모듈
 def get_mm_payment(year):
@@ -1778,40 +1550,27 @@ def get_mm_payment(year):
     return krw, usd, cny
 
 
-# 코어 / 월별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
-def get_mm_total_krw(year):
-    send = get_mm_send(year)
-    krw, _, _ = get_mm_payment(year)
-    return _sum_series(send, krw)
-
-
-# 코어 / 월별 / 전체 건수 = 무통장 건수 + 결제모듈 건수
-def get_mm_total_cnt(year):
-    send_cnt = get_mm_send_cnt(year)
-    pay_cnt = get_mm_payment_cnt(year)
-    return _sum_series(send_cnt, pay_cnt)
-
-
 # 코어 / 월별 / 무통장 건수
-def get_mm_send_cnt(year):
+def get_mm_send_cnt(year: int):
+    start = date(year, 1, 1)
+    end   = date(year + 1, 1, 1)
+
     with connections['default'].cursor() as cur:
-        query = '''
-            select  mm, 
-                    count(krw) as cnt1
-            from (
-                select  date_format(COALESCE(accept_date, api_date, regist_date), "%Y") as yyyy, 
-                        date_format(COALESCE(accept_date, api_date, regist_date), "%m") as mm, 
-                        krw
-                from tbl_send_history
-                where UPPER(TRIM(status)) in ('A','S')
-            ) x
-            where x.yyyy = '{year}'
-            group by mm;
-        '''.format(year=year)
-        cur.execute(query)
-        rows = dictfetchall(cur)
-        send = serialize_rows_mm(rows, 1)
+        query = """
+            SELECT
+                MONTH(accept_date) AS mm,
+                COUNT(*)           AS cnt1
+            FROM tbl_send_history
+            WHERE status IN ('A','S')
+              AND accept_date >= %s AND accept_date < %s
+            GROUP BY MONTH(accept_date)
+            ORDER BY mm
+        """
+        cur.execute(query, [start, end])   # ✅ 파라미터 바인딩
+        rows = dictfetchall(cur)           # [{'mm':1,'cnt1':...}, ...]
+        send = serialize_rows_mm(rows, 1)  # 기존 함수와 호환
     return send
+
 
 
 # 코어 / 월별 / 결제모듈 건수

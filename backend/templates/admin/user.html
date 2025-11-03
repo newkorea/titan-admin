@@ -3,25 +3,9 @@
 <%block name="css">
 </%block>
 
-<%block name="title">
-	<div class="row">
-    	<div class="form-group col-sm-2">
-      		<label>회원 관리</label>
-    	</div>
-    	<div class="form-group col-sm-10">
-      		<label id="active_users"></label>
-      		<label class="ml-3" id="session_one_users"></label>
-      		<label class="ml-3" id="session_two_users"></label>
-      		<label class="ml-3" id="session_three_users"></label>
-      		<label class="ml-3" id="session_four_users"></label>
-      		<label class="ml-3" id="session_five_users"></label>
-      		<label class="ml-3" id="session_six_users"></label>
-      		<label class="ml-3" id="expired_users"></label>
-      		<label class="ml-3" id="deleted_users"></label>
-    	</div>
-	</div>
-</%block>
+<%block name="title">회원 관리</%block>
 <%block name="subtitle">TITAN VPN에 가입한 회원들을 관리할 수 있습니다</%block>
+
 <%block name="content">
   <!-- 검색필터 -->
   <div class="row">
@@ -86,7 +70,6 @@
           <th>사용자명</th>
           <th>삭제여부</th>
           <th>활성여부</th>
-          <th>차단여부</th>
           <th>권한</th>
           <th>가입아이피</th>
           <th>가입일시</th>
@@ -96,7 +79,6 @@
           <th>비번</th>
           <th>활성</th>
           <th>탈퇴</th>
-          <th>앱퇴출</th>          
         </tr>
       </thead>
       <tbody>

@@ -6,111 +6,33 @@
 <%block name="css"></%block>
 
 <%block name="content">
-<div class="row">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <div>안녕하세요. 관리자 대시보드입니다.</div>
-        <div>최근 24시간 운영 현황을 요약해서 보여드립니다: 로그인 시도, 서버 접속 실패, 강제 종료 Top 10.</div>
-      </div>
-    </div>
-  </div>
-  </div>
-
-<!-- 결제 요약 섹션 제거 (요구사항에 따라 비활성화) -->
-
-<!-- 최근 24시간 Top 10 통계 -->
-<div class="row mt-3">
-  <!-- 로그인 시도 Top 10 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>최근 24시간 로그인 시도 Top 10</b></div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th style="width: 50px;">순위</th>
-              <th>이메일</th>
-              <th style="width: 90px;" class="text-right">건수</th>
-            </tr>
-          </thead>
-          <tbody>
-            % for i, r in enumerate(top_login_24h or [], start=1):
-            <tr>
-              <td>${i}</td>
-              <td><a href="/device_info" target="_blank">${r['email']}</a></td>
-              <td class="text-right">${r['cnt']}</td>
-            </tr>
-            % endfor
-            % if not top_login_24h:
-            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
-            % endif
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 서버 접속 실패 Top 10 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>최근 24시간 서버 접속 실패 Top 10</b></div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th style="width: 50px;">순위</th>
-              <th>이메일</th>
-              <th style="width: 90px;" class="text-right">건수</th>
-            </tr>
-          </thead>
-          <tbody>
-            % for i, r in enumerate(top_failed_24h or [], start=1):
-            <tr>
-              <td>${i}</td>
-              <td><a href="/failed_info" target="_blank">${r['email']}</a></td>
-              <td class="text-right">${r['cnt']}</td>
-            </tr>
-            % endfor
-            % if not top_failed_24h:
-            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
-            % endif
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 강제 종료 Top 10 -->
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header"><b>최근 24시간 강제 종료 Top 10</b></div>
-      <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr>
-              <th style="width: 50px;">순위</th>
-              <th>이메일</th>
-              <th style="width: 90px;" class="text-right">건수</th>
-            </tr>
-          </thead>
-          <tbody>
-            % for i, r in enumerate(top_force_24h or [], start=1):
-            <tr>
-              <td>${i}</td>
-              <td><a href="/disconnection_info" target="_blank">${r['email']}</a></td>
-              <td class="text-right">${r['cnt']}</td>
-            </tr>
-            % endfor
-            % if not top_force_24h:
-            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
-            % endif
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+% if request.session['is_staff'] in [1]:
+<div>
+  안녕하세요 담당 개발자입니다<br>
+  <br>
+  현재 지속적으로 기능이 추가되는 중입니다<br>
+  <br>
+  AS-IS 기능들은 전부 개선 완료되었습니다<br>
+  <br>
+  감사합니다<br>
+  <br>
 </div>
+% endif
+
+% if request.session['is_staff'] in [3]:
+<div>
+  안녕하세요 총판님<br>
+  <br>
+  TITAN VPN 담당 개발자입니다<br>
+  <br>
+  타이탄 관리자 사이트에 오신걸 환영합니다<br>
+  <br>
+  마케팅에 필요한 기능들을 지속적으로 추가할 예정입니다<br>
+  <br>
+  이용해주셔서 감사합니다<br>
+  <br>
+</div>
+% endif
 </%block>
 
 <%block name="js">

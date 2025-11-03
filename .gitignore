@@ -6,25 +6,3 @@
 .idea/
 /upload
 .vscode/
-
-# Python build/cache
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.coverage
-
-# Virtual environments
-.venv/
-.venv*/
-
-# OS/editor
-.DS_Store
-
-# Generated/compiled templates
-mako_modules/
-
-# Local SSL/ACME or deployment artifacts
-.well-known/
-
-# SQLite or local DB files
-*.sqlite3

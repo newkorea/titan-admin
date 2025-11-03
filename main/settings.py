@@ -14,10 +14,6 @@ DEBUG = False
 SESSION_COOKIE_AGE = 24 * 60 * 60                       # 세션 타임아웃 (sec)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True                  # 브라우저 닫을 시 세션 만료 (크롬 적용 불가)
 APPEND_SLASH = False
-# 고유 세션 쿠키 이름으로 교차 서비스 충돌 방지
-SESSION_COOKIE_NAME = 'titanadmin_sessionid'
-# 메시지는 세션에 저장하여 쿠키 Base64 디코딩 이슈 방지
-MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # settings.py
 #USE_TZ = True  # 시간을 시간대가 고려된 datetime으로 처리
 #TIME_ZONE = 'Asia/Seoul'  # 서울 시간대 (한국 표준시)

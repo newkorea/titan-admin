@@ -96,6 +96,14 @@ function editAgent(payload) {
     '<label class="fz12">통신사</label>'+
     '<input id="edit_telecom" type="text" class="form-control" value="'+(row.telecom||'')+'">'+
     '</div>'+
+      '<div class="form-group tal">'+
+      '<label class="fz12">config</label>'+
+      '<textarea id="edit_config" class="form-control" rows="4">'+(row.config||'')+'</textarea>'+
+      '</div>'+
+      '<div class="form-group tal">'+
+      '<label class="fz12">v2config</label>'+
+      '<textarea id="edit_v2config" class="form-control" rows="4">'+(row.v2config||'')+'</textarea>'+
+      '</div>'+
   '<div class="form-group tal">'+
   '<label class="fz12">프로토콜</label>'+
   '<input id="edit_protocol" type="text" class="form-control" value="'+(row.protocol||'')+'">'+
@@ -115,16 +123,16 @@ function editAgent(payload) {
     '    <option value="0"'+((String(row.is_status)!=='1')?' selected':'')+'>0</option>'+
     '  </select>'+
     ' </div>'+
+    '</div>'+
+    '<div class="row">'+
+     ' <div class="form-group col-sm-6 tal">'+
+     '  <label class="fz12">자동 (1/0)</label>'+
+     '  <select id="edit_is_auto" class="form-control">'+
+     '    <option value="1"'+((String(row.is_auto)==='1')?' selected':'')+'>1</option>'+
+     '    <option value="0"'+((String(row.is_auto)!=='1')?' selected':'')+'>0</option>'+
+     '  </select>'+
+     ' </div>'+
     '</div>';
-  '<div class="row">'+
-   ' <div class="form-group col-sm-6 tal">'+
-   '  <label class="fz12">자동 (1/0)</label>'+
-   '  <select id="edit_is_auto" class="form-control">'+
-   '    <option value="1"'+((String(row.is_auto)==='1')?' selected':'')+'>1</option>'+
-   '    <option value="0"'+((String(row.is_auto)!=='1')?' selected':'')+'>0</option>'+
-   '  </select>'+
-   ' </div>'+
-  '</div>'+
 
   Swal.fire({
     title: '서버 수정 (#'+row.id+')',
@@ -142,14 +150,15 @@ function editAgent(payload) {
         hostdomain: $('#edit_hostdomain').val(),
         hostip: $('#edit_hostip').val(),
         telecom: $('#edit_telecom').val(),
-        // 접속계정은 UI에서 제거. 기존 값 유지 위해 그대로 전달(백엔드 호환)
+        // UI에는 노출하지 않지만 기존 값 유지(백엔드 호환)
         username: row.username,
-        // 비밀번호는 UI에서 제거. 기존 값 유지 위해 그대로 전달(백엔드 호환)
         password: row.password,
         is_active: $('#edit_is_active').val(),
         is_status: $('#edit_is_status').val(),
         is_auto: $('#edit_is_auto').val(),
-        protocol: $('#edit_protocol').val()
+        protocol: $('#edit_protocol').val(),
+        config: $('#edit_config').val(),
+        v2config: $('#edit_v2config').val()
       }).done(function (data) {
         if (data.result == 200) {
           Swal.fire({
