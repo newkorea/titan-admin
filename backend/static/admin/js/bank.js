@@ -2,12 +2,16 @@
 // $('#filter_regist_start').val(getNow());
 // $('#filter_regist_end').val(getTomorrow());
 
-// URL 파라미터에서 email 가져와 초기 필터에 반영 (예: /account_history?email=user@domain)
+// URL 파라미터에서 email/type 가져와 초기 필터에 반영 (예: /account_history?email=user@domain&type=A)
 try {
     var __qs = new URLSearchParams(window.location.search);
     var __initEmail = __qs.get('email') || '';
+    var __initType = (__qs.get('type') || '').toUpperCase();
     if (__initEmail) {
         $('#filter_email').val(__initEmail);
+    }
+    if (__initType && ['A','W','M','V'].indexOf(__initType) !== -1) {
+        $('#filter_type').val(__initType);
     }
 } catch (e) {
     // no-op: 구형 브라우저 등 예외는 무시
@@ -41,6 +45,7 @@ var datatable = $('#price-inform').DataTable({
             session: function() { return $('#filter_session').val() },
             month: function() { return $('#filter_month').val() },
             status: function() { return $('#filter_status').val() },
+            type: function() { return ($('#filter_type').val() || '').toUpperCase() },
             regist_start: function() { return $('#filter_regist_start').val() },
             regist_end: function() { return $('#filter_regist_end').val() }
         },
@@ -166,16 +171,13 @@ var datatable = $('#price-inform').DataTable({
             targets: 15,
             visible: true,
             orderable: false,
-            render: function (data) {
-                if (data == 'A') {
-                    return '알리페이';
-                } else if (data == 'W') {
-                    return '위쳇페이';
-                } else if (data == 'V') {
-                    return '가상화폐';
-                } else {
-                    return '무통장';
-                }
+            render: function (data, type, row) {
+                var code = (data || '').toUpperCase();
+                var label = (code === 'A') ? '알리페이' :
+                            (code === 'W') ? '위쳇페이' :
+                            (code === 'V') ? '가상화폐' : '무통장';
+                // 클릭 시 해당 타입으로 필터 적용되도록 링크 처리
+                return '<a href="#" class="js-type-filter" data-type="' + code + '">' + label + '</a>';
             }
         }
     ],
@@ -206,6 +208,32 @@ $('#price-inform').on('click', 'a.js-email-filter', function (e) {
             url.searchParams.set('email', email);
         } else {
             url.searchParams.delete('email');
+        }
+        window.history.replaceState({}, '', url.toString());
+    } catch (e2) { /* ignore */ }
+    reload_data();
+});
+
+// 요청구분(타입) 클릭 시 필터 적용/토글 후 재조회
+$('#price-inform').on('click', 'a.js-type-filter', function (e) {
+    e.preventDefault();
+    var code = (($(this).data('type') || '') + '').toUpperCase();
+    if (!code) return;
+    var $type = $('#filter_type');
+    // 같은 타입을 한번 더 클릭하면 해제 토글
+    if ($type.val().toUpperCase() === code) {
+        $type.val('');
+    } else {
+        $type.val(code);
+    }
+    // URL에도 반영 (history replace)
+    try {
+        var url = new URL(window.location.href);
+        var cur = $type.val().toUpperCase();
+        if (cur) {
+            url.searchParams.set('type', cur);
+        } else {
+            url.searchParams.delete('type');
         }
         window.history.replaceState({}, '', url.toString());
     } catch (e2) { /* ignore */ }

@@ -595,6 +595,7 @@ def api_read_bank(request):
     session = request.POST.get('session')
     month = request.POST.get('month')
     status = request.POST.get('status')
+    type_code = (request.POST.get('type') or '').strip().upper()
     regist_start = request.POST.get('regist_start')
     regist_end = request.POST.get('regist_end')
 
@@ -617,6 +618,8 @@ def api_read_bank(request):
         wc += " and x.session = '{session}' ".format(session=session)
     if month != '0':
         wc += " and x.month_type = '{month}' ".format(month=month)
+    if type_code != '':
+        wc += " and UPPER(TRIM(x.type)) = '{type_code}' ".format(type_code=type_code)
     if regist_start != '':
         wc += " and x.regist_date >= '{regist_start}' ".format(regist_start=regist_start)
     if regist_end != '':
