@@ -72,7 +72,8 @@ def update_all_pings():
     for _id, ip in rows:
         ms = ping_ip(ip)
         with connections['default'].cursor() as cur:
-            cur.execute("UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s", [ms if ms is not None else 0, _id])
+            # Store -88 for unreachable per display policy
+            cur.execute("UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s", [ms if ms is not None else -88, _id])
 
 
 def main():

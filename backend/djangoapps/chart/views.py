@@ -370,14 +370,17 @@ def api_read_agents(request):
             for r in rows:
                 ip = r.get('hostip') or r.get('hostdomain')
                 p = r.get('ping')
-                if p in (None, '', '0', 0, -1):
+                # Re-measure if missing, zero, previous unreachable codes
+                if p in (None, '', '0', 0, -1, -88):
                     measured = measure_ping(r.get('hostip'))
                 else:
                     measured = int(p) if str(p).isdigit() else measure_ping(r.get('hostip'))
-                r['ping'] = measured
+                # Display rule: unreachable -> -88
+                displayed = measured if (isinstance(measured, int) and measured >= 0) else -88
+                r['ping'] = displayed
                 if has_ping_col:
                     try:
-                        cur.execute('UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s', [measured, r['id']])
+                        cur.execute('UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s', [displayed, r['id']])
                     except Exception:
                         pass
 
