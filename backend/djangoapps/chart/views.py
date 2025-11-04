@@ -980,10 +980,8 @@ def api_read_reward(request):
         'ty.email',
         'ty.username',
         'tr.reward_days',
-        'tr.type',
-        'protocol',
-        'ping'
-        'ping'
+        'tr.register_date',
+        'tr.type'
     ]
 
     # 데이터테이블즈 - 카운팅 쿼리
@@ -1021,31 +1019,30 @@ def api_read_reward(request):
         cur.execute(query)
         rows = dictfetchall(cur)
 
-        query = '''
-            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
-                   {is_auto}, {protocol}, {ping},
-                   {config}, {v2config},
-                   {username}, {password}
-            FROM titan.tbl_agent3
-            {wc}
-            ORDER BY {orderby_col} {orderby_opt}
-            LIMIT {start}, {length}
-        '''.format(
+    ret = {
+        "recordsTotal": total,
+        "recordsFiltered": total,
+        "draw": draw,
+        "data": rows
+    }
+    return JsonResponse(ret)
+
+
+# 실시간 사용자 API
 def api_realtime_user(request):
     with connections['default'].cursor() as cur:
-            ping=sel('ping'),
         query = '''
-            SELECT acctsessionid    AS sessionid,  
-                acctuniqueid, 
-                username            AS email, 
-                nasipaddress        AS agent_ip,  
-                DATE_FORMAT(acctstarttime, "%Y-%m-%d %H:%i:%S") as starttime,
-                callingstationid    AS client_ip, 
-                framedipaddress     AS private_ip,
-                nasporttype       AS nas_type
-            FROM   radius.radacct 
-            WHERE  acctstoptime IS NULL; 
-        '''.format()
+            SELECT acctsessionid    AS sessionid,
+                   acctuniqueid,
+                   username          AS email,
+                   nasipaddress      AS agent_ip,
+                   DATE_FORMAT(acctstarttime, "%Y-%m-%d %H:%i:%S") as starttime,
+                   callingstationid  AS client_ip,
+                   framedipaddress   AS private_ip,
+                   nasporttype       AS nas_type
+            FROM   radius.radacct
+            WHERE  acctstoptime IS NULL;
+        '''
         cur.execute(query)
         rows = dictfetchall(cur)
     return JsonResponse({'result': rows})
@@ -1105,79 +1102,55 @@ def use_traffic(request):
 
 # 트래픽 사용량 API
 @allow_admin
-def api_use_traffic(request):    
+def api_use_traffic(request):
     start = int(request.POST.get('start'))
     length = int(request.POST.get('length'))
     draw = int(request.POST.get('draw'))
 
     # 검색 필터 파라미터
-    id = request.POST.get('id')
     year = request.POST.get('year')
     month = request.POST.get('month')
     day = request.POST.get('day')
-    
-    if len(month) == 1:
+
+    # zero-pad month/day
+    if month and len(month) == 1:
         month = '0' + month
-    if len(day) == 1:
+    if day and len(day) == 1:
         day = '0' + day
 
-    # 카운팅 쿼리
+    like_prefix = f"{year}-{month}-{day}%"
+
+    # 카운팅 쿼리 (distinct usernames)
     with connections['default'].cursor() as cur:
         query = '''
-            SELECT  username
+            SELECT COUNT(DISTINCT username)
             FROM radius.radacct
-            where acctstarttime like  "{year}-{month}-{day}%" 
-            group by username
-        '''.format(year=year, month=month, day=day)
-        cur.execute(query)
-        rows = cur.fetchall()
-        
-        if len(rows) == 0 :
-            query = '''
-                SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
-                       {is_auto}, {protocol}, {ping},
-                       {config}, {v2config},
-                       {username}, {password}
+            WHERE acctstarttime LIKE %s
+        '''
+        cur.execute(query, [like_prefix])
+        total = cur.fetchall()[0][0]
+
     # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
             SELECT  username,
-                    sum(acctoutputoctets)/1e+9 as acctoutputoctets,
-                    sum(acctinputoctets)/1e+9 as acctinputoctets
-            FROM radius.radacct 
-                ping=sel('ping'),
-            where acctstarttime like  "{year}-{month}-{day}%" 
-            group by username
-            order by acctoutputoctets desc
-            limit {start}, 10
-        '''.format(
-            year=year, month=month, day=day,
-            start=start)
-        # print('DEBUG -> query : ', query)
-        cur.execute(query)
+                    SUM(acctoutputoctets)/1e+9 AS acctoutputoctets,
+                    SUM(acctinputoctets)/1e+9  AS acctinputoctets
+            FROM radius.radacct
+            WHERE acctstarttime LIKE %s
+            GROUP BY username
+            ORDER BY acctoutputoctets DESC
+            LIMIT %s, %s
+        '''
+        cur.execute(query, [like_prefix, start, length])
         rows = dictfetchall(cur)
 
-    returnData = {
-
-        # Fill ping if missing or null; optionally persist when column exists
-        for r in rows:
-            val = r.get('ping') if 'ping' in r else None
-            if val in [None, '', 0, '0']:
-                host = r.get('hostip') or r.get('hostdomain')
-                ms = _ping_max_ms(host)
-                r['ping'] = ms if ms is not None else ''
-                if ms is not None and 'ping' in cols:
-                    try:
-                        with connections['default'].cursor() as ucur:
-                            ucur.execute('UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s', [ms, r.get('id')])
-                    except Exception:
-                        pass
+    return JsonResponse({
         "recordsTotal": total,
         "recordsFiltered": total,
         "draw": draw,
         "data": rows
-    }
-    return JsonResponse(returnData)
+    })
 
 # 트래픽 사용량 렌더
 @allow_admin
