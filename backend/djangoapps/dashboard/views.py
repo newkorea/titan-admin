@@ -93,13 +93,20 @@ def dashboard(request):
 
     try:
         MAX_CHECK = 200
+        # 활성(is_active) 컬럼이 있으면 활성=1만 대상으로 측정
         with connections['default'].cursor() as cur:
-            cur.execute('''
+            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3")
+            cols = {r[0] for r in cur.fetchall()}
+        wc = ' WHERE is_active=1 ' if 'is_active' in cols else ''
+        with connections['default'].cursor() as cur:
+            query = f'''
                 SELECT id, name, hostdomain, hostip, telecom
                 FROM titan.tbl_agent3
+                {wc}
                 ORDER BY id DESC
                 LIMIT %s
-            ''', [MAX_CHECK])
+            '''
+            cur.execute(query, [MAX_CHECK])
             agents = _dictfetchall(cur)
         bad = []
         for a in agents:
