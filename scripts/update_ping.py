@@ -29,8 +29,10 @@ def parse_ping_output(out: str) -> Optional[int]:
 
 def ping_ip(ip: str) -> Optional[int]:
     try:
+        # Use absolute /usr/bin/ping to avoid PATH issues under cron/systemd
+        ping_bin = '/usr/bin/ping'
         # -c 3: 3 packets, -w 3: deadline 3s
-        res = subprocess.run(['ping', '-c', '3', '-w', '3', ip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        res = subprocess.run([ping_bin, '-c', '3', '-w', '3', ip], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         return parse_ping_output(res.stdout)
     except Exception:
         return None

@@ -344,8 +344,10 @@ def api_read_agents(request):
         max_ms = -1
         for _ in range(3):
             try:
+                # Use absolute path to avoid PATH issues in uWSGI env
+                ping_bin = '/usr/bin/ping'
                 # Linux: -c count, -W timeout (seconds)
-                proc = subprocess.run(['ping', '-c', '1', '-W', '1', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2)
+                proc = subprocess.run([ping_bin, '-c', '1', '-W', '1', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2)
                 out = proc.stdout.decode('utf-8', errors='ignore')
                 # parse 'time=XX ms'
                 m = re.search(r'time[=<>]([^ ]+)\s*ms', out)
