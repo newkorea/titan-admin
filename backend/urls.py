@@ -220,6 +220,8 @@ urlpatterns = [
 
     #  [api v1] 로그인접속로그 데이터를 반환합니다
     path('api/v1/read/device', ChartViews.api_read_device, name='api_read_device'),
+    #  [api v1] 로그인 세션 퇴출 처리
+    path('api/v1/delete/device_session', ChartViews.api_delete_device_session, name='api_delete_device_session'),
 
     #  [api v1] 서버접속로그 데이터를 반환합니다
     path('api/v1/read/connection', ChartViews.api_read_connection, name='api_read_connection'),

@@ -602,6 +602,42 @@ def api_read_device(request):
     }
     return JsonResponse(ret)
 
+@allow_admin
+def api_delete_device_session(request):
+    """
+    퇴출 처리: tbl_device_info.id로 session_key를 조회하고,
+    django_session에서 동일한 session_key를 삭제하여 로그인 세션을 강제 종료한다.
+    """
+    try:
+        id_raw = request.POST.get('id') or request.GET.get('id')
+        did = int(id_raw)
+    except Exception:
+        return JsonResponse({'result': 400, 'title': '잘못된 요청', 'text': '유효한 번호가 아닙니다'})
+
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute('SELECT session_key FROM tbl_device_info WHERE id=%s', [did])
+            row = cur.fetchone()
+            if not row:
+                return JsonResponse({'result': 404, 'title': '대상 없음', 'text': '해당 로그를 찾을 수 없습니다'})
+            session_key = row[0]
+
+        if not session_key:
+            return JsonResponse({'result': 404, 'title': '세션 없음', 'text': '연결된 세션 키가 없습니다'})
+
+        # django_session 에서 삭제
+        with connections['default'].cursor() as cur:
+            cur.execute('DELETE FROM django_session WHERE session_key=%s', [session_key])
+            affected = cur.rowcount
+
+        if affected > 0:
+            return JsonResponse({'result': 200, 'title': '퇴출 완료', 'text': '로그인 세션이 종료되었습니다'})
+        else:
+            return JsonResponse({'result': 200, 'title': '완료', 'text': '활성 세션이 없었습니다'})
+    except Exception:
+        logger.exception('api_delete_device_session failed')
+        return JsonResponse({'result': 500, 'title': '오류', 'text': '퇴출 처리 중 오류가 발생했습니다'})
+
 # (2022-12-03)
 @allow_admin
 def api_read_connection(request):

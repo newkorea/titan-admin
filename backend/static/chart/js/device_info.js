@@ -50,6 +50,7 @@ var datatable = $('#device-inform').DataTable({
         {data: "api_url"},
         {data: "load_balancer"},
         {data: "login_time"},
+        {data: null},
     ],
     columnDefs: [
         {
@@ -135,6 +136,13 @@ var datatable = $('#device-inform').DataTable({
             orderable: false,
             render: function (data) {
                 return data;
+            }
+        },
+        {
+            targets: 12,
+            orderable: false,
+            render: function (_data, _type, row) {
+                return '<button class="btn btn-outline b-danger text-danger btn-sm" onclick="kickOut('+row.id+')">퇴출</button>';
             }
         }
     ],
@@ -399,4 +407,33 @@ function ready_list() {
 // 검색하기 버튼 클릭
 function reload_data(){
     datatable.ajax.reload();
+}
+
+// 퇴출 처리: 해당 로그인 세션 제거
+function kickOut(id){
+    var csrf_token = $('#csrf_token').html();
+    Swal.fire({
+        title: '해당 기기를 퇴출하시겠습니까?',
+        text: '같은 세션 키를 가진 로그인 세션이 종료됩니다.',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '퇴출',
+        cancelButtonText: '취소',
+        confirmButtonColor: swalColor('error')
+    }).then(function(result){
+        if(result.value){
+            $.post('/api/v1/delete/device_session', { csrfmiddlewaretoken: csrf_token, id: id })
+            .done(function(res){
+                if(res.result === 200){
+                    Swal.fire({ title: res.title, text: res.text, type: 'success', confirmButtonColor: swalColor('success')});
+                } else {
+                    Swal.fire({ title: res.title || '실패', text: res.text || '처리 중 오류가 발생했습니다', type: 'error', confirmButtonColor: swalColor('error')});
+                }
+                reload_data();
+            })
+            .fail(function(){
+                Swal.fire('오류', '서버 통신에 실패했습니다', 'error');
+            });
+        }
+    });
 }
