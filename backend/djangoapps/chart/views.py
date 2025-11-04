@@ -258,6 +258,11 @@ def api_read_agents(request):
     telecom = (_gp('telecom', '') or '').strip()
     is_active = (_gp('is_active', '') or '').strip()
     is_status = (_gp('is_status', '') or '').strip()
+    id_filter_raw = (_gp('id', '') or '').strip()
+    try:
+        id_filter = int(id_filter_raw) if id_filter_raw != '' else None
+    except Exception:
+        id_filter = None
 
     # where clause
     wc = ' where 1=1 '
@@ -269,6 +274,8 @@ def api_read_agents(request):
         wc += " and is_active = {v} ".format(v=is_active)
     if is_status in ['0','1']:
         wc += " and is_status = {v} ".format(v=is_status)
+    if id_filter is not None:
+        wc += " and id = {v} ".format(v=id_filter)
 
     column_name = [
         'id',
@@ -331,8 +338,8 @@ def api_read_agents(request):
             wc=wc,
             orderby_col=orderby_col_name,
             orderby_opt=orderby_opt,
-            start=start,
-            length=length
+            start=0 if id_filter is not None else start,
+            length=1 if id_filter is not None else length
         )
         cur.execute(query)
         rows = dictfetchall(cur)

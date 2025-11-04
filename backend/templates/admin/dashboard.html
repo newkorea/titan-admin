@@ -32,6 +32,7 @@
                 <th>IP</th>
                 <th style="width: 100px;">통신사</th>
                 <th style="width: 90px;">PING</th>
+                <th style="width: 90px;">작업</th>
               </tr>
             </thead>
             <tbody>
@@ -43,10 +44,13 @@
                 <td>${r.get('hostip','')}</td>
                 <td>${r.get('telecom','')}</td>
                 <td><span class="badge badge-danger">${r.get('ping','')}</span></td>
+                <td>
+                  <a class="btn btn-outline b-primary text-primary btn-sm" href="/server_admin?edit=${r['id']}" target="_blank">편집</a>
+                </td>
               </tr>
               % endfor
               % if not bad_ping_agents:
-              <tr><td colspan="6" class="text-center">모든 서버가 정상 응답 중입니다</td></tr>
+              <tr><td colspan="7" class="text-center">모든 서버가 정상 응답 중입니다</td></tr>
               % endif
             </tbody>
           </table>

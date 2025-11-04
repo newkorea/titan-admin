@@ -78,6 +78,34 @@ function reload_servers(){
   serverDT.ajax.reload();
 }
 
+// Helper: parse query parameter
+function getQueryParam(name){
+  var params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+// If deep-link edit id is provided, fetch the row and open editor
+$(function(){
+  var editId = getQueryParam('edit') || getQueryParam('id');
+  if (editId) {
+    $.ajax({
+      url: '/api/v1/read/agents',
+      method: 'GET',
+      dataType: 'json',
+      data: { id: editId, start: 0, length: 1, draw: 1 },
+      success: function(resp){
+        try {
+          if (resp && resp.data && resp.data.length > 0) {
+            var row = resp.data[0];
+            var payload = encodeURIComponent(JSON.stringify(row));
+            editAgent(payload);
+          }
+        } catch(e) {}
+      }
+    });
+  }
+});
+
 function editAgent(payload) {
   var row = JSON.parse(decodeURIComponent(payload));
   var html = ''+
