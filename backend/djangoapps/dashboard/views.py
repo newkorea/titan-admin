@@ -1,4 +1,6 @@
 import json
+import re
+import subprocess
 from django.shortcuts import render  # ✅ djangomako 제거
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -73,25 +75,40 @@ def dashboard(request):
         )
         context['top_force_24h'] = _dictfetchall(cur)
 
-    # PING < 0 (unreachable) NAS 목록
+    # PING < 0 (unreachable) NAS 목록 - 실시간 측정 기반으로 표시
+    # 이유: DB ping 값이 0 등 초기값일 수 있어 정확도가 떨어질 수 있음
+    def _measure_ping(ip_or_host: str) -> int:
+        if not ip_or_host:
+            return -88
+        try:
+            proc = subprocess.run(['/usr/bin/ping', '-c', '1', '-W', '1', ip_or_host],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2)
+            out = proc.stdout.decode('utf-8', errors='ignore')
+            m = re.search(r'time[=<>]([^ ]+)\s*ms', out)
+            if m:
+                return int(float(m.group(1)))
+            return -88
+        except Exception:
+            return -88
+
     try:
+        MAX_CHECK = 200
         with connections['default'].cursor() as cur:
-            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3")
-            cols = {r[0] for r in cur.fetchall()}
-        if 'ping' in cols:
-            with connections['default'].cursor() as cur:
-                cur.execute(
-                    '''
-                    SELECT id, name, hostdomain, hostip, telecom, ping
-                    FROM titan.tbl_agent3
-                    WHERE ping < 0
-                    ORDER BY ping ASC, id DESC
-                    LIMIT 50
-                    '''
-                )
-                context['bad_ping_agents'] = _dictfetchall(cur)
-        else:
-            context['bad_ping_agents'] = []
+            cur.execute('''
+                SELECT id, name, hostdomain, hostip, telecom
+                FROM titan.tbl_agent3
+                ORDER BY id DESC
+                LIMIT %s
+            ''', [MAX_CHECK])
+            agents = _dictfetchall(cur)
+        bad = []
+        for a in agents:
+            host = a.get('hostip') or a.get('hostdomain')
+            ms = _measure_ping(host)
+            if ms < 0:
+                a['ping'] = -88
+                bad.append(a)
+        context['bad_ping_agents'] = bad
     except Exception:
         context['bad_ping_agents'] = []
 
