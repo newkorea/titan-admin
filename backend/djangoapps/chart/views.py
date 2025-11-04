@@ -9,7 +9,10 @@ import uuid
 import requests
 import logging
 import time
+import subprocess
 from django.shortcuts import render
+import subprocess
+import shlex
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
@@ -28,6 +31,7 @@ from backend.djangoapps.common.swal import get_swal
 from django.utils import translation
 from django.conf import settings
 from calendar import monthrange
+import subprocess
 
 
 LINE_COLOR_BLUE = 'rgba(0, 123, 255, 1)'
@@ -50,6 +54,27 @@ COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
 
 # module logger
 logger = logging.getLogger(__name__)
+
+# ping helper: returns max RTT in ms for 3 packets (or None on failure)
+def _ping_max_ms(host: str):
+    try:
+        if not host:
+            return None
+        # allow simple hostname/ip only
+        if not re.match(r'^[A-Za-z0-9\-\.]+$', host):
+            return None
+        out = subprocess.check_output(
+            ['ping', '-c', '3', '-w', '3', '-q', host],
+            stderr=subprocess.STDOUT,
+            timeout=4
+        ).decode('utf-8', 'ignore')
+        m = re.search(r'=\s*([0-9\.]+)/([0-9\.]+)/([0-9\.]+)/', out)
+        if m:
+            max_ms = float(m.group(3))
+            return int(round(max_ms))
+        return None
+    except Exception:
+        return None
 
 # 검색필터 생성 [ 2019 ~ 현재 yyyy ]
 def make_yaer_list():
@@ -254,7 +279,8 @@ def api_read_agents(request):
         'is_active',
         'is_status',
         'is_auto',
-        'protocol'
+        'protocol',
+        'ping'
     ]
     # Fallback if client requests a column index out of range
     if orderby_col < 0 or orderby_col >= len(column_name):
@@ -287,7 +313,7 @@ def api_read_agents(request):
     with connections['default'].cursor() as cur:
         query = '''
             SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
-                   {is_auto}, {protocol},
+                   {is_auto}, {protocol}, {ping},
                    {config}, {v2config},
                    {username}, {password}
             FROM titan.tbl_agent3
@@ -297,6 +323,7 @@ def api_read_agents(request):
         '''.format(
             is_auto=sel('is_auto'),
             protocol=sel('protocol'),
+            ping=sel('ping'),
             config=sel('config'),
             v2config=sel('v2config'),
             username=sel('username'),
@@ -309,6 +336,48 @@ def api_read_agents(request):
         )
         cur.execute(query)
         rows = dictfetchall(cur)
+
+    # helper: measure ping (max of 3, in ms), -1 if unreachable
+    def measure_ping(ip):
+        if not ip:
+            return -1
+        max_ms = -1
+        for _ in range(3):
+            try:
+                # Linux: -c count, -W timeout (seconds)
+                proc = subprocess.run(['ping', '-c', '1', '-W', '1', ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2)
+                out = proc.stdout.decode('utf-8', errors='ignore')
+                # parse 'time=XX ms'
+                m = re.search(r'time[=<>]([^ ]+)\s*ms', out)
+                if m:
+                    val = m.group(1)
+                    try:
+                        ms = float(val)
+                        if ms > max_ms:
+                            max_ms = ms
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        return int(max_ms) if max_ms >= 0 else -1
+
+    # compute ping and update DB if column exists
+    has_ping_col = 'ping' in cols
+    if rows:
+        with connections['default'].cursor() as cur:
+            for r in rows:
+                ip = r.get('hostip') or r.get('hostdomain')
+                p = r.get('ping')
+                if p in (None, '', '0', 0, -1):
+                    measured = measure_ping(r.get('hostip'))
+                else:
+                    measured = int(p) if str(p).isdigit() else measure_ping(r.get('hostip'))
+                r['ping'] = measured
+                if has_ping_col:
+                    try:
+                        cur.execute('UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s', [measured, r['id']])
+                    except Exception:
+                        pass
 
     return JsonResponse({
         'recordsTotal': total,
@@ -912,7 +981,9 @@ def api_read_reward(request):
         'ty.username',
         'tr.reward_days',
         'tr.type',
-        'tr.register_date'
+        'protocol',
+        'ping'
+        'ping'
     ]
 
     # 데이터테이블즈 - 카운팅 쿼리
@@ -950,18 +1021,19 @@ def api_read_reward(request):
         cur.execute(query)
         rows = dictfetchall(cur)
 
-    ret = {
-        "recordsTotal": total,
-        "recordsFiltered": total,
-        "draw": draw,
-        "data": rows
-    }
-    return JsonResponse(ret)
-
-
-# 실시간 사용자 API
+        query = '''
+            SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
+                   {is_auto}, {protocol}, {ping},
+                   {config}, {v2config},
+                   {username}, {password}
+            FROM titan.tbl_agent3
+            {wc}
+            ORDER BY {orderby_col} {orderby_opt}
+            LIMIT {start}, {length}
+        '''.format(
 def api_realtime_user(request):
     with connections['default'].cursor() as cur:
+            ping=sel('ping'),
         query = '''
             SELECT acctsessionid    AS sessionid,  
                 acctuniqueid, 
@@ -1061,11 +1133,11 @@ def api_use_traffic(request):
         rows = cur.fetchall()
         
         if len(rows) == 0 :
-            total = 0
-        else :
-            total = rows[0][0]
-        
-
+            query = '''
+                SELECT id, name, hostdomain, hostip, telecom, is_active, is_status,
+                       {is_auto}, {protocol}, {ping},
+                       {config}, {v2config},
+                       {username}, {password}
     # 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
@@ -1073,6 +1145,7 @@ def api_use_traffic(request):
                     sum(acctoutputoctets)/1e+9 as acctoutputoctets,
                     sum(acctinputoctets)/1e+9 as acctinputoctets
             FROM radius.radacct 
+                ping=sel('ping'),
             where acctstarttime like  "{year}-{month}-{day}%" 
             group by username
             order by acctoutputoctets desc
@@ -1085,6 +1158,20 @@ def api_use_traffic(request):
         rows = dictfetchall(cur)
 
     returnData = {
+
+        # Fill ping if missing or null; optionally persist when column exists
+        for r in rows:
+            val = r.get('ping') if 'ping' in r else None
+            if val in [None, '', 0, '0']:
+                host = r.get('hostip') or r.get('hostdomain')
+                ms = _ping_max_ms(host)
+                r['ping'] = ms if ms is not None else ''
+                if ms is not None and 'ping' in cols:
+                    try:
+                        with connections['default'].cursor() as ucur:
+                            ucur.execute('UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s', [ms, r.get('id')])
+                    except Exception:
+                        pass
         "recordsTotal": total,
         "recordsFiltered": total,
         "draw": draw,

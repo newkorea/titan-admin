@@ -46,11 +46,12 @@ var serverDT = $('#server-table').DataTable({
     { data: 'is_status' },
     { data: 'is_auto' },
     { data: 'protocol' },
+    { data: 'ping', defaultContent: '' },
     { data: null }
   ],
   columnDefs: [
     {
-      targets: 9,
+      targets: 10,
       orderable: false,
       render: function (_, __, row) {
         var payload = encodeURIComponent(JSON.stringify(row));
