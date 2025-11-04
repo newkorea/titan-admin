@@ -17,6 +17,43 @@
   </div>
   </div>
 
+  <!-- PING < 0 서버 목록 -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><b>네트워크 점검 필요: PING < 0 서버</b></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th style="width: 90px;">ID</th>
+                <th>이름</th>
+                <th>도메인</th>
+                <th>IP</th>
+                <th style="width: 100px;">통신사</th>
+                <th style="width: 90px;">PING</th>
+              </tr>
+            </thead>
+            <tbody>
+              % for r in bad_ping_agents or []:
+              <tr>
+                <td>${r['id']}</td>
+                <td>${r.get('name','')}</td>
+                <td>${r.get('hostdomain','')}</td>
+                <td>${r.get('hostip','')}</td>
+                <td>${r.get('telecom','')}</td>
+                <td><span class="badge badge-danger">${r.get('ping','')}</span></td>
+              </tr>
+              % endfor
+              % if not bad_ping_agents:
+              <tr><td colspan="6" class="text-center">모든 서버가 정상 응답 중입니다</td></tr>
+              % endif
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 <!-- 결제 요약 섹션 제거 (요구사항에 따라 비활성화) -->
 
 <!-- 최근 24시간 Top 10 통계 -->

@@ -73,4 +73,26 @@ def dashboard(request):
         )
         context['top_force_24h'] = _dictfetchall(cur)
 
+    # PING < 0 (unreachable) NAS 목록
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute("SHOW COLUMNS FROM titan.tbl_agent3")
+            cols = {r[0] for r in cur.fetchall()}
+        if 'ping' in cols:
+            with connections['default'].cursor() as cur:
+                cur.execute(
+                    '''
+                    SELECT id, name, hostdomain, hostip, telecom, ping
+                    FROM titan.tbl_agent3
+                    WHERE ping < 0
+                    ORDER BY ping ASC, id DESC
+                    LIMIT 50
+                    '''
+                )
+                context['bad_ping_agents'] = _dictfetchall(cur)
+        else:
+            context['bad_ping_agents'] = []
+    except Exception:
+        context['bad_ping_agents'] = []
+
     return render(request, 'admin/dashboard.html', context)
