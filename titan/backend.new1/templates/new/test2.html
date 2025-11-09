@@ -1,0 +1,58 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<style>
+  .test {
+    margin-top: 65px;
+    border: solid 3px red;
+  }
+</style>
+</%block>
+
+<%block name="content">
+<div class="test">
+  <h1>EximBay Sample</h1>
+  <form id="eximbay" name="regForm" method="post" action="https://secureapi.test.eximbay.com/Gateway/BasicProcessor.krp">
+    fgkey<input type="text" name="fgkey" value="${fgkey}"/><br>
+    amt<input type="text" name="amt" value="7"/><br>
+    paymethod<input type="text" name="paymethod" value="P141"/><br>
+    buyer<input type="text" name="buyer" value="Buyer"/><br>
+    cur<input type="text" name="cur" value="USD"/><br>
+    displaytype<input type="text" name="displaytype" value="P"/><br>
+    email<input type="text" name="email" value="email@email.com"/><br>
+    item_0_product<input type="text" name="item_0_product" value="product"/><br>
+    item_0_quantity<input type="text" name="item_0_quantity" value="1"/><br>
+    item_0_unitPrice<input type="text" name="item_0_unitPrice" value="1.25"/><br>
+    lang<input type="text" name="lang" value="KR"/><br>
+    mid<input type="text" name="mid" value="1849705C64"/><br>
+
+    param1<input type="text" name="param1" value="1_1"/><br>
+    param2<input type="text" name="param2" value="TITAN NETWORKS 세션1 (1개월)"/><br>
+    param3<input type="text" name="param3" value="228"/><br>
+
+    ref<input type="text" name="ref" value="demo20170418202020"/><br>
+    returnurl<input type="text" name="returnurl" value="http://localhost:8000/eximbay_return"/><br>
+    shipTo_city<input type="text" name="shipTo_city" value="Mountain View"/><br>
+    shipTo_country<input type="text" name="shipTo_country" value="US"/><br>
+    shipTo_firstName<input type="text" name="shipTo_firstName" value="First Name"/><br>
+    shipTo_lastName<input type="text" name="shipTo_lastName" value="Last Name"/><br>
+    shipTo_phoneNumber<input type="text" name="shipTo_phoneNumber" value="1234"/><br>
+    shipTo_postalCode<input type="text" name="shipTo_postalCode" value="94043"/><br>
+    shipTo_state<input type="text" name="shipTo_state" value="CA"/><br>
+    shipTo_street1<input type="text" name="shipTo_street1" value="100 Elm Street"/><br>
+    statusurl<input type="text" name="statusurl" value="http://localhost:8000/eximbay_callback"/><br>
+    txntype<input type="text" name="txntype" value="PAYMENT"/><br>
+    ver<input type="text" name="ver" value="230"/><br>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+  $( document ).ready(function() {
+    $("#eximbay").submit();
+  });
+</script>
+</%block>

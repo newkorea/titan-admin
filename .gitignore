@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+.venv310/
+.venv38/
+venv/
+venv.lowversion/
+
+# System files
+.DS_Store
+
+# Logs and runtime artifacts
+logs/
+*.log
+/tmp/
+*.pid
+
+# Compiled templates
+mako_modules/
+
+# Misc
+*.swp
+.idea/
+.vscode/

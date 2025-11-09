@@ -1,0 +1,20 @@
+[Unit]
+Description=Titan uWSGI Service
+After=network.target
+
+[Service]
+User=newkorea
+Group=www-data
+ExecStartPre=/bin/bash -lc 'mkdir -p /home/newkorea/project/titan/logs && chown -R newkorea:www-data /home/newkorea/project/titan/logs'
+Environment=PATH=/home/newkorea/project/titan/.venv310/bin:/usr/bin
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/home/newkorea/project/titan/.venv310/bin/uwsgi --ini /home/newkorea/project/titan/titan.new.ini --need-app
+StandardOutput=append:/home/newkorea/project/titan/logs/systemd-uwsgi.out
+StandardError=append:/home/newkorea/project/titan/logs/systemd-uwsgi.err
+LimitNOFILE=65535
+Restart=always
+KillSignal=SIGQUIT
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

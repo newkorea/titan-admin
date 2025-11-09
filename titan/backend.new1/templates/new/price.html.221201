@@ -1,0 +1,849 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('Payment')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--customer review section start-->
+    <section class="customer-review-section gray-light-bg ptb-50">
+        <div class="container">
+
+            <div class="payment-tip">
+                <div>
+                  * ${_('Concurrent Access means the number of devices available to log in at the same time')}
+                </div>
+                <div>
+                  * ${_('The service expiration date is applied as of the payment date and time')}
+                </div>
+                <div>
+                  * ${_('You can only get a refund before the first 7 days')}
+                </div>
+                <div>
+                  * ${_('You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module')}
+                </div>
+                <div>
+                  % if LANGUAGE_CODE == 'zh':
+                    * 付款时贵方视为同意<a href="/policy/service" target="_blank">用户条款</a>
+                  % elif LANGUAGE_CODE == 'en':
+                    * At payment, you accept <a href="/policy/service" target="_blank">the terms and conditions of the users</a>
+                  % else:
+                    * 결제 시 귀하는 <a href="/policy/service" target="_blank">이용자 약관</a>과 <a href="/policy/refund" target="_blank">환불 정책</a>에 동의한 것으로 간주합니다
+                  % endif
+                </div>
+            </div>
+
+            <span class="badge badge-success badge-pill mb-8">Step1. ${_('Select a product')}</span>
+
+            <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="1+1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one1.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  1 ${_('Month')} ${_('concurrent access')} (1${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">8,300 ￦</span>
+                                  <span class="p-bad p-bad-222">7 $</span>
+                                  <span class="p-bad p-bad-222">49 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="2+1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one6.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  2 ${_('Month')} ${_('concurrent access')} (1${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">16,600 ￦</span>
+                                  <span class="p-bad p-bad-222">14 $</span>
+                                  <span class="p-bad p-bad-222">98 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="3+1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one12.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  3 ${_('Month')} ${_('concurrent access')} (1${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">24,900 ￦</span>
+                                  <span class="p-bad p-bad-222">21 $</span>
+                                  <span class="p-bad p-bad-222">147 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="6+1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one1.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  6 ${_('Month')} ${_('concurrent access')} (1${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">47,000 ￦</span>
+                                  <span class="p-bad p-bad-222">40 $</span>
+                                  <span class="p-bad p-bad-222">280 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="12+1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one6.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  12 ${_('Month')} ${_('concurrent access')} (1${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">83,000 ￦</span>
+                                  <span class="p-bad p-bad-222">70 $</span>
+                                  <span class="p-bad p-bad-222">490 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="1+2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/two1.png" alt="client" class="img-fluid rounded-circle" style="margin-top: 20px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  1 ${_('Month')} ${_('concurrent access')} (2${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">14,000 ￦</span>
+                                  <span class="p-bad p-bad-222">12 $</span>
+                                  <span class="p-bad p-bad-222">85 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="2+2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/two6.png" alt="client" class="img-fluid rounded-circle" style="height: 60px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  2 ${_('Month')} ${_('concurrent access')} (2${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">28,000 ￦</span>
+                                  <span class="p-bad p-bad-222">24 $</span>
+                                  <span class="p-bad p-bad-222">170 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="3+2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/two12.png" alt="client" class="img-fluid rounded-circle" style="height: 60px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  3 ${_('Month')} ${_('concurrent access')} (2${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">42,000 ￦</span>
+                                  <span class="p-bad p-bad-222">36 $</span>
+                                  <span class="p-bad p-bad-222">255 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="6+2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/two1.png" alt="client" class="img-fluid rounded-circle" style="height: 60px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  6 ${_('Month')} ${_('concurrent access')} (2${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">69,000 ￦</span>
+                                  <span class="p-bad p-bad-222">58 $</span>
+                                  <span class="p-bad p-bad-222">399 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="12+2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/two6.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  12 ${_('Month')} ${_('concurrent access')} (2${_('personnel')})
+                                </h5>
+                                <h5 class="mb-0" style="margin-top: 8px;">
+                                  <span class="p-bad p-bad-222">125,000 ￦</span>
+                                  <span class="p-bad p-bad-222">105 $</span>
+                                  <span class="p-bad p-bad-222">720 ¥</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <span class="badge badge-success badge-pill mb-8">Step2. ${_('Select payment method')}</span>
+
+            <div class="row" style="margin-top: 10px;">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="PLCreditCardMpi">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/bank.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('CreditCard')}
+                                  <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="PLUnionPay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/unionpay.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('UnionPay')}
+                                <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="WECHAT_IV">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/wechat.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('WechatPay')}
+                                <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                <span class="p-bad p-bad-sea">${_('Payment request')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="sendmoney">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/wallet.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('Bank Transfer')}
+                                  <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                  <span class="p-bad p-bad-sea">${_('Payment request')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="creditcard">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/bank.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('CreditCard')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="banktransfer">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/institution.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('Online Banking')}
+                                  <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <!--
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="toss">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/toss.png" alt="client" class="img-fluid rounded-circle" style="margin-top: 20px;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('Toss')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>-->
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="kakaopay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/kakao.png" alt="client" class="img-fluid" style="margin-top: 16px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('KakaoPay')}
+                                  <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="ssgpay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/ssgpay.png" alt="client" class="img-fluid" style="border-radius: 50%;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                SSG페이
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="payco">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/payco.png" alt="client" class="img-fluid" style="margin-top: 24px;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('PAYCO')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="virtualaccount">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/virtual.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                가상계좌
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<!--
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="virtualaccount">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/virtual.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                가상계좌
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+-->
+            <div>
+                <button onclick="payment()" class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                    ${_('Purchase')}
+                </button>
+            </div>
+
+
+        </div>
+    </section>
+
+    <form id="eximbay" name="regForm" method="post" action="#" style="display: none;">
+      fgkey<input id="fgkey" type="text" name="fgkey" value=""/><br>
+      amt<input id="amt" type="text" name="amt" value=""/><br>
+      paymethod<input id="paymethod" type="text" name="paymethod" value=""/><br>
+      buyer<input id="buyer" type="text" name="buyer" value=""/><br>
+      cur<input id="cur" type="text" name="cur" value=""/><br>
+      displaytype<input id="displaytype" type="text" name="displaytype" value=""/><br>
+      email<input id="email" type="text" name="email" value=""/><br>
+      item_0_product<input id="item_0_product" type="text" name="item_0_product" value=""/><br>
+      item_0_quantity<input id="item_0_quantity" type="text" name="item_0_quantity" value=""/><br>
+      item_0_unitPrice<input id="item_0_unitPrice" type="text" name="item_0_unitPrice" value=""/><br>
+      lang<input id="lang" type="text" name="lang" value=""/><br>
+      mid<input id="mid" type="text" name="mid" value=""/><br>
+      param1<input id="param1" type="text" name="param1" value=""/><br>
+      param2<input id="param2" type="text" name="param2" value=""/><br>
+      ref<input id="ref" type="text" name="ref" value=""/><br>
+      returnurl<input id="returnurl" type="text" name="returnurl" value=""/><br>
+      shipTo_city<input id="shipTo_city" type="text" name="shipTo_city" value=""/><br>
+      shipTo_country<input id="shipTo_country" type="text" name="shipTo_country" value=""/><br>
+      shipTo_firstName<input id="shipTo_firstName" type="text" name="shipTo_firstName" value=""/><br>
+      shipTo_lastName<input id="shipTo_lastName" type="text" name="shipTo_lastName" value=""/><br>
+      shipTo_phoneNumber<input id="shipTo_phoneNumber" type="text" name="shipTo_phoneNumber" value=""/><br>
+      shipTo_postalCode<input id="shipTo_postalCode" type="text" name="shipTo_postalCode" value=""/><br>
+      shipTo_state<input id="shipTo_state" type="text" name="shipTo_state" value=""/><br>
+      shipTo_street1<input id="shipTo_street1" type="text" name="shipTo_street1" value=""/><br>
+      statusurl<input id="statusurl" type="text" name="statusurl" value=""/><br>
+      txntype<input id="txntype" type="text" name="txntype" value=""/><br>
+      ver<input id="ver" type="text" name="ver" value="230"/><br>
+      <button type="submit">Submit</button>
+    </form>
+    <!--customer review section end-->
+
+</div>
+
+<!-- 결제 상태 관리 -->
+<div>
+  <input id="state_pgcode" type="text" hidden>
+  <input id="state_month_type" type="text" hidden>
+  <input id="state_session" type="text" hidden>
+</div>
+
+<!-- 무통장입금 관리 -->
+<div>
+  <input id="person_name" type="text" value="${person_name}" hidden>
+  <input id="bank_name" type="text" value="${bank_name}" hidden>
+  <input id="bank_number" type="text" value="${bank_number}" hidden>
+</div>
+
+<!-- 페이레터 해외 -->
+<div>
+  <form id="full_url" action="#" method="post" style='display: none'>
+    <input hidden type="text" id="storeid" name="storeid"><br>
+    <input hidden type="text" id="currency" name="currency"><br>
+    <input hidden type="text" id="storeorderno" name="storeorderno"><br>
+    <input hidden type="text" id="payamt" name="payamt"><br>
+    <input hidden type="text" id="payerid" name="payerid"><br>
+    <input hidden type="text" id="payeremail" name="payeremail"><br>
+    <input hidden type="text" id="servicename" name="servicename"><br>
+    <input hidden type="text" id="returnurl" name="returnurl"><br>
+    <input hidden type="text" id="backurl" name="backurl"><br>
+    <input hidden type="text" id="custom" name="custom"><br>
+    <input hidden type="text" id="pginfo" name="pginfo"><br>
+    <input hidden type="text" id="recurringtype" name="recurringtype"><br>
+    <input hidden type="text" id="timestamp" name="timestamp"><br>
+    <input hidden type="text" id="hash" name="hash"><br>
+    <input hidden type="submit" value="Submit">
+  </form>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+$( document ).ready(function() {
+    $( ".hackx" ).click(function(e) {
+        $(".hackx").removeClass("hackx-pick");
+        $(this).addClass("hackx-pick");
+        var product = $(this).attr('id');
+        var product = product.split('+');
+        var month_type = product[0];
+        var session = product[1];
+        $('#state_month_type').val(month_type);
+        $('#state_session').val(session);
+    });
+
+    $( ".hacky" ).click(function(e) {
+        $(".hacky").removeClass("hacky-pick");
+        $(this).addClass("hacky-pick");
+        var pgcode = $(this).attr('id');
+        $('#state_pgcode').val(pgcode);
+    });
+});
+
+
+function payment() {
+    var pgcode = $('#state_pgcode').val();
+    var month_type = $('#state_month_type').val();
+    var session = $('#state_session').val();
+
+    console.log('pgcode -> ', pgcode);
+    console.log('month_type -> ', month_type);
+    console.log('session -> ', session);
+
+    // null 유효성 처리
+    if (pgcode == '' || pgcode == null) {
+        Swal.fire({
+            type: 'error',
+            title: '알림',
+            text: '결제방식을 선택하십시오',
+            confirmButtonColor: swalColor('error'),
+        }).then(function(result) { /* pass */ })
+        return false;
+    } else if (month_type == '' || month_type == null) {
+        Swal.fire({
+            type: 'error',
+            title: '알림',
+            text: '상품을 선택하십시오',
+            confirmButtonColor: swalColor('error'),
+        }).then(function(result) { /* pass */ })
+        return false;
+    } else if (session == '' || session == null) {
+        Swal.fire({
+            type: 'error',
+            title: '알림',
+            text: '상품을 선택하십시오',
+            confirmButtonColor: swalColor('error'),
+        }).then(function(result) { /* pass */ })
+        return false;
+    }
+
+    // 결제방식에 따른 분기 처리
+    if (pgcode == 'PLCreditCard' || pgcode == 'PLUnionPay' || pgcode == 'PLCreditCardMpi' || pgcode == 'PaypalExpressCheckout') { // 페이레터 해외
+        payletter_global(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'WECHAT') { // 엑심베이 (위쳇페이)
+        eximbay(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'ALIPAY') { // 엑심베이 (알리페이)
+        eximbay(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'WECHAT_deprecated') { // 페이박스 (계약만료)
+        // paybox(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'WECHAT_IV') { // 수동
+        titan_wechat(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'sendmoney') { // 수동
+        titan_bank(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'creditcard' || pgcode == 'banktransfer' || pgcode == 'toss' || pgcode == 'kakaopay' || pgcode == 'payco' || pgcode == 'virtualaccount' || pgcode == 'mobile' || pgcode == 'ssgpay') { // 페이레터 국내
+        payletter_korea(pgcode, month_type, session);
+        return false;
+    } else {
+        Swal.fire({
+            type: 'error',
+            title: '알림',
+            text: '알수 없는 결제방식 입니다. 관리자에게 문의하십시오',
+            confirmButtonColor: swalColor('error'),
+        }).then(function(result) { /* pass */ })
+    }
+}
+
+
+function payletter_global(pgcode, month_type, session) {
+    $.post("/api_make_globalpayletter", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            var data = data.result;
+            console.log('data : ', data);
+            console.log('data.backurl : ', data.backurl);
+            $('#storeid').val(data.storeid);
+            $('#currency').val(data.currency);
+            $('#storeorderno').val(data.storeorderno);
+            $('#payamt').val(data.payamt);
+            $('#payerid').val(data.payerid);
+            $('#payeremail').val(data.payeremail);
+            $('#servicename').val(data.servicename);
+            $('#returnurl').val(data.returnurl);
+            $('#backurl').val(data.backurl);
+            $('#custom').val(data.custom);
+            $('#pginfo').val(data.pginfo);
+            $('#recurringtype').val(data.recurringtype);
+            $('#timestamp').val(data.timestamp);
+            $('#hash').val(data.hash);
+            $('#full_url').attr('action', data.full_url);
+            $("#full_url").submit();
+        }
+    });
+}
+
+function payletter_korea(pgcode, month_type, session) {
+    $.post("/api_make_payletter", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            window.open(data.result, 'TITAN NETWORKS', 'width=450, height=550');
+        }
+    });
+}
+
+
+function eximbay(pgcode, month_type, session) {
+    $.post("/api_make_eximbay", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            console.log(data);
+            $('#fgkey').val(data.fgkey);
+            $('#ver').val(data.ver);
+            $('#mid').val(data.mid);
+            $('#txntype').val(data.txntype);
+            $('#ref').val(data.ref);
+            $('#cur').val(data.cur);
+            $('#amt').val(data.amt);
+            $('#paymethod').val(data.paymethod);
+            $('#buyer').val(data.buyer);
+            $('#email').val(data.email);
+            $('#lang').val(data.lang);
+            $('#returnurl').val(data.returnurl);
+            $('#statusurl').val(data.statusurl);
+            $('#param1').val(data.param1);
+            $('#param2').val(data.param2);
+            $('#item_0_product').val(data.item_0_product);
+            $('#item_0_quantity').val(data.item_0_quantity);
+            $('#item_0_unitPrice').val(data.item_0_unitPrice);
+            $('#shipTo_city').val(data.shipTo_city);
+            $('#shipTo_country').val(data.shipTo_country);
+            $('#shipTo_firstName').val(data.shipTo_firstName);
+            $('#shipTo_lastName').val(data.shipTo_lastName);
+            $('#shipTo_phoneNumber').val(data.shipTo_phoneNumber);
+            $('#shipTo_postalCode').val(data.shipTo_postalCode);
+            $('#shipTo_state').val(data.shipTo_state);
+            $('#shipTo_street1').val(data.shipTo_street1);
+            $('#displaytype').val(data.displaytype);
+            $('#eximbay').attr('action', data.url);
+            $("#eximbay").submit();
+        }
+    });
+}
+
+
+function paybox(pgcode, month_type, session) {
+    $.post("/api_make_paybox", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            window.location.href = data.result;
+        }
+    });
+}
+
+
+function titan_wechat(pgcode, month_type, session) {
+    // 금액 하드코딩
+    //if (month_type == '1' && session == '1') {var  srcaddress = "/static/new/img/payment_core/qr.png"; }
+    //if (month_type == '6' && session == '1') {var  srcaddress = "/static/new/img/payment_core/qr_old.png"; }
+    //if (month_type == '12' && session == '1') {var  srcaddress = "/static/new/img/payment_core/qr.png"; }
+    //if (month_type == '1' && session == '2') {var  srcaddress = "/static/new/img/payment_core/qr.png"; }
+    //if (month_type == '6' && session == '2') {var  srcaddress = "/static/new/img/payment_core/qr.png"; }
+    //if (month_type == '12' && session == '2') {var srcaddress = "/static/new/img/payment_core/qr.png"; }
+    var srcaddress = "/static/new/img/payment_core/qr.png"
+
+    $.post("/api_plz_payment", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+        type: 'W',
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+          // 이중결제 시도 시 새로고침
+          window.location.reload();
+        }
+    });
+    Swal.fire({
+        html:
+        '<div style="font-weight: bold">QR CODE</div>'+
+        '<img style="width: 300px; height: 300px;" src='+srcaddress+'>'+
+        '<div style="margin-top: 15px; font-size: 15px;">위 QR CODE에 입금 시 관리자가 확인 후 결제처리합니다</div>'+
+        '<div style="font-size: 15px;">결제처리가 늦을 시 관리자에게 문의 부탁드립니다</div>',
+        showCancelButton: false,
+        showConfirmButton: true,
+        confirmButtonColor: '#8a4cf7',
+        cancelButtonColor: '#cccccc',
+        confirmButtonText: '확인',
+        cancelButtonText: '닫기',
+        reverseButtons: true,
+        allowOutsideClick: false,
+    }).then(function(result) {
+        if (result.value) { /* pass */ }
+    })
+}
+
+
+function titan_bank(pgcode, month_type, session) {
+    // 금액 하드코딩
+    if (month_type == '1' && session == '1') { var price = '8,300'; }
+    if (month_type == '2' && session == '1') { var price = '16,600'; }
+    if (month_type == '3' && session == '1') { var price = '24,900'; }
+    if (month_type == '6' && session == '1') { var price = '47,000'; }
+    if (month_type == '12' && session == '1') { var price = '83,000'; }
+    if (month_type == '1' && session == '2') { var price = '14,000'; }
+    if (month_type == '2' && session == '2') { var price = '28,000'; }
+    if (month_type == '3' && session == '2') { var price = '42,000'; }
+    if (month_type == '6' && session == '2') { var price = '69,000'; }
+    if (month_type == '12' && session == '2') { var price = '125,000'; }
+
+    $.post("/api_plz_payment", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+        type: 'M',
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        }
+    });
+    var person_name = $('#person_name').val();
+    var bank_name = $('#bank_name').val();
+    var bank_number = $('#bank_number').val();
+    Swal.fire({
+        html:
+        '<div>입금주</div>'+
+        '<div style="font-weight: bold;">'+person_name+'</div>'+
+        '<div style="margin-top: 14px;">은행</div>'+
+        '<div style="font-weight: bold;">'+bank_name+'</div>'+
+        '<div style="margin-top: 14px;">계좌번호</div>'+
+        '<div style="font-weight: bold;">'+bank_number+'</div>'+
+        '<div style="margin-top: 14px;">금액</div>'+
+        '<div style="font-weight: bold; font-size: 30px;">'+price+'</div>'+
+        '<div style="margin-top: 15px; font-size: 15px;">위 계좌에 입금 시 관리자가 확인 후 결제처리합니다</div>'+
+        '<div style="font-size: 15px;">결제처리가 늦을 시 관리자에게 문의 부탁드립니다</div>',
+        showCancelButton: false,
+        showConfirmButton: true,
+        confirmButtonColor: '#8a4cf7',
+        cancelButtonColor: '#cccccc',
+        confirmButtonText: '확인',
+        cancelButtonText: '닫기',
+        reverseButtons: true,
+        allowOutsideClick: false,
+    }).then(function(result) {
+        if (result.value) { /* pass */ }
+    })
+}
+</script>
+</%block>

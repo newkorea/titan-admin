@@ -1,0 +1,32 @@
+server {
+
+    listen 80 default;
+    server_name aws1.titanvpn.io;
+
+    access_log /var/log/nginx/titan_access.log;
+    error_log /var/log/nginx/titan_error.log;
+
+    if ($http_x_forwarded_proto = 'http'){
+        return 301 https://$host$request_uri;
+    }
+
+    location / {
+        uwsgi_pass unix:///tmp/titan.sock;
+        include uwsgi_params;
+    }
+
+    location /static/ {
+        alias /home/ubuntu/project/titan/backend/static/;
+        expires -1;
+    }
+
+    location /upload/download/ {
+        alias /home/ubuntu/project/titan-admin/upload/download/;
+        expires -1;
+    }
+
+    # error_page  403 404 405 406 411 497 500 501 502 503 504 505 /error.html;
+    # location = /error.html {
+    #     root /usr/share/nginx/html;
+    # }
+}

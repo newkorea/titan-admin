@@ -1,0 +1,239 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section full-screen gray-light-bg">
+        <div class="container-fluid">
+            <div class="row align-items-center justify-content-center">
+
+                <div class="col-12 col-md-7 col-lg-6 col-xl-8 d-none d-lg-block">
+
+                    <!-- Image -->
+                    <div class="bg-cover vh-100 ml-n3 background-img" style="background-image: url(/static/new/img/hero-bg-2.jpg);">
+                        <div class="position-absolute login-signup-content">
+                            <div class="position-relative text-white col-md-12 col-lg-7">
+                                <h2 class="text-white">${_('Sign up')}</h2>
+                                <p class="lead" style="font-weight: 500;">
+                                   ${_('You will be free to use TITAN VPN after you sign up')}<br>
+                                   ${_('You will be receive authentication e-mail for identify confirmation')}<br>
+								   ${_('We closely collaborate with police forces across various countries and regions to prevent cyber crime')}<br>
+                                   <img src="/static/new/img/policelog.png" alt="Policy Logo" class="img-fluid mt-3">
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-12 col-md-5 col-lg-6 col-xl-4 px-lg-6 my-5">
+                    <div class="login-signup-wrap px-4 px-lg-5 my-5">
+                        <!-- Heading -->
+                        <h1 class="text-center mb-1">
+                            ${_('Sign up')}
+                        </h1>
+
+                        <!-- Form -->
+                        <form class="login-signup-form" action="javascript:void(0);">
+                            <div class="form-group">
+                                <!-- Label -->
+                                <label class="pb-1">
+                                    ${_('Email')}
+                                </label>
+                                <!-- Input group -->
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-email color-primary"></span>
+                                    </div>
+                                    <input id="regist_email" type="text" class="form-control" placeholder="hello@example.com">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <!-- Label -->
+                                <label class="pb-1">
+                                    ${_('Name')}
+                                </label>
+                                <!-- Input group -->
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-user color-primary"></span>
+                                    </div>
+                                    <input id="regist_username" type="text" class="form-control" placeholder="${_('Enter your name')}">
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="form-group">
+                                <!-- Label -->
+                                <label class="pb-1">
+                                    ${_('Password')}
+                                </label>
+                                <!-- Input group -->
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-lock color-primary"></span>
+                                    </div>
+                                    <input id="regist_password" type="password" class="form-control" placeholder="${_('Enter the password')}">
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="form-group">
+                                <!-- Label -->
+                                <label class="pb-1">
+                                    ${_('Confirm password')}
+                                </label>
+                                <!-- Input group -->
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-lock color-primary"></span>
+                                    </div>
+                                    <input id="regist_password_re" type="password" class="form-control" placeholder="${_('Re-enter password')}">
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="form-group">
+                                <!-- Label -->
+                                <label class="pb-1">
+                                    ${_('Referrer code (optional)')}
+                                </label>
+                                <!-- Input group -->
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-user color-primary"></span>
+                                    </div>
+                                    <input id="regist_rec" type="text" class="form-control" placeholder="${_('Enter the referrer code')}" value="${code}">
+                                </div>
+                            </div>
+
+                            <div class="form-check d-flex align-items-center text-center">
+                                <input type="checkbox" class="form-check-input mt-0 mr-3" id="regist_check1">
+                                <label class="form-check-label small" for="exampleCheck1">
+                                  % if LANGUAGE_CODE == 'zh':
+                                    同意<a href="/policy/service" target="_blank">服务利用条款吗</a>
+                                  % elif LANGUAGE_CODE == 'en':
+                                    Do you agree to <a href="/policy/service" target="_blank">the terms of service</a>?
+                                  % else:
+                                    <a href="/policy/service" target="_blank">서비스이용약관</a>에 동의하십니까?
+                                  % endif
+                                </label>
+                            </div>
+                            <div class="form-check d-flex align-items-center text-center">
+                                <input type="checkbox" class="form-check-input mt-0 mr-3" id="regist_check2">
+                                <label class="form-check-label small" for="exampleCheck1">
+                                  % if LANGUAGE_CODE == 'zh':
+                                    同意<a href="/policy/privacy" target="_blank">隐私权政策吗</a>
+                                  % elif LANGUAGE_CODE == 'en':
+                                    Do you agree to <a href="/policy/privacy" target="_blank">the privacy policy</a>?
+                                  % else:
+                                    <a href="/policy/privacy" target="_blank">개인정보보호정책</a>에 동의하십니까?
+                                  % endif
+                                </label>
+                            </div>
+
+                            <!-- Submit -->
+                            <button id="btn_signup" onclick="signup()" class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                ${_('Sign up')}
+                            </button>
+                            <div id="send_email_txt" class="animated infinite pulse delay-1s send-email">
+                                ${_('Sending Email...')}
+                            </div>
+
+                            <!-- Link -->
+                            <div class="text-center">
+                                <small class="text-muted text-center">
+                                    ${_('Do you have already an account?')} <a href="/login">${_('Sign in')}</a>
+                                </small>
+
+                            </div>
+							 <img src="/static/new/img/policelog.png" alt="Policy Logo" class="img-fluid mt-3">
+						<a href="https://ecrm.police.go.kr/minwon/main" target="_blank">${_('We closely collaborate with police forces across various countries and regions to prevent cyber crime')}<br></a>
+					
+                    
+                        </form>
+                    </div>
+                </div>
+            </div> <!-- / .row -->
+        </div>
+    </section>
+    <!--hero section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script>
+function isValidEmail(email) {
+    // 이메일 주소의 유효성을 검사하는 정규표현식
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function signup() {
+    var regist_email = $('#regist_email').val();
+    var regist_username = $('#regist_username').val();
+    var regist_password = $('#regist_password').val();
+    var regist_password_re = $('#regist_password_re').val();
+    var regist_rec = $('#regist_rec').val();
+    var regist_check1 = $('#regist_check1').is(":checked");
+    var regist_check2 = $('#regist_check2').is(":checked");
+
+    // 이메일 주소의 유효성을 확인
+    if (!isValidEmail(regist_email)) {
+        // 유효하지 않은 이메일 주소일 경우 사용자에게 알림
+        Swal.fire({
+            type: 'error',
+            title: 'Invalid Email Address',
+            text: 'Please enter a valid email address. 정확한 이메일형식으로 넣어주세요.',
+            confirmButtonColor: swalColor('error')
+        });
+        return;
+    }
+
+      // 버튼 이중클릭 방지 로직
+    $('#btn_signup').hide();
+    $('#send_email_txt').show();
+
+
+    $.post( "/api_login_signup", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        regist_email: regist_email,
+        regist_username: regist_username,
+        regist_password: regist_password,
+        regist_password_re: regist_password_re,
+        regist_rec: regist_rec,
+        regist_check1: regist_check1,
+        regist_check2: regist_check2
+    }).done(function( data ) {
+        $('#btn_signup').show();
+        $('#send_email_txt').hide();
+        if(data.result == 200){
+            Swal.fire({
+                type: 'success',
+                title: data.title,
+                text: data.text,
+                confirmButtonColor: swalColor('success'),
+            }).then(function(result) {
+                window.location.href = "/login";
+            })
+        }
+        else{
+            Swal.fire({
+                type: 'error',
+                title: data.title,
+                text: data.text,
+                confirmButtonColor: swalColor('error'),
+            }).then(function(result) { /* pass */ })
+        }
+    });
+}
+</script>
+</%block>

@@ -1,0 +1,34 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="title">API 결제 승인 로그</%block>
+
+<%block name="content">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>요청시각</th>
+        <th>결제유형</th>
+        <th>금액</th>
+        <th>결제시각</th>
+        <th>IP</th>
+        <th>상태</th>
+        <th>결과</th>
+      </tr>
+    </thead>
+    <tbody>
+      % for log in logs:
+        <tr>
+          <td>${log.id}</td>
+          <td>${log.request_time}</td>
+          <td>${log.payment_type}</td>
+          <td>${log.payment_amount}</td>
+          <td>${log.payment_time}</td>
+          <td>${log.ip_address}</td>
+          <td>${log.status}</td>
+          <td>${log.result_message}</td>
+        </tr>
+      % endfor
+    </tbody>
+  </table>
+</%block>

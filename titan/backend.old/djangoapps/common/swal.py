@@ -1,0 +1,28 @@
+def get_swal(lang: str, code: str):
+    messages = {
+        'NULL_EMAIL': ('Error', 'Email is required'),
+        'NULL_PASSWORD': ('Error', 'Password is required'),
+        'INCORRECT_LOGIN': ('Error', 'Incorrect email or password'),
+        'NOT_ACTIVE': ('Error', 'Account is not active'),
+        'UNKNOWN_ERROR': ('Error', 'Unknown error'),
+        'OVER_LOGIN': ('Error', 'Too many attempts'),
+        'BAN_DOMAIN': ('Error', 'Email domain is not allowed'),
+        'BAN_IP': ('Error', 'IP is not allowed'),
+        'NULL_USERNAME': ('Error', 'Username is required'),
+        'NULL_RE_PASSWORD': ('Error', 'Password confirmation is required'),
+        'NON_CHECK_SERVICE': ('Error', 'You must agree to service terms'),
+        'NON_CHECK_PRIVACY': ('Error', 'You must agree to privacy policy'),
+        'NOT_EMAIL': ('Error', 'Invalid email'),
+        'NOT_MATCH_PASSWORD': ('Error', 'Passwords do not match'),
+        'NOT_PASSWORD_RULE': ('Error', 'Password rule not satisfied'),
+        'EXIST_EMAIL': ('Error', 'Email already exists'),
+        'ERROR_CODE': ('Error', 'Invalid referral code'),
+        'CODE_EXPIRED': ('Error', 'Referral code expired'),
+        'SUCCESS_SIGNUP': ('Success', 'Sign up success. Please verify your email'),
+        'SUCCESS_SIGNUP_SP': ('Success', 'Sign up success'),
+        'NOT_USER': ('Error', 'User not found'),
+        'SUCCESS_FORGOT': ('Success', 'Password reset email sent'),
+        'SUCCESS_RESET': ('Success', 'Password changed'),
+        'NOT_SESSION': ('Error', 'Session invalid'),
+    }
+    return messages.get(code, ('Info', code))

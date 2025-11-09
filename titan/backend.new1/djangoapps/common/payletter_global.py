@@ -1,0 +1,107 @@
+import json
+import requests
+import datetime
+import hashlib
+from django.conf import settings
+
+
+# 페이레터 해외 공통 클래스
+class PayletterGlobal:
+
+
+    def __init__(self, type):
+        if type == 'LIVE':
+            self.endpoint      = settings.PAYLETTER_GLOBAL_LIVE_ENDPOINT
+            self.storeid       = settings.PAYLETTER_GLOBAL_LIVE_STOREID
+            self.store_hashkey = settings.PAYLETTER_GLOBAL_LIVE_STORE_HASHKEY
+        elif type == 'TEST':
+            self.endpoint      = settings.PAYLETTER_GLOBAL_TEST_ENDPOINT
+            self.storeid       = settings.PAYLETTER_GLOBAL_TEST_STOREID
+            self.store_hashkey = settings.PAYLETTER_GLOBAL_TEST_STORE_HASHKEY
+
+
+    # 결제요청 함수
+    def payments_request(self,
+                        pgcode,
+                        user_id,
+                        user_name,
+                        price,
+                        product_name,
+                        order_no,
+                        custom_parameter,
+                        email,
+                        type='web'):
+
+        # 입력 파라미터 로깅
+        print('API DEBUG -> pgcode : ', pgcode)
+        print('API DEBUG -> user_id : ', user_id)
+        print('API DEBUG -> user_name : ', user_name)
+        print('API DEBUG -> price : ', price)
+        print('API DEBUG -> product_name : ', product_name)
+        print('API DEBUG -> order_no : ', order_no)
+        print('API DEBUG -> custom_parameter : ', custom_parameter)
+        print('API DEBUG -> email : ', email)
+        print('API DEBUG -> type : ', type)
+
+        # 페이레터 API 호출
+        if type == 'web':
+            full_url = self.endpoint + 'Web/Payment.aspx'   # 웹
+        elif type == 'mobile':
+            full_url = self.endpoint + 'Smart/Payment.aspx' # 모바일
+        unixtime = str(datetime.datetime.now().timestamp())[:10]
+        currency = 'USD'
+        payamt = price
+
+        print('API PARAM DEBUG -> storeid : ', self.storeid)
+        print('API PARAM DEBUG -> currency : ', currency)
+        print('API PARAM DEBUG -> order_no : ', order_no)
+        print('API PARAM DEBUG -> payamt : ', payamt)
+        print('API PARAM DEBUG -> user_id : ', user_id)
+        print('API PARAM DEBUG -> full_url : ', full_url)
+        print('API PARAM DEBUG -> unixtime : ', unixtime)
+        print('API PARAM DEBUG -> store_hashkey : ', self.store_hashkey)
+
+        data = self.storeid  + \
+               currency      + \
+               str(order_no) + \
+               str(payamt)   + \
+               str(user_id)  + \
+               str(unixtime) + \
+               self.store_hashkey
+        print('API PARAM DEBUG -> data : ', data)
+
+        hash_data = hashlib.sha256(data.encode()).hexdigest()
+        print('API PARAM DEBUG -> hash_data : ', hash_data)
+
+        # set url
+		
+        if settings.HTTPS == True:
+            return_url = "https://"+settings.FULL_URL+"/globalpayletter_return"
+        else:
+            return_url = "http://"+settings.FULL_URL+"/globalpayletter_return"
+
+        if settings.HTTPS == True:
+            cancel_url = "https://"+settings.FULL_URL+"/globalpayletter_cancel"
+        else:
+            cancel_url = "http://"+settings.FULL_URL+"/globalpayletter_cancel"
+        print('API PARAM DEBUG -> returnurl : ', return_url)
+
+        payload = {
+            'full_url'      : full_url,
+            'storeid'       : self.storeid,
+            'currency'      : currency,
+            'storeorderno'  : order_no,
+            'payamt'        : payamt,
+            'payerid'       : user_id,
+            'payeremail'    : user_id,
+            'servicename'   : product_name,
+            'returnurl'     : return_url,
+            'backurl'       : cancel_url,
+            'custom'        : custom_parameter,
+            'pginfo'        : pgcode,
+            'recurringtype' : 'N',
+            'timestamp'     : unixtime,
+            'hash'          : hash_data,
+        }
+
+        return payload

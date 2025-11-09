@@ -1,0 +1,139 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-03 16:40+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# --- JS popup/QR i18n strings ---
+msgid "Please try again later"
+msgstr "Please try again later"
+
+msgid "We are currently processing another request. Please try again in 1 minute!"
+msgstr "We are currently processing another request. Please try again in 1 minute!"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Confirm"
+msgstr "Confirm"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Recent Payment Check"
+msgstr "Recent Payment Check"
+
+msgid "{minutes} minutes ago, {amount} KRW was paid via {method}. {expire} Would you like to make an additional payment?"
+msgstr "{minutes} minutes ago, {amount} KRW was paid via {method}. {expire} Would you like to make an additional payment?"
+
+msgid "Already extended until {expire_date}."
+msgstr "Already extended until {expire_date}."
+
+msgid "Additional payment"
+msgstr "Additional payment"
+
+msgid "ALIPAY"
+msgstr "ALIPAY"
+
+msgid "WECHAT PAY"
+msgstr "WECHAT PAY"
+
+msgid "Other payment"
+msgstr "Other payment"
+
+msgid "{label} payment has been requested."
+msgstr "{label} payment has been requested."
+
+msgid "Please scan the QR code and deposit {price} yuan."
+msgstr "Please scan the QR code and deposit {price} yuan."
+
+msgid "After the deposit, the administrator will manually confirm and complete the payment."
+msgstr "After the deposit, the administrator will manually confirm and complete the payment."
+
+msgid "After payment, press the Payment Complete button to notify via Channel Talk."
+msgstr "After payment, press the Payment Complete button to notify via Channel Talk."
+
+msgid "QR validity expired"
+msgstr "QR validity expired"
+
+msgid "The QR code window closed after 1 minute. Please try again."
+msgstr "The QR code window closed after 1 minute. Please try again."
+
+msgid "Payment Success"
+msgstr "Payment Success"
+
+msgid "Your payment has been successfully completed."
+msgstr "Your payment has been successfully completed."
+
+msgid "Payment confirmation failed"
+msgstr "Payment confirmation failed"
+
+msgid "Payment confirmation failed. Please contact the administrator."
+msgstr "Payment confirmation failed. Please contact the administrator."
+
+msgid "Contact Admin"
+msgstr "Contact Admin"
+
+msgid "Payment Complete"
+msgstr "Payment Complete"
+
+msgid "(Concurrent devices: {n})"
+msgstr "(Concurrent devices: {n})"
+
+msgid "Concurrent devices: {n}"
+msgstr "Concurrent devices: {n}"
+
+# Sub-Accounts section
+msgid "Sub-Accounts"
+msgstr "Sub-Accounts"
+
+msgid "Accounts registered with suffix after your email"
+msgstr "Accounts registered with suffix after your email"
+
+msgid "Concurrent devices"
+msgstr "Concurrent devices"
+
+msgid "Action"
+msgstr "Action"
+
+msgid "Request Extension"
+msgstr "Request Extension"
+
+# --- MyPage session history ---
+msgid "App Login History"
+msgstr "App Login History"
+
+msgid "Device Type"
+msgstr "Device Type"
+
+msgid "App Version"
+msgstr "App Version"
+
+msgid "ISP"
+msgstr "ISP"
+
+msgid "Country"
+msgstr "Country"
+
+msgid "City"
+msgstr "City"
+
+msgid "Login Time"
+msgstr "Login Time"
+
+msgid "No active sessions."
+msgstr "No active sessions."

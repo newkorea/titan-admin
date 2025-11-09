@@ -1,0 +1,88 @@
+<%! from django.utils.translation import ugettext as _ %>
+<input type="text" id="csrf_token" value="${csrf_token}" hidden>
+
+<!--header section start-->
+<header class="header">
+    <!--start navbar-->
+    <nav class="navbar navbar-expand-lg fixed-top bg-transparent" style="background: black !important; margin-top: -8px;">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+              <div style="display: flex;">
+                <img src="/static/new/img/titan.png" style="width: 25px; height: 25px;" alt="logo" class="img-fluid">
+                <div style="color: #ffffff; margin-left: 10px; font-weight: bold;">TITAN VPN</div>
+              </div>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="ti-menu"></span>
+            </button>
+            <div class="collapse navbar-collapse main-menu" id="navbarSupportedContent">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll fwb menu-gab" href="/price_table">${_('Price')}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll fwb menu-gab" href="/price">${_('Payment')}</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link page-scroll dropdown-toggle menu-gab" href="#" id="navbarDropdownHome" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            ${_('Download')}
+                        </a>
+                        <div class="dropdown-menu submenu" aria-labelledby="navbarDropdownHome">
+                            <a class="dropdown-item" href="/download/android">${_('Android')}</a>
+                            <a class="dropdown-item" href="/download/ios">${_('IOS')}</a>
+                            <a class="dropdown-item" href="/download/windows">${_('Windows')}</a>
+                            <a class="dropdown-item" href="/download/mac">${_('MacOS')}</a>
+                        </div>
+                    </li>
+                    % if 'email' in request.session:
+	                    <li class="nav-item dropdown">
+	                        <a class="nav-link page-scroll dropdown-toggle menu-gab" href="#" id="navbarDropdownHome" role="button"
+	                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                            ${_('MyPage')}
+	                        </a>
+	                        <div class="dropdown-menu submenu" aria-labelledby="navbarDropdownHome">
+	                            <a class="dropdown-item" href="/mypage">${_('MyPage')}</a>
+	                            <a class="dropdown-item" href="/transaction">${_('Transactions')}</a>
+	                        </div>
+	                    </li>
+                            <!-- show logged-in email between MyPage and Logout -->
+                            <li class="nav-item d-flex align-items-center">
+                                <a href="/mypage" class="nav-link page-scroll menu-gab" style="font-size:0.45em; line-height:1; padding-top:0.1rem; padding-bottom:0.1rem; margin: 0 4px; color:#cfd6e4; display:inline-flex; align-items:center; letter-spacing:0; text-decoration:none;">
+                                    ${request.session.get('email')|h}
+                                </a>
+                            </li>
+                        <li class="nav-item">
+                            <a class="nav-link page-scroll fwb menu-gab" href="/logout">${_('Logout')}</a>
+                        </li>
+                    % else:
+                        <li class="nav-item">
+                            <a class="nav-link page-scroll fwb menu-gab" href="/login">${_('Sign in')}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link page-scroll fwb menu-gab" href="/regist">${_('Sign up')}</a>
+                        </li>
+                    % endif
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll fwb menu-gab" href="/api_translate/ko">
+                          <img class="lang-img" src="/static/new/img/korea.png">
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll fwb menu-gab" href="/api_translate/zh">
+                          <img class="lang-img" src="/static/new/img/china.png">
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll fwb menu-gab" href="/api_translate/en">
+                          <img class="lang-img" src="/static/new/img/usa.png">
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!--end navbar-->
+</header>
+<!--header section end-->

@@ -1,0 +1,104 @@
+import os
+import json
+import datetime
+import hashlib
+import uuid
+from pytz import timezone
+from dateutil.relativedelta import relativedelta
+from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.db import connections
+from django.conf import settings
+from backend.djangoapps.common.views import *
+from backend.djangoapps.common.payletter import Payletter
+from backend.djangoapps.common.payletter_global import PayletterGlobal
+from backend.models import *
+from backend.models_radius import Radcheck
+
+
+# 이용가격 테이블 (2020-03-10)
+def transaction(request):
+    context = {}
+    return render(request, 'new/transaction.html', context)
+
+# 이용가격 테이블 (2020-03-10)
+def get_transaction(request):
+    # 데이터테이블즈 - 메인 쿼리    
+    if 'id' in request.session:
+        email = request.session['email']
+        print("Email:", email)
+        id = request.session['id']
+        with connections['default'].cursor() as cur:
+            query = '''
+                SELECT 
+                id, product_name, session, month_type, krw, usd, cny, status, type, regist_date, refund_date, null as email
+                FROM tbl_send_history
+                WHERE user_id = {user_id}
+
+                UNION ALL
+
+                SELECT 
+                id, product_name, session, month_type, krw, usd, cny, refund_yn, pgcode, regist_date, refund_date, null
+                FROM tbl_price_history
+                WHERE user_id = {user_id}
+                
+                UNION ALL
+
+                SELECT
+                tr.id,  '추천보상', null, tr.reward_days, null, null, null, null, null, tr.register_date, null, tu.email
+                FROM tbl_reward_log tr JOIN tbl_user tu ON tr.registrant_id = tu.id
+                WHERE tr.rewarder_id = {user_id}
+                
+                ORDER BY regist_date desc
+            '''.format(user_id = id)
+            cur.execute(query)
+            rows = dictfetchall(cur)
+            
+            new_array = []
+            i = 1
+            for row in rows:
+                tmp = {}
+                tmp['id'] = i
+                tmp['product_name'] = row['product_name']
+                if row['session'] == None:
+                    tmp['session'] = ''
+                else :
+                    tmp['session'] = row['session']
+                tmp['month_type'] = row['month_type']
+                if row['krw'] != None:
+                    tmp['krw'] = "￦" + row['krw']
+                elif row['usd'] != None:
+                    tmp['krw'] = "$" + row['usd']
+                elif row['cny'] != None:
+                    tmp['krw'] = "￥" + row['cny']
+                else:
+                    tmp['krw'] = ""
+                if row['status'] == None:
+                    tmp['status'] = ''
+                else :
+                    tmp['status'] = row['status']
+                if row['type'] == None:
+                    tmp['type'] = ''
+                else :
+                    tmp['type'] = row['type']
+                tmp['regist_date'] = row['regist_date']
+                if row['refund_date'] == None:
+                    tmp['refund_date'] = ''
+                else :
+                    tmp['refund_date'] = row['refund_date']
+                if row['email'] == None:
+                    tmp['email'] = ''
+                else :
+                    tmp['email'] = row['email']
+                new_array.append(tmp)
+                i = i + 1
+            #new_array.sort(key=lambda x: x['regist_date'], reverse=True)
+            ret = {
+                "recordsTotal": len(new_array),
+                "recordsFiltered": len(new_array),
+                "data": new_array
+            }
+            return JsonResponse(ret)
+    else:
+        return redirect('/login')

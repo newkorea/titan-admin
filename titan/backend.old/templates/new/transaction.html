@@ -1,0 +1,183 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<link rel="stylesheet" href="/static/cdn/jquery-ui.css" type="text/css" />
+<link rel="stylesheet" href="/static/cdn/jquery.dataTables.min.css" type="text/css" />
+<link rel="stylesheet" href="/static/cdn/summernote.css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('Transaction history')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--contact us section start-->
+    <section class="contact-us gray-light-bg ptb-100">
+        <div class="container">
+            <div class="row">
+                <table class="table see-table" id="transaction-table" style="font-size:14px;">
+                    <thead class="thead-light">
+                        <tr>
+                          <th>번호</th>
+                          <th>상품</th>
+                          <th>세션</th>
+                          <th>시간</th>
+                          <th>금액</th>
+                          <th>상태표기</th>
+                          <th>결제구분</th>
+                          <th>요청시간</th>
+                          <th>거래명세서</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <!--contact us section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script src="/static/cdn/jquery.dataTables.min.js"></script>
+<script src="/static/cdn/Chart.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    console.log("🚀 transaction.html의 JS가 실행됨!");
+
+    var paymentTypeMap = {
+        "creditcard": "한국신용카드",
+        "PLCreditCard": "해외신용카드",
+        "PLUnionPay": "银联卡",
+        "WECHAT": "WECHAT",
+        "toss": "토스페이",
+        "kakaopay": "카카오페이",
+        "payco": "페이코",
+        "kftc": "KFTC",
+        "virtualaccount": "가상계좌",
+        "apple": "애플페이",
+        "ssgpay": "SSG페이",
+        "PLCreditCartMpi": "해외신용카드"
+    };
+
+    var statusMap = {
+        "N": "결제완료",
+        "A": "자동승인",
+        "C": "관리자취소",
+        "U": "사용자취소",
+        "R": "결제요청",
+        "Z": "환불완료",
+		"S": "관리자승인"
+    };
+
+    var datatable = $('#transaction-table').DataTable({
+        dom: '<"top"Blf>rtp<"bottom"i>',
+        paging: false,
+        ordering: false,
+        info: false,
+        filter: false,
+        lengthChange: false,
+        order: [[0, "desc"]],
+        stateSave: false,
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "/get_transaction/",
+            type: "POST",
+            dataType: "json",
+            data: function (d) {
+                d.csrfmiddlewaretoken = $('#csrf_token').val();
+            },
+            error: function (xhr, status, error) {
+                console.error("❌ 거래 내역 불러오기 실패:", xhr.status, error);
+                console.log("❗ 응답 내용:", xhr.responseText);
+            }
+        },
+        columns: [
+            { data: "id" },
+            { data: "product_name" },
+            { data: "session" },
+            { data: "month_type" },
+            { data: "krw" },
+            { 
+                data: "status", 
+                render: function (data) { return statusMap[data] || data; }
+            },
+            { 
+                data: "type", 
+                render: function (data) { return paymentTypeMap[data] || data; }
+            },
+            { data: "regist_date" },
+            {
+                data: "tid",
+                render: function (data) {
+                    return data ? `<button class="btn btn-info show-receipt" data-tid="` + data + `">보기</button>` : `<button class="btn btn-secondary" disabled>없음</button>`;
+                }
+            }
+        ]
+    });
+
+
+
+
+    // ✅ 거래명세서 버튼 클릭 이벤트
+    $('#transaction-table tbody').on("click", ".show-receipt", function () {
+        var transaction_id = $(this).data("tid");
+        console.log("📝 [DEBUG] 거래명세서 요청 ID:", transaction_id);
+        console.log("📝 [DEBUG] 버튼 HTML:", $(this).prop('outerHTML'));
+
+        if (!transaction_id || transaction_id.trim() === "") {
+            alert("⚠️ 이 거래에는 거래명세서가 없습니다.");
+            return;
+        }
+
+        $.ajax({
+            url: "/get_receipt/",
+            type: "POST",
+            data: {
+                transaction_id: transaction_id,
+                csrfmiddlewaretoken: $('#csrf_token').val()
+            },
+            beforeSend: function () {
+                console.log("📡 거래명세서 요청 중... (ID: " + transaction_id + ")");
+            },
+            success: function (response) {
+                console.log("✅ 거래명세서 응답:", response);
+                if (response.status === "success" && response.receipt_url) {
+                    window.open(response.receipt_url, "거래명세서", "width=800,height=600");
+                } else {
+                    alert("⚠️ 거래명세서를 가져올 수 없습니다.");
+                    console.log("🚨 [DEBUG] 거래명세서 응답 상세:", response);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("❌ 거래명세서 요청 실패:", xhr.status, error);
+                console.log("❗ 응답 내용:", xhr.responseText);
+            }
+        });
+    });
+
+}); // ✅ `$(document).ready()` 닫는 중괄호 추가!
+
+</script>  <!-- ✅ `<script>` 태그가 정상적으로 닫힘 -->
+
+</%block>

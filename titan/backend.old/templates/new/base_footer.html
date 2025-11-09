@@ -1,0 +1,75 @@
+<%! from django.utils.translation import ugettext as _ %>
+<!--footer section start-->
+<footer class="footer-section">
+
+    <!--footer top start-->
+    <div class="footer-top py-5 background-img-2"
+         style="background: url('/static/new/img/footer-bg.png')no-repeat center top / cover">
+        <div class="container">
+            <div class="row justify-content-between">
+                <div class="col-lg-3 ml-auto mb-4 mb-lg-0">
+                    <div class="footer-nav-wrap text-white">
+                        <h5 class="mb-3 text-white">TITAN VPN</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/policy/service">${_('Terms of Service')}</a></li>
+                            <li class="mb-2"><a href="/policy/privacy">${_('Privacy Policy')}</a></li>
+                            <li class="mb-2"><a href="/policy/refund">${_('Refund Policy')}</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 ml-auto mb-4 mb-lg-0">
+                    <div class="footer-nav-wrap text-white">
+                        <h5 class="mb-3 text-white">${_('Download')}</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/download/android">${_('Android')}</a></li>
+                            <li class="mb-2"><a href="/download/ios">${_('IOS')}</a></li>
+                            <li class="mb-2"><a href="/download/windows">${_('Windows')}</a></li>
+                            <li class="mb-2"><a href="/download/mac">${_('MacOS')}</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 ml-auto mb-4 mb-lg-0">
+                    <div class="footer-nav-wrap text-white">
+                        <h5 class="mb-3 text-white">${_('Service')}</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/price_table">${_('Price')}</a></li>
+                            <li class="mb-2"><a href="/price">${_('Payment')}</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="footer-nav-wrap text-white">
+                        <h5 class="mb-3 text-white">Location</h5>
+                        <img src="/static/new/img/map.png" alt="location map" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--footer top end-->
+
+    <!--footer copyright start-->
+    <div class="footer-bottom pt-4 pb-4" style="background: #101010; color: #ffffff;">
+        <div class="container">
+            <div class="row text-center justify-content-center">
+                <div>
+                    % if LANGUAGE_CODE == 'zh':
+                        TitanVPN<br>
+                        160 Daehwa-ro, Daedeok-gu, Daejeon, Korea | Business Registration Number : 732-43-00614<br>
+                        TEL : +82-70-8016-3303 | FAX : +82-70-8016-3305 | Contact : kakaovpn@naver.com<br>
+                    % elif LANGUAGE_CODE == 'en':
+                        TitanVPN<br>
+                        160 Daehwa-ro, Daedeok-gu, Daejeon, Korea | Business Registration Number : 732-43-00614<br>
+                        TEL : +82-70-8016-3303 | FAX : +82-70-8016-3305 | Contact : kakaovpn@naver.com<br>
+                    % else:
+                        타이탄VPN<br>
+                        대전광역시 대덕구 대화로 160 | 사업자 등록번호 : 732-43-00614<br>
+                        TEL : 070-8016-3303 | FAX : 070-8016-3305 | Contact : kakaovpn@naver.com<br>
+                    % endif
+                   </div>
+            </div>
+        </div>
+    </div>
+    <!--footer copyright end-->
+</footer>
+<!--footer section end-->

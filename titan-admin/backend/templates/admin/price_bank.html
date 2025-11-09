@@ -1,0 +1,131 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">무통장 내역</%block>
+<%block name="subtitle">사용자가 신청한 결제요청을 처리할 수 있습니다</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_email">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>사용자명[like]</label>
+      <input class="form-control" id="filter_username">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>세션</label>
+      <select class="form-control" id="filter_session" name="filter_session">
+        <option value="0">선택하세요</option>
+        <option value="1">1 세션</option>
+        <option value="2">2 세션</option>
+        <option value="3">3 세션</option>
+        <option value="4">4 세션</option>
+        <option value="5">5 세션</option>
+		<option value="6">6 세션</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>개월수</label>
+      <select class="form-control" id="filter_month" name="filter_month">
+        <option value="0">선택하세요</option>
+        <option value="1">1 개월</option>
+        <option value="2">2 개월</option>
+        <option value="3">3 개월</option>
+        <option value="6">6 개월</option>
+        <option value="12">12 개월</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>상태</label>
+      <select class="form-control" id="filter_status" name="filter_status">
+        <option value="0">전체</option>
+        <option value="R">대기</option>
+        <option value="A">승인</option>
+        <option value="C">관리자취소</option>
+        <option value="U">사용자취소</option>
+        <option value="Z">환불</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>요청(시작) [<=]</label>
+      <input id="filter_regist_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>요청(종료) [<]</label>
+      <input id="filter_regist_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <!-- 요청구분(type) 필터: 클릭으로만 설정하므로 숨김 입력 -->
+    <input type="hidden" id="filter_type" value="">
+  </div>
+
+  <!-- 버튼 -->
+ <div class='btn-store'>
+  <button class="btn btn-fw accent" onclick="ready_list()">
+    <i class="fa fa-question mr5"></i>
+    처리되지 않은 일감
+  </button>
+  <button class="btn btn-fw success" onclick="enroll_ready()">
+    <i class="fa fa-plus mr5"></i>
+    등록하기
+  </button>
+  <button class="btn btn-fw primary" onclick="reload_data()">
+    <i class="fa fa-search mr5"></i>
+    검색하기
+  </button>
+
+  <!-- ✅ 추가 버튼 -->
+  <button class="btn btn-fw danger" onclick="deleteByStatus('R')">
+    요청삭제
+  </button>
+  <button class="btn btn-fw warning" onclick="deleteByStatus('C')">
+    관리자취소삭제
+  </button>
+  <button class="btn btn-fw info" onclick="deleteByStatus('U')">
+    사용자취소삭제
+  </button>
+</div>
+
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="price-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>사용자명</th>
+          <th>지불번호</th>
+          <th>세션</th>
+          <th>개월수</th>
+          <th>금액</th>
+          <th>상태</th>
+          <th>요청시간</th>
+          <th>취소</th>
+          <th>취소시간</th>
+          <th>승인</th>
+          <th>승인시간</th>
+          <th>환불</th>
+          <th>환불시간</th>
+          <th>요청구분</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/bank.js"></script>
+</%block>

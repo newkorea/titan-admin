@@ -1,0 +1,139 @@
+import os
+import json
+import datetime
+import hashlib
+import uuid
+from pytz import timezone
+from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.db import connections
+from django.conf import settings
+from backend.djangoapps.common.views import *
+from backend.djangoapps.common.payletter import Payletter
+from backend.djangoapps.common.payletter_global import PayletterGlobal
+from backend.models import *
+from backend.models_radius import Radcheck
+
+
+# 이용가격 테이블 (2020-03-10)
+def price_table(request):
+    context = {}
+    return render(request, 'new/price_table.html', context)
+
+
+# 이용가격 렌더링 (2020-03-11)
+def price(request):
+    LANGUAGE_CODE = request.LANGUAGE_CODE
+    # 이용 데이터가 존재하지 않거나 현재보다 작을 경우 결제화면 렌더링
+    lock = 0
+    if 'id' in request.session:
+        id = request.session['id']
+        u1 = TblUser.objects.get(id = id)
+
+        ph = TblPriceHistory.objects.filter(user_id=id, refund_yn='N')
+        sh = TblSendHistory.objects.filter(user_id=id, status='A')
+        st = TblServiceTime.objects.filter(user_id=id)
+
+        # 결제 기록이 없으면 통과
+        if len(ph) == 0 and len(sh) == 0 and len(st) == 0:
+            pass
+        # 결제 기록이 있으면 이력 체크
+        else:
+            try:
+                r = Radcheck.objects.using('radius').get(
+                    username=u1.email,
+                    attribute='Expiration'
+                )
+                expire_time = r.value
+                expire_time = dec_radius_time(expire_time)
+                print('INFO -> expire_time : ', expire_time)
+                now = datetime.datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
+                now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+                print('INFO -> now : ', now)
+                if expire_time > now:
+                    lock = 1
+            except BaseException as err:
+                print('ERROR -> err : ', err)
+                pass
+    else:
+        return redirect('/login?next=price')
+
+    print('INFO -> lock : ', lock)
+
+    # bank info
+    try:
+        bank_info = TblBankAccount.objects.get(type='main')
+        person_name = bank_info.person_name
+        bank_name = bank_info.bank_name
+        bank_number = bank_info.bank_number
+    except BaseException:
+        person_name = 'error'
+        bank_name = 'error'
+        bank_number = 'error'
+
+    context = {}
+    context['LANGUAGE_CODE'] = LANGUAGE_CODE
+    context['lock'] = lock
+    context['person_name'] = person_name
+    context['bank_name'] = bank_name
+    context['bank_number'] = bank_number
+    return render(request, 'new/price.html', context)
+
+
+# 무통장 결제요청 (2020-03-12)
+def api_plz_payment(request):
+    user_id = request.session['id']
+    user_name = request.session['username']
+    pgcode = request.POST.get('pgcode')
+    session = request.POST.get('session')
+    month_type = request.POST.get('month_type')
+    type = request.POST.get('type')
+    product_name = makeProductName(session, month_type)
+    print('DEBUG -> user_id : ', user_id)
+    print('DEBUG -> user_name : ', user_name)
+    print('DEBUG -> pgcode : ', pgcode)
+    print('DEBUG -> session : ', session)
+    print('DEBUG -> month_type : ', month_type)
+    print('DEBUG -> product_name : ', product_name)
+
+    price = getProductPirce(session, month_type, 'KRW')
+    print('DEBUG -> price : ', price)
+
+    u1 = TblUser.objects.get(id=user_id)
+
+    # 사용자 이중결제 방지
+    if duplicatePaymentProtect(u1):
+        return JsonResponse({'result': 'fail'})
+
+    # insert db
+    history = TblSendHistory(
+        user_id = user_id,
+        product_name = product_name,
+        session = session,
+        month_type = month_type,
+        krw = price,
+        status = 'R',
+        type = type,
+        regist_date = datetime.datetime.now()
+    )
+    history.save()
+    return JsonResponse({'result': 200})
+
+
+# 페이레터 국내 취소 리다이렉트 (2020-03-12)
+@csrf_exempt
+def payletter_cancel(request):
+    return redirect('/price')
+
+
+# 페이레터 해외 취소 리다이렉트 (2020-03-12)
+@csrf_exempt
+def globalpayletter_cancel(request):
+    return redirect('/price')
+
+
+# 위쳇페이 취소 리다이렉트 (2020-03-12)
+@csrf_exempt
+def paybox_cancel(request):
+    return redirect('/price')

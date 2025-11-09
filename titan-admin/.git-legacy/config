@@ -1,0 +1,16 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = git@github.com:newkorea/titan-admin.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+	vscode-merge-base = origin/master
+[branch "backup-2025-11-08"]
+	remote = origin
+	merge = refs/heads/upgrade-dj42
+	vscode-merge-base = origin/upgrade-dj42

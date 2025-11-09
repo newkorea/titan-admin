@@ -1,0 +1,124 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base_no_footer.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<input type="text" value="${next}" id="next" hidden>
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section full-screen gray-light-bg">
+        <div class="container-fluid">
+            <div class="row align-items-center justify-content-center">
+
+                <div class="col-12 col-md-7 col-lg-6 col-xl-8 d-none d-lg-block">
+                    <!-- Image -->
+                    <div class="bg-cover vh-100 ml-n3 background-img" style="background-image: url(/static/new/img/hero-bg-1.jpg);">
+                        <div class="position-absolute login-signup-content">
+                            <div class="position-relative text-white col-md-12 col-lg-7">
+                                <h2 class="text-white">${_('Hello Customer')} !</h2>
+                                <p class="lead" style="font-weight: 500;">
+                                  ${_('Thank you for using TITAN VPN')}<br>
+                                  ${_('We will return your favor with a stable service and fast speed')}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-6 col-xl-4">
+                    <div class="login-signup-wrap px-4 px-lg-5 my-5">
+                        <!-- Heading -->
+                        <h1 class="text-center mb-1">
+                            ${_('Sign in')}
+                        </h1>
+
+                        <!--login form-->
+                        <form class="login-signup-form" action="javascript:void(0);">
+                            <div class="form-group">
+                                <label class="pb-1">${_('Email')}</label>
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-email color-primary"></span>
+                                    </div>
+                                    <input id="login_email" type="text" class="form-control" placeholder="hello@example.com">
+                                </div>
+                            </div>
+                            <!-- Password -->
+                            <div class="form-group">
+                                <div class="row">
+                                    <div class="col">
+                                        <label class="pb-1">${_('Password')}</label>
+                                    </div>
+                                    <div class="col-auto">
+                                        <a href="/forgot_password" class="form-text small text-muted">
+                                            ${_('Forgot your password?')}
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="input-group input-group-merge">
+                                    <div class="input-icon">
+                                        <span class="ti-lock color-primary"></span>
+                                    </div>
+                                    <input id="login_password" type="password" class="form-control" placeholder="${_('Enter the password')}">
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button onclick="signin()" class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                ${_('Sign in')}
+                            </button>
+
+                            <!-- Link -->
+                            <p class="text-center">
+                                <small class="text-muted text-center">
+                                    ${_("Don't have an account yet?")} <a href="/regist">${_('Sign up')}</a>
+                                </small>
+                            </p>
+
+                        </form>
+                    </div>
+                </div>
+            </div> <!-- / .row -->
+        </div>
+    </section>
+    <!--hero section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script>
+function signin(){
+  var next = $('#next').val();
+  var login_email = $('#login_email').val();
+  var login_password = $('#login_password').val();
+
+  $.post( "/api_login_signin", {
+      csrfmiddlewaretoken: $('#csrf_token').val(),
+      login_email: login_email,
+      login_password: login_password
+  })
+  .done(function( data ) {
+      if(data.result == 200){
+          if(next == '' || next == null) {
+              window.location.href = '/';
+          } else {
+              window.location.href = '/' + next;
+          }
+      }
+      else {
+          Swal.fire({
+            type: 'error',
+            title: data.title,
+            text: data.text,
+            confirmButtonColor: swalColor('error')
+          }).then(function (result) { /* pass */ });
+      }
+  });
+}
+</script>
+</%block>

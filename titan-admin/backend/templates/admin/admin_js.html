@@ -1,0 +1,114 @@
+<script src="/static/cdn/jquery-1.12.4.js"></script>
+<script src="/static/cdn/jquery-ui.js"></script>
+<script src="/static/cdn/291a47d307.js"></script>
+
+<script src="/static/common/libs/jquery/dist/jquery.min.js"></script>
+<script src="/static/common/libs/jquery/dist/jquery.min.js"></script>
+<script src="/static/common/libs/popper.js/dist/umd/popper.min.js"></script>
+<script src="/static/common/libs/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/static/common/libs/pace-progress/pace.min.js"></script>
+<script src="/static/common/libs/pjax/pjax.js"></script>
+<script src="/static/common/scripts/lazyload.config.js"></script>
+<script src="/static/common/scripts/lazyload.js"></script>
+<script src="/static/common/scripts/plugin.js"></script>
+<script src="/static/common/scripts/nav.js"></script>
+<script src="/static/common/scripts/scrollto.js"></script>
+<script src="/static/common/scripts/toggleclass.js"></script>
+<script src="/static/common/scripts/theme.js"></script>
+<script src="/static/common/scripts/ajax.js"></script>
+<script src="/static/common/scripts/app.js"></script>
+<script src="/static/common/swal2.js"></script>
+<script src="/static/common/swal2_color.js"></script>
+<script src="/static/common/countUp.js"></script>
+<script src="/static/common/libs/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="/static/chart/js/common_chart.js"></script>
+
+<script src="/static/cdn/sweetalert2@8"></script>
+<script src="/static/cdn/summernote.js"></script>
+<script src="/static/cdn/jquery.dataTables.min.js"></script>
+<script src="/static/cdn/Chart.min.js"></script>
+
+<script>
+    // 로그아웃
+    function callLogout(){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api/v1/logout", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                window.location.href = "/login";
+            }
+        });
+    }
+
+    // 무통장 결제 대기 건수
+    function ready_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api/v1/read/ready_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                var ready_count = data.ready_count;
+                $('#ready_count').html(ready_count);
+            }
+        });
+    }
+
+    // 현재 가입자 수
+    function use_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post( "/api/v1/read/use_user", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function( data ) {
+            if(data.result == 200){
+                var use_count = data.use_count;
+                $('#use_count').html(use_count);
+            }
+        });
+    }
+
+    // 오늘 날짜 yyyy-mm-dd
+    function getNow(){
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
+    }
+
+    // 내일 날짜 yyyy-mm-dd
+    function getTomorrow(){
+        var dt = new Date();
+        dt.setDate(dt.getDate() + 1);
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        return result;
+    }
+
+    // 오늘 dd
+    function current_day(type){
+        var dt = new Date();
+        var y = dt.getFullYear();
+        var m = ("00" + (dt.getMonth()+1)).slice(-2);
+        var d = ("00" + dt.getDate()).slice(-2);
+        var result = y + "-" + m + "-" + d;
+        if(type == 'year'){
+            return Number(y);
+        } else if(type == 'month'){
+            return Number(m);
+        } else if(type == 'day'){
+            return Number(d);
+        }
+    }
+
+    // 초기화 실행
+    ready_count();
+    use_count();
+    $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
+</script>

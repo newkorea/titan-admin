@@ -1,0 +1,1174 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('Payment')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--customer review section start-->
+    <section class="customer-review-section gray-light-bg ptb-50">
+        <div class="container">
+
+            <div class="payment-tip">
+                <div>
+                  * ${_('Concurrent Access means the number of devices available to log in at the same time')}
+                </div>
+                <div>
+                  * ${_('The service expiration date is applied as of the payment date and time')}
+                </div>
+                <div>
+                  * ${_('You can only get a refund before the first 7 days')}
+                </div>
+                <div>
+                  * ${_('You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module')}
+                </div>
+                <div>
+                  % if LANGUAGE_CODE == 'zh':
+                    * 付款时贵方视为同意<a href="/policy/service" target="_blank">用户条款</a>
+                  % elif LANGUAGE_CODE == 'en':
+                    * At payment, you accept <a href="/policy/service" target="_blank">the terms and conditions of the users</a>
+                  % else:
+                    * 결제 시 귀하는 <a href="/policy/service" target="_blank">이용자 약관</a>과 <a href="/policy/refund" target="_blank">환불 정책</a>에 동의한 것으로 간주합니다
+                  % endif
+                </div>
+				<div>
+				<font size=4>
+                  % if LANGUAGE_CODE == 'zh':
+                    --> 这页里有手动微信和支付宝付钱， 如果你有问题 按这个<a href="https://titan.channel.io" target="_blank"><U>Channel Talk Link</U></a>
+                  % elif LANGUAGE_CODE == 'en':
+                    --> If you have any problem with Alipay And WeChat pay In this page, Contact admin with click  <a href="https://titan.channel.io" target="_blank"><U>This Channel Talk Link</U></a>
+                  % else:
+                    --> 만약 알리페이(支付宝)와 위챗페이(微信钱包）문제가 있으신 분은  <a href="https://titan.channel.io" target="_blank"><U>This Channel Talk Link</U></a>에서 상담하세요.
+                  % endif
+				  </font></br>
+                </div>
+            </div>
+            <!-- Subaccount selection dropdown -->
+            <div class="white-bg shadow-sm p-3 rounded mb-3" style="border:1px solid #eee;">
+                <div class="d-flex flex-wrap align-items-center">
+                    <span class="badge badge-success badge-pill mb-2 mr-3" style="font-size:13px; padding:6px 14px;">연장할 아이디</span>
+                    <select id="ext_account_select" class="form-control form-control-sm mb-2" style="max-width:280px;">
+                        <option value="">불러오는 중...</option>
+                    </select>
+                    <div id="ext_account_status" class="ml-3 mb-2" style="font-size:18px;font-weight:bold;color:#0d6efd;"></div>
+                </div>
+                <div class="mt-1" style="font-weight:700; font-size:18px; color:#333;">드롭다운에서 연장할 아이디를 선택하거나 드롭다운 맨밑의 <span style="color:#0d6efd;">'계정추가'</span>로 다른 계정을 등록하세요.</div>
+            </div>
+
+            <span class="badge badge-success badge-pill mb-8">Step1. ${_('Select a Period')}</span>
+
+            <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="1">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one1.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  1 ${_('Month')} ${_('Use')}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="2">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one6.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  2 ${_('Month')} ${_('Use')}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="3">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one12.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  3 ${_('Month')} ${_('Use')}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="6">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one1.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  6 ${_('Month')} ${_('Use')}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx" style="min-height: 76px;" id="12">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/product/one6.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  12 ${_('Month')} ${_('Use')}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+<span class="badge badge-success badge-pill mb-8">Step2. ${_('Select a session')}</span>
+<div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+    % for i in range(1, 7):
+    <div class="col-md-12 col-sm-12 col-lg-12" style="margin-bottom: 3px !important">
+        <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hackx-session" style="min-height: 76px;" id="session_${i}" data-value="${i}">
+            <div class="media author-info ref-box">
+                <div class="author-img mr-3">
+                    <img src="/static/new/img/product/session${i}.png" alt="client" class="img-fluid rounded-circle ref-img">
+                </div>
+                <div class="media-body">
+
+  <h5 class="mb-0">
+    % if i == 1:
+      ${_('One device concurrent access')}
+    % elif i == 2:
+      ${_('Two devices concurrent access')}
+    % elif i == 3:
+      ${_('Three devices concurrent access')}
+    % elif i == 4:
+      ${_('Four devices concurrent access')}
+    % elif i == 5:
+      ${_('Five devices concurrent access')}
+    % elif i == 6:
+      ${_('Six devices concurrent access')}
+    % endif
+  </h5>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    % endfor
+</div>
+<div class="col-md-12 col-sm-12 col-lg-12 mt-3" id="div_price" style="display:none">
+    <h5 class="mb-0" style="margin-top: 15px;">
+        <span class="mr-1">Total: </span>
+        <span class="p-bad p-bad-222" id="price_krw">8,300 ￦</span>
+        <span class="p-bad p-bad-222" id="price_usd">7 $</span>
+        <span class="p-bad p-bad-222" id="price_chy">49 ¥</span>
+    </h5>
+</div>
+<br>
+            <span class="badge badge-success badge-pill mb-8">Step3. ${_('Select payment method')}</span>
+
+            <div class="row" style="margin-top: 15px;">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="PLCreditCardMpi">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/bank.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('CreditCard')}
+                                  <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="PLUnionPay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/unionpay.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('UnionPay')}
+                                <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+			            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="WECHAT_IV">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/wechat.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('WechatPay')}
+                                <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                <span class="p-bad p-bad-sea">${_('Payment request')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                            
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="ALIPAY_IV">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/alipay.png" alt="client" width="65">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('Alipay')}
+                                  <span class="p-bad p-bad-green ml-20">${_('General')}</span>
+                                  <span class="p-bad p-bad-sea">${_('Payment request')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="creditcard">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/bank.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('CreditCard')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="banktransfer">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/institution.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('Online Banking')}
+                                  <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <!--
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="toss">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/toss.png" alt="client" class="img-fluid rounded-circle" style="margin-top: 20px;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('Toss')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>-->
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="kakaopay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/kakao.png" alt="client" class="img-fluid" style="margin-top: 16px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">
+                                  ${_('KakaoPay')}
+                                  <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                  <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="ssgpay">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/ssgpay.png" alt="client" class="img-fluid" style="border-radius: 50%;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                SSG페이
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="payco">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/payco.png" alt="client" class="img-fluid" style="margin-top: 24px;">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                ${_('PAYCO')}
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="virtualaccount">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/virtual.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                가상계좌(무통장)
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<!--
+            <div class="row ">
+                <div class="col-md-6 col-sm-6 col-lg-6" style="margin-bottom: 3px !important">
+                    <div class="testimonial-quote-wrap p-gab rounded white-bg shadow-sm hacky" id="virtualaccount">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/payment/virtual.png" alt="client" class="img-fluid">
+                            </div>
+                            <div class="media-body">
+                              <h5 class="mb-0">
+                                가상계좌
+                                <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
+                                <span class="p-bad p-bad-blue">${_('Payment module')}</span>
+                              </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+-->
+            <div>
+				<font size=4>
+                  % if LANGUAGE_CODE == 'zh':
+                    --> 这页里有手动微信和支付宝付钱， 如果你有问题 按这个<a href="https://titan.channel.io" target="_blank"><U>Channel Talk Link</U></a>
+                  % elif LANGUAGE_CODE == 'en':
+                    --> If you have any problem with Alipay And WeChat pay In this page, Contact admin with click  <a href="https://titan.channel.io" target="_blank"><U>This Channel Talk Link</U></a>
+                  % else:
+                    --> 만약 알리페이(支付宝)와 위챗페이(微信钱包）문제가 있으신 분은  <a href="https://titan.channel.io" target="_blank"><U>This Channel Talk Link</U></a>에서 상담하세요.
+                  % endif
+				 </font></br>
+                </div>
+            <div>
+                <button onclick="payment()" class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                    ${_('Purchase')}
+                </button>
+            </div>
+
+
+        </div>
+    </section>
+
+    <form id="eximbay" name="regForm" method="post" action="#" style="display: none;">
+      fgkey<input id="fgkey" type="text" name="fgkey" value=""/><br>
+      amt<input id="amt" type="text" name="amt" value=""/><br>
+      paymethod<input id="paymethod" type="text" name="paymethod" value=""/><br>
+      buyer<input id="buyer" type="text" name="buyer" value=""/><br>
+      cur<input id="cur" type="text" name="cur" value=""/><br>
+      displaytype<input id="displaytype" type="text" name="displaytype" value=""/><br>
+      email<input id="email" type="text" name="email" value=""/><br>
+      item_0_product<input id="item_0_product" type="text" name="item_0_product" value=""/><br>
+      item_0_quantity<input id="item_0_quantity" type="text" name="item_0_quantity" value=""/><br>
+      item_0_unitPrice<input id="item_0_unitPrice" type="text" name="item_0_unitPrice" value=""/><br>
+      lang<input id="lang" type="text" name="lang" value=""/><br>
+      mid<input id="mid" type="text" name="mid" value=""/><br>
+      param1<input id="param1" type="text" name="param1" value=""/><br>
+      param2<input id="param2" type="text" name="param2" value=""/><br>
+      ref<input id="ref" type="text" name="ref" value=""/><br>
+      returnurl<input id="returnurl" type="text" name="returnurl" value=""/><br>
+      shipTo_city<input id="shipTo_city" type="text" name="shipTo_city" value=""/><br>
+      shipTo_country<input id="shipTo_country" type="text" name="shipTo_country" value=""/><br>
+      shipTo_firstName<input id="shipTo_firstName" type="text" name="shipTo_firstName" value=""/><br>
+      shipTo_lastName<input id="shipTo_lastName" type="text" name="shipTo_lastName" value=""/><br>
+      shipTo_phoneNumber<input id="shipTo_phoneNumber" type="text" name="shipTo_phoneNumber" value=""/><br>
+      shipTo_postalCode<input id="shipTo_postalCode" type="text" name="shipTo_postalCode" value=""/><br>
+      shipTo_state<input id="shipTo_state" type="text" name="shipTo_state" value=""/><br>
+      shipTo_street1<input id="shipTo_street1" type="text" name="shipTo_street1" value=""/><br>
+      statusurl<input id="statusurl" type="text" name="statusurl" value=""/><br>
+      txntype<input id="txntype" type="text" name="txntype" value=""/><br>
+      ver<input id="ver" type="text" name="ver" value="230"/><br>
+      <button type="submit">Submit</button>
+    </form>
+    <!--customer review section end-->
+
+</div>
+
+<!-- 결제 상태 관리 -->
+<div>
+  <input id="state_pgcode" type="text" hidden>
+  <input id="state_month_type" type="text" hidden>
+  <input id="state_session" type="text" hidden>
+</div>
+
+<!-- 무통장입금 관리 -->
+<div>
+  <input id="person_name" type="text" value="${person_name}" hidden>
+  <input id="bank_name" type="text" value="${bank_name}" hidden>
+  <input id="bank_number" type="text" value="${bank_number}" hidden>
+</div>
+
+<!-- 페이레터 해외 -->
+<div>
+  <form id="full_url" action="#" method="post" style='display: none'>
+    <input hidden type="text" id="storeid" name="storeid"><br>
+    <input hidden type="text" id="currency" name="currency"><br>
+    <input hidden type="text" id="storeorderno" name="storeorderno"><br>
+    <input hidden type="text" id="payamt" name="payamt"><br>
+    <input hidden type="text" id="payerid" name="payerid"><br>
+    <input hidden type="text" id="payeremail" name="payeremail"><br>
+    <input hidden type="text" id="servicename" name="servicename"><br>
+    <input hidden type="text" id="returnurl" name="returnurl"><br>
+    <input hidden type="text" id="backurl" name="backurl"><br>
+    <input hidden type="text" id="custom" name="custom"><br>
+    <input hidden type="text" id="pginfo" name="pginfo"><br>
+    <input hidden type="text" id="recurringtype" name="recurringtype"><br>
+    <input hidden type="text" id="timestamp" name="timestamp"><br>
+    <input hidden type="text" id="hash" name="hash"><br>
+    <input hidden type="submit" value="Submit">
+  </form>
+</div>
+<!-- 프로그레스 바 컨테이너 -->
+<div id="progressBarContainer" style="
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background-color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+">
+    <div style="margin-bottom: 10px; font-weight: bold;">결제 진행 중...</div>
+    <div style="width: 100%; height: 30px; background-color: #ddd; border-radius: 5px; overflow: hidden;">
+        <div id="progressBar" style="width: 0%; height: 100%; background-color: #007bff; text-align: center; line-height: 30px; color: white; border-radius: 5px;">
+            0%
+        </div>
+    </div>
+    <div id="progressText" style="margin-top: 10px; font-size: 14px; color: #333;">
+        결제하신 내용을 확인하고 있습니다. 잠시만 기다려주세요.
+    </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+$( document ).ready(function() {
+    // 초기 서브계정 목록 로드
+    loadSubaccountList();
+
+    $( ".hackx" ).click(function(e) {
+        $(".hackx").removeClass("hackx-pick");
+        $(this).addClass("hackx-pick");
+        var month_type = $(this).attr('id');
+        $('#state_month_type').val(month_type);
+        
+    	var session = $('#state_session').val();
+    	if (session == '' || session == null) {
+	    	$('#div_price').hide();
+	    } else {
+	    	if(month_type != '') {
+	    		$('#div_price').show();
+	    		calculatePrice(month_type, session);
+	    	} else {
+	    		$('#div_price').hide();
+	    	}
+	    }
+    });
+ // Step 2 클릭 박스 이벤트
+$(".hackx-session").click(function(e) {
+    $(".hackx-session").removeClass("hackx-pick");
+    $(this).addClass("hackx-pick");
+
+    var session = $(this).data("value");
+    $('#state_session').val(session);
+
+    var month_type = $('#state_month_type').val();
+    if (month_type === '' || month_type === null) {
+        $('#div_price').hide();
+    } else {
+        if(session !== '') {
+            $('#div_price').show();
+            calculatePrice(month_type, session);
+        } else {
+            $('#div_price').hide();
+        }
+    }
+});
+
+    $( ".hacky" ).click(function(e) {
+        $(".hacky").removeClass("hacky-pick");
+        $(this).addClass("hacky-pick");
+        var pgcode = $(this).attr('id');
+        $('#state_pgcode').val(pgcode);
+    });
+});
+
+function selectSession(obj) {
+	var session = obj.value;
+    $('#state_session').val(session);
+    var month_type = $('#state_month_type').val();
+    if (month_type == '' || month_type == null) {
+    	$('#div_price').hide();
+    } else {
+    	if(session != '') {
+    		$('#div_price').show();
+	    	calculatePrice(month_type, session);
+    	} else {
+    		$('#div_price').hide();
+    	}
+    }
+}
+
+function calculatePrice(month, session) {
+	if(session == 1) {
+		if (month == 1) {
+    		$('#price_krw').html('8,300 ￦');
+    		$('#price_usd').html('7 $');
+    		$('#price_chy').html('69 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('16,600 ￦');
+    		$('#price_usd').html('14 $');
+    		$('#price_chy').html('98 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('24,900 ￦');
+    		$('#price_usd').html('21 $');
+    		$('#price_chy').html('147 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('47,000 ￦');
+    		$('#price_usd').html('40 $');
+    		$('#price_chy').html('280 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('83,000 ￦');
+    		$('#price_usd').html('70 $');
+    		$('#price_chy').html('490 ￥');
+		}
+	} else if (session == 2) {
+		if (month == 1) {
+    		$('#price_krw').html('14,000 ￦');
+    		$('#price_usd').html('12 $');
+    		$('#price_chy').html('99 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('28,000 ￦');
+    		$('#price_usd').html('24 $');
+    		$('#price_chy').html('170 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('42,000 ￦');
+    		$('#price_usd').html('36 $');
+    		$('#price_chy').html('255 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('69,000 ￦');
+    		$('#price_usd').html('58 $');
+    		$('#price_chy').html('399 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('125,000 ￦');
+    		$('#price_usd').html('105 $');
+    		$('#price_chy').html('720 ￥');
+		}
+	} else if (session == 3) {
+		if (month == 1) {
+    		$('#price_krw').html('22,000 ￦');
+    		$('#price_usd').html('19 $');
+    		$('#price_chy').html('168 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('44,000 ￦');
+    		$('#price_usd').html('38 $');
+    		$('#price_chy').html('336 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('66,000 ￦');
+    		$('#price_usd').html('55 $');
+    		$('#price_chy').html('402 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('110,000 ￦');
+    		$('#price_usd').html('95 $');
+    		$('#price_chy').html('670 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('199,000 ￦');
+    		$('#price_usd').html('169 $');
+    		$('#price_chy').html('1199 ￥');
+		}
+	} else if (session == 4) {
+		if (month == 1) {
+    		$('#price_krw').html('28,000 ￦');
+    		$('#price_usd').html('24 $');
+    		$('#price_chy').html('198 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('56,000 ￦');
+    		$('#price_usd').html('48 $');
+    		$('#price_chy').html('396 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('84,000 ￦');
+    		$('#price_usd').html('72 $');
+    		$('#price_chy').html('510 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('135,000 ￦');
+    		$('#price_usd').html('110 $');
+    		$('#price_chy').html('798 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('249,000 ￦');
+    		$('#price_usd').html('210 $');
+    		$('#price_chy').html('1420 ￥');
+		}
+	} else if (session == 5) {
+		if (month == 1) {
+    		$('#price_krw').html('35,000 ￦');
+    		$('#price_usd').html('30 $');
+    		$('#price_chy').html('259 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('70,000 ￦');
+    		$('#price_usd').html('60 $');
+    		$('#price_chy').html('518 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('105,000 ￦');
+    		$('#price_usd').html('89 $');
+    		$('#price_chy').html('649 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('179,000 ￦');
+    		$('#price_usd').html('149 $');
+    		$('#price_chy').html('798 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('329,000 ￦');
+    		$('#price_usd').html('279 $');
+    		$('#price_chy').html('1890 ￥');
+		}
+	} else if (session == 6) {
+		if (month == 1) {
+    		$('#price_krw').html('43,300 ￦');
+    		$('#price_usd').html('37 $');
+    		$('#price_chy').html('328 ￥');
+		} else if(month == 2) {
+    		$('#price_krw').html('86,600 ￦');
+    		$('#price_usd').html('74 $');
+    		$('#price_chy').html('656 ￥');
+		} else if(month == 3) {
+    		$('#price_krw').html('125,400 ￦');
+    		$('#price_usd').html('110 $');
+    		$('#price_chy').html('718 ￥');
+		} else if(month == 6) {
+    		$('#price_krw').html('226,000 ￦');
+    		$('#price_usd').html('189 $');
+    		$('#price_chy').html('1330 ￥');
+		} else if(month == 12) {
+    		$('#price_krw').html('412,000 ￦');
+    		$('#price_usd').html('349 $');
+    		$('#price_chy').html('2380 ￥');
+		}
+	}
+}
+
+function checkRecentPaymentsAndProceed(pgcode, month_type, session, paymentFunction, type) {
+    $.post("/api_check_recent_payments", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        type: type // 요청한 결제 타입 추가 ('A' 또는 'W')
+    }).done(function(data) {
+        console.log("최근 결제 확인 결과:", data.hasRecentPayments);
+
+        if (data.hasRecentPayments) {
+            console.log("최근 결제가 감지됨. 1분 대기 중...");
+            Swal.fire({
+                icon: 'warning',
+                title: '잠시 후 다시 시도해주세요',
+                text: '현재 다른 고객의 요청을 처리 중입니다. 1분 후 다시 시도하세요!',
+                confirmButtonText: '확인',
+                confirmButtonColor: '#007bff'
+            });
+
+            setTimeout(() => {
+                console.log("1분 대기 후 결제 진행");
+                paymentFunction(pgcode, month_type, session);
+            }, 60000); // 1분 대기 (60,000ms)
+        } else {
+            console.log("최근 결제 없음. 즉시 결제 진행");
+            paymentFunction(pgcode, month_type, session);
+        }
+    }).fail(function() {
+        console.error("최근 결제 확인 요청 실패");
+        paymentFunction(pgcode, month_type, session); // 오류 발생 시에도 진행
+    });
+}
+
+// 기존 함수 실행을 이 함수를 통해 변경
+function payment() {
+    var pgcode = $('#state_pgcode').val();
+    var month_type = $('#state_month_type').val();
+    var session = $('#state_session').val();
+    var targetUserId = $('#ext_target_user_id').val();
+
+    console.log('pgcode -> ', pgcode);
+    console.log('month_type -> ', month_type);
+    console.log('session -> ', session);
+   
+   // 결제방식에 따른 분기 처리
+    if (pgcode == 'PLCreditCard' || pgcode == 'PLUnionPay' || pgcode == 'PLCreditCardMpi' || pgcode == 'PaypalExpressCheckout') { // 페이레터 해외
+        payletter_global(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'WECHAT') { // 엑심베이 (위쳇페이)
+        eximbay(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'ALIPAY') { // 엑심베이 (알리페이)
+        eximbay(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'WECHAT_deprecated') { // 페이박스 (계약만료)
+        // paybox(pgcode, month_type, session);
+        return false;
+    }
+    if (pgcode == 'WECHAT_IV') {
+        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); // WeChat Pay (W)
+        return false;
+    } else if (pgcode == 'ALIPAY_IV') {
+        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); // Alipay (A)
+        return false;
+    }else if (pgcode == 'sendmoney') { // 수동
+        titan_bank(pgcode, month_type, session);
+        return false;
+    } else if (pgcode == 'creditcard' || pgcode == 'banktransfer' || pgcode == 'toss' || pgcode == 'kakaopay' || pgcode == 'payco' || pgcode == 'virtualaccount' || pgcode == 'mobile' || pgcode == 'ssgpay') { // 페이레터 국내
+        payletter_korea(pgcode, month_type, session);
+        return false;
+    } else {
+        Swal.fire({
+            type: 'error',
+            title: '알림',
+            text: '알수 없는 결제방식 입니다. 관리자에게 문의하십시오',
+            confirmButtonColor: swalColor('error'),
+        }).then(function(result) { /* pass */ })
+    }
+}
+
+
+
+function payletter_global(pgcode, month_type, session) {
+    $.post("/api_make_globalpayletter", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            var data = data.result;
+            console.log('data : ', data);
+            console.log('data.backurl : ', data.backurl);
+            $('#storeid').val(data.storeid);
+            $('#currency').val(data.currency);
+            $('#storeorderno').val(data.storeorderno);
+            $('#payamt').val(data.payamt);
+            $('#payerid').val(data.payerid);
+            $('#payeremail').val(data.payeremail);
+            $('#servicename').val(data.servicename);
+            $('#returnurl').val(data.returnurl);
+            $('#backurl').val(data.backurl);
+            $('#custom').val(data.custom);
+            $('#pginfo').val(data.pginfo);
+            $('#recurringtype').val(data.recurringtype);
+            $('#timestamp').val(data.timestamp);
+            $('#hash').val(data.hash);
+            $('#full_url').attr('action', data.full_url);
+            $("#full_url").submit();
+        }
+    });
+}
+
+function payletter_korea(pgcode, month_type, session) {
+    $.post("/api_make_payletter", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            window.open(data.result, 'TITAN NETWORKS', 'width=450, height=550');
+        }
+    });
+}
+
+
+function eximbay(pgcode, month_type, session) {
+    $.post("/api_make_eximbay", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            console.log(data);
+            $('#fgkey').val(data.fgkey);
+            $('#ver').val(data.ver);
+            $('#mid').val(data.mid);
+            $('#txntype').val(data.txntype);
+            $('#ref').val(data.ref);
+            $('#cur').val(data.cur);
+            $('#amt').val(data.amt);
+            $('#paymethod').val(data.paymethod);
+            $('#buyer').val(data.buyer);
+            $('#email').val(data.email);
+            $('#lang').val(data.lang);
+            $('#returnurl').val(data.returnurl);
+            $('#statusurl').val(data.statusurl);
+            $('#param1').val(data.param1);
+            $('#param2').val(data.param2);
+            $('#item_0_product').val(data.item_0_product);
+            $('#item_0_quantity').val(data.item_0_quantity);
+            $('#item_0_unitPrice').val(data.item_0_unitPrice);
+            $('#shipTo_city').val(data.shipTo_city);
+            $('#shipTo_country').val(data.shipTo_country);
+            $('#shipTo_firstName').val(data.shipTo_firstName);
+            $('#shipTo_lastName').val(data.shipTo_lastName);
+            $('#shipTo_phoneNumber').val(data.shipTo_phoneNumber);
+            $('#shipTo_postalCode').val(data.shipTo_postalCode);
+            $('#shipTo_state').val(data.shipTo_state);
+            $('#shipTo_street1').val(data.shipTo_street1);
+            $('#displaytype').val(data.displaytype);
+            $('#eximbay').attr('action', data.url);
+            $("#eximbay").submit();
+        }
+    });
+}
+
+
+function paybox(pgcode, month_type, session) {
+    $.post("/api_make_paybox", {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+    })
+    .done(function(data) {
+        if (data.result == 'fail') {
+            // 이중결제 시도 시 새로고침
+            window.location.reload();
+        } else {
+            window.location.href = data.result;
+        }
+    });
+}
+// 공통 변수 및 함수 초기화
+let paymentCheckInterval = null;
+let forceStop = false;
+
+function calculatePrice(month_type, session) {
+    const priceTable = {
+        '1': {'1': '69', '2': '99', '3': '168', '4': '198', '5': '259', '6': '328'},
+        '2': {'1': '138', '2': '198', '3': '336', '4': '396', '5': '518', '6': '656'},
+        '3': {'1': '147', '2': '255', '3': '402', '4': '510', '5': '649', '6': '718'},
+        '6': {'1': '280', '2': '399', '3': '670', '4': '790', '5': '1050', '6': '1330'},
+        '12': {'1': '490', '2': '720', '3': '1199', '4': '1420', '5': '1890', '6': '2380'},
+    };
+    return priceTable[month_type]?.[session] || '';
+}
+
+function startPaymentCheck(paymentId) {
+    let elapsedTime = 0;
+    const interval = 5000;
+    const maxTime = 60000;
+
+    forceStop = false;
+
+    $("#progressBarContainer").show();
+    $("#progressBar").css('width', '0%').text('0%');
+    $("#progressText").text("결제하신 내용을 확인하고 있습니다. 잠시만 기다려주세요.");
+
+    paymentCheckInterval = setInterval(function () {
+        if (forceStop) {
+            clearInterval(paymentCheckInterval);
+            closeProgressPopup();
+            return;
+        }
+
+        elapsedTime += interval;
+        let progress = Math.min((elapsedTime / maxTime) * 100, 100);
+        $("#progressBar").css('width', progress + '%').text(Math.round(progress) + '%');
+
+        $.post("/api_check_payment_status", {
+            csrfmiddlewaretoken: $('#csrf_token').val(),
+            payment_id: paymentId
+        })
+        .done(function (data) {
+            if (data.status === 'A' || data.status === 'S') {
+                clearInterval(paymentCheckInterval);
+                $("#progressBar").css('width', '100%').text('100%');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '결제 성공',
+                    text: '결제가 성공적으로 완료되었습니다.',
+                    confirmButtonText: '확인'
+                }).then(() => {
+                    closeProgressPopup();
+                    window.location.href = "/mypage";
+                });
+            }
+        });
+
+        if (elapsedTime >= maxTime) {
+            clearInterval(paymentCheckInterval);
+            forceStop = true;
+            Swal.fire({
+                icon: 'error',
+                title: '결제 확인 실패',
+                text: '결제 확인이 실패하였습니다. 관리자에게 문의하세요.',
+                confirmButtonText: '관리자 문의'
+            }).then(() => {
+                closeProgressPopup();
+                window.open('https://titan.channel.io', '_blank');
+            });
+        }
+    }, interval);
+}
+
+function closeProgressPopup() {
+    forceStop = true;
+    if (paymentCheckInterval) {
+        clearInterval(paymentCheckInterval);
+        paymentCheckInterval = null;
+    }
+    $("#progressBarContainer").hide();
+}
+
+function createPayment(typeCode, pgcode, session, month_type, imageSrc, typeLabel) {
+    var price = calculatePrice(month_type, session);
+    var targetUserId = $('#ext_target_user_id').val();
+
+    // 기존 결제 취소 후 재요청 처리
+    var payload = {
+        csrfmiddlewaretoken: $('#csrf_token').val(),
+        pgcode: pgcode,
+        session: session,
+        month_type: month_type,
+        type: typeCode,
+        create_type: 'F' // ← 기존 R 상태를 취소 처리 후 재생성
+    };
+    if (typeof targetUserId !== 'undefined' && targetUserId !== '' && targetUserId !== null) {
+        payload['target_user_id'] = targetUserId;
+    }
+    $.post("/api_create_payment", payload).done(function(res) {
+        if (res.result === 200 && res.payment_id) {
+            startPaymentCheck(res.payment_id);
+            Swal.fire({
+                html:
+                    '<div style="margin-top: 14px;">' + typeLabel + '</div>' +
+                    '<div style="font-weight: bold; font-size: 30px;">' + price + ' 元</div>' +
+                    '<img style="width: 250px; height: 250px;" src="' + imageSrc + '">' +
+                    '<div style="margin-top: 10px; font-weight: bold; font-size: 36px; color: black;">' + (res.data?.email || '이메일 없음') + '</div>' +
+                    '<div style="margin-top: 15px; font-size: 16px; color:red;">' + typeLabel + ' 결제를 신청하셨습니다.</div>' +
+                    '<div style="font-size: 16px; color:red;">QR 코드를 스캔하여 ' + price + ' 元을 입금해주세요.</div>' +
+                    '<div style="margin-top: 15px; font-size: 16px; color:blue;">입금 후 수동으로 관리자가 확인하여 결제를 완료합니다.</div>' +
+                    '<div style="font-size: 16px; color:blue;">결제 후 <b>결제완료</b> 버튼을 눌러 채널톡으로 알려주세요.</div>',
+                showCancelButton: true,
+                showConfirmButton: true,
+                confirmButtonText: '결제완료',
+                cancelButtonText: '닫기',
+                confirmButtonColor: '#8a4cf7',
+                cancelButtonColor: '#cccccc',
+                reverseButtons: true,
+                allowOutsideClick: false,
+            }).then(function(result) {
+                if (result.value) {
+                    $("#progressBarContainer").show();
+                } else {
+                    closeProgressPopup();
+                }
+            });
+
+            setTimeout(() => {
+                if (Swal.isVisible()) {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'QR 유효시간 만료',
+                        text: '1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요.',
+                        confirmButtonText: '확인',
+                        confirmButtonColor: '#8a4cf7'
+                    });
+                }
+            }, 60000);
+        } else {
+            alert("결제 요청 실패: " + res.message);
+        }
+    });
+}
+
+function titan_alipay(pgcode, month_type, session) {
+    createPayment('A', pgcode, session, month_type, '/static/new/img/payment_core/zhifubao.png', '알리페이 ALIPAY');
+}
+
+function titan_wechat(pgcode, month_type, session) {
+    createPayment('W', pgcode, session, month_type, '/static/new/img/payment_core/weixin.png', '위챗페이 WECHAT PAY');
+}
+
+// Hidden field to store prepared target user id
+$(function(){
+    if ($('#ext_target_user_id').length == 0) {
+        $('<input/>',{type:'hidden',id:'ext_target_user_id'}).appendTo('body');
+    }
+});
+// 서브계정 목록 불러오기
+function loadSubaccountList(selectId) {
+    $.get('/api_list_subaccounts').done(function(res){
+        if (res.result === 200) {
+            var sel = $('#ext_account_select');
+            sel.empty();
+            res.items.forEach(function(item){
+                sel.append('<option value="'+item.id+'">'+item.email+'</option>');
+            });
+            sel.append('<option value="__add__">+ 계정추가</option>');
+            var selectedVal = selectId ? String(selectId) : (res.items.length ? String(res.items[0].id) : '');
+            if (selectedVal) {
+                sel.val(selectedVal);
+                $('#ext_target_user_id').val(selectedVal);
+                $('#ext_account_status').text(sel.find('option:selected').text());
+            } else {
+                $('#ext_target_user_id').val('');
+                $('#ext_account_status').text('');
+            }
+        } else {
+            $('#ext_account_select').html('<option value="">로드 실패</option>');
+        }
+    }).fail(function(){
+        $('#ext_account_select').html('<option value="">네트워크 오류</option>');
+    });
+}
+
+// 드롭다운 변경 이벤트
+$(document).on('change', '#ext_account_select', function(){
+    var v = $(this).val();
+    if (v === '__add__') {
+        showAddAccountPopup();
+    } else {
+        $('#ext_target_user_id').val(v);
+        $('#ext_account_status').text($(this).find('option:selected').text());
+    }
+});
+
+// 계정추가 팝업
+function showAddAccountPopup() {
+    Swal.fire({
+        title: '계정 추가',
+        html: '<input id="add_email" type="text" class="swal2-input" placeholder="이메일">'
+            + '<input id="add_password" type="password" class="swal2-input" placeholder="비밀번호">'
+            + '<div style="font-size:12px;color:#666;margin-top:4px;">해당 계정 비밀번호로 인증 후 서브계정으로 편입됩니다.</div>',
+        confirmButtonText: '확인',
+        cancelButtonText: '취소',
+        showCancelButton: true,
+        preConfirm: () => {
+            const email = $('#add_email').val().trim();
+            const pw = $('#add_password').val();
+            if(!email || !pw) {
+                Swal.showValidationMessage('이메일과 비밀번호를 입력하세요');
+                return false;
+            }
+            return {email: email, password: pw};
+        }
+    }).then(function(result){
+        if (result.value) {
+            var data = result.value;
+            Swal.fire({title:'처리 중...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+            $.post('/api_prepare_extension_target', {
+                csrfmiddlewaretoken: $('#csrf_token').val(),
+                email: data.email,
+                password: data.password
+            }).done(function(res){
+                if(res.result === 200){
+                    Swal.fire({icon:'success',title:'등록 완료',text:res.target_email+' 서브계정 설정되었습니다.'});
+                    // 목록 재로딩 후 선택
+                    loadSubaccountList(res.target_user_id);
+                } else {
+                    Swal.fire({icon:'error',title:'실패',text: res.text || res.message || '오류'}).then(()=>{
+                        showAddAccountPopup();
+                    });
+                }
+            }).fail(function(){
+                Swal.fire({icon:'error',title:'네트워크 오류'}).then(()=>{
+                    showAddAccountPopup();
+                });
+            });
+        } else {
+            // 사용자가 취소 -> 기존 선택 복구
+            loadSubaccountList($('#ext_target_user_id').val());
+        }
+    });
+}
+
+</script>
+</%block>
+### 여기는 다른건 OK 단지 다시신청QR 코드가 뜰때 DB갱신__2팝업깜박임수정_이메일주소팝업표기_글자크게###

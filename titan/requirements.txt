@@ -1,0 +1,13 @@
+Django==2.2.5
+djangomako==1.1.1
+mysqlclient==1.4.4
+requests==2.22.0
+paramiko==2.7.1
+# pycrypto==2.6.1
+# pip install pycrypto-2.6.1-cp36-cp36m-win_amd64.whl
+# venv\lib\site-packages\Crypto\Random\OSRNG\nt.py
+# import winrandom -> from . import winrandom
+python-dateutil==2.9.0.post0
+pycryptodome==3.20.0
+uWSGI==2.0.23
+

@@ -1,0 +1,3 @@
+2025.01.17 20:14:04	<QueryDict: {'amount': ['135000'], 'account_no': ['28809071845420'], 'account_name': ['阿哲'], 'account_holder': ['TITANVPN'], 'bank_name': ['국민은행'], 'expire_date': ['20250124'], 'payhash': [''], 'expire_time': [''], 'transaction_date': [''], 'bank_code': ['04'], 'issue_tid': ['202501171434543'], 'cash_receipt_type': ['06'], 'pgcode': ['virtualaccount'], 'user_id': ['17461'], 'user_name': ['阿哲'], 'service_name': ['TITAN NETWORKS'], 'product_name': ['TITAN NETWORKS 세션4 (6개월)'], 'custom_parameter': ['4_6'], 'order_no': ['17461_20250117201231'], 'code': ['0'], 'message': ['']}>
+2025.01.17 20:14:29	<QueryDict: {}>
+2025.01.17 20:17:18	<QueryDict: {}>

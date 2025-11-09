@@ -1,0 +1,78 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">통지관리</%block>
+<%block name="subtitle">You can manage notifications</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>플랫폼</label>
+      <select class="form-control" id="filter_platform" name="filter_platform">
+        <option value="All">All</option>
+        <option value="User">User</option>
+        <option value="Windows">Windows</option>
+        <option value="MacOS">MacOS</option>
+        <option value="Android">Android</option>
+        <option value="iOS">iOS</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>종료 날짜[From]</label>
+      <input id="filter_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>종료 날짜[To]</label>
+      <input id="filter_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    
+    <div class="form-group col-sm-4">
+    </div>
+  </div>
+
+<div class='btn-store'>
+	<button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+    
+    <button class="btn btn-fw success" onclick="add_notification()">
+      <i class="fa fa-plus mr5"></i>
+      등록하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="notification-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>알림내용(한국어)</th>
+          <th>알림내용(영어)</th>
+          <th>알림내용(중국어)</th>
+          <th>플랫폼</th>
+          <th>종료 날짜</th>
+          <th>사용자</th>
+          <th>수정</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/notification.js"></script>
+</%block>

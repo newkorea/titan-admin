@@ -1,0 +1,635 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<link rel="stylesheet" href="/static/new/css/popup.css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+
+<div class="main">
+
+<!--hero section start-->
+<section class="hero-section" style="background: url('/static/new/img/globew.png') no-repeat center center / cover; height: 350px; position: relative;">
+    <div class="d-flex align-items-center justify-content-center" style="height: 100%; width: 100%; position: absolute; top: 0; left: 0;">
+        <div class="text-center" style="color: white;">
+            <div style="font-size: 38px;">TITAN VPN</div>
+            <p style="font-size: 15px;">
+                FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE
+            </p>
+            <a href="/regist" class="btn" style="background-color: #4285f4; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">${_('Sign up')}</a>
+        </div>
+    </div>
+</section>
+<!--hero section end-->
+
+<style>
+  #channelTalkButton {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: transparent; /* 버튼 배경을 투명으로 설정 */
+    padding: 0;
+    border: none;
+    border-radius: 50%; /* 아이콘을 원형으로 유지 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+    width: 60px; /* 버튼의 크기 설정 */
+    height: 60px; /* 버튼의 크기 설정 */
+  }
+  #channelTalkButton img {
+    display: block;
+    width: 100%; /* 버튼 내부를 꽉 채우도록 설정 */
+    height: 100%; /* 버튼 내부를 꽉 채우도록 설정 */
+    border-radius: 50%; /* 이미지를 둥글게 설정 */
+    object-fit: cover; /* 이미지가 영역을 채우도록 설정 */
+  }
+</style>
+
+<!-- 오른쪽 아래에 항상 표시되는 버튼 -->
+<div id="channelTalkButton">
+  <img src="{% static 'new/img/channel2.jpg' %}" alt="ChannelTalk Icon" style="cursor: pointer; width: 60px; height: 60px;" />
+</div>
+
+
+
+
+
+
+<!--promo section start-->
+<section class="promo-section ptb-20 mob-off">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-md-10">
+                <div class="section-heading mb-5">
+                    <span class="badge badge-success badge-pill">${_('지원국가및 통신사')}</span>
+                    <div class="sfd-txt">
+                        ${_('타이탄은 현재 다음과 같은 국가 와 통신사들을 연결하고 있습니다.')}
+                    </div>
+					
+
+                </div>
+            </div>
+        </div>
+       <div class="row" style="margin-top: -25px;">
+    <div class="col-lg-12 col-sm-20 mb-lg-0">
+        <div  class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+            <div class="card-body">
+                <div class="pb-2 tac">
+				    <img class="idx-di" src="/static/new/img/download/korea.jfif" style="width: 10%; height: 10%;">
+                    <img class="idx-di" src="/static/new/img/download/USA.jfif" style="width: 10%; height: 10%;">
+                    <img class="idx-di" src="/static/new/img/download/india.png" style="width: 10%; height: 10%;">
+					<img class="idx-di" src="/static/new/img/download/japan.png" style="width: 10%; height: 10%;">
+                </div>
+				<div class="pb-2 tac">
+                    <img class="idx-di" src="/static/new/img/download/kt.jfif" style="width: 10%; height: 10%;">
+                    <img class="idx-di" src="/static/new/img/download/lg.png" style="width: 10%; height: 10%;">
+					<img class="idx-di" src="/static/new/img/download/sk.jfif" style="width: 10%; height: 10%;">
+                </div>
+                <div class="tac">
+                    <h5 style="margin-bottom: 0px;">${_('KT, SK, LG의 3개 통신망서버들과 미국LA, 인도, 일본서버들을 제공하고 있습니다. ')}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="media-body">
+    <h5 class="mb-0">${_('Email')}</h5>
+    % if is_authenticated:
+        <span>${user.email}</span>
+    % else:
+        <span>Guest</span>
+    % endif
+</div>
+
+
+
+        </div>
+    </div>
+</section>
+<!--promo section end-->
+
+
+
+<!--promo section start-->
+
+<section class="promo-section ptb-20 mob-off">
+    <div class="container">
+        <div class="row">
+		<div class="media-body">
+            <div class="col-lg-8 col-md-10">
+                <div class="section-heading mb-5">
+                    <span class="badge badge-success badge-pill">${_('Software Download')}</span>
+                    <div class="sfd-txt">
+                        ${_('Please download the software that corresponds to the platform you are using')}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin-top: -25px;">
+            <div class="col-lg-3 col-sm-6 mb-lg-0">
+                <div onclick='window.location.href = "https://titan.jobjapan.com/upload/download/titan.apk"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                    <div class="card-body">
+                        <div class="pb-2 tac">
+                            <img class="idx-di" src="/static/new/img/download/android.png">
+                        </div>
+                        <div class="tac">
+                            <h5 style="margin-bottom: 0px;">${_('Android')}</h5>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 15px; color: red; font-weight: bold;">IKEV2, OPENVPN, V2RAY</p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Private App Store Links')}
+                            </p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Select apps that will not use VPN')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-lg-3 col-sm-6">
+                <div onclick='window.location.href = "/download/ios"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                    <div class="card-body">
+                        <div class="pb-2 tac">
+                            <img class="idx-di" src="/static/new/img/download/apple-ios.svg">
+                        </div>
+                        <div class="tac">
+                            <h5 style="margin-bottom: 0px;">${_('IOS')}</h5>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 15px; color: red; font-weight: bold;">IKEV2, OPENVPN, V2RAY</p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Auto Select fastest Server')}
+                            </p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Support In Chinese Iphones')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-sm-6">
+                <div onclick='window.location.href = "https://titan.jobjapan.com/upload/download/titan.zip"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                    <div class="card-body">
+                        <div class="pb-2 tac">
+                            <img class="idx-di" src="/static/new/img/download/windows.png">
+                        </div>
+                        <div class="tac">
+                            <h5 style="margin-bottom: 0px;">${_('Windows')}</h5>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 15px; color: red; font-weight: bold;">IKEV2,OPENVPN,V2RAY,SSTP</p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Auto Select fastest Server')}
+                            </p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Support In Chinese Windows')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-sm-6">
+                <div onclick='window.location.href = "https://titan.jobjapan.com/upload/download/titan.pkg"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                    <div class="card-body">
+                        <div class="pb-2 tac">
+                            <img class="idx-di" src="/static/new/img/download/macos.png">
+                        </div>
+                        <div class="tac">
+                            <h5 style="margin-bottom: 0px;">${_('MacOS')}</h5>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 15px; color: red; font-weight: bold;">IKEV2, OPENVPN, V2RAY</p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Two Versions of MacOS')}
+                            </p>
+                            <p style="margin-bottom: 3px; line-height: 1.2; font-size: 12px;">
+                                ${_('Support In Chinese MacOS')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!--promo section end-->
+
+    <!--our pricing packages section start-->
+    <section id="pricing" class="package-section ptb-20 mob-off">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-md-10">
+                    <div class="section-heading mb-5">
+                        <span class="badge badge-success badge-pill">${_('Price')}</span>
+                        <div class="sfd-txt">
+                          ${_('TITAN VPN provides service at the following price')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center" style="margin-top: -20px;">
+
+                <div class="col-lg-4 col-md">
+                    <div class="card text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>1 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/basic.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">8300</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">7</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">69</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">14,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">12</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">99</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('3 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">22,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">19</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">168</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('4 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">28,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">24</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">198</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('5 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">35,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">30</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">259</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('6 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">43,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">37</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">328</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-lg-4 col-md">
+                    <div class="card text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>6 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/unlimited.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">47,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">40</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">280</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">69,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">58</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">399</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('3 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">110,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">95</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">670</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('4 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">135,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">110</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">790</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('5 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">179,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">149</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">1050</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('6 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">226,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">189</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">1330</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-lg-4 col-md">
+                    <div class="card popular-price text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>12 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/standard.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">83,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">70</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">490</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">125,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">105</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">720</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('3 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">199,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">169</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">1199</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('4 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">249,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">210</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">1420</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('5 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">329,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">279</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">1890</span> ¥
+                            </div>
+                        </div>
+						<div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('6 users concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">412,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">349</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">2380</span> ¥
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+    <!--our pricing packages section end-->
+
+    <section id="pricing" class="package-section ptb-20">
+        <div class="container">
+            <div class="row mob-off">
+                <div class="col-lg-8 col-md-10">
+                    <div class="section-heading mb-5">
+                        <span class="badge badge-success badge-pill">${_('Costomer Service')}</span>
+                        <div class="sfd-txt">
+                          ${_('Any problems or inquiries arising from using the service are handled below')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center mob-sp" style="margin-top: -20px;">
+
+                <div class="col-lg-6 col-md">
+                  <div class="card cus-box">
+                    <img class="lf-size" src="/static/new/img/channel.png">
+                    <div class="cus-txt">
+                      ${_('Costomer Service on (KST)10:00 AM to 20:00 PM')}<br>
+                      ${_('If you want to direct contact, Please click on the bottom right icon')}<br>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-lg-6 col-md">
+                  <div class="card cus-box">
+                    <img class="qr-size" src="/static/new/img/titan_qr.jpeg">
+                    <div class="cus-txt">
+                      ${_('You can scan the top QR code in Wechat for contact')}
+                    </div>
+                  </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script src="/static/new/js/popup.js"></script>
+<script>
+document.getElementById('channelTalkButton').addEventListener('click', function() {
+    console.log("ChannelTalk button clicked!");  // 클릭 이벤트가 작동하는지 확인하기 위한 로그
+
+    var script = document.createElement('script');
+    script.src = '/static/new/js/channel.js';  // ChannelTalk 스크립트를 로드합니다.
+
+    script.onload = function() {
+        if (window.ChannelIO) {
+            var userEmail = "${user_email}";  // Django에서 전달된 이메일 값을 사용
+            var userName = "${username}";  // username에도 동일한 이메일 값을 사용
+
+            window.ChannelIO('boot', {
+                "pluginKey": "261378ba-3892-4660-80d6-94cd59c1a6eb",  // ChannelTalk에서 발급받은 플러그인 키입니다.
+                "profile": {
+                    "email": userEmail,  // 사용자의 이메일을 전달합니다.
+                    "name": userName,  // 사용자의 이메일을 username으로 전달합니다.
+                },
+                "customLauncherSelector": "#channelTalkButton", // 커스텀 런처로 사용할 버튼을 지정합니다.
+            }, function onBoot(error) {
+                if (!error) {
+                    console.log("ChannelTalk initialized successfully!");  // 성공적으로 초기화되었는지 확인
+                    window.ChannelIO('showMessenger');
+                } else {
+                    console.error("ChannelTalk initialization error:", error);  // 에러 로그 출력
+                }
+            });
+        }
+    };
+    document.body.appendChild(script);  // 스크립트를 본문에 추가하여 실행합니다.
+});
+</script>
+
+</%block>

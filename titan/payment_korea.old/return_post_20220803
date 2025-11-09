@@ -1,0 +1,3 @@
+2022.08.03 13:06:20	<QueryDict: {}>
+2022.08.03 19:23:55	<QueryDict: {'code': ['0'], 'message': [''], 'user_id': ['9604'], 'user_name': ['김시연'], 'order_no': ['9604_20220803192231'], 'service_name': ['TITAN NETWORKS'], 'product_name': ['TITAN NETWORKS 세션1 (1개월)'], 'pgcode': ['kakaopay'], 'custom_parameter': ['1_1'], 'tid': ['utocom-202208037082139'], 'cid': ['29063045'], 'amount': ['8300'], 'pay_info': ['신한카드'], 'payhash': ['B0E1A31624966503FDFE2AE676321EB8BEC46B992844675CB3FDE869AAB32387'], 'taxfree_amount': ['0'], 'tax_amount': ['755'], 'nonsettle_amount': ['0'], 'transaction_date': ['2022-08-03 19:23:46']}>
+2022.08.03 21:19:07	<QueryDict: {}>

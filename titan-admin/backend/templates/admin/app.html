@@ -1,0 +1,44 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">
+	<div class="row">
+    	<div class="form-group col-sm-2">
+      		<label>차단앱 관리</label>
+    	</div>
+	</div>
+</%block>
+<%block name="subtitle">VPN차단앱 관리할 수 있습니다</%block>
+<%block name="content">
+  <!-- 버튼 -->
+  <div class='btn-store'>
+    <button class="btn btn-fw success" onclick="add_app()">
+      <i class="fa fa-plus mr5"></i>
+      알림추가
+    </button>
+  </div>
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="user-inform" class="table display">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>앱 이름</th>
+          <th>패키지 이름</th>
+          <th>등록날짜</th>
+          <th>수정</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/app.js"></script>
+</%block>

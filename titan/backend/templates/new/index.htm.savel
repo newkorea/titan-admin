@@ -1,0 +1,384 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<link rel="stylesheet" href="/static/new/css/popup.css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section background-img" style="background: url('')no-repeat center center / cover">
+        <div class="video-section-wrap">
+            <div class="background-video-overly ptb-100" style="height: 300px;">
+                <div class="player" data-property="{videoURL:'https://www.youtube.com/watch?v=gOqlwlQjVis',containment:'.video-section-wrap', quality:'highres', autoPlay:true, showControls: false, startAt:0, mute:true, opacity: 1}"></div>
+                <div class="container">
+                    <div class="row align-items-center justify-content-center">
+                        <div class="col-md-8 col-lg-7">
+                            <div class="hero-content-left text-white text-center mt-5 ptb-100">
+                                <div class="text-white" style="font-size: 25px;">TITAN VPN</div>
+                                <p class="lead" style="font-size: 12px;">
+                                  FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE
+                                </p>
+                                <a href="/regist" class="btn google-play-btn">${_('1day free trial')}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!-- notice start -->
+    % if False:
+    <div class="notice-wrapper">
+      <div class="notice">
+        <div class="notice-head">
+          <p>제목</p>
+        </div>
+        <div class="notice-content">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </div>
+        <div class="notice-btn flex">
+          <div class="notice-btn-left"><i class="far fa-check-circle"></i>7일간 열지 않음</div>
+          <div class="notice-btn-right">닫기</div>
+        </div>
+      </div>
+    </div>
+    % endif
+    <!-- notice end-->
+
+    <!--promo section start-->
+    <section class="promo-section">
+      % if LANGUAGE_CODE == 'en':
+        <div class="free-txt">
+          TITAN VPN is given <span class="free-day">one day</span> free trial <br>
+          automatically when you complete sign up.
+        </div>
+      % elif LANGUAGE_CODE == 'zh':
+        <div class="free-txt">
+          titan vpn不用特意申请一天免费体验，<br>
+          直接以会员注册完成时间为准提供<span class="free-day">一天</span>免费体验
+        </div>
+      % else:
+        <div class="free-txt">
+          TITAN VPN 은 열악한 인터넷환경인 중국내 격리호텔에서도 100%연결을 보장합니다. <br> 
+		  최신 고속브피엔프로토콜인 IKEV2방식과 SSTP방식을 기본 제공하고 TLS1.2의 OPENVPN및  L2TP, PPTP를 서비스하고 있습니다.<br>
+          TITAN VPN 은 무료체험 신청 없이 회원가입을 완료한 시점부터 무료 기간 <span class="free-day">1일</span>이 부여됩니다.
+        </div>
+      % endif
+    </section>
+
+    <section class="mob-on" style="display: none;">
+      <div class="card cur-p" onclick='window.location.href = "/price_table";'>
+          <div class="container">
+              <div class="row pt20">
+                  <div class="col-4">
+                    <img class="mobile-i" src="/static/new/img/best-price.png">
+                  </div>
+                  <div class="col-8">
+                    <div class="mobile-tt">
+                      ${_('TITAN VPN Price')}
+                    </div>
+                    <div>
+                      ${_('You can check the VPN price at a glance')}
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="card cur-p" onclick='window.location.href = "/download/android";'>
+          <div class="container">
+              <div class="row pt20">
+                  <div class="col-4">
+                    <img class="mobile-i" src="/static/new/img/information.png">
+                  </div>
+                  <div class="col-8">
+                    <div class="mobile-tt">
+                      ${_('TITAN VPN Download and Manual')}
+                    </div>
+                    <div>
+                      ${_('Read the manual, you can use it easily')}
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+    </section>
+
+    <!--promo section start-->
+    <section class="promo-section ptb-20 mob-off">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-md-10">
+                    <div class="section-heading mb-5">
+                        <span class="badge badge-success badge-pill">${_('Software Download')}</span>
+                        <div class="sfd-txt">
+                          ${_('Please download the software that corresponds to the platform you are using')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: -25px;">
+                <div class="col-lg-3 col-sm-6 mb-lg-0">
+                    <div onclick='window.location.href = "${and_client_name}"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p" onclick="">
+                        <div class="card-body">
+                            <div class="pb-2 tac">
+                                <img class="idx-di" src="/static/new/img/download/android.png">
+                            </div>
+                            <div class="tac">
+                              <h5 style="margin-bottom: 0px;">${_('Android')}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <div onclick='window.location.href = "/download/ios"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                        <div class="card-body">
+                            <div class="pb-2 tac">
+                                <img class="idx-di" src="/static/new/img/download/apple-ios.svg">
+                            </div>
+                            <div class="tac">
+                              <h5  style="margin-bottom: 0px;">${_('IOS')}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <div onclick='window.location.href = "${win_client_save_path}"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                        <div class="card-body">
+                            <div class="pb-2 tac">
+                                <img class="idx-di" src="/static/new/img/download/windows.png">
+                            </div>
+                            <div class="tac">
+                              <h5 style="margin-bottom: 0px;">${_('Windows')}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <div onclick='window.location.href = "${mac_client_save_path}"' class="card single-promo-card single-promo-hover mb-lg-0 cur-p">
+                        <div class="card-body">
+                            <div class="pb-2 tac">
+                                <img class="idx-di" src="/static/new/img/download/macos.png">
+                            </div>
+                            <div class="tac">
+                              <h5  style="margin-bottom: 0px;">${_('MacOS')}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--promo section end-->
+
+    <!--our pricing packages section start-->
+    <section id="pricing" class="package-section ptb-20 mob-off">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-md-10">
+                    <div class="section-heading mb-5">
+                        <span class="badge badge-success badge-pill">${_('Price')}</span>
+                        <div class="sfd-txt">
+                          ${_('TITAN VPN provides service at the following price')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center" style="margin-top: -20px;">
+
+                <div class="col-lg-4 col-md">
+                    <div class="card text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>1 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/basic.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">8300</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">7</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">46</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 usres concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">14,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">12</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">78</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md">
+                    <div class="card popular-price text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>12 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/standard.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">83,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">70</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">456</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 usres concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">125,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">105</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">696</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md">
+                    <div class="card text-center single-pricing-pack">
+                        <div class="pt-4">
+                          <h5>6 ${_('Month')}</h5>
+                        </div>
+                        <div class="pricing-img mt-4">
+                            <img src="/static/new/img/unlimited.svg" alt="pricing img" class="img-fluid">
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('One user concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">47,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">40</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">258</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-header py-4 border-0 pricing-header">
+                            <div class="sen">${_('2 usres concurrent access')}</div>
+                            <div class="text-center mb-0">
+                              <span>${_('WON')}</span>
+                              <span class="fcb price font-weight-bolder">69,000</span> ₩
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('USD')}</span>
+                              <span class="fcb price font-weight-bolder">58</span> $
+                            </div>
+                            <div class="text-center mb-0">
+                              <span>${_('CNY')}</span>
+                              <span class="fcb price font-weight-bolder">384</span> ¥
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled text-sm mb-4 pricing-feature-list">
+                                <li>${_('Free refund before 7 days')}</li>
+                            </ul>
+                            <a href="/price" class="btn outline-btn mb-3">${_('Purchase')}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+    <!--our pricing packages section end-->
+
+    <section id="pricing" class="package-section ptb-20">
+        <div class="container">
+            <div class="row mob-off">
+                <div class="col-lg-8 col-md-10">
+                    <div class="section-heading mb-5">
+                        <span class="badge badge-success badge-pill">${_('Costomer Service')}</span>
+                        <div class="sfd-txt">
+                          ${_('Any problems or inquiries arising from using the service are handled below')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row justify-content-center mob-sp" style="margin-top: -20px;">
+
+                <div class="col-lg-6 col-md">
+                  <div class="card cus-box">
+                    <img class="lf-size" src="/static/new/img/channel.png">
+                    <div class="cus-txt">
+                      ${_('Costomer Service on (KST)10:00 AM to 10:00 PM')}<br>
+                      ${_('If you want to direct contact, Please click on the bottom right icon')}<br>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-lg-6 col-md">
+                  <div class="card cus-box">
+                    <img class="qr-size" src="/static/new/img/titan_qr.jpeg">
+                    <div class="cus-txt">
+                      ${_('You can scan the top QR code in Wechat for contact')}
+                    </div>
+                  </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script src="/static/new/js/channel.js"></script>
+<script src="/static/new/js/popup.js"></script>
+</%block>

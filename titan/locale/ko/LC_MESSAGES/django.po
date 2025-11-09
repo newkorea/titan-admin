@@ -1,0 +1,587 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-03 16:40+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Terms of Service"
+msgstr "서비스이용약관"
+
+msgid "Privacy Policy"
+msgstr "개인정보보호정책"
+
+msgid "Refund Policy"
+msgstr "환불정책"
+
+msgid "Download"
+msgstr "다운로드"
+
+msgid "Download2"
+msgstr "다운로드2"
+
+msgid "Download3"
+msgstr "다운로드3"
+
+msgid "Titan Plus"
+msgstr "타이탄플러스"
+
+msgid "Android"
+msgstr "Android"
+
+msgid "IOS"
+msgstr "IOS"
+
+msgid "Windows"
+msgstr "Windows"
+
+msgid "MacOS"
+msgstr "MacOS"
+
+msgid "Service"
+msgstr "서비스"
+
+msgid "Price"
+msgstr "이용가격"
+
+msgid "Payment"
+msgstr "결제"
+
+msgid "Paymen"
+msgstr "결제"
+
+msgid "MyPage"
+msgstr "마이페이지"
+
+msgid "Transactions"
+msgstr "서비스결제이력"
+
+msgid "Logout"
+msgstr "로그아웃"
+
+msgid "Sign in"
+msgstr "로그인"
+
+msgid "Sign up"
+msgstr "회원가입"
+
+msgid "Change password"
+msgstr "비밀번호 변경"
+
+msgid "Your identity has been verified"
+msgstr "본인인증이 확인되었습니다"
+
+msgid "Enter your new password"
+msgstr "새롭게 변경하실 비밀번호를 입력하여 비밀번호를 변경하세요"
+
+msgid "New password"
+msgstr "새로운 비밀번호"
+
+msgid "Enter the password"
+msgstr "비밀번호를 입력하십시오"
+
+msgid "Re-enter new password"
+msgstr "새로운 비밀번호 확인"
+
+msgid "Re-enter password"
+msgstr "비밀번호를 한번 더 입력하십시오"
+
+msgid "Try to login again?"
+msgstr "비밀번호가 기억나셨나요...?"
+
+msgid "Support Android"
+msgstr "Android 지원"
+
+msgid "Support IOS"
+msgstr "IOS 지원"
+
+msgid "Please refer to the manual below"
+msgstr "아래의 메뉴얼을 참고"
+
+msgid "Support MacOS"
+msgstr "MacOS 지원"
+
+msgid "Support Windows 11, 10, 8, 7, Vista"
+msgstr "Windows 11, 10, 8, 7, Vista 지원"
+
+msgid "Expired mail"
+msgstr "만료된 메일"
+
+msgid "It's been a long time sent to email"
+msgstr "메일을 발송한지 오랜 시간이 지났습니다"
+
+msgid "Retry the change password"
+msgstr "비밀번호 찾기를 다시 시도하십시오"
+
+msgid "Forgot your password?"
+msgstr "비밀번호 찾기"
+
+msgid "1day free trial"
+msgstr "1일 무료체험"
+
+msgid "TITAN VPN Price"
+msgstr "TITAN VPN 이용요금"
+
+msgid "You can check the VPN price at a glance"
+msgstr "요금을 한눈에 확인할 수 있습니다"
+
+msgid "TITAN VPN Download and Manual"
+msgstr "TITAN VPN 다운로드 및 사용법"
+
+msgid "Read the manual, you can use it easily"
+msgstr "사용 설명서를 읽고 누구나 쉽게 사용할 수 있습니다"
+
+msgid "Software Download"
+msgstr "소프트웨어 다운로드"
+
+msgid "Please download the software that corresponds to the platform you are using"
+msgstr "고객님께서 사용하시는 해당 플랫폼의 소프트웨어를 다운로드 해주십시오"
+
+msgid "TITAN VPN provides service at the following price"
+msgstr "TITAN VPN은 아래의 가격으로 서비스를 제공하고있습니다"
+
+msgid "Month"
+msgstr "개월"
+
+msgid "Use"
+msgstr "사용"
+
+msgid "(30days)"
+msgstr "(30일)"
+
+msgid "(180days)"
+msgstr "(180일)"
+
+msgid "(360days)"
+msgstr "(360일)"
+
+msgid "One device concurrent access"
+msgstr "동시접속 1 기기"
+
+msgid "Two devices concurrent access"
+msgstr "동시접속 2 기기"
+
+msgid "Three devices concurrent access"
+msgstr "동시접속 3 기기"
+
+msgid "Four devices concurrent access"
+msgstr "동시접속 4 기기"
+
+msgid "Five devices concurrent access"
+msgstr "동시접속 5 기기"
+
+msgid "Six devices concurrent access"
+msgstr "동시접속 6 기기"
+
+msgid "Seven devices concurrent access"
+msgstr "동시접속 7 기기"
+
+msgid "Eight devices concurrent access"
+msgstr "동시접속 8 기기"
+
+msgid "Nine devices concurrent access"
+msgstr "동시접속 9 기기"
+
+msgid "Ten devices concurrent access"
+msgstr "동시접속 10 기기"
+
+# --- MyPage session history ---
+msgid "App Login History"
+msgstr "앱로그인기록"
+
+msgid "Device Type"
+msgstr "기기 종류"
+
+msgid "App Version"
+msgstr "앱 버전"
+
+msgid "ISP"
+msgstr "통신사"
+
+msgid "Country"
+msgstr "국가"
+
+msgid "City"
+msgstr "도시"
+
+msgid "Login Time"
+msgstr "로그인 시간"
+
+msgid "No active sessions."
+msgstr "활성 세션이 없습니다."
+
+msgid "One user concurrent access"
+msgstr "동시접속 1 사용자"
+
+msgid "2 users concurrent access"
+msgstr "동시접속 2 사용자"
+
+msgid "3 users concurrent access"
+msgstr "동시접속 3 사용자"
+
+msgid "4 users concurrent access"
+msgstr "동시접속 4 사용자"
+
+msgid "5 users concurrent access"
+msgstr "동시접속 5 사용자"
+
+msgid "6 users concurrent access"
+msgstr "동시접속 6 사용자"
+
+msgid "WON"
+msgstr "국내결제가격"
+
+msgid "USD"
+msgstr "해외결제가격"
+
+msgid "CNY"
+msgstr "위쳇결제가격"
+
+msgid "Free refund before 7 days"
+msgstr "7일 이전 무료 환불"
+
+msgid "Purchase"
+msgstr "구매하기"
+
+msgid "Select"
+msgstr "동시접속수 선택"
+
+msgid "Costomer Service"
+msgstr "고객센터"
+
+msgid "Any problems or inquiries arising from using the service are handled below"
+msgstr "서비스를 이용하시면서 발생하는 문제 또는 문의는 아래에서 처리해드리고 있습니다"
+
+msgid "Costomer Service on (KST)10:00 AM to 10:00 PM"
+msgstr "상담시간 오전 10:00 ~ 오후 10:00"
+
+msgid "If you want to direct contact, Please click on the bottom right icon"
+msgstr "1:1 상담을 원하시면 오른쪽 하단의 아이콘을 클릭해주세요"
+
+msgid "You can scan the top QR code in Wechat for contact"
+msgstr "위챗으로 상단의 QR 코드를 스캔하여 상담할 수 있습니다"
+
+msgid "Password"
+msgstr "비밀번호"
+
+msgid "Email"
+msgstr "이메일"
+
+msgid "Hello"
+msgstr "안녕하세요"
+
+msgid "Hello Customer"
+msgstr "안녕하세요 고객님"
+
+msgid "Thank you for using TITAN VPN"
+msgstr "TITAN VPN을 찾아주셔서 감사합니다"
+
+msgid "We will return your favor with a stable service and fast speed"
+msgstr "오늘도 안정적인 서비스와 빠른 속도로 고객님들께 보답드리도록 하겠습니다"
+
+msgid "Don't have an account yet?"
+msgstr "아이디가 없으신가요...?"
+
+msgid "Expiry date"
+msgstr "서비스 만료일"
+
+msgid "concurrent access"
+msgstr "동시접속"
+
+msgid "personnel"
+msgstr "명"
+
+msgid "Name"
+msgstr "이름"
+
+msgid "Referrer Code"
+msgstr "추천인코드"
+
+msgid "Registered date"
+msgstr "회원가입일"
+
+msgid "VPN Server address"
+msgstr "VPN 서버주소"
+
+msgid "VPN ID"
+msgstr "VPN 계정"
+
+msgid "VPN Password"
+msgstr "VPN 비밀번호"
+
+msgid "Personal Referrer Promotion link"
+msgstr "추천인 홍보 링크"
+
+# --- JS popup/QR i18n strings ---
+msgid "Please try again later"
+msgstr "잠시 후 다시 시도해주세요"
+
+msgid "We are currently processing another request. Please try again in 1 minute!"
+msgstr "현재 다른 고객의 요청을 처리 중입니다. 1분 후 다시 시도하세요!"
+
+msgid "OK"
+msgstr "확인"
+
+msgid "Confirm"
+msgstr "확인"
+
+msgid "Close"
+msgstr "닫기"
+
+msgid "Recent Payment Check"
+msgstr "최근 결제 확인"
+
+msgid "{minutes} minutes ago, {amount} KRW was paid via {method}. {expire} Would you like to make an additional payment?"
+msgstr "{minutes}분 전에 {amount}원이 {method}로 결제되었습니다. {expire} 추가결제하시겠습니까?"
+
+msgid "Already extended until {expire_date}."
+msgstr "이미 기간이 {expire_date}까지 연장되어 있습니다."
+
+msgid "Additional payment"
+msgstr "추가결제"
+
+msgid "ALIPAY"
+msgstr "알리페이 ALIPAY"
+
+msgid "WECHAT PAY"
+msgstr "위챗페이 WECHAT PAY"
+
+msgid "Other payment"
+msgstr "기타결제"
+
+msgid "{label} payment has been requested."
+msgstr "{label} 결제를 신청하셨습니다."
+
+msgid "Please scan the QR code and deposit {price} yuan."
+msgstr "QR 코드를 스캔하여 {price} 위안을 입금해주세요."
+
+msgid "After the deposit, the administrator will manually confirm and complete the payment."
+msgstr "입금 후 관리자가 확인하여 결제를 완료합니다."
+
+msgid "After payment, press the Payment Complete button to notify via Channel Talk."
+msgstr "결제 후 결제완료 버튼을 눌러 채널톡으로 알려주세요."
+
+msgid "QR validity expired"
+msgstr "QR 유효시간 만료"
+
+msgid "The QR code window closed after 1 minute. Please try again."
+msgstr "1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요."
+
+msgid "Payment Success"
+msgstr "결제 성공"
+
+msgid "Your payment has been successfully completed."
+msgstr "결제가 성공적으로 완료되었습니다."
+
+msgid "Payment confirmation failed"
+msgstr "결제 확인 실패"
+
+msgid "Payment confirmation failed. Please contact the administrator."
+msgstr "결제 확인이 실패하였습니다. 관리자에게 문의하세요."
+
+msgid "Contact Admin"
+msgstr "관리자 문의"
+
+msgid "Payment Complete"
+msgstr "결제완료"
+
+msgid "(Concurrent devices: {n})"
+msgstr "(동시접속 {n} 기기)"
+
+msgid "Concurrent devices: {n}"
+msgstr "동시접속 {n} 기기"
+
+msgid "We will send you a reset password link via email"
+msgstr "이메일로 비밀번호 초기화 링크를 보내드립니다"
+
+msgid "Click the reset URL and you can change the password"
+msgstr "비밀번호 초기화 링크를 클릭하여 비밀번호를 변경하실 수 있습니다"
+
+msgid "Send Email"
+msgstr "이메일 발송"
+
+msgid "The price at a glance"
+msgstr "한 눈에 보는 이용가격"
+
+msgid "Transaction history"
+msgstr "서비스결제이력"
+
+msgid "Service period"
+msgstr "기간"
+
+msgid "Move to payment page"
+msgstr "서비스 결제페이지 이동"
+
+msgid "Go back"
+msgstr "이전페이지"
+
+msgid "You will be free to use TITAN VPN after you sign up"
+msgstr "회원가입을 통해 TITAN VPN을 자유롭게 이용할 수 있습니다"
+
+msgid "You will be receive authentication e-mail for identify confirmation"
+msgstr "본인인증과 중복가입 방지를 위하여 회원가입 시 인증 메일이 발송됩니다"
+
+msgid "Attention! Don't use Gmail and Naver Daum mail in China, You have to get Authentification mail"
+msgstr "주의! Gmail이나 Naver 다음메일은 중국에서 인증메일을 받지 못하오니 다른메일로 가입해주세요"
+
+msgid "We closely collaborate with police forces across various countries and regions to prevent cyber crime"
+msgstr "저희 Titan은 사이버범죄를 예방하기 위해 각국의 경찰들과 긴밀히 협조하고 있습니다. 특히 한중간의 범죄발생시 사용자의 현재 IP를 파악하여 한국경찰은 물론 해당지역 중국공안에도 통보하게 됩니다."
+
+msgid "Enter your name"
+msgstr "이름을 입력하십시오"
+
+msgid "Confirm password"
+msgstr "비밀번호 확인"
+
+msgid "Referrer code (optional)"
+msgstr "추천인 코드 (선택)"
+
+msgid "Enter the referrer code"
+msgstr "추천인 코드를 입력하십시오"
+
+msgid "Do you have already an account?"
+msgstr "이미 계정이 있으신가요?"
+
+msgid "Sending Email..."
+msgstr "이메일 발송중..."
+
+msgid "Concurrent Access means the number of devices available to log in at the same time"
+msgstr "동시접속이란 동시에 로그인하여 사용할 수 있는 기기의 수를 의미합니다"
+
+msgid "The service expiration date is applied as of the payment date and time"
+msgstr "서비스 만료일은 상품 결제 완료 시간을 기준으로 적용됩니다."
+
+msgid "You can only get a refund before the first 7 days"
+msgstr "환불은 서비스 결제 후 7일 이내에만 환불이 가능합니다."
+
+msgid "You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module"
+msgstr "국내에서 발급 된 카드(VISA/MASTER)의 경우 해외 결제 수단으로 결제가 불가능합니다. 따라서 국내 결제 모듈을 이용해주시기 바랍니다"
+
+msgid "Select a product"
+msgstr "상품 선택"
+
+msgid "Select a Period"
+msgstr "사용기간선택"
+
+msgid "Select a session"
+msgstr "동시접속수 선택"
+
+msgid "Select payment method"
+msgstr "결제방식 선택"
+
+msgid "CreditCard"
+msgstr "신용카드"
+
+msgid "UnionPay"
+msgstr "유니온페이(银联)"
+
+msgid "WechatPay"
+msgstr "위쳇페이"
+
+msgid "Bank Transfer"
+msgstr "무통장입금"
+
+msgid "Online Banking"
+msgstr "인터넷뱅킹"
+
+msgid "Toss"
+msgstr "토스"
+
+msgid "KakaoPay"
+msgstr "카카오페이"
+
+msgid "PAYCO"
+msgstr "페이코"
+
+msgid "The payment cannot be made because the product already exists"
+msgstr "결제된 상품이 이미 존재하여 결제할 수 없습니다"
+
+msgid "Korea"
+msgstr "국내"
+
+msgid "General"
+msgstr "해외"
+
+msgid "Payment module"
+msgstr "결제모듈"
+
+msgid "Payment request"
+msgstr "결제요청"
+
+msgid "Alipay"
+msgstr "알리페이"
+
+msgid "Delete account"
+msgstr "계정삭제"
+
+msgid "Apply"
+msgstr "신청"
+
+msgid "Cancel"
+msgstr "취소"
+
+msgid "Warning"
+msgstr "경고"
+
+msgid "You are currently in the process of cancelling your account and removing your membership privileges. Please be aware that if you proceed with the cancellation, any remaining period will be forfeited and the account cannot be recovered. Are you sure you want to proceed with the cancellation?"
+msgstr "고객님께서는 현재 아이디를 탈퇴후 회원권한을 삭제하고 계십니다. 회원탈퇴신청은 남은 기간이 있더라도 모두 취소되며 다시 복구 불가하게됩니다. 정말 탈퇴하시겠습니까?"
+
+msgid "Private App Store Links"
+msgstr "사설앱스토어기능 탑재(카톡설치등)"
+
+msgid "Select apps that will not use VPN"
+msgstr "VPN사용제외기능(위챗,알리페이등)"
+
+msgid "Auto Select fastest Server"
+msgstr "가장빠른서버 자동선택"
+
+msgid "Support In Chinese Iphones"
+msgstr "중국IPHONE에 설치가능"
+
+msgid "Support In Chinese Windows"
+msgstr "중국윈도우7,10,11에 설치가능"
+
+msgid "Two Versions of MacOS"
+msgstr "두개의 MacOS설치버젼배포"
+
+msgid "Supported Countries and ISPs"
+msgstr "지원국가및 통신사"
+
+msgid "TITAN is currently connected to the following countries and ISPs."
+msgstr "타이탄은 현재 다음과 같은 국가 와 통신사들을 연결하고 있습니다."
+
+msgid "We provide servers for three Korean ISPs (KT, SK, LG) as well as servers in Los Angeles, USA, India, and Japan."
+msgstr "KT, SK, LG의 3개 통신망서버들과 미국LA, 인도, 일본서버들을 제공하고 있습니다."
+
+
+# Sub-Accounts section
+msgid "Sub-Accounts"
+msgstr "하위 계정"
+
+msgid "Accounts registered with suffix after your email"
+msgstr "이메일 뒤 접미사로 등록된 계정"
+
+msgid "Concurrent devices"
+msgstr "동시접속 기기"
+
+msgid "Action"
+msgstr "동작"
+
+msgid "Request Extension"
+msgstr "연장신청"
+
+
+

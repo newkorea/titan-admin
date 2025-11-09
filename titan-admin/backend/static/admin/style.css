@@ -1,0 +1,65 @@
+table > thead > tr {
+    font-size: 12px;
+    text-align: center;
+}
+table > tbody > tr {
+    font-size: 12px;
+    text-align: center;
+}
+.btn-store{
+    text-align: right;
+    margin-bottom: 12px;
+}
+.dataTables_paginate{
+    width: 100% !important;
+    text-align: center !important;
+    margin-top: 10px !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover{
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{
+    background: #ab6cff !important;
+    border: solid 1px #ab6cff !important;
+    color: #ffffff !important;
+}
+.tal {
+    text-align: left;
+}
+.fz12 {
+    font-size: 12px;
+}
+.dp-re {
+    height: 35px;
+    padding-left: 10px !important;
+    font-size: 12px !important;
+}
+.ready-count {
+    background: #53a6fa;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 5px;
+    color: #ffffff !important;
+}
+.chart-txt {
+    margin-top: 20px;
+}
+.chart-tt {
+    font-weight: bold;
+}
+.null-txt {
+    text-align: center;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    display: none;
+}
+.real_step {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}

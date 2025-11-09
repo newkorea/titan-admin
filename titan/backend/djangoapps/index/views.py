@@ -1,0 +1,145 @@
+import json
+import datetime
+import re
+import uuid
+import requests
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_protect
+from django.db import connections
+from django.conf import settings
+from backend.djangoapps.common.views import *
+from django.utils import translation
+from backend.models import *
+from django.template.context_processors import csrf
+
+def index(request):
+    LANGUAGE_CODE = request.LANGUAGE_CODE
+    print('DEBUG -> LANGUAGE_CODE : ', LANGUAGE_CODE)
+
+    win_client_save_path = get_index_resource(LANGUAGE_CODE, 'windows')
+    mac_client_save_path = get_index_resource(LANGUAGE_CODE, 'mac')
+    and_client_name = get_index_resource(LANGUAGE_CODE, 'android')
+    ios_client_name = get_index_resource(LANGUAGE_CODE, 'ios')
+
+    print('DEBUG -> win_client_save_path : ', win_client_save_path)
+    print('DEBUG -> mac_client_save_path : ', mac_client_save_path)
+    print('DEBUG -> and_client_name : ', and_client_name)
+    print('DEBUG -> ios_client_name : ', ios_client_name)
+
+    user_email = 'guest'  # 기본 이메일 값을 guest로 설정
+    user_regdate = ''
+    expiration_str = "None"  # 기본값으로 초기화
+    simultaneous_use_str = "None"  # 기본값으로 초기화
+
+    if 'id' in request.session:
+        user_id = request.session['id']
+        try:
+            user = TblUser.objects.get(id=user_id)
+            if user.email:
+                user_email = user.email  # 이메일이 있을 경우 해당 이메일 사용
+                user_regdate = user.regist_date
+
+                with connections['default'].cursor() as cur:
+                    sql = '''
+                        SELECT attribute, value
+                        FROM   radius.radcheck
+                        WHERE  username = %s
+                    '''
+                    cur.execute(sql, [user.email])
+                    rows = dictfetchall(cur)
+
+                    for row in rows:
+                        if row["attribute"] == "Simultaneous-Use":
+                            simultaneous_use_str = row["value"]
+                        elif row["attribute"] == "Expiration":
+                            expiration_str = row["value"]
+
+        except TblUser.DoesNotExist:
+            pass
+
+    context = {
+        'win_client_save_path': win_client_save_path,
+        'mac_client_save_path': mac_client_save_path,
+        'and_client_name': and_client_name,
+        'ios_client_name': ios_client_name,
+        'LANGUAGE_CODE': LANGUAGE_CODE,
+        'user_email': user_email,  # 이메일을 context에 추가
+        'username': user_email,  # 이메일을 context에 추가
+        'regdate': str(user_regdate) if user_regdate else '',
+        'simultaneous_use': simultaneous_use_str,
+        'expiration': expiration_str,
+    }
+
+    context.update(csrf(request))
+
+    return render(request, 'new/index.html', context)
+
+
+'''
+# 테스트 페이지 렌더링 (2020-06-29)
+@csrf_exempt
+def test2(request):
+    url = 'https://secureapi.test.eximbay.com/Gateway/BasicProcessor.krp'
+    payload = {
+        'ver': 230,
+        'mid': '1849705C64',
+        'txntype': 'PAYMENT',
+        'ref': 'demo20170418202020',
+        'cur': 'USD',
+        'amt': '7',
+        'paymethod': 'P141', # P141 (Wechat), P101 (VISA)
+        'buyer': 'Buyer',
+        'email': 'email@email.com',
+        'lang': 'KR',
+        'returnurl': 'http://localhost:8000/eximbay_return',
+        'statusurl': 'http://localhost:8000/eximbay_callback',
+        'item_0_product': 'product',
+        'item_0_quantity': '1',
+        'item_0_unitPrice': '1.25',
+        'shipTo_city': 'Mountain View',
+        'shipTo_country': 'US',
+        'shipTo_firstName': 'First Name',
+        'shipTo_lastName': 'Last Name',
+        'shipTo_phoneNumber': '1234',
+        'shipTo_postalCode': '94043',
+        'shipTo_state': 'CA',
+        'shipTo_street1': '100 Elm Street',
+        'displaytype': 'P',
+        'param1': '1_1', # <session>_<month_type>
+        'param2': 'TITAN NETWORKS 세션1 (1개월)', # product_name
+        'param3': '228', # user_id
+    }
+    secret_key = '289F40E6640124B2628640168C3C5464'
+    sort_payload = dict(sorted(payload.items()))
+
+    a = '&'.join(['%s=%s' % (key, value) for (key, value) in sort_payload.items()])
+    b = '{secret_key}?{string_sort_payload}'.format(secret_key=secret_key, string_sort_payload=a)
+    c = hashlib.sha256(b.encode('utf-8')).hexdigest()
+
+    print('a = ', a)
+    print('b = ', b)
+    print('c = ', c)
+
+    context = {}
+    context['fgkey'] = c
+    return render(request, 'new/test2.html', context)
+
+
+# 테스트 페이지 렌더링 (2020-06-29)
+def test(request):
+    context = {}
+    return render(request, 'new/test.html', context)
+'''
+
+
+# 다국어 변경 API (2020-03-10)
+def api_translate(request, language):
+    if translation.LANGUAGE_SESSION_KEY in request.session:
+        del request.session[translation.LANGUAGE_SESSION_KEY]
+    if 'current_language' in request.session:
+        del request.session['current_language']
+    translation.activate(language)
+    request.session[translation.LANGUAGE_SESSION_KEY] = language
+    request.session['current_language'] = translation.get_language()
+    return redirect('/')

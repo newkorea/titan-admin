@@ -1,0 +1,5 @@
+2024.12.08 09:38:46	<QueryDict: {'tid': ['utocom-202412080158669'], 'cid': ['t3379992773975997165'], 'pay_info': ['카카오머니'], 'amount': ['8300'], 'taxfree_amount': ['0'], 'tax_amount': ['755'], 'nonsettle_amount': ['0'], 'payhash': ['F35FE9914665129D50C7B327BA984CA859CC24B61A831A4919CA8ED0F0CCF01C'], 'receipt_possible_amount': ['0'], 'discount_amount': ['0'], 'disposable_cup_deposit': ['0'], 'method_info': ['money'], 'user_id': ['11953'], 'pgcode': ['kakaopay'], 'user_name': ['Joshua Seo'], 'order_no': ['11953_20241208093756'], 'service_name': ['TITAN NETWORKS'], 'product_name': ['TITAN NETWORKS 세션1 (1개월)'], 'custom_parameter': ['1_1'], 'transaction_date': ['2024-12-08 09:38:45'], 'code': ['0'], 'message': ['']}>
+2024.12.08 09:38:49	<QueryDict: {'user_id': ['11953'], 'pgcode': ['kakaopay'], 'user_name': ['Joshua Seo'], 'order_no': ['11953_20241208093756'], 'service_name': ['TITAN NETWORKS'], 'product_name': ['TITAN NETWORKS 세션1 (1개월)'], 'custom_parameter': ['1_1'], 'code': ['20454'], 'message': ['이미 처리된 거래 건입니다.']}>
+2024.12.08 09:38:51	<QueryDict: {}>
+2024.12.08 09:38:52	<QueryDict: {}>
+2024.12.08 09:38:52	<QueryDict: {}>

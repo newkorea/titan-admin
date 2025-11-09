@@ -1,0 +1,184 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--header section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-2.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('Download')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--header section end-->
+
+    <!--blog section start-->
+    <div class="module ptb-50">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-4">
+                    <div class="sidebar-left pr-4">
+
+                        <!-- Categories widget-->
+                        <aside class="widget widget-categories">
+                            <div class="widget-title">
+                                <h6>${_('Download')}</h6>
+                            </div>
+                            <ul>
+                                <li><a href="/download/android">${_('Android')}</a></li>
+                                <li><a href="/download/ios">${_('IOS')}</a></li>
+                                <li><a href="/download/windows">${_('Windows')}</a></li>
+                                <li><a href="/download/mac">${_('MacOS')}</a></li>
+                            </ul>
+                        </aside>
+
+                    </div>
+                </div>
+                <div class="col-lg-8 col-md-8">
+
+                    <!-- Post-->
+                    <article class="post">
+                        <div class="media author-info mb-3">
+                            % if type == 'android':
+                                <div class="author-img mr-3">
+                                    <img src="/static/new/img/download/android.png" class="img-fluid rounded-circle">
+                                </div>
+                                <div class="media-body">
+                                    <h5 class="mb-0">${_('Android')}</h5>
+                                    <span>${_('Support Android')}</span>
+                                </div>
+								<ul>
+                                <div class="media-body">
+                                    <li><a href="https://titanvpn.kr/upload/download/titan.apk">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}
+                                        </button>
+                                    </a></li>
+                                   <li>
+                                    <a href="https://titan.jobjapan.com/upload/download/titan.apk">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}2
+                                        </button>
+                                    </a></li>
+									<li>
+                                    <a href="https://tlb.shanghai.co.kr/upload/download/titan.apk">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}3  
+                                        </button>
+                                    </a></li>
+
+                                </div></ul>
+                            % elif type == 'ios':
+                                <div class="author-img mr-3">
+                                    <img src="/static/new/img/download/apple-ios.svg" class="img-fluid" style="margin-top: 10px;">
+                                </div>
+                                <div class="media-body">
+                                    <h5 class="mb-0">${_('IOS')}</h5>
+                                    <span>${_('Support IOS')}</span>
+                                </div>
+                                <div class="media-body">
+								    <a href="https://apps.apple.com/us/app/titan-vpn/id1483368443">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            App Store
+                                        </button>
+                                    </a>
+                                    <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                        ${_('Please refer to the manual below')}
+                                    </button>
+                                </div>
+                            % elif type == 'mac':
+                                <div class="author-img mr-3">
+                                    <img src="/static/new/img/download/macos.png" class="img-fluid rounded-circle">
+                                </div>
+                                <div class="media-body">
+                                    <h5 class="mb-0">${_('MacOS')}</h5>
+                                    <span>${_('Support MacOS')}</span>
+                                </div>
+                                <ul>
+                                <div class="media-body">
+                                    <li><a href="https://titan.jobjapan.com/upload/download/titan.pkg">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}LINK1
+                                        </button>
+                                    </a></li>
+                                   <li>
+                                    <a href="https://tlb.shanghai.co.kr/upload/download/titan.pkg">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}LINK2
+                                        </button>
+                                    </a></li>
+									<li>
+                                    <a href="https://titanvpn.kr/upload/download/titan.pkg">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}LINK3
+                                        </button>
+                                    </a></li>
+                                </div></ul>
+                            % elif type == 'windows':
+                                <div class="author-img mr-3">
+                                    <img src="/static/new/img/download/windows.png" class="img-fluid rounded-circle">
+                                </div>
+                                <div class="media-body">
+                                    <h5 class="mb-0">${_('Windows')}</h5>
+                                    <span>${_('Support Windows 11, 10, 8, 7, Vista')}</span><br>
+                                </div>
+                                <ul>
+                                <div class="media-body">
+                                    <li><a href="https://titan.jobjapan.com/upload/download/titan.zip">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}Link1
+                                        </button>
+                                    </a></li>
+                                   <li>
+                                    <a href="http://titan.shanghai.co.kr/upload/download/titan.zip">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}Link2
+                                        </button>
+                                    </a></li>
+									<a href="https://titanvpn.kr/upload/download/titan.msi">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            ${_('Download')}Link3  
+                                        </button>
+                                    </a></li>
+									<li>
+                                    <a href="https://aka.ms/vs/17/release/vc_redist.x86.exe">
+                                        <button class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
+                                            VC_LIB${_('Download')}
+                                        </button>
+                                    </a></li>
+                                    
+                                </div></ul>
+                            % endif
+                        </div>
+                    </article>
+                    <!-- Post end-->
+
+                    <!-- Post-->
+                    <article class="post">
+                        <img class="dow-img" src='${image_save_path}'>
+                    </article>
+                    <!-- Post end-->
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--blog section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+</%block>

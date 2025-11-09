@@ -1,0 +1,563 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-03 16:40+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Terms of Service"
+msgstr "服务利用条款"
+
+msgid "Privacy Policy"
+msgstr "隐私权政策"
+
+msgid "Refund Policy"
+msgstr "退款政策"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Download2"
+msgstr "下载2"
+
+msgid "Download3"
+msgstr "下载3"
+
+msgid "Download Windows 11"
+msgstr "下载 Windows 11"
+
+msgid "Titan Plus"
+msgstr "下载PLUS app"
+
+msgid "Android"
+msgstr "安卓"
+
+msgid "Use"
+msgstr "使用"
+
+msgid "Select a Period"
+msgstr "使用月数"
+
+
+msgid "IOS"
+msgstr "IOS"
+
+msgid "Windows"
+msgstr "Windows"
+
+msgid "MacOS"
+msgstr "MacOS"
+
+msgid "Service"
+msgstr "服务"
+
+msgid "Price"
+msgstr "利用价格"
+
+msgid "Payment"
+msgstr "付款"
+
+msgid "MyPage"
+msgstr "个人中心"
+
+msgid "Transactions"
+msgstr "交易记录"
+
+msgid "Logout"
+msgstr "退出"
+
+msgid "Sign in"
+msgstr "登录"
+
+msgid "Sign up"
+msgstr "注册"
+
+msgid "Change password"
+msgstr "变更密码"
+
+msgid "Your identity has been verified"
+msgstr "完成本人认证"
+
+msgid "Enter your new password"
+msgstr "请输入新的密码进行变更密码"
+
+msgid "New password"
+msgstr "新的密码"
+
+msgid "Enter the password"
+msgstr "输入密码"
+
+msgid "Re-enter new password"
+msgstr "确认新的密码"
+
+msgid "Re-enter password"
+msgstr "再次确认密码"
+
+msgid "Try to login again?"
+msgstr "想起来了密码吗"
+
+msgid "Support Android"
+msgstr "支持安卓系统"
+
+msgid "Support IOS"
+msgstr "支持IOS系统"
+
+msgid "Please refer to the manual below"
+msgstr "请参考下面的指南"
+
+# --- JS popup/QR i18n strings ---
+msgid "Please try again later"
+msgstr "请稍后再试"
+
+msgid "We are currently processing another request. Please try again in 1 minute!"
+msgstr "当前正在处理其他请求。请在1分钟后再试！"
+
+msgid "OK"
+msgstr "确认"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Recent Payment Check"
+msgstr "最近付款确认"
+
+msgid "{minutes} minutes ago, {amount} KRW was paid via {method}. {expire} Would you like to make an additional payment?"
+msgstr "{minutes} 分钟前，通过 {method} 支付了 {amount} 韩元。{expire} 是否继续追加付款？"
+
+msgid "Already extended until {expire_date}."
+msgstr "已延长至 {expire_date}。"
+
+msgid "Additional payment"
+msgstr "追加付款"
+
+msgid "ALIPAY"
+msgstr "支付宝"
+
+msgid "WECHAT PAY"
+msgstr "微信支付"
+
+msgid "Other payment"
+msgstr "其他付款"
+
+msgid "{label} payment has been requested."
+msgstr "已提交 {label} 付款请求。"
+
+msgid "Please scan the QR code and deposit {price} yuan."
+msgstr "请扫描二维码并支付 {price} 元。"
+
+msgid "After the deposit, the administrator will manually confirm and complete the payment."
+msgstr "付款后，管理员将人工确认并完成订单。"
+
+msgid "After payment, press the Payment Complete button to notify via Channel Talk."
+msgstr "付款后请点击“付款完成”按钮并通过 Channel Talk 通知我们。"
+
+msgid "QR validity expired"
+msgstr "二维码已过期"
+
+msgid "The QR code window closed after 1 minute. Please try again."
+msgstr "二维码窗口在1分钟后关闭。请重试。"
+
+msgid "Payment Success"
+msgstr "付款成功"
+
+msgid "Your payment has been successfully completed."
+msgstr "您的付款已成功完成。"
+
+msgid "Payment confirmation failed"
+msgstr "付款确认失败"
+
+msgid "Payment confirmation failed. Please contact the administrator."
+msgstr "付款确认失败。请联系管理员。"
+
+msgid "Contact Admin"
+msgstr "联系管理员"
+
+msgid "Payment Complete"
+msgstr "付款完成"
+
+msgid "(Concurrent devices: {n})"
+msgstr "（同时在线 {n} 台设备）"
+
+msgid "Concurrent devices: {n}"
+msgstr "同时在线 {n} 台设备"
+
+msgid "Support MacOS"
+msgstr "支持MacOS系统"
+
+# --- MyPage session history ---
+msgid "App Login History"
+msgstr "应用登录记录"
+
+msgid "Device Type"
+msgstr "设备类型"
+
+msgid "App Version"
+msgstr "应用版本"
+
+msgid "ISP"
+msgstr "运营商"
+
+msgid "Country"
+msgstr "国家"
+
+msgid "City"
+msgstr "城市"
+
+msgid "Login Time"
+msgstr "登录时间"
+
+msgid "No active sessions."
+msgstr "当前没有活跃会话。"
+
+msgid "Support Windows 11, 10, 8, 7, Vista"
+msgstr "支持Windows 11, 10, 8, 7, Vista系统"
+
+msgid "Expired mail"
+msgstr "已过期的邮件"
+
+msgid "It's been a long time sent to email"
+msgstr "发送邮件已太久了"
+
+msgid "Retry the change password"
+msgstr "请再次进行找回密码"
+
+msgid "Forgot your password?"
+msgstr "找回密码"
+
+msgid "1day free trial"
+msgstr "一天免费体验"
+
+msgid "TITAN VPN Price"
+msgstr "TITAN VPN 利用价格"
+
+msgid "You can check the VPN price at a glance"
+msgstr "价格一览"
+
+msgid "TITAN VPN Download and Manual"
+msgstr "TITAN VPN下载及使用方法"
+
+msgid "Read the manual, you can use it easily"
+msgstr "阅读使用指南，任何人都可以容易使用"
+
+msgid "Software Download"
+msgstr "下载软件"
+
+msgid "Please download the software that corresponds to the platform you are using"
+msgstr "请下载顾客要使用的平台的软件"
+
+msgid "TITAN VPN provides service at the following price"
+msgstr "TITAN VPN以下列价格提供服务(一个月30天，一年360天)"
+
+msgid "Month"
+msgstr "个月"
+
+msgid "(30days)"
+msgstr "(30天)"
+
+msgid "(180days)"
+msgstr "(180天)"
+
+msgid "(360days)"
+msgstr "(360天)"
+
+msgid "One device concurrent access"
+msgstr "同时在线一个机器"
+
+msgid "Two devices concurrent access"
+msgstr "同时在线2个机器"
+
+msgid "Three devices concurrent access"
+msgstr "同时在线3个机器"
+
+msgid "Four devices concurrent access"
+msgstr "同时在线4个机器"
+
+msgid "Five devices concurrent access"
+msgstr "同时在线5个机器"
+
+msgid "Six devices concurrent access"
+msgstr "同时在线6个机器"
+
+msgid "Seven devices concurrent access"
+msgstr "同时在线7个机器"
+
+msgid "Eight devices concurrent access"
+msgstr "同时在线8个机器"
+
+msgid "Nine devices concurrent access"
+msgstr "同时在线9个机器"
+
+msgid "Ten devices concurrent access"
+msgstr "同时在线10个机器"
+
+msgid "One user concurrent access"
+msgstr "同时在线一个机器"
+
+msgid "2 users concurrent access"
+msgstr "同时在线2个机器"
+
+msgid "3 users concurrent access"
+msgstr "同时在线3个机器"
+
+msgid "4 users concurrent access"
+msgstr "同时在线4个机器"
+
+msgid "5 users concurrent access"
+msgstr "同时在线5个机器"
+
+msgid "6 users concurrent access"
+msgstr "同时在线6个机器"
+
+msgid "WON"
+msgstr "国内付款价格"
+
+msgid "USD"
+msgstr "海外支付价格"
+
+msgid "CNY"
+msgstr "微信支付价格"
+
+msgid "Free refund before 7 days"
+msgstr "7日之前免费退款"
+
+msgid "Purchase"
+msgstr "购买"
+
+msgid "Select a session"
+msgstr "选择同时在线数"
+
+msgid "Costomer Service"
+msgstr "咨询时间"
+
+msgid "Any problems or inquiries arising from using the service are handled below"
+msgstr "使用服务时发生的问题或咨询由在下面处理"
+
+msgid "Costomer Service on (KST)10:00 AM to 10:00 PM"
+msgstr "咨询时间 上午10:00 ~ 下午10:00"
+
+msgid "If you want to direct contact, Please click on the bottom right icon"
+msgstr "如需1:1咨询,请点击右下角图标"
+
+msgid "You can scan the top QR code in Wechat for contact"
+msgstr "可在微信扫描上端QR码进行咨询"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "Email"
+msgstr "电子邮箱"
+
+msgid "Hello"
+msgstr "你好"
+
+msgid "Hello Customer"
+msgstr "您好"
+
+msgid "Thank you for using TITAN VPN"
+msgstr "感谢利用TITAN VPN"
+
+msgid "We will return your favor with a stable service and fast speed"
+msgstr "我们会以稳定的服务和快速回报顾客"
+
+msgid "Don't have an account yet?"
+msgstr "没有帐号吗"
+
+msgid "Expiry date"
+msgstr "预定到期"
+
+msgid "concurrent access"
+msgstr "同时在线"
+
+msgid "personnel"
+msgstr "名"
+
+msgid "Name"
+msgstr "名字"
+
+msgid "Referrer Code"
+msgstr "推荐人代码"
+
+msgid "Registered date"
+msgstr "注册日"
+
+msgid "VPN Server address"
+msgstr "VPN 服务器地址"
+
+msgid "VPN ID"
+msgstr "VPN 名称"
+
+msgid "VPN Password"
+msgstr "VPN 密码"
+
+msgid "Personal Referrer Promotion link"
+msgstr "推荐人注册地址"
+
+msgid "We will send you a reset password link via email"
+msgstr "通过电子邮件发送密码初始化链接"
+
+msgid "Click the reset URL and you can change the password"
+msgstr "通过点击密码初始化链接可以变更密码"
+
+msgid "Send Email"
+msgstr "发送邮件"
+
+msgid "The price at a glance"
+msgstr "价格一览"
+
+msgid "Transaction history"
+msgstr "交易记录"
+
+msgid "Service period"
+msgstr "期间"
+
+msgid "Go back"
+msgstr "上一页"
+
+msgid "Move to payment page"
+msgstr "转换到服务付款页面"
+
+msgid "You will be free to use TITAN VPN after you sign up"
+msgstr "通过注册会员可方便地使用TITAN VPN"
+
+msgid "You will be receive authentication e-mail for identify confirmation"
+msgstr "为了进行本人认证,注册会员时发送本人认证邮件"
+
+msgid "We closely collaborate with police forces across various countries and regions to prevent cyber crime"
+msgstr "我们的Titan致力于与各国警方紧密合作，以预防网络犯罪。特别是在韩中发生犯罪时，我们会追踪用户当前的IP地址，并通报韩国警方以及中国公安部门"
+
+
+msgid "Enter your name"
+msgstr "输入名字"
+
+msgid "Confirm password"
+msgstr "确认密码"
+
+msgid "Referrer code (optional)"
+msgstr "推荐人代码（可选）"
+
+msgid "Enter the referrer code"
+msgstr "输入推荐人代码"
+
+msgid "Do you have already an account?"
+msgstr "已经有帐号吗"
+
+msgid "Sending Email..."
+msgstr "在发送邮件中..."
+
+msgid "Concurrent Access means the number of devices available to log in at the same time"
+msgstr "同时在线是指同时能登录后可以使用的机器数量"
+
+msgid "The service expiration date is applied as of the payment date and time"
+msgstr "服务到期日以付款日为准"
+
+msgid "You can only get a refund before the first 7 days"
+msgstr "付款后7日前可免费退款"
+
+msgid "You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module"
+msgstr "付款后7日前可免费退款"
+
+msgid "Select a product"
+msgstr "选择商品"
+
+
+msgid "Select payment method"
+msgstr "选择支付手段"
+
+msgid "CreditCard"
+msgstr "信用卡"
+
+msgid "UnionPay"
+msgstr "银联支付"
+
+msgid "WechatPay"
+msgstr "微信支付"
+
+msgid "Bank Transfer"
+msgstr "无折存款"
+
+msgid "Online Banking"
+msgstr "网上银行"
+
+msgid "Toss"
+msgstr "Toss"
+
+msgid "KakaoPay"
+msgstr "KakaoPay"
+
+msgid "PAYCO"
+msgstr "PAYCO"
+
+msgid "The payment cannot be made because the product already exists"
+msgstr "已存在付款的产品,不能再支付"
+
+msgid "Korea"
+msgstr "韩国"
+
+msgid "General"
+msgstr "海外"
+
+msgid "Payment module"
+msgstr "付款模式"
+
+msgid "Payment request"
+msgstr "申请付款"
+
+msgid "Alipay"
+msgstr "支付宝"
+
+msgid "Delete account"
+msgstr "删除帐户"
+
+msgid "Apply"
+msgstr "申请"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Warning"
+msgstr "警告"
+
+msgid "You are currently in the process of cancelling your account and removing your membership privileges. Please be aware that if you proceed with the cancellation, any remaining period will be forfeited and the account cannot be recovered. Are you sure you want to proceed with the cancellation?"
+msgstr "您当前正在注销账号并删除会员权限。请注意，一旦注销，任何剩余时间将被取消，且账号无法恢复。您确定要继续注销吗？"
+
+msgid "Supported Countries and ISPs"
+msgstr "国家和运营商"
+
+msgid "TITAN is currently connected to the following countries and ISPs."
+msgstr "TITAN目前正在连接以下国家和运营商"
+
+msgid "We provide servers for three Korean ISPs (KT, SK, LG) as well as servers in Los Angeles, USA, India, and Japan."
+msgstr "我们提供 KT、SK、LG 的三个网络服务器，以及美国洛杉矶、印度和日本的服务器。"
+
+
+# Sub-Accounts section
+msgid "Sub-Accounts"
+msgstr "子账号"
+
+msgid "Accounts registered with suffix after your email"
+msgstr "使用邮箱后缀注册的账号"
+
+msgid "Concurrent devices"
+msgstr "同时在线设备"
+
+msgid "Action"
+msgstr "操作"
+
+msgid "Request Extension"
+msgstr "续费申请"

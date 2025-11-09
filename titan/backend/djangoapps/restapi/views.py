@@ -1,0 +1,2218 @@
+import json
+import datetime
+import re
+import uuid
+import requests
+import time
+from dateutil.relativedelta import relativedelta
+from django.shortcuts import render
+from django.shortcuts import redirect
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.db import connections
+from django.db import transaction
+from django.db.models import Max
+from django.core.exceptions import ObjectDoesNotExist
+from pytz import timezone
+from urllib.parse import quote
+from urllib.parse import unquote
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from backend.models import *
+from backend.models_radius import *
+from backend.djangoapps.common.views import *
+from backend.djangoapps.common.smtp import send_email
+from django.utils import translation
+from django.conf import settings
+from backend.djangoapps.common.payletter import Payletter
+from backend.djangoapps.common.payletter_global import PayletterGlobal
+from distutils.version import LooseVersion, StrictVersion
+import paramiko
+import traceback
+import socket
+import random
+import string
+
+# 페이레터 해외 모바일 (2019.09.12 21:06 점검완료)
+@csrf_exempt
+def app_payletter_global(request):
+
+    user_id = request.session['id']
+    user_name = request.session['username']
+    pgcode = request.POST.get('pgcode')
+    session = request.POST.get('session')
+    month_type = request.POST.get('month_type')
+
+    product_name = makeProductName(session, month_type)
+    print('DEBUG -> user_id : ', user_id)
+    print('DEBUG -> user_name : ', user_name)
+    print('DEBUG -> pgcode : ', pgcode)
+    print('DEBUG -> session : ', session)
+    print('DEBUG -> month_type : ', month_type)
+    print('DEBUG -> product_name : ', product_name)
+
+    price = getProductPirce(session, month_type, 'USD')
+    print('DEBUG -> price : ', price)
+
+    u1 = TblUser.objects.get(id=user_id)
+
+    # 사용자 이중결제 방지
+    if duplicatePaymentProtect(user_id):
+        return JsonResponse({'result': 'fail'})
+
+    # 상품번호 생성
+    order_no = createOrderNumber(user_id)
+
+    # 세션, 개월수를 넘겨주기 위한 커스텀 파라미터 생성
+    custom_parameter = createCustomParameter(session, month_type)
+
+    # 결제요청 API 호출
+    gp = PayletterGlobal(settings.PAYLETTER_MODE)
+    html = gp.payments_request(
+        pgcode,
+        user_id,
+        user_name,
+        int(price),
+        product_name,
+        order_no,
+        custom_parameter,
+        u1.email,
+        'mobile'
+    )
+
+    print('DEBUG -> html : ', html)
+
+    return JsonResponse({'result': html})
+
+
+# 페이레터 국내 모바일 (2019.09.12 21:06 점검완료)
+@csrf_exempt
+def app_payletter_korea(request):
+
+    user_id = request.session['id']
+    user_name = request.session['username']
+    pgcode = request.POST.get('pgcode')
+    session = request.POST.get('session')
+    month_type = request.POST.get('month_type')
+
+    product_name = makeProductName(session, month_type)
+    print('DEBUG -> user_id : ', user_id)
+    print('DEBUG -> user_name : ', user_name)
+    print('DEBUG -> pgcode : ', pgcode)
+    print('DEBUG -> session : ', session)
+    print('DEBUG -> month_type : ', month_type)
+    print('DEBUG -> product_name : ', product_name)
+
+    price = getProductPirce(session, month_type, 'KRW')
+    print('DEBUG -> price : ', price)
+
+    u1 = TblUser.objects.get(id=user_id)
+
+    # 사용자 이중결제 방지
+    if duplicatePaymentProtect(user_id):
+        return JsonResponse({'result': 'fail'})
+
+    # 상품번호 생성
+    order_no = createOrderNumber(user_id)
+
+    # 세션, 개월수를 넘겨주기 위한 커스텀 파라미터 생성
+    custom_parameter = createCustomParameter(session, month_type)
+
+    # 결제요청 API 호출
+    p = Payletter(settings.PAYLETTER_MODE)
+    res = p.payments_request(
+        pgcode,
+        user_id,
+        user_name,
+        int(price),
+        product_name,
+        order_no,
+        custom_parameter,
+        u1.email
+    )
+    res = json.loads(res)
+    mobile_url = res['mobile_url']
+
+    print('DEBUG -> mobile_url : ', mobile_url)
+
+    return JsonResponse({'result': mobile_url})
+
+
+# 안드로이드 버전 조회 API (2019.09.16 21:49)
+@csrf_exempt
+def app_android_version(request):
+    # 200 : 업데이트 필요없음
+    # 300 : 업데이트 필요함
+    version_name = request.POST.get('version_name')
+    version_code = request.POST.get('version_code')
+
+    with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT ver_name , ver_code
+                FROM titan.tbl_android_version
+                ORDER BY id desc limit 1 
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            ver_code = rows[0]['ver_code']
+            ver_name = rows[0]['ver_name']
+            
+            if StrictVersion(ver_name) <= StrictVersion(version_name) :
+                return JsonResponse({'result': 200,
+                					 'version_code': version_code,
+                					 'version_name': version_name})
+            else :
+                return JsonResponse({'result': 300,
+                					 'version_code': ver_code,
+                					 'version_name': ver_name})
+
+
+# 윈도우즈 버전 조회 API (2019.09.16 21:49)
+@csrf_exempt
+def app_windows_version(request):
+    version_code = request.POST.get('version_code')
+    with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT ver_code
+                FROM titan.tbl_windows_version
+                ORDER BY id desc limit 1 
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            ver_code = rows[0]['ver_code']
+            new_ver_code = ver_code.split('.')[0] + "." + ver_code.split('.')[1] + "." + ver_code.split('.')[2]
+            new_version_code = version_code.split('.')[0] + "." + version_code.split('.')[1] + "." + version_code.split('.')[2] 
+            if StrictVersion(new_ver_code) <= StrictVersion(new_version_code) :
+                return JsonResponse({'result': 200,
+                					 'version_code': version_code})
+            else :
+                return JsonResponse({'result': 300,
+                					 'version_code': ver_code})
+
+    # try:
+    #     twv = TblWindowsVersion.objects.get(ver_code=version_code)
+    #     ret = {
+    #         'ver_code': twv.ver_code,
+    #         'remark': twv.remark
+    #     }
+    #     print("debug ver request ==>",version_code)
+    #     print("debug ver request ==>",ret['ver_code'])
+    #     return JsonResponse({'result': 200})
+    # except BaseException as err:
+    #     print('ERROR -> err : ', err)
+    #     return JsonResponse({'result': 300})
+
+# MAC OS 버전 조회 API (2020.02.18 12:44)
+@csrf_exempt
+def app_osx_version(request):
+
+    version_code = request.POST.get('version_code')
+
+    with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT ver_code
+                FROM titan.tbl_osx_version
+                ORDER BY id desc limit 1 
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            ver_code = rows[0]['ver_code']
+
+            if StrictVersion(ver_code) <= StrictVersion(version_code) :
+                return JsonResponse({'result': 200,
+                					 'version_code': version_code})
+            else :
+                return JsonResponse({'result': 300,
+                					 'version_code': ver_code})
+
+
+# 디비에 세션키 생성 후 반환 API (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_init_session(request):
+    if settings.HTTPS == True:
+        endpoint = 'https://'+ settings.MY_URL +''
+    if settings.HTTPS == False:
+        endpoint = 'http://'+ settings.MY_URL +''
+    url = endpoint + '/login'
+    session = requests.Session()
+    response = session.get(url)
+    session_store = session.cookies.get_dict()
+    csrftoken = session_store['csrftoken']
+    sessionid = session_store['sessionid']
+    print('INFO -> csrftoken : ', csrftoken)
+    print('INFO -> sessionid : ', sessionid)
+    with connections['default'].cursor() as cur:
+        sql = '''
+            SELECT *
+            FROM titan.tbl_china_app
+        '''
+        cur.execute(sql)
+        rows = dictfetchall(cur)
+
+        return JsonResponse({
+            'csrftoken': csrftoken,
+            'sessionid': sessionid,
+            'data':rows
+        })
+
+# 세션 키 복호화 테스트 API (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_session_test(request):
+    tmp = {
+        'id': request.session['id'],
+        'email': request.session['email'],
+        'username': request.session['username'],
+        'is_staff': request.session['is_staff'],
+    }
+    print('DEBUG -> tmp : ', tmp)
+    return JsonResponse({'result': tmp})
+
+
+# 세션키 체크 API (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_check_login(request):
+    if 'id' in request.session:
+        id = request.session['id']
+        device_type = request.POST.get('device_type')
+        device_os = request.headers['User-Agent']
+        app_version = request.POST.get('app_version')
+        device_uuid = request.POST.get('device_uuid')
+        session_key = request.POST.get('session_key')
+        load_balancer = request.headers['Host']
+        api_url = settings.MY_URL
+        login_ip = get_client_ip(request)
+        print('INFO -> START CHECK LOGIN')
+        print('INFO -> ID : ', id)
+        print('INFO -> device_type : ', device_type)
+        print('INFO -> device_os : ', device_os)
+        print('INFO -> app_version : ', app_version)
+        print('INFO -> device_uuid : ', device_uuid)
+        print('INFO -> session_key : ', session_key)
+        print('INFO -> load_balancer : ', load_balancer)
+        print('INFO -> api_url : ', api_url)
+	
+        #if app_version == None:
+        #    return JsonResponse({'result': 200,'id': id})
+        response = requests.get("http://ip-api.com/json/" + login_ip).json()
+        print('INFO -> device_country : ', response['country'])
+        print('INFO -> device_city : ', response['city'])
+        print('INFO -> login_time : ', datetime.datetime.now())
+ 
+        st = TblDeviceInfo(
+            user_id = id,
+            app_version = app_version,
+            device_type = device_type,
+            device_os = device_os.replace('\'', ''),
+            device_uuid = device_uuid,
+            session_key = session_key,
+            device_ip = login_ip,
+            device_country = response['country'].replace('\'', ''),
+            device_city = response['city'].replace('\'', ''),
+            device_isp = response['isp'].replace('\'', ''),
+            api_url = api_url,
+            load_balancer = load_balancer,
+            login_time = datetime.datetime.now())
+        st.save()
+            
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT *
+                FROM titan.tbl_china_app
+            '''
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            
+            sql_all = '''
+                SELECT id, content_zh, content_en, content_ko
+                FROM tbl_notice
+                WHERE (platform = "{device_type}"
+                OR platform = "All") AND delete_yn = 'N' AND end_date > '{date}'
+                ORDER BY id DESC
+            '''.format(device_type=device_type, date = datetime.datetime.now())
+            cur.execute(sql_all)
+            common_rows = dictfetchall(cur)
+                    
+            sql_user = '''
+                SELECT tn.id, tn.content_zh, tn.content_en, tn.content_ko
+                FROM tbl_notice_user tu
+                LEFT JOIN tbl_notice tn ON tu.notice_id = tn.id
+                WHERE tu.user_id ={id} AND delete_yn = 'N' AND end_date > '{date}'
+                ORDER BY tu.id DESC
+            '''.format(id=id, date = datetime.datetime.now())
+            cur.execute(sql_user)
+            user_rows = dictfetchall(cur)
+            
+            return JsonResponse({'result': 200,'id': id, 'data':rows, 'common_notice': common_rows, 'user_notice': user_rows})
+    else:
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT *
+                FROM titan.tbl_china_app
+            '''
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            print('INFO -> Session is invalid')
+            return JsonResponse({'result': 400, 'data':rows})
+
+
+# 세션키 삭제 API - 로그아웃 (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_user_logout(request):
+    if 'id' in request.session:
+        del request.session['id']
+    if 'email' in request.session:
+        del request.session['email']
+    if 'username' in request.session:
+        del request.session['username']
+    if 'is_staff' in request.session:
+        del request.session['is_staff']
+    print('INFO -> App Logout Processing Complete')
+    return JsonResponse({'result': 200})
+
+
+# 비밀번호 변경 API (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_change_password(request):
+    if 'id' in request.session:
+        id = request.session['id']
+
+        user_privious_password = request.POST.get('user_privious_password')
+        user_new_password = request.POST.get('user_new_password')
+        hash_password = hashText(user_new_password)
+
+        # 비밀번호 유효성 검증
+        check_cnt = 0
+        pattern1 = re.search('[0-9]', user_new_password)
+        pattern2 = re.search('[a-zA-Z]', user_new_password)
+        pattern3 = re.search('[~!@#$%^&*()_+|<>?:{}]', user_new_password)
+
+        if len(user_new_password) < 8:
+            print('ERROR -> Password validation fail')
+            return JsonResponse({'result': 500})
+        if len(user_new_password) > 16:
+            print('ERROR -> Password validation fail')
+            return JsonResponse({'result': 500})
+        if pattern1 != None:
+            print('INFO -> pattern1 match')
+            check_cnt += 1
+        if pattern2 != None:
+            print('INFO -> pattern2 match')
+            check_cnt += 1
+        if pattern3 != None:
+            print('INFO -> pattern3 match')
+            check_cnt += 1
+        print('INFO -> check_cnt : ', check_cnt)
+        if check_cnt >= 2:
+            print('INFO -> Password validation success')
+            pass
+        else:
+            print('ERROR -> Password validation fail')
+            return JsonResponse({'result': 500})
+
+        # 현재 비밀번호 검증
+        u1 = TblUser.objects.get(id = id)
+        match_result = matchHashedText(u1.password, user_privious_password)
+        if match_result == True:
+            u1.password = hash_password
+            u1.save()
+            print('INFO -> Password change completed')
+            return JsonResponse({'result': 200})
+        else:
+            print('INFO -> Password change failed')
+            return JsonResponse({'result': 600})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 404})
+
+
+# 사용자 정보 로드 API (2019.09.09 15:12 점검완료)
+@csrf_exempt
+def app_get_userinfo(request):
+    if 'id' in request.session:
+        id = request.session['id']
+
+        with connections['default'].cursor() as cur:
+            sql = '''
+                select 	w.email,
+                		ifnull(w.product_name, '') as product_name,
+                        w.username,
+                        ifnull(t.value, '') as value,
+                        ifnull(w.rec, '') as rec,
+                        ifnull(w.regist_rec, '') as regist_rec
+                from (
+                select email,
+                		case
+                        when a.regist_date > b.accept_date or b.accept_date is null
+                        then a.product_name
+                        else b.product_name
+                        end as product_name,
+                        username,
+                        rec,
+                        regist_rec
+                from tbl_user x
+                left join (
+                	select *
+                	from tbl_price_history
+                	where refund_yn = 'N'
+                	and user_id = '{id}'
+                	order by regist_date desc
+                	limit 1
+                )a
+                on x.id = a.user_id
+                left join (
+                	select *
+                	from tbl_send_history
+                	where status IN ('A','S')
+                	and user_id = '{id}'
+                	order by accept_date desc
+                	limit 1
+                ) b
+                on x.id = b.user_id
+                where x.id = '{id}'
+                ) w
+                join radius.radcheck t
+                on w.email = t.username
+                where t.attribute = 'Expiration';
+            '''.format(id=id)
+            cur.execute(sql)
+            row = dictfetchall(cur)
+            # FOR APPLE
+            apple_sql = '''
+                    select 
+                    (select status from titan.tbl_apple_status where platform = 'iOS') as apple_status, 
+                    (select status from titan.tbl_apple_status where platform = 'Mac') as mac_status;
+            '''.format()
+            cur.execute(apple_sql)
+            apple_row = dictfetchall(cur)
+            
+            if len(row) != 0:
+                res = row[0]
+                res['info_value'] = dec_radius_time(res['value']).strftime("%Y-%m-%d %H:%M:%S")
+                delta = datetime.datetime.strptime(res['info_value'], '%Y-%m-%d %H:%M:%S') - datetime.datetime.now()
+                res['remain_days'] = delta.days
+                if len(apple_row) != 0:
+                    res['apple_status'] = apple_row[0]['apple_status']
+                    res['mac_status'] = apple_row[0]['mac_status']
+                else :
+                    res['apple_status'] = 0
+                    res['mac_status'] = 0
+            else:
+                sql = '''
+                    select email, '' as product_name, username, '' as value, rec, regist_rec
+                    from titan.tbl_user
+                    where id = '{id}';
+                '''.format(id=id)
+                cur.execute(sql)
+                row = dictfetchall(cur)
+                res = row[0]
+                res['info_value'] = ''
+                res['remain_days'] = ''
+                if len(apple_row) != 0:
+                    res['apple_status'] = apple_row[0]['apple_status']
+                    res['mac_status'] = apple_row[0]['mac_status']
+                else :
+                    res['apple_status'] = 0
+                    res['mac_status'] = 0
+        res['result'] = 200
+        res['id'] = id
+        # 서비스 만료 체크
+        if datetime.datetime.strptime(res['info_value'], '%Y-%m-%d %H:%M:%S') < datetime.datetime.now() :
+            res['is_expiration'] = True
+        else :
+            res['is_expiration'] = False
+        return JsonResponse(res)
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+
+# 그룹코드 목록 호출 API (2019.09.09 15:15 점검완료)
+@csrf_exempt
+def app_group_list(request):
+    tcg = TblCodeGroup.objects.filter(
+        delete_yn = 'N'
+    )
+    res = []
+    for t in tcg:
+        tmp = {}
+        tmp['code'] = t.code
+        tmp['name'] = t.name
+        res.append(tmp)
+    return JsonResponse({'result': res})
+
+
+# 가격정보 호출 API (2019.09.09 15:15 점검완료)
+@csrf_exempt
+def app_get_price(request):
+    tp = TblPrice.objects.all()
+    res = []
+    for t in tp:
+        session = t.type_session
+        month = t.type_month
+        price = t.item_price
+        item_price_usd = t.item_price_usd
+        item_price_jpy = t.item_price_jpy
+        item_price_cny = t.item_price_cny
+        tmp = {
+            'session': session,
+            'month': month,
+            'price': price,
+            'item_price_usd': item_price_usd,
+            'item_price_jpy': item_price_jpy,
+            'item_price_cny': item_price_cny
+        }
+        res.append(tmp)
+    return JsonResponse({'result': res})
+
+
+# 그룹코드 요소 호출 API (2019.09.09 15:15 점검완료)
+@csrf_exempt
+def app_get_group(request):
+    code = request.POST.get('code')
+    tcg = TblCodeGroup.objects.get(
+        code = code,
+        delete_yn = 'N'
+    )
+    res = {
+        'name': tcg.name,
+        'memo': tcg.memo
+    }
+    return JsonResponse({'result':res})
+
+
+# 코드 요소 호출 API (2019.09.09 15:15 점검완료)
+@csrf_exempt
+def app_get_detail(request):
+    group_code = request.POST.get('group_code')
+    tcd = TblCodeDetail.objects.filter(
+        group_code = group_code,
+        delete_yn = 'N'
+    )
+    res = []
+    for t in tcd:
+        tmp = {}
+        tmp['code'] = t.code
+        tmp['name'] = t.name
+        tmp['memo'] = t.memo
+        res.append(tmp)
+    return JsonResponse({'result': res})
+
+
+# 메세지 푸쉬 API (2019.09.09 15:15 점검완료)
+@csrf_exempt
+def app_push_message(request):
+    to = request.POST.get('to')                      # "/topics/all"
+    collapse_key = request.POST.get('collapse_key')  # "type_a"
+    body = request.POST.get('body')                  # "world"
+    title = request.POST.get('title')                # "hello"
+    url = 'https://fcm.googleapis.com/fcm/send'
+    headers = {
+        "Authorization": "key=AAAAHkOoqDo:APA91bEv8Q51tDZQ5rMgDTWStGQK_s0W1jAkfB0a29aY0BTPamiYwxHGPAxue0UoJz8tZ_ERfSry-QvFBtDO5Akw2N6BI2myDUXDXUiZP6FCHj9-p0zp_oEOcNBx2IXcTA7zC8ChMJNy",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "to": to,
+        "collapse_key": collapse_key,
+        "data": {
+            "title": title,
+            "body": body
+        }
+    }
+    try:
+        r = requests.post(url, json=payload, headers=headers)
+        print('DEBUG -> status_code : ', r.status_code)
+        print('DEBUG -> text : ', r.text)
+        print('INFO -> I sent you a normal Push message')
+        return JsonResponse({'result': 200})
+    except BaseException as err:
+        print('ERROR -> err : ', err)
+        return JsonResponse({'result': 500})
+
+
+# 세션키 발급 API (2019.09.09 15:20 점검완료)
+@csrf_exempt
+def app_session_key(request):
+    login_email = request.POST.get('login_email')
+    login_password = request.POST.get('login_password')
+    device_type = request.POST.get('device_type')
+    device_os = request.headers['User-Agent']
+    app_version = request.POST.get('app_version')
+    device_uuid = request.POST.get('device_uuid')
+    load_balancer = request.headers['Host']
+    api_url = settings.MY_URL
+    login_ip = get_client_ip(request)
+    print('INFO -> START APP SESSION KEY')
+    print('INFO -> login_email : ', login_email)
+    print('INFO -> login_password : ', login_password)
+    print('INFO -> login_ip : ', login_ip)
+
+    # 백엔드 유효성 체크
+    if login_email == '':
+        return JsonResponse({'result': 400})
+    elif login_password == '':
+        return JsonResponse({'result': 400})
+
+    # 아이디 존재여부 체크
+    try:
+        u1 = TblUser.objects.get(email=login_email)
+    except BaseException:
+        return JsonResponse({'result': 600})
+
+    user_password = u1.password
+    user_id = u1.id
+
+    # 활성화 여부 체크
+    if u1.is_active == 0:
+        return JsonResponse({'result': 700})
+
+    # 로그인 테이블 체크
+    try:
+        u2 = TblUserLogin.objects.get(user_id=user_id)
+    except BaseException:
+        return JsonResponse({'result': 500})
+
+    user_attempt = u2.attempt
+
+    print('INFO -> user_id : ', user_id)
+    print('INFO -> user_attempt : ', user_attempt)
+
+    # 로그인 시도 오버 시 계정 잠금
+    if user_attempt >= 100:
+        return JsonResponse({'result': 300})
+
+    match_result = matchHashedText(user_password, login_password)
+    if match_result == True:
+        try:
+            with transaction.atomic():
+                u1.login_ip = login_ip
+                u2.attempt = 0
+                u2.login_date = datetime.datetime.now()
+                u1.save()
+                u2.save()
+
+                # 세션키를 찾을 수 없는 경우
+                if request.session.session_key == None:
+                    return JsonResponse({'result': 444})
+
+                # 로그인 성공
+                request.session['id'] = u1.id
+                request.session['email'] = u1.email
+                request.session['username'] = u1.username
+                request.session['is_staff'] = u1.is_staff
+                
+                session_key = request.session.session_key
+                
+                #if app_version == None:
+                #    return JsonResponse({'result': 200})
+                response = requests.get("http://ip-api.com/json/" + login_ip).json()
+                print('INFO -> user_id : ', user_id)
+                print('INFO -> app_version : ', app_version)
+                print('INFO -> device_type : ', device_type)
+                print('INFO -> device_os : ', device_os)
+                print('INFO -> device_uuid : ', device_uuid)
+                print('INFO -> session_key : ', session_key)
+                print('INFO -> device_country: ', response['country'])
+                print('INFO -> device_city : ', response['city'])
+                print('INFO -> api_url : ', api_url)
+                print('INFO -> load_balancer : ', load_balancer)
+                print('INFO -> login_time : ', datetime.datetime.now())
+                
+                st = TblDeviceInfo(
+                    user_id = u1.id,
+                    app_version = app_version,
+                    device_type = device_type,
+                    device_os = device_os.replace('\'', ''),
+                    device_uuid = device_uuid,
+                    session_key = session_key,
+                    device_ip = login_ip,
+                    device_country = response['country'].replace('\'', ''),
+                    device_city = response['city'].replace('\'', ''),
+                    device_isp = response['isp'].replace('\'', ''),
+                    api_url = api_url,
+                    load_balancer = load_balancer,
+                    login_time = datetime.datetime.now())
+                st.save()
+                
+                with connections['default'].cursor() as cur:
+                    sql_all = '''
+                        SELECT id, content_zh, content_en, content_ko
+                        FROM tbl_notice
+                        WHERE (platform = "{device_type}"
+                        OR platform = "All") AND delete_yn = 'N' AND end_date > '{date}'
+                        ORDER BY id DESC
+                    '''.format(device_type=device_type, date = datetime.datetime.now())
+                    cur.execute(sql_all)
+                    common_rows = dictfetchall(cur)
+                    
+                    sql_user = '''
+                        SELECT tn.id, tn.content_zh, tn.content_en, tn.content_ko
+                        FROM tbl_notice_user tu
+                        LEFT JOIN tbl_notice tn ON tu.notice_id = tn.id
+                        WHERE tu.user_id ={id} AND delete_yn = 'N' AND end_date > '{date}'
+                        ORDER BY tu.id DESC
+                    '''.format(id=u1.id, date = datetime.datetime.now())
+                    cur.execute(sql_user)
+                    user_rows = dictfetchall(cur)
+                    
+                    return JsonResponse({'result': 200, 'common_notice': common_rows, 'user_notice': user_rows})
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            return JsonResponse({'result': 500})
+    else:
+        try:
+            with transaction.atomic():
+                # 로그인 실패
+                u1.login_ip = login_ip
+                u2.attempt = u2.attempt + 1
+                u2.login_date = datetime.datetime.now()
+                u1.save()
+                u2.save()
+                return JsonResponse({'result': 600})
+        except BaseException as err:
+            print('ERROR -> err : ', err)
+            return JsonResponse({'result': 500})
+
+
+# VPN 시작 API (2019.09.09 15:23 점검완료)
+@csrf_exempt
+def app_start_vpn(request):
+    if 'id' in request.session:
+        id = request.session['email']
+
+        client_type = request.META['HTTP_USER_AGENT'].split('/')[0]
+        print('client_type -----> ',client_type)
+
+        # get regist_rec
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT regist_rec 
+                FROM   titan.tbl_user 
+                WHERE  email = '{id}' 
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            for row in rows:
+                regist_rec = row['regist_rec']
+
+
+        # radius 기본정보 획득
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT username
+                        ,attribute
+                        ,op
+                        ,value
+                FROM   radius.radcheck
+                WHERE  username = '{id}'
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            username = rows[0]['username']
+            for row in rows:
+                # VPN 세션 수
+                if row["attribute"] == "Simultaneous-Use":
+                    simultaneous_use = row["value"]
+
+                # VPN 접속 비밀번호
+                if row["attribute"] == "Cleartext-Password":
+                    password = row["value"]
+
+                # VPN 접속 만료기한
+                if row["attribute"] == "Expiration":
+                    expiration  = row["value"]
+
+            # VPN 사용기한 확인
+            try:
+                date = datetime.datetime.strptime(expiration, "%d %b %Y %H:%M:%S %Z")
+                now = datetime.datetime.now()
+                if date < now:
+                    print('INFO -> The period of use has expired')
+                    return JsonResponse({'result': 300})
+            except BaseException as err:
+                print('ERROR -> err : ', err)
+                return JsonResponse({'result': 300})
+
+            # radius 사용자 수 체크
+            sql = '''
+                SELECT  radacctid,
+                        acctsessionid, 
+                        nasportid, 
+                        nasipaddress,
+			nasporttype
+                FROM   radius.radacct 
+                WHERE  acctstoptime IS NULL 
+                AND username = '{id}'
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            print (simultaneous_use)
+            
+            if len(rows) >= int(simultaneous_use) :
+                sessionid = rows[0]['acctsessionid']
+                nasportid = rows[0]['nasportid']
+                nasipaddress = rows[0]['nasipaddress']
+                nasporttype = rows[0]['nasporttype']
+
+                # 서버 접속정보 가져오기
+                sql = '''
+                    SELECT username,password FROM titan.tbl_agent WHERE hostip='{ip}';
+                '''.format(ip=nasipaddress)
+                cur.execute(sql)
+                ssh_info_rows = dictfetchall(cur)
+
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                try:
+                    # timeout 1초
+                    ssh.connect(nasipaddress,
+                                username=ssh_info_rows[0]['username'],
+                                password=ssh_info_rows[0]['password'],
+                                timeout = 1)
+	            
+                    if nasporttype == 'ISDN' : # openvpn
+                        channel = ssh.invoke_shell()
+                        channel.send("telnet 127.0.0.1 1199\n")
+                        time.sleep(1.0)
+                        channel.send("mykakao9898\n")
+                        time.sleep(0.5)
+                        command = 'kill '+id+'\n'
+                        channel.send(command)
+                        time.sleep(0.5)
+                        channel.send("exit\n")
+                        time.sleep(0.5)
+                        channel.send("exit\n")
+                        time.sleep(0.5)
+                        output = channel.recv(65535).decode("utf-8")
+                        print(output)
+                    elif nasportid == '443' : # softether sstp
+                        sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                        command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                        print('cmd => ',command)
+                        ssh.exec_command(command)
+                    else :
+                        command = 'strongswan statusall | grep '+id
+                        stdin, stdout, stderr = ssh.exec_command(command)
+                        sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+
+                        command = 'strongswan stroke down-nb '+sa
+                        print('cmd => ',command)
+                        # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
+                        ssh.exec_command(command)
+                        ssh.exec_command(command)
+                except socket.timeout:
+                    #timeout 걸렸을때 radius 강제 업데이트
+                    sql = '''
+                        UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                        COMMIT;
+                    '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                    cur.execute(sql)
+                except BaseException as err:
+                    print('ERROR -> err : ', err)
+                    return JsonResponse({'result': 600})
+                    
+                finally:
+                    ssh.close()
+                    
+            
+
+            # VPN Agent 매칭
+            sql = '''
+                SELECT t2.count,
+                       t1.hostdomain
+                FROM   titan.tbl_agent t1,
+                       (SELECT t1.hostip,
+                               Count(t2.nasipaddress) AS count
+                        FROM   titan.tbl_agent t1
+                               LEFT JOIN (SELECT *
+                                          FROM   radius.radacct
+                                          WHERE  acctstoptime IS NULL
+                                          ) t2
+                                      ON t1.hostip = t2.nasipaddress
+                        WHERE  is_active
+                                OR is_active = 1
+                                   AND is_status = 1
+                        GROUP  BY t1.hostip)t2
+                WHERE  t1.hostip = t2.hostip and t1.telecom = 'KT'
+                ORDER  BY t2.count
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            if len(rows) == 0:
+                print('INFO -> Agent does not exist')
+                return JsonResponse({'result': 700})
+            else:
+                host_name = rows[0]['hostdomain']
+
+                #if regist_rec.lower() == 'kok'.lower() :
+                #    host_name = 'dt35.a301469t.com'
+
+                res = {
+                    'result' : 200,
+                    'vpn_hostname' : host_name,
+                    'vpn_username' : username,
+                    'vpn_password' : password
+                }
+            return JsonResponse(res)
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_server_list(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        with connections['default'].cursor() as cur:
+                sql = '''
+                SELECT
+                        name,
+                        hostdomain,
+                        hostip,
+                        is_active,
+                        is_status,
+                        country,
+                        pd_name,
+                        telecom,
+                        protocol
+                    FROM titan.tbl_agent
+                    order by is_active desc ,is_status desc, telecom, RAND();
+                '''
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                return JsonResponse({'result' : 200 , 'data' : rows})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+        
+@csrf_exempt
+def app_new_server_list(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        with connections['default'].cursor() as cur:
+                sql = '''                    
+                    SELECT
+                    	t1.id, 
+                    	t1.name,
+                        t1.hostdomain,
+                        t1.hostip,
+                        t1.v2_port,
+                        t1.is_active,
+                        t1.is_status,
+                        t1.is_auto,
+                        t1.country,
+                        t1.pd_name,
+                        t1.telecom,
+                        t1.protocol,
+                        t1.config,
+                        t1.v2_config
+                    FROM   titan.tbl_agent3 t1,
+                        (SELECT t1.hostip,
+                                Count(t2.nasipaddress) AS count
+                            FROM   titan.tbl_agent3 t1
+                                LEFT JOIN (SELECT *
+                                            FROM   radius.radacct
+                                            WHERE  acctstoptime IS NULL
+                                            ) t2
+                                        ON t1.hostip = t2.nasipaddress
+                            WHERE  is_active
+                                    OR is_active = 1
+                                    AND is_status = 1
+                            GROUP  BY t1.hostip)t2
+                    WHERE t1.hostip = t2.hostip AND t1.is_active = 1
+                    ORDER BY t1.country = 'KR' desc, t2.count, t1.is_auto desc
+                '''
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                return JsonResponse({'result' : 200 , 'data' : rows})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_check_server(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        server_name = request.POST.get('server_name')
+
+        with connections['default'].cursor() as cur:
+            # radius 기본정보 획득 만료일, 패스워드, 세션등
+                sql = '''
+                    SELECT username
+                            ,attribute
+                            ,op
+                            ,value
+                    FROM   radius.radcheck
+                    WHERE  username = '{id}'
+                '''.format(id=id)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                username = rows[0]['username']
+                for row in rows:
+                    # VPN 세션 수
+                    if row["attribute"] == "Simultaneous-Use":
+                        simultaneous_use = row["value"]
+
+                    # VPN 접속 비밀번호
+                    if row["attribute"] == "Cleartext-Password":
+                        password = row["value"]
+
+                    # VPN 접속 만료기한
+                    if row["attribute"] == "Expiration":
+                        expiration  = row["value"]
+
+                # VPN 사용기한 확인
+                try:
+                    date = datetime.datetime.strptime(expiration, "%d %b %Y %H:%M:%S %Z")
+                    now = datetime.datetime.now()
+                    if date < now:
+                        print('INFO -> The period of use has expired:' + id)
+                        return JsonResponse({'result': 300})
+                except BaseException as err:
+                    print('ERROR -> err : ' + id, err)
+                    return JsonResponse({'result': 300})
+
+                # radius 사용자 수 체크(동접세션수)
+                sql = '''
+                    SELECT acctsessionid, 
+                            nasportid, 
+                            nasipaddress,
+			    nasporttype
+                    FROM   radius.radacct 
+                    WHERE  acctstoptime IS NULL 
+                    AND username = '{id}'
+                '''.format(id=id)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                print('INFO old app ->' + id + ' 의' + 'NULL 줄수 :'+ str(len(rows)) + ' 동시접속 설정수 :' + simultaneous_use)
+                if len(rows) >= int(simultaneous_use) :
+                    sessionid = rows[0]['acctsessionid']
+                    nasportid = rows[0]['nasportid']
+                    nasipaddress = rows[0]['nasipaddress']
+                    nasporttype = rows[0]['nasporttype']
+
+                    # 서버 접속정보 가져오기
+                    sql = '''
+                        SELECT username,password FROM titan.tbl_agent3 WHERE hostip='{ip}';
+                    '''.format(ip=nasipaddress)
+                    cur.execute(sql)
+                    ssh_info_rows = dictfetchall(cur)
+
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    try:
+                        # timeout 1초
+                        ssh.connect(nasipaddress,
+                                    username=ssh_info_rows[0]['username'],
+                                    password=ssh_info_rows[0]['password'],
+                                    timeout = 1)
+
+                    
+                        if nasporttype == 'ISDN' : # openvpn
+                            channel = ssh.invoke_shell()
+                            channel.send("telnet 127.0.0.1 1199\n")
+                            time.sleep(0.5)
+                            channel.send("mykakao9898\n")
+                            time.sleep(0.2)
+                            command = 'kill '+id+'\n'
+                            channel.send(command)
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            output = channel.recv(65535).decode("utf-8")
+                            print(output)
+                        elif nasportid == '443' : # softether sstp
+                            sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                            command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                            print('cmd => ',command)
+                            ssh.exec_command(command)
+                        else :
+                            command = 'strongswan statusall | grep '+id
+                            stdin, stdout, stderr = ssh.exec_command(command)
+                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+                            command = 'strongswan stroke down-nb '+sa
+                            print('cmd => ',command)
+                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
+                            ssh.exec_command(command)
+                            ssh.exec_command(command)
+                    except socket.timeout:
+                        #timeout 걸렸을때 radius 강제 업데이트
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                    except BaseException as err:
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        print('ERROR -> err : ' + id, err)
+                    finally:
+                        ssh.close()
+                
+                # VPN Agent 매칭
+                sql = '''
+                    SELECT t2.count,
+                        t1.hostdomain,
+                        t1.name,
+                        t1.country
+                    FROM   titan.tbl_agent t1,
+                        (SELECT t1.hostip,
+                                Count(t2.nasipaddress) AS count
+                            FROM   titan.tbl_agent t1
+                                LEFT JOIN (SELECT *
+                                            FROM   radius.radacct
+                                            WHERE  acctstoptime IS NULL
+                                            ) t2
+                                        ON t1.hostip = t2.nasipaddress
+                            WHERE  is_active
+                                    OR is_active = 1
+                                    AND is_status = 1
+                            GROUP  BY t1.hostip)t2
+                    WHERE  t1.hostip = t2.hostip AND t1.telecom = 'KT'
+                    ORDER  BY t2.count
+                '''
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                if len(rows) == 0:
+                    print('INFO -> Agent does not exist:' + id)
+                    return JsonResponse({'result': 700})
+                else:
+                    host_name = rows[0]['hostdomain']
+                    vpn_server_name = rows[0]['name']
+                    vpn_server_country = rows[0]['country']
+
+                    sql = '''
+                    SELECT
+                            name,
+                            hostdomain,
+                            hostip,
+                            is_active,
+                            is_status,
+                            country,
+                            pd_name,
+                            telecom,
+			    protocol
+                        FROM titan.tbl_agent
+                        WHERE hostdomain = '{server_name}'
+                        LIMIT 1;
+                    '''.format(server_name = server_name)
+                    cur.execute(sql)
+                    rows = dictfetchall(cur)
+
+
+                    if len(rows) <= 0 :
+                        return JsonResponse({'result' : 200 , 
+                                            'vpn_smart_match_hostname' : host_name,
+                                            'vpn_smart_match_name' : vpn_server_name,
+                                            'vpn_smart_match_country' : vpn_server_country,
+                                            'vpn_username' : username,
+                                            'vpn_password' : password})
+                    
+                    is_active = rows[0]['is_active']
+                    is_status = rows[0]['is_status']
+
+                    if is_active == 1 and is_status == 1 :
+                        return JsonResponse({'result' : 1001 , 
+                                            'vpn_smart_match_hostname' : rows[0]['hostdomain'],
+                                            'vpn_smart_match_name' : rows[0]['name'],
+                                            'vpn_smart_match_country' : rows[0]['country'],
+                                            'vpn_username' : username,
+                                            'vpn_password' : password}) # 정상
+                    else :
+                        return JsonResponse({'result' : 1002 ,
+                                            'vpn_smart_match_hostname' : host_name,
+                                            'vpn_smart_match_name' : vpn_server_name,
+                                            'vpn_smart_match_country' : vpn_server_country,
+                                            'vpn_username' : username,
+                                            'vpn_password' : password})# 점검중
+
+#2023-08-10 Fixed By Zhao
+@csrf_exempt
+def app_new_check_server(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        server_name = request.POST.get('server_name') # Server Domain
+        server_protocol = request.POST.get('server_protocol')
+        name = request.POST.get('name')               # Server Name
+        failed_server = request.POST.get('failed_server_name')
+        login_ip = get_client_ip(request)
+        optimize_server = request.POST.get('optimize_server') # Server Domain that get from client using ping test
+
+        if server_protocol == None:
+            server_protocol = ''
+        if failed_server == None:
+            failed_server = ''
+        if name == None:
+            name = ''
+        if optimize_server == None:
+            optimize_server = ''
+        with connections['default'].cursor() as cur:
+            # radius 기본정보 획득
+                sql = '''
+                    SELECT username
+                            ,attribute
+                            ,op
+                            ,value
+                    FROM   radius.radcheck
+                    WHERE  username = '{id}'
+                '''.format(id=id)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                username = rows[0]['username']
+                for row in rows:
+                    # VPN 세션 수
+                    if row["attribute"] == "Simultaneous-Use":
+                        simultaneous_use = row["value"]
+
+                    # VPN 접속 비밀번호
+                    if row["attribute"] == "Cleartext-Password":
+                        password = row["value"]
+
+                    # VPN 접속 만료기한
+                    if row["attribute"] == "Expiration":
+                        expiration  = row["value"]
+
+                # VPN 사용기한 확인
+                try:
+                    date = datetime.datetime.strptime(expiration, "%d %b %Y %H:%M:%S %Z")
+                    now = datetime.datetime.now()
+                    if date < now:
+                        print('INFO -> The period of use has expired:' + id)
+                        return JsonResponse({'result': 300})
+                except BaseException as err:
+                    print('ERROR -> err : ' + id, err)
+                    return JsonResponse({'result': 300})
+
+                # radius 사용자 수 체크
+                sql = '''
+                    SELECT acctsessionid, 
+                            nasportid, 
+                            nasipaddress,
+                            nasporttype,
+                            radacctid,
+                            callingstationid
+                    FROM   radius.radacct 
+                    WHERE  acctstoptime IS NULL 
+                    AND username = '{id}'
+                    ORDER BY radacctid
+                '''.format(id=id)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                print('INFO ->' + id + ' 의' + 'NULL 줄수 :'+ str(len(rows)) + ' 동시접속 설정수 :' + simultaneous_use)
+                if len(rows) >= int(simultaneous_use) :
+                    sessionid = rows[0]['acctsessionid']
+                    nasportid = rows[0]['nasportid']
+                    nasipaddress = rows[0]['nasipaddress']
+                    nasporttype = rows[0]['nasporttype']
+                    callingstationid = rows[0]['callingstationid'].split('=')[0]
+                    print('INFO ->' + str(len(rows)) + ' 의 강제종료스타트 ' + simultaneous_use)
+                    # 서버 접속정보 가져오기
+                    sql = '''
+                        SELECT username,password FROM titan.tbl_agent3 WHERE hostip='{ip}';
+                    '''.format(ip=nasipaddress)
+                    cur.execute(sql)
+                    ssh_info_rows = dictfetchall(cur)
+
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    print('INFO -> SSH Open: ' + id)
+                    try:
+                        protocol = ''
+                        # timeout 1초
+                        ssh.connect(nasipaddress,
+                                    username=ssh_info_rows[0]['username'],
+                                    password=ssh_info_rows[0]['password'],
+                                    timeout = 1)
+                        			
+                        if nasporttype == 'ISDN' : # openvpn
+                            protocol = 'OPENVPN'
+                            print('INFO -> Openvpn Server telnet login:' + id)
+                            channel = ssh.invoke_shell()
+                            channel.send("telnet 127.0.0.1 1199\n")
+                            time.sleep(0.5)
+                            channel.send("mykakao9898\n")
+                            time.sleep(0.2)
+                            command = 'kill '+id+'\n'
+                            channel.send(command)
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            output = channel.recv(65535).decode("utf-8")
+                            print(output)
+                        elif nasportid == '443' : # softether sstp
+                            protocol = 'SSTP'
+                            print('INFO -> SSTP Force Stop:' + id)
+                            sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                            command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                            print('cmd => ',command)
+                            ssh.exec_command(command)
+                        elif nasporttype == 'V2RAY' : # V2RAY
+                            protocol = 'V2RAY'
+                            print("No Action")
+                        else :
+                            protocol = 'IKEV2'
+                            print('INFO -> IKEV2 Force Stop:' + id)
+                            command = 'strongswan statusall | grep '+id
+                            stdin, stdout, stderr = ssh.exec_command(command)
+                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+
+                            command = 'strongswan stroke down-nb '+sa
+                            print('cmd => ',command)
+                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
+                            ssh.exec_command(command)
+                            ssh.exec_command(command)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+                    except socket.timeout:
+                        #timeout 걸렸을때 radius 강제 업데이트
+                        print('INFO -> socket.timeout' + id)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+
+                    except BaseException as err:
+                        print('ERROR -> err : ' + id, err)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+                    finally:
+                        ssh.close()
+                
+                # VPN Agent 매칭
+                sql = ''
+                if server_protocol == '': # Under 2.2.0 for iOS problem 
+                    sql = '''
+                        SELECT
+                            t1.id, 
+                            t2.count,
+                            t1.hostdomain,
+                            t1.hostip,
+                            t1.name,
+                            t1.country,
+                            t1.config,
+                            t1.v2_config,
+                            t1.v2_port
+                        FROM titan.tbl_agent3 t1,
+                            (SELECT t1.hostip,
+                                Count(t2.nasipaddress) AS count
+                            FROM titan.tbl_agent3 t1
+                                 LEFT JOIN (SELECT *
+                                            FROM   radius.radacct
+                                            WHERE  acctstoptime IS NULL
+                                            ) t2
+                                        ON t1.hostip = t2.nasipaddress
+                            WHERE  is_active OR is_active = 1 AND is_status = 1
+                            GROUP  BY t1.hostip)t2
+                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
+                        ORDER  BY t1.telecom, t2.count
+                    '''
+                else :
+                    sql = '''
+                        SELECT
+                            t1.id, 
+                            t2.count,
+                            t1.hostdomain,
+                            t1.hostip,
+                            t1.name,
+                            t1.country,
+                            t1.config,
+                            t1.v2_config,
+                            t1.v2_port
+                        FROM titan.tbl_agent3 t1,
+                            (SELECT t1.hostip,
+                                Count(t2.nasipaddress) AS count
+                            FROM titan.tbl_agent3 t1
+                                 LEFT JOIN (SELECT *
+                                            FROM   radius.radacct
+                                            WHERE  acctstoptime IS NULL
+                                            ) t2
+                                        ON t1.hostip = t2.nasipaddress
+                            WHERE  is_active OR is_active = 1 AND is_status = 1
+                            GROUP  BY t1.hostip)t2
+                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
+                        ORDER  BY t1.telecom, t2.count
+                    '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                if len(rows) == 0:
+                    print('INFO -> Agent does not exist here 3 ' + id)
+                    sql = ''
+                    if server_protocol == '': # Under 2.2.0 for iOS problem 
+                        sql = '''
+                            SELECT
+                                t1.id, 
+                                t2.count,
+                                t1.hostdomain,
+                                t1.hostip,
+                                t1.name,
+                                t1.country,
+                                t1.config,
+                                t1.v2_config,
+                                t1.v2_port
+                            FROM titan.tbl_agent3 t1,
+                                (SELECT t1.hostip,
+                                    Count(t2.nasipaddress) AS count
+                                FROM titan.tbl_agent3 t1
+                                    LEFT JOIN (SELECT *
+                                                FROM   radius.radacct
+                                                WHERE  acctstoptime IS NULL
+                                                ) t2
+                                            ON t1.hostip = t2.nasipaddress
+                                WHERE  is_active OR is_active = 1 AND is_status = 1
+                                GROUP  BY t1.hostip)t2
+                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
+                            ORDER  BY t1.telecom, t2.count
+                        '''
+                    else :
+                        sql = '''
+                            SELECT
+                                t1.id, 
+                                t2.count,
+                                t1.hostdomain,
+                                t1.hostip,
+                                t1.name,
+                                t1.country,
+                                t1.config,
+                                t1.v2_config,
+                                t1.v2_port
+                            FROM titan.tbl_agent3 t1,
+                                (SELECT t1.hostip,
+                                    Count(t2.nasipaddress) AS count
+                                FROM titan.tbl_agent3 t1
+                                    LEFT JOIN (SELECT *
+                                                FROM   radius.radacct
+                                                WHERE  acctstoptime IS NULL
+                                                ) t2
+                                            ON t1.hostip = t2.nasipaddress
+                                WHERE  is_active OR is_active = 1 AND is_status = 1
+                                GROUP  BY t1.hostip)t2
+                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
+                            ORDER  BY t1.telecom, t2.count
+                        '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
+                    cur.execute(sql)
+                    rows = dictfetchall(cur)
+                if len(rows) == 0:
+                    print('INFO -> Agent does not exist here 2 ' + id)
+                    return JsonResponse({'result': 700})
+                else:
+                    host_name = rows[0]['hostdomain']
+                    host_ip = rows[0]['hostip']
+                    vpn_server_name = rows[0]['name']
+                    vpn_server_country = rows[0]['country']
+                    vpn_server_config = rows[0]['config']
+                    vpn_server_v2config = rows[0]['v2_config']
+                    vpn_server_v2port = rows[0]['v2_port']
+                    vpn_server_id = rows[0]['id']
+
+                    print('INFO -> optimize server ' + optimize_server)
+                    sql = '''
+                        SELECT t1.hostip,Count(t2.nasipaddress) AS count
+                        FROM titan.tbl_agent3 t1
+                        LEFT JOIN (SELECT *
+                            FROM   radius.radacct
+                            WHERE  acctstoptime IS NULL
+                            ) t2
+                        ON t1.hostip = t2.nasipaddress
+                        WHERE is_active = 1 AND is_status = 1 AND hostdomain = '{optimize_server}'
+                        GROUP  BY t1.hostip
+                    '''.format(optimize_server = optimize_server)
+                    cur.execute(sql)
+                    rows = dictfetchall(cur)
+                    count = 0
+                    if len(rows) > 0:
+                        count = rows[0]['count']
+                    sql = ''
+                    print('INFO -> count >>>>' + str(count))
+                    if optimize_server != '': 
+                        sql = '''
+                            SELECT
+                                id,
+                                name,
+                                hostdomain,
+                                hostip,
+                                v2_port,
+                                is_active,
+                                is_status,
+                                country,
+                                pd_name,
+                                telecom,
+                                protocol,
+                                config,
+                                v2_config
+                            FROM titan.tbl_agent3
+                            WHERE hostdomain = '{optimize_server}' AND cut_number > {count}
+                            LIMIT 1;
+                        '''.format(optimize_server = optimize_server, count = count)
+                    elif name == '': # Under 2.2.0 version
+                        sql = '''
+                            SELECT
+                                id,
+                                name,
+                                hostdomain,
+                                hostip,
+                                v2_port,
+                                is_active,
+                                is_status,
+                                country,
+                                pd_name,
+                                telecom,
+                                protocol,
+                                config,
+                                v2_config
+                            FROM titan.tbl_agent3
+                            WHERE hostdomain = '{server_name}'
+                            LIMIT 1;
+                        '''.format(server_name = server_name)
+                    else :
+                        sql = '''
+                            SELECT
+                                id,
+                                name,
+                                hostdomain,
+                                hostip,
+                                v2_port,
+                                is_active,
+                                is_status,
+                                country,
+                                pd_name,
+                                telecom,
+                                protocol,
+                                config,
+                                v2_config
+                            FROM titan.tbl_agent3
+                            WHERE hostdomain = '{server_name}' AND name = '{name}'
+                            LIMIT 1;
+                        '''.format(server_name = server_name, name = name)
+                    cur.execute(sql)
+                    rows = dictfetchall(cur)
+
+                    if len(rows) <= 0 :
+                        return JsonResponse({'result' : 200 , 
+                                            'vpn_smart_match_id' : vpn_server_id,
+                                            'vpn_smart_match_hostname' : host_name,
+                                            'vpn_smart_match_name' : vpn_server_name,
+                                            'vpn_smart_match_ip' : host_ip,
+                                            'vpn_smart_match_country' : vpn_server_country,
+                                            'vpn_smart_match_config' : vpn_server_config,
+                                            'vpn_smart_match_v2config' : vpn_server_v2config,
+                                            'vpn_smart_match_v2port' : vpn_server_v2port,
+                                            'vpn_username' : username,
+                                            'vpn_password' : password})
+                    
+                    is_active = rows[0]['is_active']
+                    is_status = rows[0]['is_status']
+
+                    if is_active == 1 and is_status == 1 :
+                        return JsonResponse({'result' : 1001 , 
+                                            'vpn_smart_match_id' : rows[0]['id'],
+                                            'vpn_smart_match_hostname' : rows[0]['hostdomain'],
+                                            'vpn_smart_match_ip' : rows[0]['hostip'],
+                                            'vpn_smart_match_name' : rows[0]['name'],
+                                            'vpn_smart_match_country' : rows[0]['country'],
+                                            'vpn_smart_match_config' : rows[0]['config'],
+                                            'vpn_smart_match_v2config' : rows[0]['v2_config'],
+                                            'vpn_smart_match_v2port' : rows[0]['v2_port'],
+                                            'vpn_username' : username,
+                                            'vpn_password' : password}) # 정상
+                    else :
+                        return JsonResponse({'result' : 1002 ,
+                                            'vpn_smart_match_id' : rows[0]['id'],
+                                            'vpn_smart_match_hostname' : host_name,
+                                            'vpn_smart_match_ip' : host_ip,
+                                            'vpn_smart_match_name' : vpn_server_name,
+                                            'vpn_smart_match_country' : vpn_server_country,
+                                            'vpn_smart_match_config' : vpn_server_config,
+                                            'vpn_smart_match_v2config' : vpn_server_v2config,
+                                            'vpn_smart_match_v2port' : vpn_server_v2port,
+                                            'vpn_username' : username,
+                                            'vpn_password' : password})# 점검중
+    else :
+         print('ERROR -> err : NO ID')
+         return JsonResponse({'result': 500})
+
+#2023-03-02 Added By Zhao
+#2023-05-04 Fixed By Zhao
+#2023-07-19 Fixed By Zhao
+@csrf_exempt
+def app_stable_server(request):
+    if 'id' in request.session:
+        print("===Called Stable Server Function===")
+        email = request.session['email']
+        telecom = request.POST.get('telecom')
+        server_name = request.POST.get('server_name')
+        server_ip = request.POST.get('server_ip')
+        protocol = request.POST.get('protocol')
+        app_version = request.POST.get('app_version')
+        platform = request.POST.get('platform')
+        device = request.POST.get('device')
+        
+        login_ip = get_client_ip(request)
+	
+        response = requests.get("http://ip-api.com/json/" + login_ip).json()
+        
+        with connections['default'].cursor() as cur:
+            # radius 기본정보 획득
+                sql = '''
+                    SELECT acctsessionid, 
+                            nasportid, 
+                            nasipaddress,
+                            nasporttype,
+                            radacctid,
+                            callingstationid
+                    FROM   radius.radacct 
+                    WHERE  acctstoptime IS NULL 
+                    AND ABS(TIMESTAMPDIFF(SECOND, acctstarttime, NOW())) <= 20
+                    AND username = '{email}'
+                    ORDER BY radacctid DESC
+                '''.format(email=email)
+                cur.execute(sql)
+                rows = dictfetchall(cur)
+                print('len:' + str(len(rows)))
+                if len(rows) > 0 :
+                    print('INFO -> called here>>>>>: ')
+                    sessionid = rows[0]['acctsessionid']
+                    nasportid = rows[0]['nasportid']
+                    nasipaddress = rows[0]['nasipaddress']
+                    nasporttype = rows[0]['nasporttype']
+                    callingstationid = rows[0]['callingstationid'].split('=')[0]
+                    print('INFO -> sessionid: ' + sessionid)
+                    
+                    # 서버 접속정보 가져오기
+                    sql = '''
+                        SELECT username,password FROM titan.tbl_agent3 WHERE hostip='{ip}';
+                    '''.format(ip=nasipaddress)
+                    cur.execute(sql)
+                    ssh_info_rows = dictfetchall(cur)
+
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    print('INFO -> SSH Open: ' + email)
+                    try:
+                        protocol = ''
+                        # timeout 1초
+                        ssh.connect(nasipaddress,
+                                    username=ssh_info_rows[0]['username'],
+                                    password=ssh_info_rows[0]['password'],
+                                    timeout = 1)
+                        			
+                        if nasporttype == 'ISDN' : # openvpn
+                            protocol = 'OPENVPN'
+                            print('INFO -> Openvpn Server telnet login:' + email)
+                            channel = ssh.invoke_shell()
+                            channel.send("telnet 127.0.0.1 1199\n")
+                            time.sleep(0.5)
+                            channel.send("mykakao9898\n")
+                            time.sleep(0.2)
+                            command = 'kill '+email+'\n'
+                            channel.send(command)
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            channel.send("exit\n")
+                            time.sleep(0.2)
+                            output = channel.recv(65535).decode("utf-8")
+                            print(output)
+                        elif nasportid == '443' : # softether sstp
+                            protocol = 'SSTP'
+                            print('INFO -> SSTP Force Stop:' + email)
+                            sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                            command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                            print('cmd => ',command)
+                            ssh.exec_command(command)
+                        elif nasporttype == 'V2RAY' : # V2RAY
+                            protocol = 'V2RAY'
+                            print("No Action")
+                        else :
+                            protocol = 'IKEV2'
+                            print('INFO -> IKEV2 Force Stop:' + email)
+                            command = 'strongswan statusall | grep '+email
+                            stdin, stdout, stderr = ssh.exec_command(command)
+                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+
+                            command = 'strongswan stroke down-nb '+sa
+                            print('cmd => ',command)
+                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
+                            ssh.exec_command(command)
+                            ssh.exec_command(command)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+                    except socket.timeout:
+                        #timeout 걸렸을때 radius 강제 업데이트
+                        print('INFO -> socket.timeout' + email)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+
+                    except BaseException as err:
+                        print('ERROR -> err : ' + email, err)
+                        sql = '''
+                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                        cur.execute(sql)
+                        
+                        sql = '''
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                        cur.execute(sql)
+                    finally:
+                        ssh.close()
+        
+        
+        if platform != None:
+            device_info = ''
+            if device != None:
+                device_info = device
+            st = TblAgentFailed(
+                username = email,
+                server_name = server_name,
+                server_domain = server_ip,
+                server_protocol = protocol,
+                platform = platform,
+                app_version = app_version,
+                user_ip = login_ip,
+                user_location = response['country'].replace('\'', '') + " " + response['city'].replace('\'', ''),
+                device_info = device_info,
+                failed_time = datetime.datetime.now())
+            st.save()
+        
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT
+                    t1.id,
+                    t1.name,
+                    t1.hostdomain,
+                    t1.hostip,
+                    t1.is_active,
+                    t1.is_status,
+                    t1.country,
+                    t1.pd_name,
+                    t1.telecom,
+                    t1.protocol,
+                    t1.config
+                FROM titan.tbl_agent3 t1
+                LEFT JOIN (SELECT t1.hostip, Count(t2.nasipaddress) AS connect
+                           FROM titan.tbl_agent3 t1
+                           LEFT JOIN (SELECT *
+                                      FROM radius.radacct
+                                      WHERE acctstoptime IS NULL) t2 
+                           ON t1.hostip = t2.nasipaddress
+                           GROUP  BY t1.hostip)t2
+                ON t1.hostip = t2.hostip
+                WHERE t1.telecom = '{telecom}'
+                ORDER BY t2.connect;
+                '''.format(telecom = telecom)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            #return JsonResponse({'result' : 300 })
+            if len(rows) <= 0 :
+                return JsonResponse({'result' : 300 })
+            else :
+                return JsonResponse({'result' : 200 , 'data' : rows}) # 정상
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+#2023-06-16 Fixed By Zhao
+@csrf_exempt
+def app_report_failed_server(request):
+    if 'id' in request.session:
+        email = request.session['email']
+        telecom = request.POST.get('telecom')
+        server_name = request.POST.get('server_name')
+        server_ip = request.POST.get('server_ip')
+        protocol = request.POST.get('protocol')
+        app_version = request.POST.get('app_version')
+        platform = request.POST.get('platform')
+        device = request.POST.get('device')
+        login_ip = get_client_ip(request)
+        response = requests.get("http://ip-api.com/json/" + login_ip).json()
+        device_info = ''
+        if device != None:
+            device_info = device
+        st = TblAgentFailed(
+            username = email,
+            server_name = server_name,
+            server_domain = server_ip,
+            server_protocol = protocol,
+            platform = platform,
+            app_version = app_version,
+            user_ip = login_ip,
+            user_location = response['country'].replace('\'', '') + " " + response['city'].replace('\'', ''),
+            device_info = device_info,
+            failed_time = datetime.datetime.now())
+        st.save()
+        return JsonResponse({'result' : 200 }) # 정상
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+        
+@csrf_exempt
+def app_disconnect(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT  radacctid,
+                        acctsessionid, 
+                        nasportid, 
+                        nasipaddress
+                FROM   radius.radacct 
+                WHERE nasporttype = 'ISDN' AND acctstoptime IS NULL 
+                AND username = '{id}' ORDER BY radacctid DESC
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            
+            if len(rows) > 0 :
+                sql = '''
+                    UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                    COMMIT;
+                '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                cur.execute(sql)
+                return JsonResponse({'result': 200})
+            else :
+                return JsonResponse({'result': 200})
+                
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_check_connection(request):
+    if 'id' in request.session:
+        print('INFO -> Check V2ray Connection')
+        id = request.session['email']
+        acctuniqueid = request.POST.get('acctuniqueid')
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT  radacctid,
+                        acctsessionid, 
+                        nasportid, 
+                        nasipaddress
+                FROM   radius.radacct 
+                WHERE nasporttype = 'V2RAY' AND acctstoptime IS NULL 
+                AND username = '{id}' AND acctuniqueid = '{acctuniqueid}'
+            '''.format(id=id, acctuniqueid = acctuniqueid)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            if len(rows) > 0 :
+                return JsonResponse({'result': 200})
+            else :
+                return JsonResponse({'result': 300})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_add_connection(request):
+    if 'id' in request.session:
+        print('INFO -> Add V2ray Connection')
+        id = request.session['email']
+        login_ip = get_client_ip(request)
+        server_ip = request.POST.get('server_ip')
+        uniqueid = ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))
+        with connections['default'].cursor() as cur:
+            sql = '''
+                INSERT INTO radius.radacct (acctuniqueid, username, nasporttype, acctstarttime, nasipaddress, callingstationid, calledstationid) 
+                VALUES('{uniqueid}', '{id}', 'V2RAY', '{date}', '{server_ip}', '{login_ip}', '{server_ip}');
+            '''.format(date = datetime.datetime.now() , id=id, uniqueid = uniqueid,server_ip=server_ip,login_ip=login_ip)
+            cur.execute(sql)
+            return JsonResponse({'result': 200, 'acctuniqueid':uniqueid})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_disconnect_v2ray(request):
+    if 'id' in request.session:
+        id = request.session['email']
+        acctuniqueid = request.POST.get('acctuniqueid')
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT  radacctid
+                FROM   radius.radacct 
+                WHERE nasporttype = 'V2RAY' AND acctstoptime IS NULL 
+                AND username = '{id}' ORDER BY radacctid DESC
+            '''.format(id=id)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            if acctuniqueid == None:
+                if len(rows) > 0 :
+                    sql = '''
+                        UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                        COMMIT;
+                    '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                    cur.execute(sql)
+                    return JsonResponse({'result': 200})
+                else :
+                    return JsonResponse({'result': 300})
+            else :
+                sql = '''
+                    UPDATE radius.radacct set acctstoptime = '{date}' where acctuniqueid = '{acctuniqueid}';
+                    COMMIT;
+                '''.format(date = datetime.datetime.now() , acctuniqueid = acctuniqueid)
+                cur.execute(sql)
+                return JsonResponse({'result': 200})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+        
+@csrf_exempt
+def app_delete_user(request):
+    if 'id' in request.session:
+        change_reason = 'iOS'
+        user_id = request.session['id']
+        user = TblUser.objects.get(id = user_id)
+        # 이메일
+        email = request.session['email']
+        # 이메일(삭제)
+        delete_email = 'delete__' + user.email + '#' + datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        # racheck 처리
+        Radcheck.objects.using('radius').filter(username=email).update(username=delete_email)
+        # tbl_user 처리
+        user.email = delete_email
+        user.delete_yn = 'Y'
+        user.save()
+        # 내역 기록
+        st = TblServiceTime(
+            user_id = user_id,
+            prev_time = '',
+            prev_time_rad = '',
+            after_time = '',
+            after_time_rad = '',
+            diff = '회원탈퇴',
+            reason = change_reason,
+            regist_date = datetime.datetime.now())
+        st.save()
+        return JsonResponse({'result': 200})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+@csrf_exempt
+def app_purchase_product(request):
+    # 유저객체 획득
+    if 'id' in request.session:
+        user_id = request.session['id']
+        session = request.POST.get('session')
+        price = request.POST.get('price')
+        tid = request.POST.get('transaction')
+        month_type = request.POST.get('month_type')
+        if "-" in tid:
+            return JsonResponse({'result': 300})
+        # check double records
+        with connections['default'].cursor() as cur:
+            sql = '''
+                SELECT  tid,
+                        user_id
+                FROM  tbl_price_history
+                WHERE tid = '{tid}' AND session = '{session}' AND month_type = '{month_type}' AND pgcode= 'apple'
+                AND user_id = '{id}'
+            '''.format(id=user_id, tid=tid, month_type=month_type, session=session)
+            print(sql)
+            cur.execute(sql)
+            rows = dictfetchall(cur)
+            
+            if len(rows) > 0 :
+                return JsonResponse({'result': 300})
+                
+        # 요금 충전
+        giveServiceTime(user_id, session, month_type)
+        
+        product_name = makeProductName(session, month_type)
+        # 결제 내역 데이터베이스 기록 (해외)
+        tph = TblPriceHistory(
+            tid = tid,
+            user_id = user_id,
+            pgcode = 'apple',
+            product_name = product_name,
+            session = session,
+            month_type = month_type,
+            krw = None,
+            usd = price,
+            jpy = None,
+            cny = None,
+            taxfree_amount = None,
+            tax_amount = None,
+            autopay_flag = 'N',
+            billkey = None,
+            refund_yn = 'N',
+            regist_date = datetime.datetime.now(),
+            refund_date = None,
+            auto_end_date = None
+        )
+        tph.save()
+        
+        u1 = TblUser.objects.get(id = user_id)
+        email = u1.email
+        rce = Radcheck.objects.using('radius').filter(
+            username = email,
+            attribute = 'Expiration'
+        )
+        
+        radius_time = ''
+        if len(rce) != 0:
+            rceu = rce.first()
+            radius_time = rceu.value
+                
+        return JsonResponse({'result': 200, 'expire_date': dec_radius_time(radius_time)})
+    else:
+        print('INFO -> Session is invalid')
+        return JsonResponse({'result': 400})
+
+# python datetime 자료형을 radius 자료형으로 변경하는 함수 (2019.09.09 12:53 점검완료)
+def enc_radius_time(obj):
+    print('DEBUG -> enc_radius_time / obj : ', obj)
+    radius_time = obj.strftime('%d') + ' ' + \
+                  obj.strftime('%B')[:3] + ' ' + \
+                  obj.strftime('%Y') + ' ' + \
+                  obj.strftime('%H') + ':' + \
+                  obj.strftime('%M') + ':' + \
+                  obj.strftime('%S') + ' KST'
+    print('DEBUG -> enc_radius_time / radius_time : ', radius_time)
+    return radius_time
+
+
+# radius 자료형을 python datetime 자료형으로 변경하는 함수 (2019.09.09 12:53 점검완료)
+def dec_radius_time(radius_time):
+    radius_time = radius_time.replace(' KST', '')
+    radius_time = radius_time.replace('Jan', 'January')
+    radius_time = radius_time.replace('Feb', 'February')
+    radius_time = radius_time.replace('Mar', 'March')
+    radius_time = radius_time.replace('Apr', 'April')
+    radius_time = radius_time.replace('May', 'May')
+    radius_time = radius_time.replace('Jun', 'June')
+    radius_time = radius_time.replace('Jul', 'July')
+    radius_time = radius_time.replace('Aug', 'August')
+    radius_time = radius_time.replace('Sep', 'September')
+    radius_time = radius_time.replace('Oct', 'October')
+    radius_time = radius_time.replace('Nov', 'November')
+    radius_time = radius_time.replace('Dec', 'December')
+    radius_time = datetime.datetime.strptime(radius_time, '%d %B %Y %H:%M:%S')
+    return radius_time
+
+
+# 상품 가격 획득 함수 (2019.09.10 11:31 점검완료)
+def getProductPirce(session, month_type, type):
+    if type == 'KRW':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price
+    elif type == 'USD':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price_usd
+    elif type == 'CNY':
+        price = TblPrice.objects.get(
+            type_session = session,
+            type_month = month_type,
+        ).item_price_cny
+    return price
+
+
+# 세션과 개월을 입력받아 상품명 생성 (2019.09.10 09:44 점검완료)
+def makeProductName(session, month_type):
+    if session == '1':
+        if month_type == '1':
+            return settings.SESSION_MONTH_1_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_1_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_1_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_1_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_1_12
+    elif session == '2':
+        if month_type == '1':
+            return settings.SESSION_MONTH_1_1
+        elif month_type == '2':
+            return settings.SESSION_MONTH_2_2
+        elif month_type == '3':
+            return settings.SESSION_MONTH_2_3
+        elif month_type == '6':
+            return settings.SESSION_MONTH_2_6
+        elif month_type == '12':
+            return settings.SESSION_MONTH_2_12
+
+
+# 해당 이메일의 세션 수를 반환하는 함수 (2019.09.09 12:53 점검완료)
+def my_radius_session(email):
+    try:
+        r = Radcheck.objects.using('radius').get(
+            username=email,
+            attribute='Simultaneous-Use'
+        )
+        my_session = r.value
+        return my_session
+    except BaseException:
+        return None
+
+
+# 해당 이메일의 radius 자료형을 반환하는 함수 (2019.09.09 12:53 점검완료)
+def my_radius_time(email, return_type):
+    try:
+        r = Radcheck.objects.using('radius').get(
+            username=email,
+            attribute='Expiration'
+        )
+        expire_time = r.value
+        expire_time = dec_radius_time(expire_time)
+        if return_type == 'datetime':
+            return expire_time
+        elif return_type == 'str':
+            return expire_time.strftime("%Y-%m-%d %H:%M:%S")
+    except BaseException:
+        return None

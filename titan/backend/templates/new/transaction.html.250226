@@ -1,0 +1,63 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+<%block name="css">
+<link rel="stylesheet" href="/static/cdn/jquery-ui.css" type="text/css" />
+<link rel="stylesheet" href="/static/cdn/jquery.dataTables.min.css" type="text/css" />
+<link rel="stylesheet" href="/static/cdn/summernote.css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('Transaction history')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--contact us section start-->
+    <section class="contact-us gray-light-bg ptb-100">
+        <div class="container">
+            <div class="row">
+                <table class="table see-table" id="transaction-table" style="font-size:14px;">
+                    <thead class="thead-light">
+                        <tr>
+				          <th>번호</th>
+				          <th>상품</th>
+				          <th>세션</th>
+				          <th>시간</th>
+				          <th>금액</th>
+				          <th>상태표기</th>
+				          <th>결제구분</th>
+				          <th>요청시간</th>
+				          <th>환불시간</th>
+				          <th>등록자</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <!--contact us section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script src="/static/cdn/jquery.dataTables.min.js"></script>
+<script src="/static/cdn/Chart.min.js"></script>
+<script src="/static/new/js/transaction.js"></script>
+</%block>

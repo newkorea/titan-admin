@@ -1,0 +1,79 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="../base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">환불정책</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--contact us section start-->
+    <section class="contact-us gray-light-bg ptb-100">
+        <div class="container">
+            <div class="row">
+                환불/취소 요청은 아래와 같은 방법으로 접수하실 수 있습니다.<br>
+                · 고객센터 직접 문의 (1:1 문의, 이메일 : master@titanvpn.kr)<br>
+                * 결제 취소 및 환불은 환불신청 접수 후 7일 이내에 처리해 드립니다.<br>
+                * 단, 단순 변심에 의한 환불 요청은 기록되며 2회 이상 발생 시 환불이 불가능합니다.<br>
+                <br>
+                [ 환불 절차 ]<br>
+                온라인 환불신청 -> 고객센터 환불 요청 접수 -> 환불 가능 여부 확인 -> 결제 취소 또는 환불금 입금<br>
+                <br>
+                환불/취소가 불가능한 경우는 아래와 같습니다.<br>
+                · 결제 이후 7일이 경과한 경우<br>
+                · 단순 변심에 의한 환불을 2회 이상 반복적으로 하는 경우<br>
+                * 위 조건 중 1건이라도 해당되면 환불이 불가능하오니 유의하시기 바랍니다.<br>
+                <br>
+                전액 환불/취소가 가능한 경우는 아래와 같습니다.<br>
+                · 서비스 운영에 문제가 발생하여 타이탄 네트웍스로 부터 서비스를 공급받지 못하고 결제일로부터 7일이 지나지 않은 경우<br>
+                · 상하이구매대행의 서비스 운영에 1일 이상 문제가 발생하고 사용 일수가 결제한 상품의 30%에 달하는 일수가 지나지 않은 경우<br>
+                <br>
+                기타의 경우 부분 환불 처리하며 상품별 환불 정책은 아래와 같습니다.<br><br>
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <td>상품 종류</td>
+                      <td>상품 이름</td>
+                      <td>내용</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>단일 상품</td>
+                      <td>세션 1개</td>
+                      <td>º 사용 기간이 7일 이내인 경우 전액 환불</td>
+                    </tr>
+                    <tr>
+                      <td>통합 상품</td>
+                      <td>세션 2개</td>
+                      <td>º 사용 기간이 7일 이내인 경우 전액 환불</td>
+                    </tr>
+                  <tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <!--contact us section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+</%block>

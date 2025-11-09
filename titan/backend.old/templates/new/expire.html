@@ -1,0 +1,35 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img full-screen"
+             style="background: url('/static/new/img/app-hero-bg.jpg')no-repeat center center / cover">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="error-content text-center text-white">
+                        <h3 class="text-white">${_('Expired mail')}</h3>
+                        <p>
+                          ${_("It's been a long time sent to email")}<br>
+                          ${_('Retry the change password')}
+                        </p>
+                        <a class="btn app-store-btn" href="/forgot_password">${_('Forgot your password?')}</a></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+</%block>

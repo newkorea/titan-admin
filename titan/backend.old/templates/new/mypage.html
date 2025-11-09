@@ -1,0 +1,234 @@
+﻿<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">${_('MyPage')}</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <!--contact us section start-->
+    <section class="customer-review-section gray-light-bg ptb-50">
+        <div class="container">
+
+            <div class="row res-r">
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/season.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Expiry date')}</h5>
+                                <span>${xinfo['expire_time']}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/session.png" alt="client" class="img-fluid rounded-circle  ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('concurrent access')}</h5>
+                                <span>${xinfo['my_session']} ${_('personnel')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row res-r">
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/email.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Email')}</h5>
+                                <span>${user.email}</span>
+                            </div>
+                            <div class="">
+				                <button onclick="deleteAccount()" class="btn btn-lg btn-block solid-btn border-radius" style="font-size:14px;padding:8px;">
+				                    ${_('Delete account')}
+				                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/username.png" alt="client" class="img-fluid rounded-circle" style="margin-top: 5px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Name')}</h5>
+                                <span>${user.username}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row res-r">
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/rec_code.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Referrer Code')}</h5>
+                                <span>${user.rec}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/regist.png" alt="client" class="img-fluid rounded-circle  ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Registered date')}</h5>
+                                <span>${user.regist_date}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+      <!--          <div class="row res-r">
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/annotation.png" alt="client" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('VPN Server address')}</h5>
+                                <span>${res['vpn_hostname']}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/email2.png" alt="client" class="img-fluid rounded-circle">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('VPN ID')}</h5>
+                                <span>${res['vpn_username']}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row res-r">
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/password.png" alt="client" class="img-fluid rounded-circle" style="margin-top: 5px;">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('VPN Password')}</h5>
+                                <span>${res['vpn_password']}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-lg-6">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/link.png" alt="client" class="img-fluid rounded-circle  ref-img">
+                            </div>
+                            <div class="media-body">
+                                <h5 class="mb-0">${_('Personal Referrer Promotion link')}</h5>
+                                <span>https://www.titanvpn.io/regist?code=${user.rec}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div> -->
+    </section>
+    <!--customer review section end-->
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script>
+function deleteAccount() {
+	Swal.fire({
+		        html:
+	            '<div style="font-weight: bold; font-size: 30px;">${_("Warning")}</div>'+
+		        '<div style="font-size: 16px;;color:red;line-height:28px;margin:20px;">${_('You are currently in the process of cancelling your account and removing your membership privileges. Please be aware that if you proceed with the cancellation, any remaining period will be forfeited and the account cannot be recovered. Are you sure you want to proceed with the cancellation?')}</div>'+
+                '<input id="password" type="password" class="form-control" value="" style="height:40px;width:75%;margin-left:50px;" placeholder="${_("Enter the password")}">',
+		        showCancelButton: true,
+		        showConfirmButton: true,
+		        confirmButtonColor: '#8a4cf7',
+		        cancelButtonColor: '#cccccc',
+		        confirmButtonText: '${_("Apply")}',
+		        cancelButtonText:'${_("Cancel")}',
+		        reverseButtons: true,
+		        allowOutsideClick: false,
+		    }).then(function(result) {
+		        if (result.value) {
+			        $.post("/api_delete_account", {
+				        csrfmiddlewaretoken: $('#csrf_token').val(),
+				        password: $('#password').val()
+				    })
+				    .done(function(data) {
+				        if (data.result == '200') {
+				        	Swal.fire({
+	                            title: data.title,
+	                            text: data.text,
+	                            type: 'success',
+	                            confirmButtonColor: swalColor('success')
+	                        })
+                			window.location.href = "/logout";
+						} else {
+	                        Swal.fire({
+	                            title: data.title,
+	                            text: data.text,
+	                            type: 'error',
+	                            confirmButtonColor: swalColor('error')
+	                        })
+						}
+				    });
+			    }
+		    })
+}
+
+</script>
+</%block>

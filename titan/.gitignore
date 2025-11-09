@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtualenv
+venv/
+.venv/
+.venv38/
+
+# Django
+/static/            # STATIC_ROOT(수집물)만 제외. 소스는 backend/static/에 남김
+/media/
+upload/
+mako_modules/
+*.log
+
+# Secrets (절대 올리지 않기)
+.env
+main/settings_local.py
+*.pem
+/etc/letsencrypt/
+
+# VS Code
+.vscode/
+
+main/settings_local.py
+venv/
+*.pyc
+__pycache__/
+static/
+upload/
+
+main/settings_local.py
+venv/
+*.pyc
+__pycache__/
+static/
+upload/
+
