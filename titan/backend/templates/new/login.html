@@ -104,10 +104,14 @@ function signin(){
   })
   .done(function( data ) {
       if(data.result == 200){
-          if(next == '' || next == null) {
-              window.location.href = '/';
+          if(!next || next.trim() === '') {
+              window.location.href = '/mypage';
           } else {
-              window.location.href = '/' + next;
+              var target = next.trim();
+              if(target.charAt(0) !== '/') {
+                  target = '/' + target;
+              }
+              window.location.href = target;
           }
       }
       else {

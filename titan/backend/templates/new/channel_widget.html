@@ -1,0 +1,179 @@
+<%! import json %>
+<%
+    session = request.session
+    language_code = request.LANGUAGE_CODE
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '') or ''
+    client_ip = ''
+    if forwarded_for:
+        client_ip = forwarded_for.split(',')[0].strip()
+    else:
+        client_ip = request.META.get('REMOTE_ADDR', '') or ''
+
+    profile = {
+        'language': language_code,
+        'is_logged_in': bool(session.get('id')),
+        'request_method': request.method,
+        'request_host': request.get_host(),
+        'requested_path': request.path,
+    }
+    if client_ip:
+        profile['ip_address'] = client_ip
+
+    email = session.get('email')
+    if email:
+        profile['email'] = email
+    username = session.get('username')
+    if username:
+        profile['name'] = username
+    rec = session.get('rec')
+    if rec:
+        profile['referrer_code'] = rec
+
+    try:
+        contextual_regdate = regdate
+    except NameError:
+        contextual_regdate = None
+    if contextual_regdate:
+        profile['regdate'] = contextual_regdate
+
+    try:
+        contextual_expiration = expiration
+    except NameError:
+        contextual_expiration = None
+    if contextual_expiration:
+        profile['service_expiration'] = contextual_expiration
+
+    try:
+        contextual_simultaneous = simultaneous_use
+    except NameError:
+        contextual_simultaneous = None
+    if contextual_simultaneous:
+        profile['simultaneous_session_allowance'] = contextual_simultaneous
+
+    boot_payload = {
+        'pluginKey': '261378ba-3892-4660-80d6-94cd59c1a6eb',
+        'profile': profile,
+    }
+    user_id = session.get('id')
+    if user_id:
+        boot_payload['memberId'] = str(user_id)
+
+    boot_payload_json = json.dumps(boot_payload).replace('</', '<\/')
+%>
+<script type="application/json" id="channelBootConfigData">${boot_payload_json | n}</script>
+<script>
+(function() {
+  var channelBootConfig = {};
+  var dataElement = document.getElementById('channelBootConfigData');
+  if (dataElement) {
+    var rawText = dataElement.textContent || dataElement.innerText || '';
+    if (rawText) {
+      try {
+        channelBootConfig = JSON.parse(rawText);
+      } catch (parseError) {
+        console.error('ChannelTalk config parse error', parseError);
+        channelBootConfig = {};
+      }
+    }
+  }
+  if (dataElement && dataElement.parentNode) {
+    dataElement.parentNode.removeChild(dataElement);
+  }
+  if (!channelBootConfig || typeof channelBootConfig !== 'object') {
+    channelBootConfig = {};
+  }
+  channelBootConfig.profile = channelBootConfig.profile || {};
+
+  function enrichBootConfig() {
+    var profile = channelBootConfig.profile = channelBootConfig.profile || {};
+    var metadata = channelBootConfig.customMetadata = channelBootConfig.customMetadata || {};
+    var pageInfo = {
+      page_url: window.location.href,
+      page_path: window.location.pathname,
+      page_title: document.title || '',
+      referrer: document.referrer || '',
+      user_agent: navigator.userAgent || '',
+      viewport: (window.innerWidth || 0) + 'x' + (window.innerHeight || 0),
+      opened_at: new Date().toISOString()
+    };
+    for (var key in pageInfo) {
+      if (Object.prototype.hasOwnProperty.call(pageInfo, key)) {
+        profile[key] = pageInfo[key];
+        metadata[key] = pageInfo[key];
+      }
+    }
+  }
+
+  function bootChannel() {
+    if (!window.ChannelIO) {
+      return;
+    }
+    enrichBootConfig();
+    if (window.__channelIOBooted) {
+      window.ChannelIO('updateUser', {
+        profile: channelBootConfig.profile,
+        customMetadata: channelBootConfig.customMetadata
+      });
+      return;
+    }
+    window.ChannelIO('boot', channelBootConfig, function(error) {
+      if (error) {
+        console.error('ChannelIO boot error', error);
+        return;
+      }
+      window.__channelIOBooted = true;
+    });
+  }
+
+  function initChannel() {
+    var w = window;
+    if (w.ChannelIO && w.ChannelIOInitialized) {
+      bootChannel();
+      return;
+    }
+    if (w.ChannelIO && !w.ChannelIOInitialized) {
+      bootChannel();
+      return;
+    }
+    var d = document;
+    var ch = function() { ch.c(arguments); };
+    ch.q = [];
+    ch.c = function(args) { ch.q.push(args); };
+    w.ChannelIO = ch;
+
+    function load() {
+      if (w.ChannelIOInitialized) {
+        bootChannel();
+        return;
+      }
+      w.ChannelIOInitialized = true;
+      var s = d.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://cdn.channel.io/plugin/ch-plugin-web.js';
+      s.charset = 'UTF-8';
+      s.onload = bootChannel;
+      s.onerror = function(err) {
+        console.error('ChannelIO load error', err);
+      };
+      var x = d.getElementsByTagName('script')[0];
+      if (x && x.parentNode) {
+        x.parentNode.insertBefore(s, x);
+      } else {
+        d.head.appendChild(s);
+      }
+    }
+
+    if (d.readyState === 'complete') {
+      load();
+    } else if (w.attachEvent) {
+      w.attachEvent('onload', load);
+    } else {
+      w.addEventListener('DOMContentLoaded', load, false);
+      w.addEventListener('load', load, false);
+    }
+  }
+
+  initChannel();
+})();
+</script>

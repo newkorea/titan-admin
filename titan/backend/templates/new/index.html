@@ -24,42 +24,13 @@
 </section>
 <!--hero section end-->
 
-<style>
-  #channelTalkButton {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: transparent; /* 버튼 배경을 투명으로 설정 */
-    padding: 0;
-    border: none;
-    border-radius: 50%; /* 아이콘을 원형으로 유지 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    z-index: 1000;
-    width: 60px; /* 버튼의 크기 설정 */
-    height: 60px; /* 버튼의 크기 설정 */
-  }
-  #channelTalkButton img {
-    display: block;
-    width: 100%; /* 버튼 내부를 꽉 채우도록 설정 */
-    height: 100%; /* 버튼 내부를 꽉 채우도록 설정 */
-    border-radius: 50%; /* 이미지를 둥글게 설정 */
-    object-fit: cover; /* 이미지가 영역을 채우도록 설정 */
-  }
-</style>
-
-<!-- 오른쪽 아래에 항상 표시되는 버튼 -->
-<div id="channelTalkButton">
-  <img src="http://aws3.titanvpn.kr/static/new/img/channel2.jpg" alt="ChannelTalk Icon" style="cursor: pointer; width: 60px; height: 60px;" />
-</div>
-
 <!--promo section start-->
 <section class="promo-section ptb-20 mob-off">
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-md-10">
                 <div class="section-heading mb-5">
-                    <span class="badge badge-success badge-pill">${_('Supported Countries and ISPs')}2</span>
+                    <span class="badge badge-success badge-pill">${_('Supported Countries and ISPs')}14</span>
                     <div class="sfd-txt">
                         ${_('')}
                     </div>
@@ -547,43 +518,4 @@
 
 <%block name="js">
 <script src="/static/new/js/popup.js"></script>
-<script>
-document.getElementById('channelTalkButton').addEventListener('click', function() {
-    console.log("ChannelTalk button clicked!");  // 클릭 이벤트가 작동하는지 확인하기 위한 로그
-
-    var script = document.createElement('script');
-    script.src = '/static/new/js/channel.js';  // ChannelTalk 스크립트를 로드합니다.
-
-    script.onload = function() {
-        if (window.ChannelIO) {
-            var userEmail = "${user_email}";  // Django에서 전달된 이메일 값을 사용
-            var userName = "${username}";  // username에도 동일한 이메일 값을 사용
-            var regdate = "${regdate}";
-            var simultaneousUse = "${simultaneous_use}";  // 세션 수를 가져옴
-            var expiration = "${expiration}";  // 만료 일자를 가져옴
-
-            window.ChannelIO('boot', {
-                "pluginKey": "261378ba-3892-4660-80d6-94cd59c1a6eb",  // ChannelTalk에서 발급받은 플러그인 키입니다.
-                "profile": {
-                    "email": userEmail,  // 사용자의 이메일을 전달합니다.
-                    "name": userName,  // 사용자의 이메일을 username으로 전달합니다.
-                    "regdate": regdate,
-                    "session": simultaneousUse,  // 세션 수를 전달합니다.
-                    "lastdate": expiration,  // 만료 일자를 전달합니다.
-                    "whichpage": "메인페이지",
-                },
-                "customLauncherSelector": "#channelTalkButton", // 커스텀 런처로 사용할 버튼을 지정합니다.
-            }, function onBoot(error) {
-                if (!error) {
-                    console.log("ChannelTalk initialized successfully!");  // 성공적으로 초기화되었는지 확인
-                    window.ChannelIO('showMessenger');
-                } else {
-                    console.error("ChannelTalk initialization error:", error);  // 에러 로그 출력
-                }
-            });
-        }
-    };
-    document.body.appendChild(script);  // 스크립트를 본문에 추가하여 실행합니다.
-});
-</script>
 </%block>

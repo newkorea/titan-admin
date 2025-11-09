@@ -1434,7 +1434,7 @@ def app_new_check_server(request):
                                         ON t1.hostip = t2.nasipaddress
                             WHERE  is_active OR is_active = 1 AND is_status = 1
                             GROUP  BY t1.hostip)t2
-                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
+                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%' AND (t1.ping IS NULL OR (t1.ping >= 0 AND t1.ping <= 50))
                         ORDER  BY t1.telecom, t2.count
                     '''
                 else :
@@ -1460,7 +1460,7 @@ def app_new_check_server(request):
                                         ON t1.hostip = t2.nasipaddress
                             WHERE  is_active OR is_active = 1 AND is_status = 1
                             GROUP  BY t1.hostip)t2
-                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
+                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}' AND (t1.ping IS NULL OR (t1.ping >= 0 AND t1.ping <= 50))
                         ORDER  BY t1.telecom, t2.count
                     '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
                 cur.execute(sql)
@@ -1491,7 +1491,7 @@ def app_new_check_server(request):
                                             ON t1.hostip = t2.nasipaddress
                                 WHERE  is_active OR is_active = 1 AND is_status = 1
                                 GROUP  BY t1.hostip)t2
-                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
+                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%' AND (t1.ping IS NULL OR (t1.ping >= 0 AND t1.ping <= 50))
                             ORDER  BY t1.telecom, t2.count
                         '''
                     else :
@@ -1517,7 +1517,7 @@ def app_new_check_server(request):
                                             ON t1.hostip = t2.nasipaddress
                                 WHERE  is_active OR is_active = 1 AND is_status = 1
                                 GROUP  BY t1.hostip)t2
-                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
+                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}' AND (t1.ping IS NULL OR (t1.ping >= 0 AND t1.ping <= 50))
                             ORDER  BY t1.telecom, t2.count
                         '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
                     cur.execute(sql)

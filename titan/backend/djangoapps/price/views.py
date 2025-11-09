@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.db import connections
+from django.db.models import Q
 from django.conf import settings
 from backend.djangoapps.common.views import *
 from backend.djangoapps.common.payletter import Payletter
@@ -85,9 +86,30 @@ def api_prepare_extension_target(request):
         title, text = get_swal(LANGUAGE_CODE, 'ERROR_PASSWORD')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
+    # 자기 자신을 다시 추가하려는 경우 방지
+    if sub_user.id == owner.id:
+        return JsonResponse({'result': 500, 'code': 'SELF_ASSIGN', 'message': 'Cannot attach yourself.'})
+
+    # 이미 다른 계정의 하위계정인지 확인 (신규 parent 필드 우선)
+    if sub_user.parent_user_id:
+        if sub_user.parent_user_id == owner.id:
+            return ok_response(sub_user)
+        return JsonResponse({'result': 500, 'code': 'ALREADY_SUB', 'message': 'Already assigned to another owner.'})
+
+    # 레거시: 이메일 패턴이 다른 오너를 가리키면 중단
+    other_owner_match = re.match(r'^(.+@[^@]+?)_\d+$', sub_user.email)
+    if other_owner_match and other_owner_match.group(1) != base_email:
+        return JsonResponse({'result': 500, 'code': 'ALREADY_SUB', 'message': 'Already assigned to another owner.'})
+
     if sub_user.email.startswith(base_email + '_'):
-        # 이미 오너의 서브계정
+        # 레거시 데이터: parent_user_id를 보정 후 반환
+        sub_user.parent_user_id = owner.id
+        sub_user.save(update_fields=['parent_user_id'])
         return ok_response(sub_user)
+
+    # 하위계정을 보유한 계정은 또 다른 하위계정이 될 수 없음
+    if TblUser.objects.filter(parent_user_id=sub_user.id, delete_yn='N').exists():
+        return JsonResponse({'result': 500, 'code': 'HAS_CHILD', 'message': 'Target account already manages subaccounts.'})
 
     # 다른 사람의 메인 계정 -> 오너의 서브계정으로 변환 (email rename)
     # 유니크한 suffix 생성
@@ -103,7 +125,8 @@ def api_prepare_extension_target(request):
         pass
 
     sub_user.email = new_email
-    sub_user.save()
+    sub_user.parent_user_id = owner.id
+    sub_user.save(update_fields=['email', 'parent_user_id'])
 
     return ok_response(sub_user)
 
@@ -121,10 +144,24 @@ def api_list_subaccounts(request):
     if m:
         base_email = m.group(1)
 
-    # 소유자 + 서브계정 목록
+    # 소유자 + 서브계정 목록 (parent_user_id 기반, 레거시 패턴 보정)
     items = [{'id': owner.id, 'email': owner.email}]
-    subs = list(TblUser.objects.filter(email__startswith=base_email + '_', delete_yn='N').values('id', 'email'))
-    items.extend(subs)
+    subs_qs = TblUser.objects.filter(
+        delete_yn='N'
+    ).filter(
+        Q(parent_user_id=owner.id) |
+        Q(parent_user_id__isnull=True, email__startswith=base_email + '_')
+    ).exclude(id=owner.id).order_by('id')
+
+    subs_list = list(subs_qs)
+    legacy_ids = [su.id for su in subs_list if su.parent_user_id is None]
+    if legacy_ids:
+        TblUser.objects.filter(id__in=legacy_ids).update(parent_user_id=owner.id)
+        for su in subs_list:
+            if su.id in legacy_ids:
+                su.parent_user_id = owner.id
+
+    items.extend({'id': su.id, 'email': su.email} for su in subs_list)
     return JsonResponse({'result': 200, 'items': items})
 
 #pushplus 알림
@@ -310,7 +347,14 @@ def api_create_payment(request):
             m = re.match(r'^(.+@[^@]+?)_\d+$', base_email)
             if m:
                 base_email = m.group(1)
-            if not (target_user.email == owner.email or target_user.email.startswith(base_email + '_')):
+            if target_user.id == owner.id:
+                pass
+            elif target_user.parent_user_id == owner.id:
+                pass
+            elif target_user.parent_user_id is None and target_user.email.startswith(base_email + '_'):
+                TblUser.objects.filter(id=target_user.id, parent_user_id__isnull=True).update(parent_user_id=owner.id)
+                target_user.parent_user_id = owner.id
+            else:
                 return JsonResponse({'result': 403, 'message': 'Not allowed target user'})
             user_id = target_user.id  # 실제 결제 대상 사용자로 치환
             target_email_for_response = target_user.email
@@ -427,8 +471,13 @@ def api_create_payment_for(request):
     except TblUser.DoesNotExist:
         return JsonResponse({'result': 404, 'message': 'Target user not found'}, status=404)
 
-    # Security: ensure target account is a subaccount of the owner (email prefix match)
-    if not target_user.email.startswith(base_email + '_'):
+    # Security: ensure target account is a subaccount of the owner
+    if target_user.parent_user_id == owner.id:
+        pass
+    elif target_user.parent_user_id is None and target_user.email.startswith(base_email + '_'):
+        TblUser.objects.filter(id=target_user.id, parent_user_id__isnull=True).update(parent_user_id=owner.id)
+        target_user.parent_user_id = owner.id
+    else:
         return JsonResponse({'result': 403, 'message': 'Not allowed for this target user'}, status=403)
 
     pgcode = request.POST.get('pgcode') or 'BANK'

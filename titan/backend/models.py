@@ -523,6 +523,7 @@ class TblUser(models.Model):
     is_staff = models.IntegerField(blank=True, null=True)
     delete_yn = models.CharField(max_length=1, blank=True, null=True)
     black_yn = models.CharField(max_length=1, blank=True, null=True)
+    parent_user_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

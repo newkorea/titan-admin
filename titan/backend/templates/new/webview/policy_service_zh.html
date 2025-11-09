@@ -2,1025 +2,275 @@
 <%inherit file="../base_webview.html"/>
 
 <%block name="css">
+<style>
+  /* WebView 友好样式：左对齐与稳定行距 */
+  .tos-body { text-align: left; font-size: 15px; line-height: 1.7; }
+  .tos-body h5 { margin-top: 22px; margin-bottom: 8px; font-weight: 700; font-size: 18px; }
+  .tos-body ol { padding-left: 18px; margin: 6px 0 14px; }
+  .tos-body ul { padding-left: 18px; margin: 4px 0 10px; }
+  .tos-body li { margin: 2px 0; }
+</style>
 </%block>
 
 <%block name="content">
 <!--body content wrap start-->
 <div class="main">
 
-    <!--hero section start-->
-    <section class="hero-section ptb-100 background-img"
-             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-9 col-lg-7">
-                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
-                        <h1 class="text-white mb-0">服务利用条款</h1>
-                    </div>
-                </div>
-            </div>
+  <!--hero (WebView 简化) -->
+  <section class="hero-section ptb-60 background-img"
+           style="background: url('/static/new/img/hero-bg-1.jpg') no-repeat center center / cover;">
+    <div class="container">
+      <div class="row align-items-center justify-content-center">
+        <div class="col-md-10 col-lg-8">
+          <div class="page-header-content text-white text-center">
+            <h1 class="text-white mb-0">服务使用条款</h1>
+          </div>
         </div>
-    </section>
-    <!--hero section end-->
+      </div>
+    </div>
+  </section>
 
-    <!--contact us section start-->
-    <section class="contact-us gray-light-bg ptb-100">
-        <div class="container">
-            <div class="row">
-                Chapter 1. General Provisions<br>
-                <br>
-                Article 1 (Purpose)<br>
-                Terms and Conditions are intended to define the necessary matters between the User and the Company concerning all the services operated by the <%! from django.utils.translation import ugettext as _ %>
-<%inherit file="../base_webview.html"/>
+  <!--terms section-->
+  <section class="contact-us gray-light-bg ptb-60">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 tos-body">
 
-<%block name="css">
-</%block>
+          <p>
+            生效日期：2025年11月10日<br>
+            运营者：TitanVPN（代表：Kyungjun Lee）
+          </p>
 
-<%block name="content">
-<!--body content wrap start-->
-<div class="main">
+          <h5>第1条（目的）</h5>
+          <p>本条款旨在规定TitanVPN（以下简称“公司”）所提供之VPN及相关互联网服务（以下简称“服务”）的使用条件、程序、权利义务及责任事项。</p>
 
-    <!--hero section start-->
-    <section class="hero-section ptb-100 background-img"
-             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-9 col-lg-7">
-                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
-                        <h1 class="text-white mb-0">TERMS OF SERVICE</h1>
-                    </div>
-                </div>
-            </div>
+          <h5>第2条（定义）</h5>
+          <ol>
+            <li>“服务”系指公司提供的VPN连接、账号管理、安全通信及相关线上服务。</li>
+            <li>“会员”系指同意本条款并完成注册的个人或法人。</li>
+            <li>“账号”系指用于识别会员的基于电子邮件的登录ID。</li>
+            <li>“停用”系指在一定期间限制会员使用服务的措施。</li>
+          </ol>
+
+          <h5>第3条（条款的效力与变更）</h5>
+          <ol>
+            <li>本条款自通过服务页面或其他方式公告之时起生效。</li>
+            <li>公司可在相关法律允许范围内变更条款，并至少于生效前7日通过网站公告。</li>
+            <li>会员不同意变更条款时可申请退出；变更后继续使用视为同意。</li>
+          </ol>
+
+          <h5>第4条（服务合同的成立）</h5>
+          <ol>
+            <li>会员同意本条款并经公司审核通过后，服务合同即成立。</li>
+            <li>有下列情形之一者，公司得拒绝或事后取消注册：
+              <ol>
+                <li>以虚假身份申请；</li>
+                <li>盗用他人信息；</li>
+                <li>企图干扰服务或以非法目的使用服务；</li>
+                <li>自涉嫌犯罪、黑客攻击、垃圾信息、非法博彩、钓鱼等之实际IP/网络发起注册；</li>
+                <li>经主管机关（执法机关、ISP、CERT等）通报该IP/账号涉及恶意或违法流量。</li>
+              </ol>
+            </li>
+            <li>为确保安全，公司可对高风险IP、国家或网络采取预先的访问或认证限制。</li>
+          </ol>
+
+          <h5>第5条（公司的义务）</h5>
+          <ol>
+            <li>公司尽力稳定、持续地提供服务。</li>
+            <li>公司依相关法律保护个人信息，并另行制定并公开《隐私政策》。</li>
+            <li>发生故障或技术问题时，公司将尽速予以恢复。</li>
+          </ol>
+
+          <h5>第6条（会员义务）</h5>
+          <ol>
+            <li>会员不得：
+              <ol>
+                <li>盗用/伪造他人信息；</li>
+                <li>对服务、服务器或软件实施黑客攻击或逆向工程；</li>
+                <li>将服务用于非法博彩、色情传播、垃圾信息、钓鱼等违法行为；</li>
+                <li>诽谤、骚扰他人或侵害他人权利。</li>
+              </ol>
+            </li>
+            <li>前述违法行为的法律责任由会员自负，公司不承担因此造成之损害赔偿。</li>
+          </ol>
+
+          <h5>第7条（服务的提供与变更）</h5>
+          <ol>
+            <li>公司得基于业务或技术需要变更服务内容。</li>
+            <li>重大变更原则上提前公告，紧急情形可事后公告。</li>
+            <li>免费服务得在无事先通知的情况下变更或中止。</li>
+          </ol>
+
+          <h5>第8条（使用限制与停用）</h5>
+          <ol>
+            <li>如发生下列情形，公司得不经事先通知限制或停用服务：
+              <ol>
+                <li>实施或涉嫌实施违法/犯罪行为；</li>
+                <li>侵害他人权利或妨害运营；</li>
+                <li>造成重大网络负载或威胁系统安全；</li>
+                <li>收到合法的机关请求（如令状、公文、法院命令等）；</li>
+                <li>产生超出正常范围之过量流量并影响服务品质；</li>
+                <li>使用未经授权脚本/自动化连接导致网络过载；</li>
+                <li>超出允许的同时在线设备数量或共享账号；</li>
+                <li>自涉嫌违法活动的IP/网络接入；</li>
+                <li>经机关或CERT确认该IP/账号为恶意来源。</li>
+              </ol>
+            </li>
+            <li>对过量使用，公司可实施公平使用政策（FUP），包括限速（QoS）、并发会话阻断或临时停用等措施。</li>
+          </ol>
+          <ul>
+            <li>示例：月用量超过300GB/500GB时，可能分别限制为10Mbps/5Mbps。</li>
+            <li>示例：1设备方案300GB；2设备600GB；3设备900GB；6设备1.8TB。</li>
+          </ul>
+          <ol start="3">
+            <li>阈值可为优化而调整；重大调整将于网站公告。</li>
+            <li>在可行范围内，公司将说明限制原因与流程；法律/安全请求禁止告知时除外。</li>
+            <li>除非公司存在故意或重大过失，否则不承担损害赔偿责任。</li>
+          </ol>
+
+          <h5>第9条（个人信息保护）</h5>
+          <ol>
+            <li>公司遵守适用的个人信息保护法律。</li>
+            <li>个人信息之处理遵循《TitanVPN 隐私政策》。</li>
+          </ol>
+
+          <h5>第10条（费用与支付）</h5>
+          <ol>
+            <li>费用由公司制定并得以公告方式变更。</li>
+            <li>支付方式包括公司指定之信用卡、电子钱包或银行转账。</li>
+            <li>会员在支付前应阅读退款政策。</li>
+          </ol>
+
+          <h5>第11条（退款与取消）</h5>
+          <ol>
+            <li>支付后7日内未使用服务者，可申请退款。</li>
+            <li>已部分使用或享受活动优惠者，按使用比例结算退款。</li>
+            <li>退款原则上退回原支付渠道，相关手续费可能由会员承担。</li>
+            <li>所有退款均按韩元（KRW）计价，并仅通过韩国境内银行账户支付。</li>
+            <li>涉外支付之汇率差额由会员承担。</li>
+          </ol>
+
+          <h5>第12条（责任限制）</h5>
+          <ol>
+            <li>因免费服务、维护、不可抗力、网络故障或第三方中断而造成的损失，公司不承担责任。</li>
+            <li>因会员违反本条款而产生的损害，公司不承担责任。</li>
+            <li>公司之赔偿责任以会员最近三（3）个月已支付之费用总额为上限。</li>
+          </ol>
+
+          <h5>第13条（赔偿与免责）</h5>
+          <ol>
+            <li>会员违反本条款致公司受损者，应承担全部赔偿责任。</li>
+            <li>因依法机关请求导致之停用，公司不承担相应损害赔偿责任。</li>
+          </ol>
+
+          <h5>第14条（准据法与管辖）</h5>
+          <p>本条款受大韩民国法律管辖，与本条款相关之争议由大田地方法院专属管辖。</p>
+
+          <h5>第15条（服务使用）</h5>
+          <ol>
+            <li>自注册获批且支付确认后开始提供服务。</li>
+            <li>因技术原因无法开通时，公司将通过网站/应用告知。</li>
+            <li>会员应自行确认设备兼容性；因设备/软件过旧所致问题，公司不承担责任。</li>
+            <li>可能需要安装客户端或相关附加软件。</li>
+          </ol>
+
+          <h5>第16条（提供与中止）</h5>
+          <ol>
+            <li>服务内容包括：
+              <ol>
+                <li>VPN接入；</li>
+                <li>公司自研或合作提供的附加服务。</li>
+              </ol>
+            </li>
+            <li>公司得公告后变更或停止服务。</li>
+            <li>付费方案按网站所示期间提供。</li>
+            <li>在以下情形下服务可能暂时不可用：
+              <ol>
+                <li>维护/更换/检查系统；</li>
+                <li>应对黑客、网络不稳或异常行为；</li>
+                <li>法律禁止之情形；</li>
+                <li>不可抗力（灾害、停电等）；</li>
+                <li>合并、转让或重大业务调整；</li>
+                <li>电信运营商中止提供时。</li>
+              </ol>
+            </li>
+            <li>计划性维护可提前≥24小时公告。</li>
+            <li>紧急停机可不经事前通知。</li>
+            <li>除公司存在重大过失外，对免费服务相关损失不承担责任。</li>
+            <li>若无预告之当日累计中断超过3小时，付费用户可获相当于中断时间3倍的免费延长。</li>
+            <li>因重大运营需要，公司可提前30日公告终止服务。</li>
+            <li>对免费或不可退款方案，会员无退款请求权。</li>
+          </ol>
+
+          <h5>第17条（信息的收集与告示）</h5>
+          <ol>
+            <li>公司在网站展示商号、（如适用）登记编号等法律信息。</li>
+            <li>通知可通过注册邮箱或网站公告进行。</li>
+            <li>公司仅为正当目的（客服、合规、质量、安全）保存/查阅支付与使用日志。</li>
+            <li>为稳定与改进服务，可收集非个人技术数据（设备规格、错误日志）。</li>
+            <li>为改进服务所请求的可选数据，会员可选择同意或拒绝。</li>
+          </ol>
+
+          <h5>第18条（优惠券服务）</h5>
+          <ol>
+            <li>公司可通过网站/应用发放免费或付费优惠券。</li>
+            <li>具体条件（有效期、设备上限、支付方式等）将另行说明。</li>
+            <li>付费优惠券在7日内未使用可撤销（受法律限制约束）。</li>
+            <li>违反条款者，公司得取消其资格或限制使用；除非公司存在重大过失，否则不承担责任。</li>
+          </ol>
+
+          <h5>第19条（广告）</h5>
+          <ol>
+            <li>公司可在网站、应用或电子邮件中展示广告。</li>
+            <li>会员与广告主之间之交易损失，公司不承担责任。</li>
+          </ol>
+
+          <h5>第20条（用户内容管理）</h5>
+          <p>为维护良好通信秩序与高效运营，公司可删除、移动或拒绝发布违反第19条或第6条之内容。</p>
+
+          <h5>第21条（使用责任）</h5>
+          <p>未经公司书面同意，会员不得将服务用于营利行为；对非法行为（如黑客、非法软件分发、色情/违法广告）之后果，公司不承担责任。</p>
+
+          <h5>第22条（支付方式）</h5>
+          <ol>
+            <li>会员可使用公司提供的支付方式（信用卡、手机支付、礼品卡、实时转账等）；公司不额外收取超出商品/服务价格的费用。</li>
+            <li>公司在接收订单后发送确认通知；会员在使用前可申请变更/取消（已付款者，适用第11条与第23条）。</li>
+          </ol>
+
+          <h5>第23条（取消与退款流程）</h5>
+          <ol>
+            <li>因缺货/系统问题无法提供时，公司将尽快通知，并于已收款之情形下7个营业日内退款或采取退款措施。</li>
+            <li>支付后7日内未使用可取消，信用卡交易将予以撤销。</li>
+            <li>超过7日后，除公司可归责之重大运营故障外，不得取消；符合条件者提供退款或更换。</li>
+            <li>所有退款均以韩元（KRW）计价，并仅汇至韩国境内银行账户。</li>
+            <li>涉外支付的汇率差额由会员自行承担。</li>
+          </ol>
+
+          <h5>第24条（免责与损害赔偿）</h5>
+          <ol>
+            <li>因不可抗力无法提供服务时，公司免责。</li>
+            <li>用户之间或与第三方的交易纠纷，公司不承担责任。</li>
+            <li>发布内容之准确性/可信性由发布者自行负责；因免费服务带来的不利由会员自负。</li>
+            <li>因账号/密码管理不善或第三方不正当使用所致损失，由会员承担。</li>
+            <li>会员违反本条款致公司受损时，应赔偿全部损失并使公司免责。</li>
+          </ol>
+
+          <h5>第25条（个人信用信息使用同意）</h5>
+          <p>如公司依据相关法律需提供/使用会员之个人信用信息，将另行取得同意并告知目的、范围与保存期限。</p>
+
+          <h5>第26条（争议解决）</h5>
+          <ol>
+            <li>公司与会员应首先友好协商解决争议。</li>
+            <li>协商不成者，依第14条由大田地方法院依据韩国法专属管辖。</li>
+          </ol>
+
+          <h5>附则</h5>
+          <p>本条款自2025年11月10日起施行，并取代此前所有版本。</p>
+
         </div>
-    </section>
-    <!--hero section end-->
-
-    <!--contact us section start-->
-    <section class="contact-us gray-light-bg ptb-100">
-        <div class="container">
-            <div class="row">
-                Chapter 1. General Provisions<br>
-                <br>
-                Article 1 (Purpose)<br>
-                Terms and Conditions are intended to define the necessary matters between the User and the Company concerning all the services operated by the Shanghai Trading Co. (“we”, “us”, “our” or “Shanghai Trading Co.”).o<br>
-                <br>
-                Article 2 (Definition)<br>
-                The terms used in these Terms of Service are defined in the following way:<br>
-                1. User: Individual who is authorized to use by signing a service agreement with the company after completing the subscription according to the procedure provided by the company<br>
-                2. ID: Email address of letter and number combination selected by the user and approved by the company for user identification and user's use of the service <br>
-                3. Password: Combination of letters, numbers, special characters, etc. selected by users to protect their secrets on communication<br>
-                4. Closing an account: Termination of use agreement by company or user<br>
-                The definition of other terms is as defined in the related laws and each service guide. Undefined terms in the related laws and each service guide are based on general business practices.<br>
-                <br>
-                Article 3 (Disclosure, Effect, and Change of Terms)<br>
-                1. These terms and conditions will be announced to users by posting on a separate page at the bottom of the website.<br>
-                2. Users who agree to Terms of Service and become users will be governed by the terms and conditions from the time they agree to it. If any changes are made to the Terms of Service, they will be governed by the changed forms. By agreeing to these terms, we assume that you agree to visit our homepage regularly to check for changes in the terms.<br>
-                3. We can change the terms and conditions if there is a change in circumstances or important business reasons and will be posted online on the website 7 days before the effective date. However, in the case of changing the contents of the Terms against the user, we will directly notify the user by sending an e-mail 14 days before the effective date. Changes to the Terms will take effect on the date of the notice.<br>
-                4. Users have the right to refuse the changed terms, and users who disagree with the change of these terms can stop using the service and cancel the service. If the user continues to use the Service after the effective date of the changed terms and conditions, we assume that the user agrees to the changed terms.<br>
-                <br>
-                Article 4 (Other Terms and Conditions) <br>
-                If the matters not specified in this agreement are stipulated in other relevant laws such as the Telecommunications Basic Act, Telecommunications Business Act, ICT Promotion Act, ‘Act on Consumer Protection in Electronic Commerce’, ‘Act on the Regulation of Terms and Conditions’, ‘Electronic Commerce Basic Law’, ‘Electronic Signature Act’, ‘Act on the Promotion of Information and Communication Network Use’, and the ‘Consumer Protection Act’ the regulations shall be followed.<br>
-                <br>
-                Chapter 2. Service Agreement <br>
-                <br>
-                Article 5 (Application) <br>
-                1. You can apply by agreeing to the terms and conditions and the privacy policy, and click the 'Sign Up' button after completing the registration process (filling out the application form).<br>
-                2. The applicant must use the actual ID and the actual information and can apply for one use per service term for one ID.<br>
-                3. Users who do not enter their real name or actual information are not legally protected and may be restricted from using the service.<br>
-                4. Once the agreement is established, the company performs all administrative tasks for users through ID, and users can use the service according to the rules set by us.<br>
-                5. The details of the services such as cooperation with other companies, brokerage agreements, the obligations of third-party companies, and the rights and obligations of users follow the separate Terms of Service and operation policy provided by third parties. If you use the Service, you may need to agree to the Terms of Service provided by the third party.<br>
-                <br>
-                Article 6 (Acceptance of Application) <br>
-                1. We accept the applicant to use the service under Article 5, except for sections 2 and 3.<br>
-                2. In the following cases, consent may be withheld until the reason for the limitation is resolved.<br>
-                     A. If there are not enough service-related facilities<br>
-                     B. If there are technical difficulties<br>
-                     C. If it is necessary due to specific company circumstances<br>
-                     D. If you have not completed the registration process offered by us<br>
-                3. In the following cases, we may not approve the registration request. <br>
-                     A. If you used somebody’s name illegally <br>
-                     B. If you used false information <br>
-                     C. If you applied for hindering social well-being and morals. <br>
-                     D. If you do not meet application requirements <br>
-                     E. If you applied for an illegal activity prohibited by law<br>
-                <br>
-                Article 7 (Canceling a Service, Closing an Account) <br>
-                1. Users can cancel a service at any time through the customer center, and the company should deal with it immediately according to the relevant laws.<br>
-                2. When the user terminates the contract, all data of the user will be destroyed immediately except when the company holds the user information according to the related laws and privacy policy.<br>
-                3. If the user terminates the contract, all data registered in her/his account other than the identification information held for the period will be deleted.<br>
-                <br>
-                Chapter 3. Use of Service<br>
-                <br>
-                Article 8 (Use of Service) <br>
-                1. We will accept the user's registration request and provide the service after the customer pays for the service. However, some service may be started from the specified date as necessary, or if a separate agreement is required, the service may be started after the related procedures including agreement of the separate agreement are completed.<br>
-                2. If the service cannot be started due to the company's business or technical obstacles, it will be notified on the homepage or individual service-related homepage or through the software.<br>
-                3. For each service, the user must check whether the type of device and the quality of the wired / wireless network are suitable for the service. Due to environmental changes, such as service updates and technological developments, we can request the technical requirements for the use of the service to the user. We are not responsible for any changes in technical specification information.<br>
-                4. Users may need to install additional programs, software, etc. to run the client program and the conveniently use the service. The installation of programs and additional programs is necessary to use the services provided by the company. The capacity and type of the programs installed may vary depending on the contents of the service provided.<br>
-                <br>
-                Article 9 (Provision and Suspension of Service) <br>
-                1. We provide the following services to our users:<br>
-                  ①. Virtual private network leasing<br>
-                  ②. Any services provided by the company to its members through self-development or cooperation agreement with other companies<br>
-                2. The contents of the services and affiliated services described in section 1 may be changed. In this case, we will notify the users through the homepage and the client program.<br>
-                3. Service is provided during a certain period of time based on the term of the products. We will inform you regarding the expiry date of the service time through the website or the client program.<br>
-                4. Despite section 3, the service may not be provided for a certain period of time, and we are not obligated to provide the service in any of the following cases below: <br>
-                  ①. If it is necessary for maintenance inspection, replacement, regular inspection or modification of service of information and communication facilities such as computers<br>
-                  ②. If it is necessary to respond to electronic infringement incidents such as hacking, communication accidents, abnormal use behavior of members, and unexpected service instability<br>
-                  ③. In the case of prohibiting the provision of services at specific times or methods by law<br>
-                  ④. When normal service cannot be provided due to natural disaster, emergency, power outage, service equipment failure or congestion of service<br>
-                  ⑤. In case of serious management necessity of the company such as division of the company, merger, transfer of business, the abolition of business, deterioration of profit of the service, loss of authority of the service<br>
-                  ⑥. When the service provider or internet network provider specified in the Telecommunications Business Act suspends service<br>
-                5. In the case of Article 4, Section 1, the Company may suspend the service for a certain period of time every week or every two weeks. In this case, the company will notify the user through the homepage or the client program at least 24 hours in advance.<br>
-                6. In the case of Article 4, Section 2, the company may suspend the service without prior notice. In this case, the company may post a notice on the homepage or client program.<br>
-                7. The Company shall not be liable for any damages incurred by users in connection with the use of the free service provided by the Company. However, this does not apply to damages caused by our intention or gross mistake. <br>
-                8. If the service is suspended or interrupted more than three hours a day without prior notice due to the company’s fault, we extend free use of the time that is three times of the amount of service suspension time to whom continually uses our service. The user cannot claim additional damages against the company. However, if the company has notified the service stoppage or failure due to server inspection, etc., and the service stoppage or failure time exceeds 3 hours for some reason, we will extend the service time as much as the service has been suspended with free of charge. The user cannot claim additional damages against the company.<br>
-                9. In the case of Article 4, Section 3 to 5, we may suspend all services due to the technical and operational needs. We may notify the website 30 days in advance and suspend the services. If there is an unavoidable situation that cannot be notified in advance, we will notify you afterward.<br>
-                10. If we terminate the service following Section 9, the member shall not be able to claim refund or damage for the non-refundable paid service contract under the free service and service refund policy.<br>
-                <br>
-                Article 10 (Provision and Collection of Information)<br>
-                1. We display the following items on the website for your convenience:<br>
-                  ①. Company name <br>
-                  ②. Distributor's Declaration Number or Registration Number<br>
-                  ③. Matters that we consider as necessary<br>
-                2. When providing information to users, we may notify them through e-mail that is registered by the user or announce it on the homepage. However, in the case of an e-mail, we are not responsible for any problems caused by the limitation of the e-mail service provider or incorrect email address provided by users. <br>
-                3. We may store or view the user's service billing records and usage logs within the services provided by us. We will only access the information when we consider it as necessary for handling customer complaints, providing information from investigation agencies, and improving and maintaining quality. This information is provided only by us and is not provided by lawful third parties. If we need to access your information in connection with the investigation, processing, verification, and remedy of material breaches, such as account theft, bug exploitation, cybercrime, or other violations of current law, we will post that information in the future. We will inform you about the reasons we have visited and the information we have viewed. <br>
-                4. We may collect PC specifications, system information, and error information, except for the personal information of members, to stabilize services and improve errors.<br>
-                5. We may request additional information about the individual members to improve the service and introduce the services to the members, and the user may accept or deny to provide the additional information. <br>
-                <br>
-                Article 11 (Coupon Service)<br>
-                1. We may offer coupons for paid or free customers through the website or software provided by us to customers who participate in the event. Users can receive the service by entering the coupon. <br>
-                2. Users can purchase coupons through payment methods, such as credit cards, mobile phone payment, cultural gift certificates, account transfer, toss, Kakao pay, and Payco. Coupons vary depending on the available maximum device, expiration date, etc. We guide the users to check these details.<br>
-                3. Users can withdraw subscriptions within 7 days of purchase of the paid coupons if they are not used. If the users terminate the contract, we are allowed to recollect or delete the paid coupons without delay. Withdrawal of subscription is limited if it falls under the reasons for the restriction of subscription withdrawal prescribed by related laws such as the Act on Consumer Protection in Interest and Commerce. If subscription withdrawal is restricted, it will be displayed as a pop-up screen or a connection screen.<br>
-                4. If the user who tried the coupon service is found to violate Article 16 of this agreement, we may not approve the purchase of the coupon or later cancel the approval and restrict the coupon service and the use of our service. We will not be held liable unless there is our intention or gross mistake.<br>
-                <br>
-                Chapter 4. Obligations of the Contracting Party<br>
-                <br>
-                Article 12 (Shanghai Trading Co.’ Obligation) <br>
-                1. We are obliged to operate the site stably and continuously.<br>
-                2. We shall promptly deal with opinions or complaints raised by users that it is justified. However, if it is difficult to process immediately, we need to notify the reason and processing schedule through notice or e-mail to the users.<br>
-                3. In the case of section 1, there shall be an exception for cases for investigation, if requested by the relevant authorities and the Information and Communication Ethics Committee, or if there is a warrant, or if otherwise provided by relevant laws and regulations.<br>
-                <br>
-                Article 13 (User’s obligation)<br>
-                1. The user should be familiar with and comply with these Terms and Service, our announcements, and the site usage guidelines, and shall not do anything that interferes with our business.<br>
-                2. You may not use the website for any commercial activity without our prior approval.<br>
-                3. You may not copy, reproduce, change, translate, publish, broadcast or otherwise use the information obtained through this Site without our prior consent.<br>
-                <br>
-                Chapter 5. Provision and Use of Services<br>
-                <br>
-                Article 14 (Use of Services) <br>
-                1. You can use the site following the terms of this agreement.<br>
-                2. Matters concerning the use of the service not specified in this agreement shall be posted in the 'Notice' or announced separately by us.<br>
-                <br>
-                Article 15 (Provision of Information) <br>
-                We may provide the information to the users by e-mail or letter mail regarding crucial information. <br>
-                <br>
-                Article 16 (Ad serving) <br>
-                1. We may post advertisements that are related to the operation of the service on the service screen, homepage, e-mail, etc. <br>
-                2. We shall not be liable for any loss or damage incurred as a result of user's participation in, or correspondence with, or dealing with advertisers' promotional activities posted on the Site.<br>
-                <br>
-                Article 17 (Restriction on Service Use) <br>
-                We may restrict your access in the following cases: <br>
-                1. If you harm public order, morals, and other social order<br>
-                2. If it is objectively recognized as being for criminal activity or related to other criminal activity<br>
-                3. If it impairs the reputation of others or significantly impairs their use of services <br>
-                4. In case of continuous transmission of contents or advertising information against other people's intentions<br>
-                5. In the case of hindering the operation of the service due to hacking and dissemination of computer virus<br>
-                6. Infringes the intellectual property rights of other users or third parties, or judges that the intellectual property rights may claim infringement of intellectual property rights.<br>
-                7. If you steal someone else's ID and password<br>
-                8. If it violates other related laws and judges that you are inappropriate as a user<br>
-                <br>
-                Article 18 (Posting management) <br>
-                To establish a wholesome communication culture and to operate an efficient site, we may delete, transfer, or refuse registration if it is determined that the data posted or provided by the user falls under Article 16.<br>
-                <br>
-                Article 19 (Responsibility for Service Use) <br>
-                You may not use the service to sell illegal goods – in particular, hacking, money-making advertising, commercial activities through obscene sites, commercial software – except for specifically permitted in express written form signed by an authorized employee. Acts, illegal commercial software, etc. cannot be provided. We shall not be liable for legal actions such as the consequences and loss of business activities and the arrest by related agencies in violation of this.<br>
-                <br>
-                Chapter 6 (Ordering and Payment of Goods) <br>
-                <br>
-                Article 20 (Payment method) <br>
-                'Users' can pay for the services provided by 'us' using 'various payment methods such as prepaid cards, debit cards, credit cards, mobile phones, gift certificates, etc.' At this time, we shall not collect additional fees other than goods in respect of the user's payment method.<br>
-                  ① 'We' shall notify the user of the receipt confirmation if the user has a request for purchase. Order confirmation can be found in the relevant bulletin board.<br>
-                  ② The user who has received the confirmation notice may request a change and cancellation of the purchase application immediately after receiving the confirmation notice, and we handle it promptly. However, if payment has already been made, the “Return Policy” of Article 16 shall be followed.<br>
-                <br>
-                Article 21 (Refund Policy) <br>
-                We shall notify the user of the reason without delay when the goods, etc. that the user already purchased cannot be provided for some reasons such as being out of stock, etc. The refund will be processed within 7 business days.<br>
-                  ① If the user cancels the service within 7 days of your initial purchase, we will cancel the order and the credit card authorization.<br>
-                  ② Cancellation after 7 days from an initial purchase is not allowed. However, we shall take necessary steps to return, refund or exchange in case of service operation problems that occurred due to our negligence or service operation problems.<br>
-                <br>
-                Chapter 7. Miscellaneous<br>
-                <br>
-                Article 22 (Limitation of Liability/Compensation for Damage) <br>
-                  ① If we cannot provide the service due to natural disaster or force majeure, we shall be exempted from the responsibility of providing the service.<br>
-                  ② We shall not be responsible for any consequences arising from the mutual transaction between users or between users and third parties.<br>
-                  ③ We shall not bear any responsibility for the accuracy, reliability, etc. of the information, materials, contents, etc. posted by the user on the bulletin board, and the user shall use this site under his/her responsibility.<br>
-                  ④ The user shall be responsible for any damages related to the data posted or transmitted by the user or any disadvantages related to the selection of the material or the use of the service provided free of charge.<br>
-                  ⑤ The user shall be responsible for the damages caused by the management of ID and password and the negligence of the user or the illegal use by a third party.<br>
-                  ⑥ If the user incurs any damage to us by violating the provisions of this agreement, the user who violates this agreement shall reimburse all the damage and indemnify us from such damages.<br>
-                <br>
-                Article 23 (Consent to Provision and Use of Personal Data of Individuals) <br>
-                We must obtain the user’s consent when his/her personal data of individuals are provided to others under Article 23 of the Act on the Use and Protection of Credit Information. We assume that users agree on providing their personal data of individuals to credit information agencies, credit information providers, and other users for judging their credit or using them as policy data by public institutions.<br>
-                <br>
-                Article 24 (Settlement of disputes)<br>
-                  ① Shanghai Trading Co. and the user shall make all necessary efforts to smoothly resolve any disputes related to the use of this site.<br>
-                  ② Notwithstanding section 1, if a lawsuit is brought, then a lawsuit is considered to be the jurisdiction of a court over the headquarters of the company.<br>
-                <br>
-                This Terms of Service will take effect on July 1, 2019. <br>
-            </div>
-        </div>
-    </section>
-    <!--contact us section end-->
-
-</div>
-<!--body content wrap end-->
-</%block>
-
-<%block name="js">
-</%block>
- (“we”, “us”, “our” or “<%! from django.utils.translation import ugettext as _ %>
-<%inherit file="../base_webview.html"/>
-
-<%block name="css">
-</%block>
-
-<%block name="content">
-<!--body content wrap start-->
-<div class="main">
-
-    <!--hero section start-->
-    <section class="hero-section ptb-100 background-img"
-             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-9 col-lg-7">
-                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
-                        <h1 class="text-white mb-0">TERMS OF SERVICE</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!--hero section end-->
-
-    <!--contact us section start-->
-    <section class="contact-us gray-light-bg ptb-100">
-        <div class="container">
-            <div class="row">
-                Chapter 1. General Provisions<br>
-                <br>
-                Article 1 (Purpose)<br>
-                Terms and Conditions are intended to define the necessary matters between the User and the Company concerning all the services operated by the Shanghai Trading Co. (“we”, “us”, “our” or “Shanghai Trading Co.”).o<br>
-                <br>
-                Article 2 (Definition)<br>
-                The terms used in these Terms of Service are defined in the following way:<br>
-                1. User: Individual who is authorized to use by signing a service agreement with the company after completing the subscription according to the procedure provided by the company<br>
-                2. ID: Email address of letter and number combination selected by the user and approved by the company for user identification and user's use of the service <br>
-                3. Password: Combination of letters, numbers, special characters, etc. selected by users to protect their secrets on communication<br>
-                4. Closing an account: Termination of use agreement by company or user<br>
-                The definition of other terms is as defined in the related laws and each service guide. Undefined terms in the related laws and each service guide are based on general business practices.<br>
-                <br>
-                Article 3 (Disclosure, Effect, and Change of Terms)<br>
-                1. These terms and conditions will be announced to users by posting on a separate page at the bottom of the website.<br>
-                2. Users who agree to Terms of Service and become users will be governed by the terms and conditions from the time they agree to it. If any changes are made to the Terms of Service, they will be governed by the changed forms. By agreeing to these terms, we assume that you agree to visit our homepage regularly to check for changes in the terms.<br>
-                3. We can change the terms and conditions if there is a change in circumstances or important business reasons and will be posted online on the website 7 days before the effective date. However, in the case of changing the contents of the Terms against the user, we will directly notify the user by sending an e-mail 14 days before the effective date. Changes to the Terms will take effect on the date of the notice.<br>
-                4. Users have the right to refuse the changed terms, and users who disagree with the change of these terms can stop using the service and cancel the service. If the user continues to use the Service after the effective date of the changed terms and conditions, we assume that the user agrees to the changed terms.<br>
-                <br>
-                Article 4 (Other Terms and Conditions) <br>
-                If the matters not specified in this agreement are stipulated in other relevant laws such as the Telecommunications Basic Act, Telecommunications Business Act, ICT Promotion Act, ‘Act on Consumer Protection in Electronic Commerce’, ‘Act on the Regulation of Terms and Conditions’, ‘Electronic Commerce Basic Law’, ‘Electronic Signature Act’, ‘Act on the Promotion of Information and Communication Network Use’, and the ‘Consumer Protection Act’ the regulations shall be followed.<br>
-                <br>
-                Chapter 2. Service Agreement <br>
-                <br>
-                Article 5 (Application) <br>
-                1. You can apply by agreeing to the terms and conditions and the privacy policy, and click the 'Sign Up' button after completing the registration process (filling out the application form).<br>
-                2. The applicant must use the actual ID and the actual information and can apply for one use per service term for one ID.<br>
-                3. Users who do not enter their real name or actual information are not legally protected and may be restricted from using the service.<br>
-                4. Once the agreement is established, the company performs all administrative tasks for users through ID, and users can use the service according to the rules set by us.<br>
-                5. The details of the services such as cooperation with other companies, brokerage agreements, the obligations of third-party companies, and the rights and obligations of users follow the separate Terms of Service and operation policy provided by third parties. If you use the Service, you may need to agree to the Terms of Service provided by the third party.<br>
-                <br>
-                Article 6 (Acceptance of Application) <br>
-                1. We accept the applicant to use the service under Article 5, except for sections 2 and 3.<br>
-                2. In the following cases, consent may be withheld until the reason for the limitation is resolved.<br>
-                     A. If there are not enough service-related facilities<br>
-                     B. If there are technical difficulties<br>
-                     C. If it is necessary due to specific company circumstances<br>
-                     D. If you have not completed the registration process offered by us<br>
-                3. In the following cases, we may not approve the registration request. <br>
-                     A. If you used somebody’s name illegally <br>
-                     B. If you used false information <br>
-                     C. If you applied for hindering social well-being and morals. <br>
-                     D. If you do not meet application requirements <br>
-                     E. If you applied for an illegal activity prohibited by law<br>
-                <br>
-                Article 7 (Canceling a Service, Closing an Account) <br>
-                1. Users can cancel a service at any time through the customer center, and the company should deal with it immediately according to the relevant laws.<br>
-                2. When the user terminates the contract, all data of the user will be destroyed immediately except when the company holds the user information according to the related laws and privacy policy.<br>
-                3. If the user terminates the contract, all data registered in her/his account other than the identification information held for the period will be deleted.<br>
-                <br>
-                Chapter 3. Use of Service<br>
-                <br>
-                Article 8 (Use of Service) <br>
-                1. We will accept the user's registration request and provide the service after the customer pays for the service. However, some service may be started from the specified date as necessary, or if a separate agreement is required, the service may be started after the related procedures including agreement of the separate agreement are completed.<br>
-                2. If the service cannot be started due to the company's business or technical obstacles, it will be notified on the homepage or individual service-related homepage or through the software.<br>
-                3. For each service, the user must check whether the type of device and the quality of the wired / wireless network are suitable for the service. Due to environmental changes, such as service updates and technological developments, we can request the technical requirements for the use of the service to the user. We are not responsible for any changes in technical specification information.<br>
-                4. Users may need to install additional programs, software, etc. to run the client program and the conveniently use the service. The installation of programs and additional programs is necessary to use the services provided by the company. The capacity and type of the programs installed may vary depending on the contents of the service provided.<br>
-                <br>
-                Article 9 (Provision and Suspension of Service) <br>
-                1. We provide the following services to our users:<br>
-                  ①. Virtual private network leasing<br>
-                  ②. Any services provided by the company to its members through self-development or cooperation agreement with other companies<br>
-                2. The contents of the services and affiliated services described in section 1 may be changed. In this case, we will notify the users through the homepage and the client program.<br>
-                3. Service is provided during a certain period of time based on the term of the products. We will inform you regarding the expiry date of the service time through the website or the client program.<br>
-                4. Despite section 3, the service may not be provided for a certain period of time, and we are not obligated to provide the service in any of the following cases below: <br>
-                  ①. If it is necessary for maintenance inspection, replacement, regular inspection or modification of service of information and communication facilities such as computers<br>
-                  ②. If it is necessary to respond to electronic infringement incidents such as hacking, communication accidents, abnormal use behavior of members, and unexpected service instability<br>
-                  ③. In the case of prohibiting the provision of services at specific times or methods by law<br>
-                  ④. When normal service cannot be provided due to natural disaster, emergency, power outage, service equipment failure or congestion of service<br>
-                  ⑤. In case of serious management necessity of the company such as division of the company, merger, transfer of business, the abolition of business, deterioration of profit of the service, loss of authority of the service<br>
-                  ⑥. When the service provider or internet network provider specified in the Telecommunications Business Act suspends service<br>
-                5. In the case of Article 4, Section 1, the Company may suspend the service for a certain period of time every week or every two weeks. In this case, the company will notify the user through the homepage or the client program at least 24 hours in advance.<br>
-                6. In the case of Article 4, Section 2, the company may suspend the service without prior notice. In this case, the company may post a notice on the homepage or client program.<br>
-                7. The Company shall not be liable for any damages incurred by users in connection with the use of the free service provided by the Company. However, this does not apply to damages caused by our intention or gross mistake. <br>
-                8. If the service is suspended or interrupted more than three hours a day without prior notice due to the company’s fault, we extend free use of the time that is three times of the amount of service suspension time to whom continually uses our service. The user cannot claim additional damages against the company. However, if the company has notified the service stoppage or failure due to server inspection, etc., and the service stoppage or failure time exceeds 3 hours for some reason, we will extend the service time as much as the service has been suspended with free of charge. The user cannot claim additional damages against the company.<br>
-                9. In the case of Article 4, Section 3 to 5, we may suspend all services due to the technical and operational needs. We may notify the website 30 days in advance and suspend the services. If there is an unavoidable situation that cannot be notified in advance, we will notify you afterward.<br>
-                10. If we terminate the service following Section 9, the member shall not be able to claim refund or damage for the non-refundable paid service contract under the free service and service refund policy.<br>
-                <br>
-                Article 10 (Provision and Collection of Information)<br>
-                1. We display the following items on the website for your convenience:<br>
-                  ①. Company name <br>
-                  ②. Distributor's Declaration Number or Registration Number<br>
-                  ③. Matters that we consider as necessary<br>
-                2. When providing information to users, we may notify them through e-mail that is registered by the user or announce it on the homepage. However, in the case of an e-mail, we are not responsible for any problems caused by the limitation of the e-mail service provider or incorrect email address provided by users. <br>
-                3. We may store or view the user's service billing records and usage logs within the services provided by us. We will only access the information when we consider it as necessary for handling customer complaints, providing information from investigation agencies, and improving and maintaining quality. This information is provided only by us and is not provided by lawful third parties. If we need to access your information in connection with the investigation, processing, verification, and remedy of material breaches, such as account theft, bug exploitation, cybercrime, or other violations of current law, we will post that information in the future. We will inform you about the reasons we have visited and the information we have viewed. <br>
-                4. We may collect PC specifications, system information, and error information, except for the personal information of members, to stabilize services and improve errors.<br>
-                5. We may request additional information about the individual members to improve the service and introduce the services to the members, and the user may accept or deny to provide the additional information. <br>
-                <br>
-                Article 11 (Coupon Service)<br>
-                1. We may offer coupons for paid or free customers through the website or software provided by us to customers who participate in the event. Users can receive the service by entering the coupon. <br>
-                2. Users can purchase coupons through payment methods, such as credit cards, mobile phone payment, cultural gift certificates, account transfer, toss, Kakao pay, and Payco. Coupons vary depending on the available maximum device, expiration date, etc. We guide the users to check these details.<br>
-                3. Users can withdraw subscriptions within 7 days of purchase of the paid coupons if they are not used. If the users terminate the contract, we are allowed to recollect or delete the paid coupons without delay. Withdrawal of subscription is limited if it falls under the reasons for the restriction of subscription withdrawal prescribed by related laws such as the Act on Consumer Protection in Interest and Commerce. If subscription withdrawal is restricted, it will be displayed as a pop-up screen or a connection screen.<br>
-                4. If the user who tried the coupon service is found to violate Article 16 of this agreement, we may not approve the purchase of the coupon or later cancel the approval and restrict the coupon service and the use of our service. We will not be held liable unless there is our intention or gross mistake.<br>
-                <br>
-                Chapter 4. Obligations of the Contracting Party<br>
-                <br>
-                Article 12 (Shanghai Trading Co.’ Obligation) <br>
-                1. We are obliged to operate the site stably and continuously.<br>
-                2. We shall promptly deal with opinions or complaints raised by users that it is justified. However, if it is difficult to process immediately, we need to notify the reason and processing schedule through notice or e-mail to the users.<br>
-                3. In the case of section 1, there shall be an exception for cases for investigation, if requested by the relevant authorities and the Information and Communication Ethics Committee, or if there is a warrant, or if otherwise provided by relevant laws and regulations.<br>
-                <br>
-                Article 13 (User’s obligation)<br>
-                1. The user should be familiar with and comply with these Terms and Service, our announcements, and the site usage guidelines, and shall not do anything that interferes with our business.<br>
-                2. You may not use the website for any commercial activity without our prior approval.<br>
-                3. You may not copy, reproduce, change, translate, publish, broadcast or otherwise use the information obtained through this Site without our prior consent.<br>
-                <br>
-                Chapter 5. Provision and Use of Services<br>
-                <br>
-                Article 14 (Use of Services) <br>
-                1. You can use the site following the terms of this agreement.<br>
-                2. Matters concerning the use of the service not specified in this agreement shall be posted in the 'Notice' or announced separately by us.<br>
-                <br>
-                Article 15 (Provision of Information) <br>
-                We may provide the information to the users by e-mail or letter mail regarding crucial information. <br>
-                <br>
-                Article 16 (Ad serving) <br>
-                1. We may post advertisements that are related to the operation of the service on the service screen, homepage, e-mail, etc. <br>
-                2. We shall not be liable for any loss or damage incurred as a result of user's participation in, or correspondence with, or dealing with advertisers' promotional activities posted on the Site.<br>
-                <br>
-                Article 17 (Restriction on Service Use) <br>
-                We may restrict your access in the following cases: <br>
-                1. If you harm public order, morals, and other social order<br>
-                2. If it is objectively recognized as being for criminal activity or related to other criminal activity<br>
-                3. If it impairs the reputation of others or significantly impairs their use of services <br>
-                4. In case of continuous transmission of contents or advertising information against other people's intentions<br>
-                5. In the case of hindering the operation of the service due to hacking and dissemination of computer virus<br>
-                6. Infringes the intellectual property rights of other users or third parties, or judges that the intellectual property rights may claim infringement of intellectual property rights.<br>
-                7. If you steal someone else's ID and password<br>
-                8. If it violates other related laws and judges that you are inappropriate as a user<br>
-                <br>
-                Article 18 (Posting management) <br>
-                To establish a wholesome communication culture and to operate an efficient site, we may delete, transfer, or refuse registration if it is determined that the data posted or provided by the user falls under Article 16.<br>
-                <br>
-                Article 19 (Responsibility for Service Use) <br>
-                You may not use the service to sell illegal goods – in particular, hacking, money-making advertising, commercial activities through obscene sites, commercial software – except for specifically permitted in express written form signed by an authorized employee. Acts, illegal commercial software, etc. cannot be provided. We shall not be liable for legal actions such as the consequences and loss of business activities and the arrest by related agencies in violation of this.<br>
-                <br>
-                Chapter 6 (Ordering and Payment of Goods) <br>
-                <br>
-                Article 20 (Payment method) <br>
-                'Users' can pay for the services provided by 'us' using 'various payment methods such as prepaid cards, debit cards, credit cards, mobile phones, gift certificates, etc.' At this time, we shall not collect additional fees other than goods in respect of the user's payment method.<br>
-                  ① 'We' shall notify the user of the receipt confirmation if the user has a request for purchase. Order confirmation can be found in the relevant bulletin board.<br>
-                  ② The user who has received the confirmation notice may request a change and cancellation of the purchase application immediately after receiving the confirmation notice, and we handle it promptly. However, if payment has already been made, the “Return Policy” of Article 16 shall be followed.<br>
-                <br>
-                Article 21 (Refund Policy) <br>
-                We shall notify the user of the reason without delay when the goods, etc. that the user already purchased cannot be provided for some reasons such as being out of stock, etc. The refund will be processed within 7 business days.<br>
-                  ① If the user cancels the service within 7 days of your initial purchase, we will cancel the order and the credit card authorization.<br>
-                  ② Cancellation after 7 days from an initial purchase is not allowed. However, we shall take necessary steps to return, refund or exchange in case of service operation problems that occurred due to our negligence or service operation problems.<br>
-                <br>
-                Chapter 7. Miscellaneous<br>
-                <br>
-                Article 22 (Limitation of Liability/Compensation for Damage) <br>
-                  ① If we cannot provide the service due to natural disaster or force majeure, we shall be exempted from the responsibility of providing the service.<br>
-                  ② We shall not be responsible for any consequences arising from the mutual transaction between users or between users and third parties.<br>
-                  ③ We shall not bear any responsibility for the accuracy, reliability, etc. of the information, materials, contents, etc. posted by the user on the bulletin board, and the user shall use this site under his/her responsibility.<br>
-                  ④ The user shall be responsible for any damages related to the data posted or transmitted by the user or any disadvantages related to the selection of the material or the use of the service provided free of charge.<br>
-                  ⑤ The user shall be responsible for the damages caused by the management of ID and password and the negligence of the user or the illegal use by a third party.<br>
-                  ⑥ If the user incurs any damage to us by violating the provisions of this agreement, the user who violates this agreement shall reimburse all the damage and indemnify us from such damages.<br>
-                <br>
-                Article 23 (Consent to Provision and Use of Personal Data of Individuals) <br>
-                We must obtain the user’s consent when his/her personal data of individuals are provided to others under Article 23 of the Act on the Use and Protection of Credit Information. We assume that users agree on providing their personal data of individuals to credit information agencies, credit information providers, and other users for judging their credit or using them as policy data by public institutions.<br>
-                <br>
-                Article 24 (Settlement of disputes)<br>
-                  ① Shanghai Trading Co. and the user shall make all necessary efforts to smoothly resolve any disputes related to the use of this site.<br>
-                  ② Notwithstanding section 1, if a lawsuit is brought, then a lawsuit is considered to be the jurisdiction of a court over the headquarters of the company.<br>
-                <br>
-                This Terms of Service will take effect on July 1, 2019. <br>
-            </div>
-        </div>
-    </section>
-    <!--contact us section end-->
-
-</div>
-<!--body content wrap end-->
-</%block>
-
-<%block name="js">
-</%block>
-”).o<br>
-                <br>
-                Article 2 (Definition)<br>
-                The terms used in these Terms of Service are defined in the following way:<br>
-                1. User: Individual who is authorized to use by signing a service agreement with the company after completing the subscription according to the procedure provided by the company<br>
-                2. ID: Email address of letter and number combination selected by the user and approved by the company for user identification and user's use of the service <br>
-                3. Password: Combination of letters, numbers, special characters, etc. selected by users to protect their secrets on communication<br>
-                4. Closing an account: Termination of use agreement by company or user<br>
-                The definition of other terms is as defined in the related laws and each service guide. Undefined terms in the related laws and each service guide are based on general business practices.<br>
-                <br>
-                Article 3 (Disclosure, Effect, and Change of Terms)<br>
-                1. These terms and conditions will be announced to users by posting on a separate page at the bottom of the website.<br>
-                2. Users who agree to Terms of Service and become users will be governed by the terms and conditions from the time they agree to it. If any changes are made to the Terms of Service, they will be governed by the changed forms. By agreeing to these terms, we assume that you agree to visit our homepage regularly to check for changes in the terms.<br>
-                3. We can change the terms and conditions if there is a change in circumstances or important business reasons and will be posted online on the website 7 days before the effective date. However, in the case of changing the contents of the Terms against the user, we will directly notify the user by sending an e-mail 14 days before the effective date. Changes to the Terms will take effect on the date of the notice.<br>
-                4. Users have the right to refuse the changed terms, and users who disagree with the change of these terms can stop using the service and cancel the service. If the user continues to use the Service after the effective date of the changed terms and conditions, we assume that the user agrees to the changed terms.<br>
-                <br>
-                Article 4 (Other Terms and Conditions) <br>
-                If the matters not specified in this agreement are stipulated in other relevant laws such as the Telecommunications Basic Act, Telecommunications Business Act, ICT Promotion Act, ‘Act on Consumer Protection in Electronic Commerce’, ‘Act on the Regulation of Terms and Conditions’, ‘Electronic Commerce Basic Law’, ‘Electronic Signature Act’, ‘Act on the Promotion of Information and Communication Network Use’, and the ‘Consumer Protection Act’ the regulations shall be followed.<br>
-                <br>
-                Chapter 2. Service Agreement <br>
-                <br>
-                Article 5 (Application) <br>
-                1. You can apply by agreeing to the terms and conditions and the privacy policy, and click the 'Sign Up' button after completing the registration process (filling out the application form).<br>
-                2. The applicant must use the actual ID and the actual information and can apply for one use per service term for one ID.<br>
-                3. Users who do not enter their real name or actual information are not legally protected and may be restricted from using the service.<br>
-                4. Once the agreement is established, the company performs all administrative tasks for users through ID, and users can use the service according to the rules set by us.<br>
-                5. The details of the services such as cooperation with other companies, brokerage agreements, the obligations of third-party companies, and the rights and obligations of users follow the separate Terms of Service and operation policy provided by third parties. If you use the Service, you may need to agree to the Terms of Service provided by the third party.<br>
-                <br>
-                Article 6 (Acceptance of Application) <br>
-                1. We accept the applicant to use the service under Article 5, except for sections 2 and 3.<br>
-                2. In the following cases, consent may be withheld until the reason for the limitation is resolved.<br>
-                     A. If there are not enough service-related facilities<br>
-                     B. If there are technical difficulties<br>
-                     C. If it is necessary due to specific company circumstances<br>
-                     D. If you have not completed the registration process offered by us<br>
-                3. In the following cases, we may not approve the registration request. <br>
-                     A. If you used somebody’s name illegally <br>
-                     B. If you used false information <br>
-                     C. If you applied for hindering social well-being and morals. <br>
-                     D. If you do not meet application requirements <br>
-                     E. If you applied for an illegal activity prohibited by law<br>
-                <br>
-                Article 7 (Canceling a Service, Closing an Account) <br>
-                1. Users can cancel a service at any time through the customer center, and the company should deal with it immediately according to the relevant laws.<br>
-                2. When the user terminates the contract, all data of the user will be destroyed immediately except when the company holds the user information according to the related laws and privacy policy.<br>
-                3. If the user terminates the contract, all data registered in her/his account other than the identification information held for the period will be deleted.<br>
-                <br>
-                Chapter 3. Use of Service<br>
-                <br>
-                Article 8 (Use of Service) <br>
-                1. We will accept the user's registration request and provide the service after the customer pays for the service. However, some service may be started from the specified date as necessary, or if a separate agreement is required, the service may be started after the related procedures including agreement of the separate agreement are completed.<br>
-                2. If the service cannot be started due to the company's business or technical obstacles, it will be notified on the homepage or individual service-related homepage or through the software.<br>
-                3. For each service, the user must check whether the type of device and the quality of the wired / wireless network are suitable for the service. Due to environmental changes, such as service updates and technological developments, we can request the technical requirements for the use of the service to the user. We are not responsible for any changes in technical specification information.<br>
-                4. Users may need to install additional programs, software, etc. to run the client program and the conveniently use the service. The installation of programs and additional programs is necessary to use the services provided by the company. The capacity and type of the programs installed may vary depending on the contents of the service provided.<br>
-                <br>
-                Article 9 (Provision and Suspension of Service) <br>
-                1. We provide the following services to our users:<br>
-                  ①. Virtual private network leasing<br>
-                  ②. Any services provided by the company to its members through self-development or cooperation agreement with other companies<br>
-                2. The contents of the services and affiliated services described in section 1 may be changed. In this case, we will notify the users through the homepage and the client program.<br>
-                3. Service is provided during a certain period of time based on the term of the products. We will inform you regarding the expiry date of the service time through the website or the client program.<br>
-                4. Despite section 3, the service may not be provided for a certain period of time, and we are not obligated to provide the service in any of the following cases below: <br>
-                  ①. If it is necessary for maintenance inspection, replacement, regular inspection or modification of service of information and communication facilities such as computers<br>
-                  ②. If it is necessary to respond to electronic infringement incidents such as hacking, communication accidents, abnormal use behavior of members, and unexpected service instability<br>
-                  ③. In the case of prohibiting the provision of services at specific times or methods by law<br>
-                  ④. When normal service cannot be provided due to natural disaster, emergency, power outage, service equipment failure or congestion of service<br>
-                  ⑤. In case of serious management necessity of the company such as division of the company, merger, transfer of business, the abolition of business, deterioration of profit of the service, loss of authority of the service<br>
-                  ⑥. When the service provider or internet network provider specified in the Telecommunications Business Act suspends service<br>
-                5. In the case of Article 4, Section 1, the Company may suspend the service for a certain period of time every week or every two weeks. In this case, the company will notify the user through the homepage or the client program at least 24 hours in advance.<br>
-                6. In the case of Article 4, Section 2, the company may suspend the service without prior notice. In this case, the company may post a notice on the homepage or client program.<br>
-                7. The Company shall not be liable for any damages incurred by users in connection with the use of the free service provided by the Company. However, this does not apply to damages caused by our intention or gross mistake. <br>
-                8. If the service is suspended or interrupted more than three hours a day without prior notice due to the company’s fault, we extend free use of the time that is three times of the amount of service suspension time to whom continually uses our service. The user cannot claim additional damages against the company. However, if the company has notified the service stoppage or failure due to server inspection, etc., and the service stoppage or failure time exceeds 3 hours for some reason, we will extend the service time as much as the service has been suspended with free of charge. The user cannot claim additional damages against the company.<br>
-                9. In the case of Article 4, Section 3 to 5, we may suspend all services due to the technical and operational needs. We may notify the website 30 days in advance and suspend the services. If there is an unavoidable situation that cannot be notified in advance, we will notify you afterward.<br>
-                10. If we terminate the service following Section 9, the member shall not be able to claim refund or damage for the non-refundable paid service contract under the free service and service refund policy.<br>
-                <br>
-                Article 10 (Provision and Collection of Information)<br>
-                1. We display the following items on the website for your convenience:<br>
-                  ①. Company name <br>
-                  ②. Distributor's Declaration Number or Registration Number<br>
-                  ③. Matters that we consider as necessary<br>
-                2. When providing information to users, we may notify them through e-mail that is registered by the user or announce it on the homepage. However, in the case of an e-mail, we are not responsible for any problems caused by the limitation of the e-mail service provider or incorrect email address provided by users. <br>
-                3. We may store or view the user's service billing records and usage logs within the services provided by us. We will only access the information when we consider it as necessary for handling customer complaints, providing information from investigation agencies, and improving and maintaining quality. This information is provided only by us and is not provided by lawful third parties. If we need to access your information in connection with the investigation, processing, verification, and remedy of material breaches, such as account theft, bug exploitation, cybercrime, or other violations of current law, we will post that information in the future. We will inform you about the reasons we have visited and the information we have viewed. <br>
-                4. We may collect PC specifications, system information, and error information, except for the personal information of members, to stabilize services and improve errors.<br>
-                5. We may request additional information about the individual members to improve the service and introduce the services to the members, and the user may accept or deny to provide the additional information. <br>
-                <br>
-                Article 11 (Coupon Service)<br>
-                1. We may offer coupons for paid or free customers through the website or software provided by us to customers who participate in the event. Users can receive the service by entering the coupon. <br>
-                2. Users can purchase coupons through payment methods, such as credit cards, mobile phone payment, cultural gift certificates, account transfer, toss, Kakao pay, and Payco. Coupons vary depending on the available maximum device, expiration date, etc. We guide the users to check these details.<br>
-                3. Users can withdraw subscriptions within 7 days of purchase of the paid coupons if they are not used. If the users terminate the contract, we are allowed to recollect or delete the paid coupons without delay. Withdrawal of subscription is limited if it falls under the reasons for the restriction of subscription withdrawal prescribed by related laws such as the Act on Consumer Protection in Interest and Commerce. If subscription withdrawal is restricted, it will be displayed as a pop-up screen or a connection screen.<br>
-                4. If the user who tried the coupon service is found to violate Article 16 of this agreement, we may not approve the purchase of the coupon or later cancel the approval and restrict the coupon service and the use of our service. We will not be held liable unless there is our intention or gross mistake.<br>
-                <br>
-                Chapter 4. Obligations of the Contracting Party<br>
-                <br>
-                Article 12 (<%! from django.utils.translation import ugettext as _ %>
-<%inherit file="../base_webview.html"/>
-
-<%block name="css">
-</%block>
-
-<%block name="content">
-<!--body content wrap start-->
-<div class="main">
-
-    <!--hero section start-->
-    <section class="hero-section ptb-100 background-img"
-             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-9 col-lg-7">
-                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
-                        <h1 class="text-white mb-0">TERMS OF SERVICE</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!--hero section end-->
-
-    <!--contact us section start-->
-    <section class="contact-us gray-light-bg ptb-100">
-        <div class="container">
-            <div class="row">
-                Chapter 1. General Provisions<br>
-                <br>
-                Article 1 (Purpose)<br>
-                Terms and Conditions are intended to define the necessary matters between the User and the Company concerning all the services operated by the Shanghai Trading Co. (“we”, “us”, “our” or “Shanghai Trading Co.”).o<br>
-                <br>
-                Article 2 (Definition)<br>
-                The terms used in these Terms of Service are defined in the following way:<br>
-                1. User: Individual who is authorized to use by signing a service agreement with the company after completing the subscription according to the procedure provided by the company<br>
-                2. ID: Email address of letter and number combination selected by the user and approved by the company for user identification and user's use of the service <br>
-                3. Password: Combination of letters, numbers, special characters, etc. selected by users to protect their secrets on communication<br>
-                4. Closing an account: Termination of use agreement by company or user<br>
-                The definition of other terms is as defined in the related laws and each service guide. Undefined terms in the related laws and each service guide are based on general business practices.<br>
-                <br>
-                Article 3 (Disclosure, Effect, and Change of Terms)<br>
-                1. These terms and conditions will be announced to users by posting on a separate page at the bottom of the website.<br>
-                2. Users who agree to Terms of Service and become users will be governed by the terms and conditions from the time they agree to it. If any changes are made to the Terms of Service, they will be governed by the changed forms. By agreeing to these terms, we assume that you agree to visit our homepage regularly to check for changes in the terms.<br>
-                3. We can change the terms and conditions if there is a change in circumstances or important business reasons and will be posted online on the website 7 days before the effective date. However, in the case of changing the contents of the Terms against the user, we will directly notify the user by sending an e-mail 14 days before the effective date. Changes to the Terms will take effect on the date of the notice.<br>
-                4. Users have the right to refuse the changed terms, and users who disagree with the change of these terms can stop using the service and cancel the service. If the user continues to use the Service after the effective date of the changed terms and conditions, we assume that the user agrees to the changed terms.<br>
-                <br>
-                Article 4 (Other Terms and Conditions) <br>
-                If the matters not specified in this agreement are stipulated in other relevant laws such as the Telecommunications Basic Act, Telecommunications Business Act, ICT Promotion Act, ‘Act on Consumer Protection in Electronic Commerce’, ‘Act on the Regulation of Terms and Conditions’, ‘Electronic Commerce Basic Law’, ‘Electronic Signature Act’, ‘Act on the Promotion of Information and Communication Network Use’, and the ‘Consumer Protection Act’ the regulations shall be followed.<br>
-                <br>
-                Chapter 2. Service Agreement <br>
-                <br>
-                Article 5 (Application) <br>
-                1. You can apply by agreeing to the terms and conditions and the privacy policy, and click the 'Sign Up' button after completing the registration process (filling out the application form).<br>
-                2. The applicant must use the actual ID and the actual information and can apply for one use per service term for one ID.<br>
-                3. Users who do not enter their real name or actual information are not legally protected and may be restricted from using the service.<br>
-                4. Once the agreement is established, the company performs all administrative tasks for users through ID, and users can use the service according to the rules set by us.<br>
-                5. The details of the services such as cooperation with other companies, brokerage agreements, the obligations of third-party companies, and the rights and obligations of users follow the separate Terms of Service and operation policy provided by third parties. If you use the Service, you may need to agree to the Terms of Service provided by the third party.<br>
-                <br>
-                Article 6 (Acceptance of Application) <br>
-                1. We accept the applicant to use the service under Article 5, except for sections 2 and 3.<br>
-                2. In the following cases, consent may be withheld until the reason for the limitation is resolved.<br>
-                     A. If there are not enough service-related facilities<br>
-                     B. If there are technical difficulties<br>
-                     C. If it is necessary due to specific company circumstances<br>
-                     D. If you have not completed the registration process offered by us<br>
-                3. In the following cases, we may not approve the registration request. <br>
-                     A. If you used somebody’s name illegally <br>
-                     B. If you used false information <br>
-                     C. If you applied for hindering social well-being and morals. <br>
-                     D. If you do not meet application requirements <br>
-                     E. If you applied for an illegal activity prohibited by law<br>
-                <br>
-                Article 7 (Canceling a Service, Closing an Account) <br>
-                1. Users can cancel a service at any time through the customer center, and the company should deal with it immediately according to the relevant laws.<br>
-                2. When the user terminates the contract, all data of the user will be destroyed immediately except when the company holds the user information according to the related laws and privacy policy.<br>
-                3. If the user terminates the contract, all data registered in her/his account other than the identification information held for the period will be deleted.<br>
-                <br>
-                Chapter 3. Use of Service<br>
-                <br>
-                Article 8 (Use of Service) <br>
-                1. We will accept the user's registration request and provide the service after the customer pays for the service. However, some service may be started from the specified date as necessary, or if a separate agreement is required, the service may be started after the related procedures including agreement of the separate agreement are completed.<br>
-                2. If the service cannot be started due to the company's business or technical obstacles, it will be notified on the homepage or individual service-related homepage or through the software.<br>
-                3. For each service, the user must check whether the type of device and the quality of the wired / wireless network are suitable for the service. Due to environmental changes, such as service updates and technological developments, we can request the technical requirements for the use of the service to the user. We are not responsible for any changes in technical specification information.<br>
-                4. Users may need to install additional programs, software, etc. to run the client program and the conveniently use the service. The installation of programs and additional programs is necessary to use the services provided by the company. The capacity and type of the programs installed may vary depending on the contents of the service provided.<br>
-                <br>
-                Article 9 (Provision and Suspension of Service) <br>
-                1. We provide the following services to our users:<br>
-                  ①. Virtual private network leasing<br>
-                  ②. Any services provided by the company to its members through self-development or cooperation agreement with other companies<br>
-                2. The contents of the services and affiliated services described in section 1 may be changed. In this case, we will notify the users through the homepage and the client program.<br>
-                3. Service is provided during a certain period of time based on the term of the products. We will inform you regarding the expiry date of the service time through the website or the client program.<br>
-                4. Despite section 3, the service may not be provided for a certain period of time, and we are not obligated to provide the service in any of the following cases below: <br>
-                  ①. If it is necessary for maintenance inspection, replacement, regular inspection or modification of service of information and communication facilities such as computers<br>
-                  ②. If it is necessary to respond to electronic infringement incidents such as hacking, communication accidents, abnormal use behavior of members, and unexpected service instability<br>
-                  ③. In the case of prohibiting the provision of services at specific times or methods by law<br>
-                  ④. When normal service cannot be provided due to natural disaster, emergency, power outage, service equipment failure or congestion of service<br>
-                  ⑤. In case of serious management necessity of the company such as division of the company, merger, transfer of business, the abolition of business, deterioration of profit of the service, loss of authority of the service<br>
-                  ⑥. When the service provider or internet network provider specified in the Telecommunications Business Act suspends service<br>
-                5. In the case of Article 4, Section 1, the Company may suspend the service for a certain period of time every week or every two weeks. In this case, the company will notify the user through the homepage or the client program at least 24 hours in advance.<br>
-                6. In the case of Article 4, Section 2, the company may suspend the service without prior notice. In this case, the company may post a notice on the homepage or client program.<br>
-                7. The Company shall not be liable for any damages incurred by users in connection with the use of the free service provided by the Company. However, this does not apply to damages caused by our intention or gross mistake. <br>
-                8. If the service is suspended or interrupted more than three hours a day without prior notice due to the company’s fault, we extend free use of the time that is three times of the amount of service suspension time to whom continually uses our service. The user cannot claim additional damages against the company. However, if the company has notified the service stoppage or failure due to server inspection, etc., and the service stoppage or failure time exceeds 3 hours for some reason, we will extend the service time as much as the service has been suspended with free of charge. The user cannot claim additional damages against the company.<br>
-                9. In the case of Article 4, Section 3 to 5, we may suspend all services due to the technical and operational needs. We may notify the website 30 days in advance and suspend the services. If there is an unavoidable situation that cannot be notified in advance, we will notify you afterward.<br>
-                10. If we terminate the service following Section 9, the member shall not be able to claim refund or damage for the non-refundable paid service contract under the free service and service refund policy.<br>
-                <br>
-                Article 10 (Provision and Collection of Information)<br>
-                1. We display the following items on the website for your convenience:<br>
-                  ①. Company name <br>
-                  ②. Distributor's Declaration Number or Registration Number<br>
-                  ③. Matters that we consider as necessary<br>
-                2. When providing information to users, we may notify them through e-mail that is registered by the user or announce it on the homepage. However, in the case of an e-mail, we are not responsible for any problems caused by the limitation of the e-mail service provider or incorrect email address provided by users. <br>
-                3. We may store or view the user's service billing records and usage logs within the services provided by us. We will only access the information when we consider it as necessary for handling customer complaints, providing information from investigation agencies, and improving and maintaining quality. This information is provided only by us and is not provided by lawful third parties. If we need to access your information in connection with the investigation, processing, verification, and remedy of material breaches, such as account theft, bug exploitation, cybercrime, or other violations of current law, we will post that information in the future. We will inform you about the reasons we have visited and the information we have viewed. <br>
-                4. We may collect PC specifications, system information, and error information, except for the personal information of members, to stabilize services and improve errors.<br>
-                5. We may request additional information about the individual members to improve the service and introduce the services to the members, and the user may accept or deny to provide the additional information. <br>
-                <br>
-                Article 11 (Coupon Service)<br>
-                1. We may offer coupons for paid or free customers through the website or software provided by us to customers who participate in the event. Users can receive the service by entering the coupon. <br>
-                2. Users can purchase coupons through payment methods, such as credit cards, mobile phone payment, cultural gift certificates, account transfer, toss, Kakao pay, and Payco. Coupons vary depending on the available maximum device, expiration date, etc. We guide the users to check these details.<br>
-                3. Users can withdraw subscriptions within 7 days of purchase of the paid coupons if they are not used. If the users terminate the contract, we are allowed to recollect or delete the paid coupons without delay. Withdrawal of subscription is limited if it falls under the reasons for the restriction of subscription withdrawal prescribed by related laws such as the Act on Consumer Protection in Interest and Commerce. If subscription withdrawal is restricted, it will be displayed as a pop-up screen or a connection screen.<br>
-                4. If the user who tried the coupon service is found to violate Article 16 of this agreement, we may not approve the purchase of the coupon or later cancel the approval and restrict the coupon service and the use of our service. We will not be held liable unless there is our intention or gross mistake.<br>
-                <br>
-                Chapter 4. Obligations of the Contracting Party<br>
-                <br>
-                Article 12 (Shanghai Trading Co.’ Obligation) <br>
-                1. We are obliged to operate the site stably and continuously.<br>
-                2. We shall promptly deal with opinions or complaints raised by users that it is justified. However, if it is difficult to process immediately, we need to notify the reason and processing schedule through notice or e-mail to the users.<br>
-                3. In the case of section 1, there shall be an exception for cases for investigation, if requested by the relevant authorities and the Information and Communication Ethics Committee, or if there is a warrant, or if otherwise provided by relevant laws and regulations.<br>
-                <br>
-                Article 13 (User’s obligation)<br>
-                1. The user should be familiar with and comply with these Terms and Service, our announcements, and the site usage guidelines, and shall not do anything that interferes with our business.<br>
-                2. You may not use the website for any commercial activity without our prior approval.<br>
-                3. You may not copy, reproduce, change, translate, publish, broadcast or otherwise use the information obtained through this Site without our prior consent.<br>
-                <br>
-                Chapter 5. Provision and Use of Services<br>
-                <br>
-                Article 14 (Use of Services) <br>
-                1. You can use the site following the terms of this agreement.<br>
-                2. Matters concerning the use of the service not specified in this agreement shall be posted in the 'Notice' or announced separately by us.<br>
-                <br>
-                Article 15 (Provision of Information) <br>
-                We may provide the information to the users by e-mail or letter mail regarding crucial information. <br>
-                <br>
-                Article 16 (Ad serving) <br>
-                1. We may post advertisements that are related to the operation of the service on the service screen, homepage, e-mail, etc. <br>
-                2. We shall not be liable for any loss or damage incurred as a result of user's participation in, or correspondence with, or dealing with advertisers' promotional activities posted on the Site.<br>
-                <br>
-                Article 17 (Restriction on Service Use) <br>
-                We may restrict your access in the following cases: <br>
-                1. If you harm public order, morals, and other social order<br>
-                2. If it is objectively recognized as being for criminal activity or related to other criminal activity<br>
-                3. If it impairs the reputation of others or significantly impairs their use of services <br>
-                4. In case of continuous transmission of contents or advertising information against other people's intentions<br>
-                5. In the case of hindering the operation of the service due to hacking and dissemination of computer virus<br>
-                6. Infringes the intellectual property rights of other users or third parties, or judges that the intellectual property rights may claim infringement of intellectual property rights.<br>
-                7. If you steal someone else's ID and password<br>
-                8. If it violates other related laws and judges that you are inappropriate as a user<br>
-                <br>
-                Article 18 (Posting management) <br>
-                To establish a wholesome communication culture and to operate an efficient site, we may delete, transfer, or refuse registration if it is determined that the data posted or provided by the user falls under Article 16.<br>
-                <br>
-                Article 19 (Responsibility for Service Use) <br>
-                You may not use the service to sell illegal goods – in particular, hacking, money-making advertising, commercial activities through obscene sites, commercial software – except for specifically permitted in express written form signed by an authorized employee. Acts, illegal commercial software, etc. cannot be provided. We shall not be liable for legal actions such as the consequences and loss of business activities and the arrest by related agencies in violation of this.<br>
-                <br>
-                Chapter 6 (Ordering and Payment of Goods) <br>
-                <br>
-                Article 20 (Payment method) <br>
-                'Users' can pay for the services provided by 'us' using 'various payment methods such as prepaid cards, debit cards, credit cards, mobile phones, gift certificates, etc.' At this time, we shall not collect additional fees other than goods in respect of the user's payment method.<br>
-                  ① 'We' shall notify the user of the receipt confirmation if the user has a request for purchase. Order confirmation can be found in the relevant bulletin board.<br>
-                  ② The user who has received the confirmation notice may request a change and cancellation of the purchase application immediately after receiving the confirmation notice, and we handle it promptly. However, if payment has already been made, the “Return Policy” of Article 16 shall be followed.<br>
-                <br>
-                Article 21 (Refund Policy) <br>
-                We shall notify the user of the reason without delay when the goods, etc. that the user already purchased cannot be provided for some reasons such as being out of stock, etc. The refund will be processed within 7 business days.<br>
-                  ① If the user cancels the service within 7 days of your initial purchase, we will cancel the order and the credit card authorization.<br>
-                  ② Cancellation after 7 days from an initial purchase is not allowed. However, we shall take necessary steps to return, refund or exchange in case of service operation problems that occurred due to our negligence or service operation problems.<br>
-                <br>
-                Chapter 7. Miscellaneous<br>
-                <br>
-                Article 22 (Limitation of Liability/Compensation for Damage) <br>
-                  ① If we cannot provide the service due to natural disaster or force majeure, we shall be exempted from the responsibility of providing the service.<br>
-                  ② We shall not be responsible for any consequences arising from the mutual transaction between users or between users and third parties.<br>
-                  ③ We shall not bear any responsibility for the accuracy, reliability, etc. of the information, materials, contents, etc. posted by the user on the bulletin board, and the user shall use this site under his/her responsibility.<br>
-                  ④ The user shall be responsible for any damages related to the data posted or transmitted by the user or any disadvantages related to the selection of the material or the use of the service provided free of charge.<br>
-                  ⑤ The user shall be responsible for the damages caused by the management of ID and password and the negligence of the user or the illegal use by a third party.<br>
-                  ⑥ If the user incurs any damage to us by violating the provisions of this agreement, the user who violates this agreement shall reimburse all the damage and indemnify us from such damages.<br>
-                <br>
-                Article 23 (Consent to Provision and Use of Personal Data of Individuals) <br>
-                We must obtain the user’s consent when his/her personal data of individuals are provided to others under Article 23 of the Act on the Use and Protection of Credit Information. We assume that users agree on providing their personal data of individuals to credit information agencies, credit information providers, and other users for judging their credit or using them as policy data by public institutions.<br>
-                <br>
-                Article 24 (Settlement of disputes)<br>
-                  ① Shanghai Trading Co. and the user shall make all necessary efforts to smoothly resolve any disputes related to the use of this site.<br>
-                  ② Notwithstanding section 1, if a lawsuit is brought, then a lawsuit is considered to be the jurisdiction of a court over the headquarters of the company.<br>
-                <br>
-                This Terms of Service will take effect on July 1, 2019. <br>
-            </div>
-        </div>
-    </section>
-    <!--contact us section end-->
-
-</div>
-<!--body content wrap end-->
-</%block>
-
-<%block name="js">
-</%block>
-’ Obligation) <br>
-                1. We are obliged to operate the site stably and continuously.<br>
-                2. We shall promptly deal with opinions or complaints raised by users that it is justified. However, if it is difficult to process immediately, we need to notify the reason and processing schedule through notice or e-mail to the users.<br>
-                3. In the case of section 1, there shall be an exception for cases for investigation, if requested by the relevant authorities and the Information and Communication Ethics Committee, or if there is a warrant, or if otherwise provided by relevant laws and regulations.<br>
-                <br>
-                Article 13 (User’s obligation)<br>
-                1. The user should be familiar with and comply with these Terms and Service, our announcements, and the site usage guidelines, and shall not do anything that interferes with our business.<br>
-                2. You may not use the website for any commercial activity without our prior approval.<br>
-                3. You may not copy, reproduce, change, translate, publish, broadcast or otherwise use the information obtained through this Site without our prior consent.<br>
-                <br>
-                Chapter 5. Provision and Use of Services<br>
-                <br>
-                Article 14 (Use of Services) <br>
-                1. You can use the site following the terms of this agreement.<br>
-                2. Matters concerning the use of the service not specified in this agreement shall be posted in the 'Notice' or announced separately by us.<br>
-                <br>
-                Article 15 (Provision of Information) <br>
-                We may provide the information to the users by e-mail or letter mail regarding crucial information. <br>
-                <br>
-                Article 16 (Ad serving) <br>
-                1. We may post advertisements that are related to the operation of the service on the service screen, homepage, e-mail, etc. <br>
-                2. We shall not be liable for any loss or damage incurred as a result of user's participation in, or correspondence with, or dealing with advertisers' promotional activities posted on the Site.<br>
-                <br>
-                Article 17 (Restriction on Service Use) <br>
-                We may restrict your access in the following cases: <br>
-                1. If you harm public order, morals, and other social order<br>
-                2. If it is objectively recognized as being for criminal activity or related to other criminal activity<br>
-                3. If it impairs the reputation of others or significantly impairs their use of services <br>
-                4. In case of continuous transmission of contents or advertising information against other people's intentions<br>
-                5. In the case of hindering the operation of the service due to hacking and dissemination of computer virus<br>
-                6. Infringes the intellectual property rights of other users or third parties, or judges that the intellectual property rights may claim infringement of intellectual property rights.<br>
-                7. If you steal someone else's ID and password<br>
-                8. If it violates other related laws and judges that you are inappropriate as a user<br>
-                <br>
-                Article 18 (Posting management) <br>
-                To establish a wholesome communication culture and to operate an efficient site, we may delete, transfer, or refuse registration if it is determined that the data posted or provided by the user falls under Article 16.<br>
-                <br>
-                Article 19 (Responsibility for Service Use) <br>
-                You may not use the service to sell illegal goods – in particular, hacking, money-making advertising, commercial activities through obscene sites, commercial software – except for specifically permitted in express written form signed by an authorized employee. Acts, illegal commercial software, etc. cannot be provided. We shall not be liable for legal actions such as the consequences and loss of business activities and the arrest by related agencies in violation of this.<br>
-                <br>
-                Chapter 6 (Ordering and Payment of Goods) <br>
-                <br>
-                Article 20 (Payment method) <br>
-                'Users' can pay for the services provided by 'us' using 'various payment methods such as prepaid cards, debit cards, credit cards, mobile phones, gift certificates, etc.' At this time, we shall not collect additional fees other than goods in respect of the user's payment method.<br>
-                  ① 'We' shall notify the user of the receipt confirmation if the user has a request for purchase. Order confirmation can be found in the relevant bulletin board.<br>
-                  ② The user who has received the confirmation notice may request a change and cancellation of the purchase application immediately after receiving the confirmation notice, and we handle it promptly. However, if payment has already been made, the “Return Policy” of Article 16 shall be followed.<br>
-                <br>
-                Article 21 (Refund Policy) <br>
-                We shall notify the user of the reason without delay when the goods, etc. that the user already purchased cannot be provided for some reasons such as being out of stock, etc. The refund will be processed within 7 business days.<br>
-                  ① If the user cancels the service within 7 days of your initial purchase, we will cancel the order and the credit card authorization.<br>
-                  ② Cancellation after 7 days from an initial purchase is not allowed. However, we shall take necessary steps to return, refund or exchange in case of service operation problems that occurred due to our negligence or service operation problems.<br>
-                <br>
-                Chapter 7. Miscellaneous<br>
-                <br>
-                Article 22 (Limitation of Liability/Compensation for Damage) <br>
-                  ① If we cannot provide the service due to natural disaster or force majeure, we shall be exempted from the responsibility of providing the service.<br>
-                  ② We shall not be responsible for any consequences arising from the mutual transaction between users or between users and third parties.<br>
-                  ③ We shall not bear any responsibility for the accuracy, reliability, etc. of the information, materials, contents, etc. posted by the user on the bulletin board, and the user shall use this site under his/her responsibility.<br>
-                  ④ The user shall be responsible for any damages related to the data posted or transmitted by the user or any disadvantages related to the selection of the material or the use of the service provided free of charge.<br>
-                  ⑤ The user shall be responsible for the damages caused by the management of ID and password and the negligence of the user or the illegal use by a third party.<br>
-                  ⑥ If the user incurs any damage to us by violating the provisions of this agreement, the user who violates this agreement shall reimburse all the damage and indemnify us from such damages.<br>
-                <br>
-                Article 23 (Consent to Provision and Use of Personal Data of Individuals) <br>
-                We must obtain the user’s consent when his/her personal data of individuals are provided to others under Article 23 of the Act on the Use and Protection of Credit Information. We assume that users agree on providing their personal data of individuals to credit information agencies, credit information providers, and other users for judging their credit or using them as policy data by public institutions.<br>
-                <br>
-                Article 24 (Settlement of disputes)<br>
-                  ① <%! from django.utils.translation import ugettext as _ %>
-<%inherit file="../base_webview.html"/>
-
-<%block name="css">
-</%block>
-
-<%block name="content">
-<!--body content wrap start-->
-<div class="main">
-
-    <!--hero section start-->
-    <section class="hero-section ptb-100 background-img"
-             style="background: url('/static/new/img/hero-bg-1.jpg')no-repeat center center / cover; padding-bottom: 30px !important;">
-        <div class="container">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-md-9 col-lg-7">
-                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
-                        <h1 class="text-white mb-0">TERMS OF SERVICE</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!--hero section end-->
-
-    <!--contact us section start-->
-    <section class="contact-us gray-light-bg ptb-100">
-        <div class="container">
-            <div class="row">
-                Chapter 1. General Provisions<br>
-                <br>
-                Article 1 (Purpose)<br>
-                Terms and Conditions are intended to define the necessary matters between the User and the Company concerning all the services operated by the Shanghai Trading Co. (“we”, “us”, “our” or “Shanghai Trading Co.”).o<br>
-                <br>
-                Article 2 (Definition)<br>
-                The terms used in these Terms of Service are defined in the following way:<br>
-                1. User: Individual who is authorized to use by signing a service agreement with the company after completing the subscription according to the procedure provided by the company<br>
-                2. ID: Email address of letter and number combination selected by the user and approved by the company for user identification and user's use of the service <br>
-                3. Password: Combination of letters, numbers, special characters, etc. selected by users to protect their secrets on communication<br>
-                4. Closing an account: Termination of use agreement by company or user<br>
-                The definition of other terms is as defined in the related laws and each service guide. Undefined terms in the related laws and each service guide are based on general business practices.<br>
-                <br>
-                Article 3 (Disclosure, Effect, and Change of Terms)<br>
-                1. These terms and conditions will be announced to users by posting on a separate page at the bottom of the website.<br>
-                2. Users who agree to Terms of Service and become users will be governed by the terms and conditions from the time they agree to it. If any changes are made to the Terms of Service, they will be governed by the changed forms. By agreeing to these terms, we assume that you agree to visit our homepage regularly to check for changes in the terms.<br>
-                3. We can change the terms and conditions if there is a change in circumstances or important business reasons and will be posted online on the website 7 days before the effective date. However, in the case of changing the contents of the Terms against the user, we will directly notify the user by sending an e-mail 14 days before the effective date. Changes to the Terms will take effect on the date of the notice.<br>
-                4. Users have the right to refuse the changed terms, and users who disagree with the change of these terms can stop using the service and cancel the service. If the user continues to use the Service after the effective date of the changed terms and conditions, we assume that the user agrees to the changed terms.<br>
-                <br>
-                Article 4 (Other Terms and Conditions) <br>
-                If the matters not specified in this agreement are stipulated in other relevant laws such as the Telecommunications Basic Act, Telecommunications Business Act, ICT Promotion Act, ‘Act on Consumer Protection in Electronic Commerce’, ‘Act on the Regulation of Terms and Conditions’, ‘Electronic Commerce Basic Law’, ‘Electronic Signature Act’, ‘Act on the Promotion of Information and Communication Network Use’, and the ‘Consumer Protection Act’ the regulations shall be followed.<br>
-                <br>
-                Chapter 2. Service Agreement <br>
-                <br>
-                Article 5 (Application) <br>
-                1. You can apply by agreeing to the terms and conditions and the privacy policy, and click the 'Sign Up' button after completing the registration process (filling out the application form).<br>
-                2. The applicant must use the actual ID and the actual information and can apply for one use per service term for one ID.<br>
-                3. Users who do not enter their real name or actual information are not legally protected and may be restricted from using the service.<br>
-                4. Once the agreement is established, the company performs all administrative tasks for users through ID, and users can use the service according to the rules set by us.<br>
-                5. The details of the services such as cooperation with other companies, brokerage agreements, the obligations of third-party companies, and the rights and obligations of users follow the separate Terms of Service and operation policy provided by third parties. If you use the Service, you may need to agree to the Terms of Service provided by the third party.<br>
-                <br>
-                Article 6 (Acceptance of Application) <br>
-                1. We accept the applicant to use the service under Article 5, except for sections 2 and 3.<br>
-                2. In the following cases, consent may be withheld until the reason for the limitation is resolved.<br>
-                     A. If there are not enough service-related facilities<br>
-                     B. If there are technical difficulties<br>
-                     C. If it is necessary due to specific company circumstances<br>
-                     D. If you have not completed the registration process offered by us<br>
-                3. In the following cases, we may not approve the registration request. <br>
-                     A. If you used somebody’s name illegally <br>
-                     B. If you used false information <br>
-                     C. If you applied for hindering social well-being and morals. <br>
-                     D. If you do not meet application requirements <br>
-                     E. If you applied for an illegal activity prohibited by law<br>
-                <br>
-                Article 7 (Canceling a Service, Closing an Account) <br>
-                1. Users can cancel a service at any time through the customer center, and the company should deal with it immediately according to the relevant laws.<br>
-                2. When the user terminates the contract, all data of the user will be destroyed immediately except when the company holds the user information according to the related laws and privacy policy.<br>
-                3. If the user terminates the contract, all data registered in her/his account other than the identification information held for the period will be deleted.<br>
-                <br>
-                Chapter 3. Use of Service<br>
-                <br>
-                Article 8 (Use of Service) <br>
-                1. We will accept the user's registration request and provide the service after the customer pays for the service. However, some service may be started from the specified date as necessary, or if a separate agreement is required, the service may be started after the related procedures including agreement of the separate agreement are completed.<br>
-                2. If the service cannot be started due to the company's business or technical obstacles, it will be notified on the homepage or individual service-related homepage or through the software.<br>
-                3. For each service, the user must check whether the type of device and the quality of the wired / wireless network are suitable for the service. Due to environmental changes, such as service updates and technological developments, we can request the technical requirements for the use of the service to the user. We are not responsible for any changes in technical specification information.<br>
-                4. Users may need to install additional programs, software, etc. to run the client program and the conveniently use the service. The installation of programs and additional programs is necessary to use the services provided by the company. The capacity and type of the programs installed may vary depending on the contents of the service provided.<br>
-                <br>
-                Article 9 (Provision and Suspension of Service) <br>
-                1. We provide the following services to our users:<br>
-                  ①. Virtual private network leasing<br>
-                  ②. Any services provided by the company to its members through self-development or cooperation agreement with other companies<br>
-                2. The contents of the services and affiliated services described in section 1 may be changed. In this case, we will notify the users through the homepage and the client program.<br>
-                3. Service is provided during a certain period of time based on the term of the products. We will inform you regarding the expiry date of the service time through the website or the client program.<br>
-                4. Despite section 3, the service may not be provided for a certain period of time, and we are not obligated to provide the service in any of the following cases below: <br>
-                  ①. If it is necessary for maintenance inspection, replacement, regular inspection or modification of service of information and communication facilities such as computers<br>
-                  ②. If it is necessary to respond to electronic infringement incidents such as hacking, communication accidents, abnormal use behavior of members, and unexpected service instability<br>
-                  ③. In the case of prohibiting the provision of services at specific times or methods by law<br>
-                  ④. When normal service cannot be provided due to natural disaster, emergency, power outage, service equipment failure or congestion of service<br>
-                  ⑤. In case of serious management necessity of the company such as division of the company, merger, transfer of business, the abolition of business, deterioration of profit of the service, loss of authority of the service<br>
-                  ⑥. When the service provider or internet network provider specified in the Telecommunications Business Act suspends service<br>
-                5. In the case of Article 4, Section 1, the Company may suspend the service for a certain period of time every week or every two weeks. In this case, the company will notify the user through the homepage or the client program at least 24 hours in advance.<br>
-                6. In the case of Article 4, Section 2, the company may suspend the service without prior notice. In this case, the company may post a notice on the homepage or client program.<br>
-                7. The Company shall not be liable for any damages incurred by users in connection with the use of the free service provided by the Company. However, this does not apply to damages caused by our intention or gross mistake. <br>
-                8. If the service is suspended or interrupted more than three hours a day without prior notice due to the company’s fault, we extend free use of the time that is three times of the amount of service suspension time to whom continually uses our service. The user cannot claim additional damages against the company. However, if the company has notified the service stoppage or failure due to server inspection, etc., and the service stoppage or failure time exceeds 3 hours for some reason, we will extend the service time as much as the service has been suspended with free of charge. The user cannot claim additional damages against the company.<br>
-                9. In the case of Article 4, Section 3 to 5, we may suspend all services due to the technical and operational needs. We may notify the website 30 days in advance and suspend the services. If there is an unavoidable situation that cannot be notified in advance, we will notify you afterward.<br>
-                10. If we terminate the service following Section 9, the member shall not be able to claim refund or damage for the non-refundable paid service contract under the free service and service refund policy.<br>
-                <br>
-                Article 10 (Provision and Collection of Information)<br>
-                1. We display the following items on the website for your convenience:<br>
-                  ①. Company name <br>
-                  ②. Distributor's Declaration Number or Registration Number<br>
-                  ③. Matters that we consider as necessary<br>
-                2. When providing information to users, we may notify them through e-mail that is registered by the user or announce it on the homepage. However, in the case of an e-mail, we are not responsible for any problems caused by the limitation of the e-mail service provider or incorrect email address provided by users. <br>
-                3. We may store or view the user's service billing records and usage logs within the services provided by us. We will only access the information when we consider it as necessary for handling customer complaints, providing information from investigation agencies, and improving and maintaining quality. This information is provided only by us and is not provided by lawful third parties. If we need to access your information in connection with the investigation, processing, verification, and remedy of material breaches, such as account theft, bug exploitation, cybercrime, or other violations of current law, we will post that information in the future. We will inform you about the reasons we have visited and the information we have viewed. <br>
-                4. We may collect PC specifications, system information, and error information, except for the personal information of members, to stabilize services and improve errors.<br>
-                5. We may request additional information about the individual members to improve the service and introduce the services to the members, and the user may accept or deny to provide the additional information. <br>
-                <br>
-                Article 11 (Coupon Service)<br>
-                1. We may offer coupons for paid or free customers through the website or software provided by us to customers who participate in the event. Users can receive the service by entering the coupon. <br>
-                2. Users can purchase coupons through payment methods, such as credit cards, mobile phone payment, cultural gift certificates, account transfer, toss, Kakao pay, and Payco. Coupons vary depending on the available maximum device, expiration date, etc. We guide the users to check these details.<br>
-                3. Users can withdraw subscriptions within 7 days of purchase of the paid coupons if they are not used. If the users terminate the contract, we are allowed to recollect or delete the paid coupons without delay. Withdrawal of subscription is limited if it falls under the reasons for the restriction of subscription withdrawal prescribed by related laws such as the Act on Consumer Protection in Interest and Commerce. If subscription withdrawal is restricted, it will be displayed as a pop-up screen or a connection screen.<br>
-                4. If the user who tried the coupon service is found to violate Article 16 of this agreement, we may not approve the purchase of the coupon or later cancel the approval and restrict the coupon service and the use of our service. We will not be held liable unless there is our intention or gross mistake.<br>
-                <br>
-                Chapter 4. Obligations of the Contracting Party<br>
-                <br>
-                Article 12 (Shanghai Trading Co.’ Obligation) <br>
-                1. We are obliged to operate the site stably and continuously.<br>
-                2. We shall promptly deal with opinions or complaints raised by users that it is justified. However, if it is difficult to process immediately, we need to notify the reason and processing schedule through notice or e-mail to the users.<br>
-                3. In the case of section 1, there shall be an exception for cases for investigation, if requested by the relevant authorities and the Information and Communication Ethics Committee, or if there is a warrant, or if otherwise provided by relevant laws and regulations.<br>
-                <br>
-                Article 13 (User’s obligation)<br>
-                1. The user should be familiar with and comply with these Terms and Service, our announcements, and the site usage guidelines, and shall not do anything that interferes with our business.<br>
-                2. You may not use the website for any commercial activity without our prior approval.<br>
-                3. You may not copy, reproduce, change, translate, publish, broadcast or otherwise use the information obtained through this Site without our prior consent.<br>
-                <br>
-                Chapter 5. Provision and Use of Services<br>
-                <br>
-                Article 14 (Use of Services) <br>
-                1. You can use the site following the terms of this agreement.<br>
-                2. Matters concerning the use of the service not specified in this agreement shall be posted in the 'Notice' or announced separately by us.<br>
-                <br>
-                Article 15 (Provision of Information) <br>
-                We may provide the information to the users by e-mail or letter mail regarding crucial information. <br>
-                <br>
-                Article 16 (Ad serving) <br>
-                1. We may post advertisements that are related to the operation of the service on the service screen, homepage, e-mail, etc. <br>
-                2. We shall not be liable for any loss or damage incurred as a result of user's participation in, or correspondence with, or dealing with advertisers' promotional activities posted on the Site.<br>
-                <br>
-                Article 17 (Restriction on Service Use) <br>
-                We may restrict your access in the following cases: <br>
-                1. If you harm public order, morals, and other social order<br>
-                2. If it is objectively recognized as being for criminal activity or related to other criminal activity<br>
-                3. If it impairs the reputation of others or significantly impairs their use of services <br>
-                4. In case of continuous transmission of contents or advertising information against other people's intentions<br>
-                5. In the case of hindering the operation of the service due to hacking and dissemination of computer virus<br>
-                6. Infringes the intellectual property rights of other users or third parties, or judges that the intellectual property rights may claim infringement of intellectual property rights.<br>
-                7. If you steal someone else's ID and password<br>
-                8. If it violates other related laws and judges that you are inappropriate as a user<br>
-                <br>
-                Article 18 (Posting management) <br>
-                To establish a wholesome communication culture and to operate an efficient site, we may delete, transfer, or refuse registration if it is determined that the data posted or provided by the user falls under Article 16.<br>
-                <br>
-                Article 19 (Responsibility for Service Use) <br>
-                You may not use the service to sell illegal goods – in particular, hacking, money-making advertising, commercial activities through obscene sites, commercial software – except for specifically permitted in express written form signed by an authorized employee. Acts, illegal commercial software, etc. cannot be provided. We shall not be liable for legal actions such as the consequences and loss of business activities and the arrest by related agencies in violation of this.<br>
-                <br>
-                Chapter 6 (Ordering and Payment of Goods) <br>
-                <br>
-                Article 20 (Payment method) <br>
-                'Users' can pay for the services provided by 'us' using 'various payment methods such as prepaid cards, debit cards, credit cards, mobile phones, gift certificates, etc.' At this time, we shall not collect additional fees other than goods in respect of the user's payment method.<br>
-                  ① 'We' shall notify the user of the receipt confirmation if the user has a request for purchase. Order confirmation can be found in the relevant bulletin board.<br>
-                  ② The user who has received the confirmation notice may request a change and cancellation of the purchase application immediately after receiving the confirmation notice, and we handle it promptly. However, if payment has already been made, the “Return Policy” of Article 16 shall be followed.<br>
-                <br>
-                Article 21 (Refund Policy) <br>
-                We shall notify the user of the reason without delay when the goods, etc. that the user already purchased cannot be provided for some reasons such as being out of stock, etc. The refund will be processed within 7 business days.<br>
-                  ① If the user cancels the service within 7 days of your initial purchase, we will cancel the order and the credit card authorization.<br>
-                  ② Cancellation after 7 days from an initial purchase is not allowed. However, we shall take necessary steps to return, refund or exchange in case of service operation problems that occurred due to our negligence or service operation problems.<br>
-                <br>
-                Chapter 7. Miscellaneous<br>
-                <br>
-                Article 22 (Limitation of Liability/Compensation for Damage) <br>
-                  ① If we cannot provide the service due to natural disaster or force majeure, we shall be exempted from the responsibility of providing the service.<br>
-                  ② We shall not be responsible for any consequences arising from the mutual transaction between users or between users and third parties.<br>
-                  ③ We shall not bear any responsibility for the accuracy, reliability, etc. of the information, materials, contents, etc. posted by the user on the bulletin board, and the user shall use this site under his/her responsibility.<br>
-                  ④ The user shall be responsible for any damages related to the data posted or transmitted by the user or any disadvantages related to the selection of the material or the use of the service provided free of charge.<br>
-                  ⑤ The user shall be responsible for the damages caused by the management of ID and password and the negligence of the user or the illegal use by a third party.<br>
-                  ⑥ If the user incurs any damage to us by violating the provisions of this agreement, the user who violates this agreement shall reimburse all the damage and indemnify us from such damages.<br>
-                <br>
-                Article 23 (Consent to Provision and Use of Personal Data of Individuals) <br>
-                We must obtain the user’s consent when his/her personal data of individuals are provided to others under Article 23 of the Act on the Use and Protection of Credit Information. We assume that users agree on providing their personal data of individuals to credit information agencies, credit information providers, and other users for judging their credit or using them as policy data by public institutions.<br>
-                <br>
-                Article 24 (Settlement of disputes)<br>
-                  ① Shanghai Trading Co. and the user shall make all necessary efforts to smoothly resolve any disputes related to the use of this site.<br>
-                  ② Notwithstanding section 1, if a lawsuit is brought, then a lawsuit is considered to be the jurisdiction of a court over the headquarters of the company.<br>
-                <br>
-                This Terms of Service will take effect on July 1, 2019. <br>
-            </div>
-        </div>
-    </section>
-    <!--contact us section end-->
-
-</div>
-<!--body content wrap end-->
-</%block>
-
-<%block name="js">
-</%block>
- and the user shall make all necessary efforts to smoothly resolve any disputes related to the use of this site.<br>
-                  ② Notwithstanding section 1, if a lawsuit is brought, then a lawsuit is considered to be the jurisdiction of a court over the headquarters of the company.<br>
-                <br>
-                This Terms of Service will take effect on July 1, 2019. <br>
-            </div>
-        </div>
-    </section>
-    <!--contact us section end-->
+      </div>
+    </div>
+  </section>
 
 </div>
 <!--body content wrap end-->

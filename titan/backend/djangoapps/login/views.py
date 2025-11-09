@@ -42,9 +42,9 @@ def login(request):
         print('DEBUG -> next : ', next)
     except BaseException:
         next = ''
-    # 로그인 시 인덱스 페이지 이동
+    # 로그인 세션이 이미 있다면 바로 마이페이지로 이동시켜 중복 로그인 단계를 건너뜀
     if 'email' in request.session:
-        return redirect('/')
+        return redirect('/mypage')
     context = {}
     context['next'] = next
     return render(request, 'new/login.html', context)
@@ -213,7 +213,12 @@ def login_as_subaccount(request):
         return redirect('/price')
 
     # 보안: 대상 계정이 오너의 서브계정인지 확인
-    if not target.email.startswith(base_email + '_'):
+    if target.parent_user_id == owner.id:
+        pass
+    elif target.parent_user_id is None and target.email.startswith(base_email + '_'):
+        TblUser.objects.filter(id=target.id, parent_user_id__isnull=True).update(parent_user_id=owner.id)
+        target.parent_user_id = owner.id
+    else:
         return redirect('/price')
 
     # 세션 전환: 기존 세션 위에 서브계정으로 덮어씀, parent_id 기록
@@ -359,6 +364,16 @@ def api_login_signup(request):
                     title, text = get_swal(LANGUAGE_CODE, 'CODE_EXPIRED')
                     return JsonResponse({'result': 800, 'title': title, 'text': text})
             
+            parent_user_id = None
+            legacy_match = re.match(r'^(.+@[^@]+?)_\d+$', regist_email)
+            if legacy_match:
+                base_candidate = legacy_match.group(1)
+                try:
+                    parent_candidate = TblUser.objects.get(email=base_candidate, delete_yn='N')
+                    parent_user_id = parent_candidate.id
+                except TblUser.DoesNotExist:
+                    parent_user_id = None
+
             u1 = TblUser(
                 email=regist_email,
                 password=regist_hash_password,
@@ -378,6 +393,7 @@ def api_login_signup(request):
                 is_staff=0,
                 delete_yn='N',
                 black_yn='N',
+                parent_user_id=parent_user_id,
             )
             u1.save()
 

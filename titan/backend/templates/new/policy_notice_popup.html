@@ -1,0 +1,102 @@
+<%! from django.utils.translation import ugettext as _ %>
+<div class="modal fade" id="policyNoticeModal" tabindex="-1" role="dialog" aria-labelledby="policyNoticeModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                % if LANGUAGE_CODE == 'zh':
+                    <h5 class="modal-title" id="policyNoticeModalTitle">服务条款及隐私政策已更新</h5>
+                % elif LANGUAGE_CODE == 'en':
+                    <h5 class="modal-title" id="policyNoticeModalTitle">Terms & Privacy Policy Updated</h5>
+                % else:
+                    <h5 class="modal-title" id="policyNoticeModalTitle">서비스 약관 및 개인정보처리방침 업데이트</h5>
+                % endif
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                % if LANGUAGE_CODE == 'zh':
+                    <p>我们已于 2025 年 11 月 10 日起更新《服务条款》和《隐私政策》。请查看最新内容以了解主要变更事项。</p>
+                % elif LANGUAGE_CODE == 'en':
+                    <p>We updated our Terms of Service and Privacy Policy effective November 10, 2025. Please review the latest documents to understand the key changes.</p>
+                % else:
+                    <p>타이탄VPN의 서비스 이용약관과 개인정보처리방침이 2025년 11월 10일자로 변경되었습니다. 주요 변경 사항을 확인해 주세요.</p>
+                % endif
+            </div>
+            <div class="modal-footer">
+                % if LANGUAGE_CODE == 'zh':
+                    <a id="policyNoticeView" class="btn btn-link" href="/policy/service" target="_blank">查看更新</a>
+                    <button type="button" class="btn btn-primary" id="policyNoticeAck" data-dismiss="modal">知道了</button>
+                % elif LANGUAGE_CODE == 'en':
+                    <a id="policyNoticeView" class="btn btn-link" href="/policy/service" target="_blank">View Updates</a>
+                    <button type="button" class="btn btn-primary" id="policyNoticeAck" data-dismiss="modal">Got it</button>
+                % else:
+                    <a id="policyNoticeView" class="btn btn-link" href="/policy/service" target="_blank">변경 내용 보기</a>
+                    <button type="button" class="btn btn-primary" id="policyNoticeAck" data-dismiss="modal">확인</button>
+                % endif
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var STORAGE_KEY = 'titan_policy_notice_20251110';
+    var hasStorage = true;
+    try {
+        if (!window.localStorage) {
+            hasStorage = false;
+        }
+    } catch (err) {
+        hasStorage = false;
+    }
+
+    function markAcknowledged() {
+        if (hasStorage) {
+            try {
+                window.localStorage.setItem(STORAGE_KEY, 'ack');
+            } catch (err) {
+                // ignore write failures (storage full, private mode, etc.)
+            }
+        }
+    }
+
+    function shouldShow() {
+        if (!hasStorage) {
+            return true;
+        }
+        try {
+            return !window.localStorage.getItem(STORAGE_KEY);
+        } catch (err) {
+            return true;
+        }
+    }
+
+    function initNotice() {
+        var modal = $('#policyNoticeModal');
+        if (!modal.length) {
+            return;
+        }
+        var ackButton = $('#policyNoticeAck');
+        var viewButton = $('#policyNoticeView');
+
+        ackButton.on('click', markAcknowledged);
+        viewButton.on('click', markAcknowledged);
+        modal.on('hide.bs.modal', markAcknowledged);
+        modal.on('shown.bs.modal', function() {
+            ackButton.trigger('focus');
+        });
+
+        if (shouldShow()) {
+            setTimeout(function() {
+                modal.modal('show');
+            }, 400);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        $(document).ready(initNotice);
+    } else {
+        initNotice();
+    }
+})();
+</script>

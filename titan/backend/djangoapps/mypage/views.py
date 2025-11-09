@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from django.db import connections
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.core.exceptions import ObjectDoesNotExist
 from pytz import timezone
 from urllib.parse import quote
@@ -159,17 +159,22 @@ def mypage(request):
 
     # 만료시간 획득
     expire_time = my_radius_time(u1.email, 'str')
-    if expire_time != None:
-        expire_time = datetime.datetime.strptime(expire_time, '%Y-%m-%d %H:%M:%S')
-        now = datetime.datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
-        now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
-        if expire_time < now:
-            expire_time = None
-            xinfo['expire_time'] = expire_time
-        else:
-            xinfo['expire_time'] = expire_time.strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        xinfo['expire_time'] = None
+    expire_label = None
+    is_expired = False
+    if expire_time:
+        try:
+            parsed_expire = datetime.datetime.strptime(expire_time, '%Y-%m-%d %H:%M:%S')
+            now = datetime.datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
+            now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+            if parsed_expire < now:
+                expire_label = parsed_expire.strftime('%Y-%m-%d %H:%M:%S')
+                is_expired = True
+            else:
+                expire_label = parsed_expire.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            expire_label = expire_time
+    xinfo['expire_time'] = expire_label
+    xinfo['is_expired'] = is_expired
 
     # 세션 수 획득
     my_session = my_radius_session(u1.email)
@@ -230,34 +235,74 @@ def mypage(request):
     m = re.match(r'^(.+@[^@]+?)_\d+$', base_email)
     if m:
         base_email = m.group(1)
-    # Build detailed subaccount list with name, concurrent devices and expiry
+
     subaccounts = []
     try:
-        subs = TblUser.objects.filter(email__startswith=base_email + '_', delete_yn='N').order_by('id')
+        subs_qs = TblUser.objects.filter(
+            delete_yn='N'
+        ).filter(
+            Q(parent_user_id=u1.id) |
+            Q(parent_user_id__isnull=True, email__startswith=base_email + '_')
+        ).exclude(id=u1.id).order_by('id')
+
+        subs = list(subs_qs)
+        legacy_ids = [su.id for su in subs if su.parent_user_id is None]
+        if legacy_ids:
+            TblUser.objects.filter(id__in=legacy_ids).update(parent_user_id=u1.id)
+            for su in subs:
+                if su.id in legacy_ids:
+                    su.parent_user_id = u1.id
+
         for su in subs:
             email_s = su.email
-            # concurrent devices from radius
             try:
                 concurrent = my_radius_session(email_s)
             except Exception:
                 concurrent = ''
-            # expiry time string
             try:
                 expire_str = my_radius_time(email_s, 'str')
             except Exception:
                 expire_str = None
+            is_sub_expired = False
+            if expire_str:
+                try:
+                    parsed_sub_expire = datetime.datetime.strptime(expire_str, '%Y-%m-%d %H:%M:%S')
+                    now = datetime.datetime.now(timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
+                    now = datetime.datetime.strptime(now, '%Y-%m-%d %H:%M:%S')
+                    if parsed_sub_expire < now:
+                        is_sub_expired = True
+                    expire_display = parsed_sub_expire.strftime('%Y-%m-%d %H:%M:%S')
+                except Exception:
+                    expire_display = expire_str
+            else:
+                expire_display = ''
             subaccounts.append({
                 'id': su.id,
                 'email': email_s,
                 'username': su.username,
                 'concurrent': concurrent,
-                'expire_time': expire_str,
+                'expire_time': expire_display,
+                'is_expired': is_sub_expired,
                 'regist_date': su.regist_date,
             })
     except Exception:
         pass
+
     context['subaccounts'] = subaccounts
     context['base_email'] = base_email
+
+    # Determine next available subaccount email suffix; fall back gracefully on error
+    next_email = ''
+    try:
+        suffix = 1
+        base_prefix = base_email or ''
+        if base_prefix:
+            while TblUser.objects.filter(email=f"{base_prefix}_{suffix}", delete_yn='N').exists():
+                suffix += 1
+            next_email = f"{base_prefix}_{suffix}"
+    except Exception:
+        next_email = base_email + '_1' if base_email else ''
+    context['next_sub_email'] = next_email
     return render(request, 'new/mypage.html', context)
 
 

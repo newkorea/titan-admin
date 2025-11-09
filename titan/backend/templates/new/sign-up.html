@@ -176,7 +176,6 @@ function signup() {
         });
         return;
     }
-
     // 버튼 이중클릭 방지 로직
     $('#btn_signup').hide();
     $('#send_email_txt').show();
@@ -213,5 +212,15 @@ function signup() {
         }
     });
 }
+
+$(function(){
+    var params = new URLSearchParams(window.location.search);
+    var prefillEmail = params.get('prefill_email');
+    if (prefillEmail) {
+        $('#regist_email').val(prefillEmail);
+        $('#regist_email').prop('readonly', true).addClass('bg-light');
+        $('#regist_username').focus();
+    }
+});
 </script>
 </%block>

@@ -2,6 +2,124 @@
 <%inherit file="base.html"/>
 
 <%block name="css">
+<style>
+.swal-existing-account .swal2-html-container {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+.swal-existing-account .existing-account-form {
+    text-align: left;
+}
+.swal-existing-account .existing-account-form h3 {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.swal-existing-account .existing-account-title {
+    display: block;
+    background: #347bff;
+    color: #fff;
+    padding: 14px 0;
+    border-radius: 14px;
+    margin: 0 auto 20px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    width: 45%;
+    max-width: 260px;
+}
+.swal-existing-account .existing-account-title::before,
+.swal-existing-account .existing-account-title::after {
+    content: '';
+}
+.swal-existing-account .existing-account-form p {
+    color: #65738c;
+    margin-bottom: 20px;
+    font-size: 14px;
+    text-align: center;
+}
+.swal-existing-account .existing-account-form .form-group {
+    margin-bottom: 18px;
+}
+.swal-existing-account .existing-account-form .input-group {
+    position: relative;
+    background: #eef3ff;
+    border-radius: 10px;
+    padding-left: 46px;
+}
+.swal-existing-account .existing-account-form .input-group .input-border {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid #d6dcff;
+    border-radius: 12px;
+    pointer-events: none;
+    transition: border-color 0.2s ease;
+}
+.swal-existing-account .existing-account-form .input-group.is-focused .input-border {
+    border-color: #8a4cf7;
+}
+.swal-existing-account .existing-account-form .input-group .form-control {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: #1a2233;
+}
+.swal-existing-account .existing-account-form .input-group .form-control:focus {
+    border: none;
+    box-shadow: none;
+}
+.swal-existing-account .existing-account-form .input-group .form-control::placeholder {
+    color: #98a3b8;
+}
+.swal-existing-account .existing-account-form .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a4cf7;
+}
+.swal-existing-account .existing-account-form .input-group input[type="password"] {
+    letter-spacing: 1.5px;
+}
+.swal-existing-account .swal2-actions {
+    margin-top: 24px;
+}
+.swal-existing-account .swal2-actions .swal2-styled {
+    min-width: 110px;
+    padding: 10px 20px;
+    border-radius: 6px;
+}
+.swal-existing-account .swal2-confirm {
+    background-color: #8a4cf7;
+}
+.swal-existing-account .swal2-cancel {
+    background: #f1f3f8;
+    color: #394052;
+}
+
+.subaccount-action-box {
+    border: 1px solid #5a8bff;
+    border-radius: 14px;
+    padding: 18px 24px;
+}
+.subaccount-action-box .action-text {
+    font-size: 14px;
+    color: #394052;
+    margin-bottom: 12px;
+}
+.subaccount-action-box .action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.subaccount-action-box .action-buttons .btn {
+    min-width: 140px;
+}
+</style>
 </%block>
 
 <%block name="content">
@@ -36,7 +154,16 @@
                             </div>
                             <div class="media-body">
                                 <h5 class="mb-0">${_('Expiry date')}</h5>
-                                <span>${xinfo['expire_time']}</span>
+                                % if xinfo.get('expire_time'):
+                                    <span>
+                                        ${xinfo['expire_time']}
+                                        % if xinfo.get('is_expired'):
+                                            <span class="badge badge-danger ml-2">${_('Expired')}</span>
+                                        % endif
+                                    </span>
+                                % else:
+                                    <span>None</span>
+                                % endif
                             </div>
                         </div>
                     </div>
@@ -239,7 +366,6 @@
     <!--session list section end-->
 
     <!-- subaccount list section start -->
-    % if subaccounts and len(subaccounts) > 0:
     <section class="ptb-50">
         <div class="container">
             <div class="row justify-content-center">
@@ -250,7 +376,7 @@
                     </div>
                     <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm p-4">
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-bordered" id="mypage_subaccount_table">
                                 <thead>
                                     <tr>
                                         <th>${_('Email')}</th>
@@ -262,27 +388,48 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                % for sa in subaccounts:
+                                % if subaccounts and len(subaccounts) > 0:
+                                    % for sa in subaccounts:
                                     <tr>
                                         <td>${sa['email']}</td>
                                         <td>${sa.get('username') or ''}</td>
                                         <td>${sa.get('concurrent') or ''}</td>
-                                        <td>${sa.get('expire_time') or ''}</td>
+                                        <td>
+                                            % if sa.get('expire_time'):
+                                                ${sa.get('expire_time')}
+                                                % if sa.get('is_expired'):
+                                                    <span class="badge badge-danger ml-1">${_('Expired')}</span>
+                                                % endif
+                                            % endif
+                                        </td>
                                         <td>${sa.get('regist_date').strftime('%Y-%m-%d %H:%M:%S') if sa.get('regist_date') else ''}</td>
                                         <td class="text-center">
                                             <button class="btn btn-primary btn-sm" data-subid="${sa['id']}" data-subemail="${sa['email']}" onclick="goExtendPrice(this)">${_('Request Extension')}</button>
                                         </td>
                                     </tr>
-                                % endfor
+                                    % endfor
+                                % else:
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">등록된 하위계정이 없습니다.</td>
+                                    </tr>
+                                % endif
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="mt-3 subaccount-action-box text-center">
+                            <div class="action-text">
+                                ${base_email} 기준으로 기존 가입 계정을 편입하거나 신규 하위계정을 생성할 수 있습니다.
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btn_add_existing_subaccount">기존계정추가</button>
+                                <button type="button" class="btn btn-primary btn-sm" id="btn_add_new_subaccount" data-next-email="${next_sub_email}">새하위계정추가</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    % endif
     <!-- subaccount list section end -->
 
     
@@ -341,6 +488,140 @@ function deleteAccount() {
 function goExtendPrice(el){
     var subId = $(el).data('subid');
     window.location.href = '/login_as_subaccount?target_user_id=' + encodeURIComponent(subId) + '&next=' + encodeURIComponent('/price');
+}
+
+$(document).on('click', '#btn_add_existing_subaccount', function(){
+    showExistingAccountPopup();
+});
+
+$(document).on('click', '#btn_add_new_subaccount', function(){
+    const nextEmail = $(this).data('next-email');
+    if (!nextEmail) {
+        Swal.fire({
+            icon: 'error',
+            title: '오류',
+            text: '추천 이메일 정보를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.',
+            confirmButtonColor: '#8a4cf7'
+        });
+        return;
+    }
+    window.location.href = '/regist?prefill_email=' + encodeURIComponent(nextEmail);
+});
+
+function showExistingAccountPopup() {
+    const popupHtml = [
+    '<div class="existing-account-form">',
+    '<h3 class="existing-account-title">기존계정추가</h3>',
+        '<p>이미 가입된 계정 정보를 입력하면 서브계정으로 편입됩니다.</p>',
+        '<div class="form-group">',
+        '<label class="pb-1">이메일</label>',
+    '<div class="input-group input-group-merge">',
+    '<span class="input-border"></span>',
+    '<div class="input-icon"><span class="ti-email color-primary"></span></div>',
+    '<input id="mypage_add_email" type="text" class="form-control" placeholder="hello@example.com" autocomplete="new-email" value="">',
+        '</div>',
+        '</div>',
+        '<div class="form-group">',
+        '<label class="pb-1">비밀번호</label>',
+    '<div class="input-group input-group-merge">',
+    '<span class="input-border"></span>',
+    '<div class="input-icon"><span class="ti-lock color-primary"></span></div>',
+    '<input id="mypage_add_password" type="password" class="form-control" placeholder="비밀번호를 입력하세요" autocomplete="new-password" value="">',
+        '</div>',
+        '</div>',
+        '</div>'
+    ].join('');
+
+    Swal.fire({
+        html: popupHtml,
+        showCancelButton: true,
+        confirmButtonText: '확인',
+        cancelButtonText: '취소',
+        reverseButtons: true,
+        focusConfirm: false,
+        width: '34rem',
+        customClass: {
+            popup: 'swal-existing-account'
+        },
+        preConfirm: () => {
+            const email = $('#mypage_add_email').val().trim();
+            const pw = $('#mypage_add_password').val();
+            if (!email || !pw) {
+                Swal.showValidationMessage('이메일과 비밀번호를 입력하세요');
+                return false;
+            }
+            return {email: email, password: pw};
+        },
+        didOpen: () => {
+            $('#mypage_add_email').trigger('focus');
+            $('#mypage_add_email').attr('autocomplete', 'one-time-code');
+            $('#mypage_add_password').attr('autocomplete', 'one-time-code');
+            $('.existing-account-form .input-group input').on('focus blur', function(e){
+                $(this).closest('.input-group').toggleClass('is-focused', e.type === 'focus' || this.value);
+            });
+            $('.existing-account-form .input-group input').each(function(){
+                if (this.value) {
+                    $(this).closest('.input-group').addClass('is-focused');
+                }
+            });
+        }
+    }).then(function(result){
+        if (result.value) {
+            Swal.fire({title:'처리 중...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+            $.post('/api_prepare_extension_target', {
+                csrfmiddlewaretoken: csrfToken,
+                email: result.value.email,
+                password: result.value.password
+            }).done(function(res){
+                if (res.result === 200) {
+                    const successEmail = res.target_email || result.value.email;
+                    Swal.fire({
+                        icon: 'success',
+                        title: '등록 완료',
+                        text: successEmail + ' 서브계정으로 추가되었습니다.',
+                        confirmButtonColor: '#8a4cf7'
+                    }).then(function(){
+                        window.location.reload();
+                    });
+                } else {
+                    const message = buildExistingAccountError(res);
+                    Swal.fire({
+                        icon: 'error',
+                        title: '실패',
+                        text: message,
+                        confirmButtonColor: '#8a4cf7'
+                    }).then(function(){
+                        showExistingAccountPopup();
+                    });
+                }
+            }).fail(function(){
+                Swal.fire({
+                    icon: 'error',
+                    title: '네트워크 오류',
+                    text: '다시 시도해주세요.',
+                    confirmButtonColor: '#8a4cf7'
+                }).then(function(){
+                    showExistingAccountPopup();
+                });
+            });
+        }
+    });
+}
+
+function buildExistingAccountError(res) {
+    if (!res) {
+        return '오류가 발생했습니다.';
+    }
+    if (res.code === 'SELF_ASSIGN') {
+        return '자신의 계정은 하위계정으로 추가할 수 없습니다.';
+    }
+    if (res.code === 'ALREADY_SUB') {
+        return '이미 다른 계정의 하위계정이어서 편입할 수 없습니다.';
+    }
+    if (res.code === 'HAS_CHILD') {
+        return '이미 다른 하위계정을 보유하고 있어 편입할 수 없습니다.';
+    }
+    return res.text || res.message || '오류가 발생했습니다.';
 }
 
 // Session deletion functions have been removed as the session list is now read-only.
