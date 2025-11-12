@@ -3,6 +3,7 @@ djangomako==1.1.1
 mysqlclient==1.4.4
 requests==2.22.0
 paramiko==2.7.1
+geoip2>=4.7.0,<5.0.0
 # pycrypto==2.6.1
 # pip install pycrypto-2.6.1-cp36-cp36m-win_amd64.whl
 # venv\lib\site-packages\Crypto\Random\OSRNG\nt.py

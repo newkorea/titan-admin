@@ -11,6 +11,10 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 HTTPS = True
 
+# GeoIP2 ASN database path (for telecom-aware auto-selection)
+# Place GeoLite2-ASN.mmdb at this path; can be overridden in settings_local.py
+GEOIP2_ASN_DB_PATH = os.path.join(BASE_DIR, 'data', 'GeoLite2-ASN.mmdb')
+
 # --- 세션 ---
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -146,6 +150,12 @@ DATABASES = {
         'PORT': '3306',
     },
 }
+
+# PushPlus notification token (set real token via environment or settings_local)
+# Legacy default token preserved for backward-compatibility; override via env or settings_local.py
+PUSHPLUS_TOKEN = os.environ.get('PUSHPLUS_TOKEN', '71441d4026b84b068f3e7522b173299f')
+# Endpoint override allowed via environment
+PUSHPLUS_ENDPOINT = os.environ.get('PUSHPLUS_ENDPOINT', 'https://www.pushplus.plus/send')
 
 # --- 앱/미들웨어 ---
 INSTALLED_APPS = [

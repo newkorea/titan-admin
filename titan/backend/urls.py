@@ -180,4 +180,5 @@ urlpatterns = [
     path('v1/app_disconnect_v2ray', RestAPIViews.app_disconnect_v2ray, name='app_disconnect_v2ray'),        #[api] V2ray set time to acctstoptime
     path('api_check_payment_status', PriceViews.api_check_payment_status, name='api_check_payment_status'), #새롭게 결제승인상태값을 보내줌
     path("api_check_recent_payments",  PriceViews.api_check_recent_payments, name="api_check_recent_payments"),
+    path('v1/app_health', RestAPIViews.app_health, name='app_health'),
 ]

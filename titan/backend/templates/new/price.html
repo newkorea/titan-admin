@@ -768,6 +768,28 @@ function payment() {
     console.log('month_type -> ', month_type);
     console.log('session -> ', session);
    
+   // 필수 선택값 점검: 개별 항목별로 안내
+   var monthValid = month_type !== undefined && month_type !== null && String(month_type).trim() !== '' && parseInt(month_type, 10) > 0;
+   if (!monthValid) {
+        Swal.fire({
+            icon: 'warning',
+            title: '알림',
+            text: '사용기간을 선택해주세요.',
+            confirmButtonColor: swalColor('error'),
+        });
+        return false;
+   }
+   var sessionValid = session !== undefined && session !== null && String(session).trim() !== '' && parseInt(session, 10) > 0;
+   if (!sessionValid) {
+        Swal.fire({
+            icon: 'warning',
+            title: '알림',
+            text: '동시접속수를 선택해주세요.',
+            confirmButtonColor: swalColor('error'),
+        });
+        return false;
+   }
+   
    // 결제방식에 따른 분기 처리
     if (pgcode == 'PLCreditCard' || pgcode == 'PLUnionPay' || pgcode == 'PLCreditCardMpi' || pgcode == 'PaypalExpressCheckout') { // 페이레터 해외
         payletter_global(pgcode, month_type, session);
@@ -798,7 +820,7 @@ function payment() {
         Swal.fire({
             type: 'error',
             title: '알림',
-            text: '알수 없는 결제방식 입니다. 관리자에게 문의하십시오',
+            text: '결제방식을 선택해주세요.',
             confirmButtonColor: swalColor('error'),
         }).then(function(result) { /* pass */ })
     }

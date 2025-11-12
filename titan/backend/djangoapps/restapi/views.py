@@ -4,6 +4,8 @@ import re
 import uuid
 import requests
 import time
+import ipaddress
+import os
 from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -33,6 +35,233 @@ import traceback
 import socket
 import random
 import string
+
+try:
+    import geoip2.database
+    from geoip2.errors import AddressNotFoundError
+except ModuleNotFoundError:
+    geoip2 = None
+    AddressNotFoundError = Exception
+
+
+GEOIP2_ASN_READER = None
+
+
+def _get_geoip2_asn_reader():
+    global GEOIP2_ASN_READER
+    if geoip2 is None:
+        return None
+    if GEOIP2_ASN_READER is False:
+        return None
+
+    if GEOIP2_ASN_READER is None:
+        db_path = getattr(settings, 'GEOIP2_ASN_DB_PATH', None)
+        if not db_path or not os.path.exists(db_path):
+            print('INFO -> GeoIP2 ASN DB missing or disabled, skip lookup')
+            GEOIP2_ASN_READER = False
+            return None
+        try:
+            GEOIP2_ASN_READER = geoip2.database.Reader(db_path)
+        except Exception as err:
+            # Downgrade to WARN and disable silently as requested
+            print('WARN -> GeoIP2 ASN load fail (disabled): ', err)
+            GEOIP2_ASN_READER = False
+            return None
+
+    return GEOIP2_ASN_READER
+
+
+def _escape_sql_literal(value):
+    return str(value).replace("'", "''")
+
+
+DETECT_TELECOM_CACHE = {}
+DETECT_TELECOM_CACHE_TTL = 300  # seconds
+
+def detect_cn_telecom(login_ip):
+    """중국 통신사 힌트 탐지 (ip-api 기반, 캐시 적용).
+    우선 안전 래퍼(safe_ip_api_lookup)로 isp를 확인하여 매핑하고,
+    실패 시 org/isp/as 확장 조회를 시도한다. 결과는 TTL 캐시한다.
+    매핑: China Telecom -> ct, China Mobile|CMCC -> cm, China Unicom|CUCC|China United Network Communications -> cu
+    """
+    organization_raw = ''
+    try:
+        ip_obj = ipaddress.ip_address(login_ip)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_multicast:
+            return None, organization_raw
+    except Exception:
+        return None, organization_raw
+
+    # Cache first
+    try:
+        now = time.time()
+        cached = DETECT_TELECOM_CACHE.get(login_ip)
+        if cached and cached[0] > now:
+            return cached[1], cached[2]
+    except Exception:
+        pass
+
+    # Fast path: use safe_ip_api_lookup (cached) to map by ISP
+    try:
+        resp = safe_ip_api_lookup(login_ip, timeout=0.8)
+        isp = (resp.get('isp') or '').lower()
+        if isp:
+            organization_raw = resp.get('isp') or ''
+            if 'china telecom' in isp:
+                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'ct', organization_raw)
+                return 'ct', organization_raw
+            if 'china mobile' in isp or 'cmcc' in isp:
+                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'cm', organization_raw)
+                return 'cm', organization_raw
+            if ('china unicom' in isp or 'cucc' in isp or 'china united network communications' in isp):
+                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'cu', organization_raw)
+                return 'cu', organization_raw
+    except Exception:
+        pass
+
+    # Fallback: extended org lookup
+    try:
+        resp = requests.get(
+            f"http://ip-api.com/json/{login_ip}?fields=status,message,org,isp,as",
+            timeout=1.2,
+        )
+        data = resp.json()
+        if data.get('status') != 'success':
+            return None, organization_raw
+        organization_raw = data.get('org') or data.get('isp') or data.get('as') or ''
+        organization = (organization_raw or '').lower()
+        if not organization:
+            return None, organization_raw
+        # Telecom mappings
+        if 'china telecom' in organization:
+            hint = 'ct'
+        elif 'china mobile' in organization or 'cmcc' in organization:
+            hint = 'cm'
+        elif ('china unicom' in organization or 'cucc' in organization or 'china united network communications' in organization):
+            hint = 'cu'
+        else:
+            hint = None
+        try:
+            DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, hint, organization_raw)
+        except Exception:
+            pass
+        return hint, organization_raw
+    except Exception:
+        return None, organization_raw
+
+
+SAFE_IP_CACHE = {}
+SAFE_IP_CACHE_TTL = 300  # seconds
+
+# Short-window de-duplication for telecom org logging to reduce noise
+_TELECOM_ORG_LAST = {'org': None, 'ts': 0}
+
+def _log_telecom_org_once(organization_raw, window_secs=3):
+    try:
+        if not organization_raw:
+            return
+        now = time.time()
+        last_org = _TELECOM_ORG_LAST.get('org')
+        last_ts = _TELECOM_ORG_LAST.get('ts', 0)
+        if last_org == organization_raw and (now - last_ts) < window_secs:
+            return
+        print('INFO -> telecom org(raw) : ', organization_raw)
+        _TELECOM_ORG_LAST['org'] = organization_raw
+        _TELECOM_ORG_LAST['ts'] = now
+    except Exception:
+        # Fallback to direct print on any unexpected error
+        try:
+            print('INFO -> telecom org(raw) : ', organization_raw)
+        except Exception:
+            pass
+
+
+def safe_ip_api_lookup(ip_addr, timeout=0.8):
+    """Best-effort lookup of country/city/isp via ip-api.com.
+    Returns dict with keys: country, city, isp (may be empty strings on failure).
+    Swallows all exceptions and network / JSON errors.
+    """
+    # Cache check
+    try:
+        now = time.time()
+        cached = SAFE_IP_CACHE.get(ip_addr)
+        if cached and cached[0] > now:
+            return cached[1]
+    except Exception:
+        pass
+
+    base = f"http://ip-api.com/json/{ip_addr}?fields=status,message,country,city,isp"
+    try:
+        resp = requests.get(base, timeout=timeout)
+        data = resp.json()
+        if data.get('status') != 'success':
+            return {'country': '', 'city': '', 'isp': ''}
+        result = {
+            'country': data.get('country') or '',
+            'city': data.get('city') or '',
+            'isp': data.get('isp') or ''
+        }
+        # Cache success only
+        try:
+            SAFE_IP_CACHE[ip_addr] = (time.time() + SAFE_IP_CACHE_TTL, result)
+        except Exception:
+            pass
+        return result
+    except Exception as err:
+        # Keep logs lightweight to avoid flooding
+        print('WARN -> safe_ip_api_lookup fail:', err)
+        return {'country': '', 'city': '', 'isp': ''}
+
+
+def _read_first_line_nonblock(stdout, timeout=0.7):
+    """Read first line from Paramiko stdout with a channel timeout to avoid blocking."""
+    try:
+        try:
+            stdout.channel.settimeout(timeout)
+        except Exception:
+            pass
+        data = stdout.read().decode("utf-8")
+        if not data:
+            return ''
+        return data.split('\n')[0]
+    except Exception:
+        return ''
+
+
+def strongswan_down_nb_safely(ssh, user_identifier, max_total_wait=0.8):
+    """Attempt to gracefully tear down a strongSwan SA; avoid long waits and duplicate calls unless needed.
+    Flow:
+    - statusall|grep {user} to get SA id (non-blocking read with short timeout)
+    - run one down-nb
+    - small sleep, re-check; only run a second down-nb if SA still present
+    - never exceed max_total_wait seconds of sleeps/checks
+    """
+    try:
+        # Find SA identifier first
+        cmd = 'strongswan statusall | grep ' + user_identifier
+        _stdin, _stdout, _stderr = ssh.exec_command(cmd)
+        first = _read_first_line_nonblock(_stdout, timeout=min(0.7, max_total_wait))
+        if not first:
+            return
+        sa = first.split(':')[0].strip()
+        if not sa:
+            return
+        down_cmd = 'strongswan stroke down-nb ' + sa
+        print('cmd => ', down_cmd)
+        ssh.exec_command(down_cmd)
+        # Re-check if still present, then optionally send second
+        remaining = max_total_wait - 0.15
+        if remaining <= 0:
+            return
+        time.sleep(0.15)
+        cmd2 = 'strongswan statusall | grep ' + user_identifier
+        _stdin2, _stdout2, _stderr2 = ssh.exec_command(cmd2)
+        second = _read_first_line_nonblock(_stdout2, timeout=max(0.0, remaining))
+        if second:
+            # Still present, send one more down-nb
+            ssh.exec_command(down_cmd)
+    except Exception as _e:
+        print('WARN -> strongswan_down_nb_safely fail:', _e)
 
 # 페이레터 해외 모바일 (2019.09.12 21:06 점검완료)
 @csrf_exempt
@@ -236,10 +465,29 @@ def app_init_session(request):
         endpoint = 'http://'+ settings.MY_URL +''
     url = endpoint + '/login'
     session = requests.Session()
-    response = session.get(url)
-    session_store = session.cookies.get_dict()
-    csrftoken = session_store['csrftoken']
-    sessionid = session_store['sessionid']
+    attempts = 0
+    csrftoken = None
+    sessionid = None
+    last_err = None
+    while attempts < 3 and (csrftoken is None or sessionid is None):
+        try:
+            session.get(url, timeout=2)
+            store = session.cookies.get_dict()
+            csrftoken = store.get('csrftoken')
+            sessionid = store.get('sessionid')
+            if csrftoken and sessionid:
+                break
+        except Exception as err:
+            last_err = err
+        attempts += 1
+        if attempts < 3:
+            time.sleep(0.4 * attempts)  # exponential-ish backoff
+    if csrftoken is None or sessionid is None:
+        if last_err:
+            print('ERROR -> init_session network fail:', last_err)
+            return JsonResponse({'result': 500, 'error': 'session_init_failed'})
+        print('ERROR -> init_session missing cookies after retries')
+        return JsonResponse({'result': 501, 'error': 'missing_session_cookies'})
     print('INFO -> csrftoken : ', csrftoken)
     print('INFO -> sessionid : ', sessionid)
     with connections['default'].cursor() as cur:
@@ -292,9 +540,9 @@ def app_check_login(request):
 	
         #if app_version == None:
         #    return JsonResponse({'result': 200,'id': id})
-        response = requests.get("http://ip-api.com/json/" + login_ip).json()
-        print('INFO -> device_country : ', response['country'])
-        print('INFO -> device_city : ', response['city'])
+        response = safe_ip_api_lookup(login_ip)
+        print('INFO -> device_country : ', (response.get('country') or ''))
+        print('INFO -> device_city : ', (response.get('city') or ''))
         print('INFO -> login_time : ', datetime.datetime.now())
  
         st = TblDeviceInfo(
@@ -304,9 +552,9 @@ def app_check_login(request):
             device_os = device_os.replace('\'', ''),
             device_uuid = device_uuid,
             device_ip = login_ip,
-            device_country = response['country'].replace('\'', ''),
-            device_city = response['city'].replace('\'', ''),
-            device_isp = response['isp'].replace('\'', ''),
+            device_country = (response.get('country') or '').replace('\'', ''),
+            device_city = (response.get('city') or '').replace('\'', ''),
+            device_isp = (response.get('isp') or '').replace('\'', ''),
             api_url = api_url,
             load_balancer = load_balancer,
             login_time = datetime.datetime.now())
@@ -641,7 +889,11 @@ def app_session_key(request):
     login_ip = get_client_ip(request)
     print('INFO -> START APP SESSION KEY')
     print('INFO -> login_email : ', login_email)
-    print('INFO -> login_password : ', login_password)
+    # 비밀번호는 로그에 남기지 않고 마스킹 처리
+    if login_password:
+        print('INFO -> login_password : (masked {} chars)'.format(len(login_password)))
+    else:
+        print('INFO -> login_password : (empty)')
     print('INFO -> login_ip : ', login_ip)
 
     # 백엔드 유효성 체크
@@ -700,14 +952,14 @@ def app_session_key(request):
                 
                 #if app_version == None:
                 #    return JsonResponse({'result': 200})
-                response = requests.get("http://ip-api.com/json/" + login_ip).json()
+                response = safe_ip_api_lookup(login_ip)
                 print('INFO -> user_id : ', user_id)
                 print('INFO -> app_version : ', app_version)
                 print('INFO -> device_type : ', device_type)
                 print('INFO -> device_os : ', device_os)
                 print('INFO -> device_uuid : ', device_uuid)
-                print('INFO -> device_country: ', response['country'])
-                print('INFO -> device_city : ', response['city'])
+                print('INFO -> device_country: ', response.get('country'))
+                print('INFO -> device_city : ', response.get('city'))
                 print('INFO -> api_url : ', api_url)
                 print('INFO -> load_balancer : ', load_balancer)
                 print('INFO -> login_time : ', datetime.datetime.now())
@@ -719,9 +971,9 @@ def app_session_key(request):
                     device_os = device_os.replace('\'', ''),
                     device_uuid = device_uuid,
                     device_ip = login_ip,
-                    device_country = response['country'].replace('\'', ''),
-                    device_city = response['city'].replace('\'', ''),
-                    device_isp = response['isp'].replace('\'', ''),
+                    device_country = (response.get('country') or '').replace('\'', ''),
+                    device_city = (response.get('city') or '').replace('\'', ''),
+                    device_isp = (response.get('isp') or '').replace('\'', ''),
                     api_url = api_url,
                     load_balancer = load_balancer,
                     login_time = datetime.datetime.now())
@@ -884,15 +1136,8 @@ def app_start_vpn(request):
                         print('cmd => ',command)
                         ssh.exec_command(command)
                     else :
-                        command = 'strongswan statusall | grep '+id
-                        stdin, stdout, stderr = ssh.exec_command(command)
-                        sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
-
-                        command = 'strongswan stroke down-nb '+sa
-                        print('cmd => ',command)
-                        # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
-                        ssh.exec_command(command)
-                        ssh.exec_command(command)
+                        # IKEv2 (strongSwan) safe disconnect
+                        strongswan_down_nb_safely(ssh, id)
                 except socket.timeout:
                     #timeout 걸렸을때 radius 강제 업데이트
                     sql = '''
@@ -1121,14 +1366,8 @@ def app_check_server(request):
                             print('cmd => ',command)
                             ssh.exec_command(command)
                         else :
-                            command = 'strongswan statusall | grep '+id
-                            stdin, stdout, stderr = ssh.exec_command(command)
-                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
-                            command = 'strongswan stroke down-nb '+sa
-                            print('cmd => ',command)
-                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
-                            ssh.exec_command(command)
-                            ssh.exec_command(command)
+                            # IKEv2 (strongSwan) safe disconnect
+                            strongswan_down_nb_safely(ssh, id)
                     except socket.timeout:
                         #timeout 걸렸을때 radius 강제 업데이트
                         sql = '''
@@ -1227,13 +1466,21 @@ def app_check_server(request):
 @csrf_exempt
 def app_new_check_server(request):
     if 'id' in request.session:
+        _t0 = time.monotonic()
+        def _log_elapsed(stage):
+            try:
+                elapsed_ms = int((time.monotonic() - _t0) * 1000)
+                print('INFO -> app_new_check_server elapsed(ms):', elapsed_ms, 'stage:', stage)
+            except Exception:
+                pass
         id = request.session['email']
         server_name = request.POST.get('server_name') # Server Domain
-        server_protocol = request.POST.get('server_protocol')
+        # Prefer explicit server_protocol; fallback to generic 'protocol' if client uses that key
+        server_protocol = request.POST.get('server_protocol') or request.POST.get('protocol')
         name = request.POST.get('name')               # Server Name
         failed_server = request.POST.get('failed_server_name')
         login_ip = get_client_ip(request)
-        optimize_server = request.POST.get('optimize_server') # Server Domain that get from client using ping test
+        optimize_server = request.POST.get('optimize_server') # Deprecated: previously client ping result
 
         if server_protocol == None:
             server_protocol = ''
@@ -1241,8 +1488,41 @@ def app_new_check_server(request):
             failed_server = ''
         if name == None:
             name = ''
-        if optimize_server == None:
-            optimize_server = ''
+        # Deprecated: ignore optimize_server completely
+        optimize_server = ''
+
+        telecom_hint, telecom_org = detect_cn_telecom(login_ip)
+        if telecom_org:
+            _log_telecom_org_once(telecom_org)
+        if telecom_hint:
+            print('INFO -> telecom hint : ', telecom_hint)
+        # Fallback: if GeoIP2 is unavailable or inconclusive, use last stored ISP from TblDeviceInfo
+        if not telecom_hint:
+            try:
+                with connections['default'].cursor() as _cur2:
+                    _sql_isp = '''
+                        SELECT device_isp
+                        FROM titan.tbl_device_info
+                        WHERE device_ip = '{login_ip}'
+                        ORDER BY login_time DESC
+                        LIMIT 1
+                    '''.format(login_ip=_escape_sql_literal(login_ip))
+                    _cur2.execute(_sql_isp)
+                    _rows_isp = dictfetchall(_cur2)
+                    if _rows_isp:
+                        _isp = (_rows_isp[0]['device_isp'] or '').lower()
+                        if 'china telecom' in _isp:
+                            telecom_hint = 'ct'
+                        elif 'china mobile' in _isp or 'cmcc' in _isp:
+                            telecom_hint = 'cm'
+                        elif ('china unicom' in _isp or 'cucc' in _isp
+                              or 'china united network communications' in _isp):
+                            telecom_hint = 'cu'
+                        if telecom_hint:
+                            print('INFO -> ISP fallback telecom hint : ', telecom_hint)
+            except Exception as _isp_err:
+                # Non-fatal: proceed without telecom hint
+                pass
         with connections['default'].cursor() as cur:
             # radius 기본정보 획득
                 sql = '''
@@ -1268,6 +1548,8 @@ def app_new_check_server(request):
                     # VPN 접속 만료기한
                     if row["attribute"] == "Expiration":
                         expiration  = row["value"]
+
+                _log_elapsed('t1_radcheck')
 
                 # VPN 사용기한 확인
                 try:
@@ -1296,7 +1578,9 @@ def app_new_check_server(request):
                 cur.execute(sql)
                 rows = dictfetchall(cur)
                 print('INFO ->' + id + ' 의' + 'NULL 줄수 :'+ str(len(rows)) + ' 동시접속 설정수 :' + simultaneous_use)
+                _log_elapsed('t2_radacct')
                 if len(rows) >= int(simultaneous_use) :
+                    _forced_done = False
                     sessionid = rows[0]['acctsessionid']
                     nasportid = rows[0]['nasportid']
                     nasipaddress = rows[0]['nasipaddress']
@@ -1309,105 +1593,136 @@ def app_new_check_server(request):
                     '''.format(ip=nasipaddress)
                     cur.execute(sql)
                     ssh_info_rows = dictfetchall(cur)
-
-                    ssh = paramiko.SSHClient()
-                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    print('INFO -> SSH Open: ' + id)
-                    try:
-                        protocol = ''
-                        # timeout 1초
-                        ssh.connect(nasipaddress,
-                                    username=ssh_info_rows[0]['username'],
-                                    password=ssh_info_rows[0]['password'],
-                                    timeout = 1)
+                    if not ssh_info_rows:
+                        # Reverted to ERROR so monitor catches missing credentials (operationally important)
+                        print('ERROR -> SSH credentials not found for hostip:', nasipaddress)
+                        # radius 레코드 정리만 하고 종료
+                        cleanup_sql = '''
+                            UPDATE radius.radacct SET acctstoptime = '{date}' WHERE radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date = datetime.datetime.now(), radacctid = rows[0]['radacctid'])
+                        cur.execute(cleanup_sql)
+                        _forced_done = True
+                        # 다음 단계 계속 (서버 선택 로직) 진행
+                    else:
+                        ssh = paramiko.SSHClient()
+                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                        print('INFO -> SSH Open: ' + id)
+                        try:
+                            protocol = ''
+                            # timeout 1초
+                            ssh.connect(nasipaddress,
+                                        username=ssh_info_rows[0]['username'],
+                                        password=ssh_info_rows[0]['password'],
+                                        timeout = 1)
                         			
-                        if nasporttype == 'ISDN' : # openvpn
-                            protocol = 'OPENVPN'
-                            print('INFO -> Openvpn Server telnet login:' + id)
-                            channel = ssh.invoke_shell()
-                            channel.send("telnet 127.0.0.1 1199\n")
-                            time.sleep(0.5)
-                            channel.send("mykakao9898\n")
-                            time.sleep(0.2)
-                            command = 'kill '+id+'\n'
-                            channel.send(command)
-                            time.sleep(0.2)
-                            channel.send("exit\n")
-                            time.sleep(0.2)
-                            channel.send("exit\n")
-                            time.sleep(0.2)
-                            output = channel.recv(65535).decode("utf-8")
-                            print(output)
-                        elif nasportid == '443' : # softether sstp
-                            protocol = 'SSTP'
-                            print('INFO -> SSTP Force Stop:' + id)
-                            sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
-                            command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
-                            print('cmd => ',command)
-                            ssh.exec_command(command)
-                        elif nasporttype == 'V2RAY' : # V2RAY
-                            protocol = 'V2RAY'
-                            print("No Action")
-                        else :
-                            protocol = 'IKEV2'
-                            print('INFO -> IKEV2 Force Stop:' + id)
-                            command = 'strongswan statusall | grep '+id
-                            stdin, stdout, stderr = ssh.exec_command(command)
-                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+                            if nasporttype == 'ISDN' : # openvpn
+                                protocol = 'OPENVPN'
+                                print('INFO -> Openvpn Server telnet login:' + id)
+                                channel = ssh.invoke_shell()
+                                channel.send("telnet 127.0.0.1 1199\n")
+                                time.sleep(0.5)
+                                channel.send("mykakao9898\n")
+                                time.sleep(0.2)
+                                command = 'kill '+id+'\n'
+                                channel.send(command)
+                                time.sleep(0.2)
+                                channel.send("exit\n")
+                                time.sleep(0.2)
+                                channel.send("exit\n")
+                                time.sleep(0.2)
+                                output = channel.recv(65535).decode("utf-8")
+                                print(output)
+                            elif nasportid == '443' : # softether sstp
+                                protocol = 'SSTP'
+                                print('INFO -> SSTP Force Stop:' + id)
+                                sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                                command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                                print('cmd => ',command)
+                                ssh.exec_command(command)
+                            elif nasporttype == 'V2RAY' : # V2RAY
+                                protocol = 'V2RAY'
+                                print("No Action")
+                            else :
+                                protocol = 'IKEV2'
+                                print('INFO -> IKEV2 Force Stop:' + id)
+                                strongswan_down_nb_safely(ssh, id)
 
-                            command = 'strongswan stroke down-nb '+sa
-                            print('cmd => ',command)
-                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
-                            ssh.exec_command(command)
-                            ssh.exec_command(command)
-                        sql = '''
-                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                            COMMIT;
-                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
-                    except socket.timeout:
-                        #timeout 걸렸을때 radius 강제 업데이트
-                        print('INFO -> socket.timeout' + id)
-                        sql = '''
-                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                            COMMIT;
-                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
+                            # 강제 종료 후 레코드 업데이트/로그 적재
+                            sql = '''
+                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                                COMMIT;
+                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                            cur.execute(sql)
+                            
+                            sql = '''
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            cur.execute(sql)
+                            _forced_done = True
+                        except socket.timeout:
+                            #timeout 걸렸을때 radius 강제 업데이트
+                            print('INFO -> socket.timeout' + id)
+                            sql = '''
+                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                                COMMIT;
+                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                            cur.execute(sql)
+                            
+                            sql = '''
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            cur.execute(sql)
 
-                    except BaseException as err:
-                        print('ERROR -> err : ' + id, err)
-                        sql = '''
-                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                            COMMIT;
-                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
-                    finally:
-                        ssh.close()
+                        except BaseException as err:
+                            print('ERROR -> err : ' + id, err)
+                            sql = '''
+                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                                COMMIT;
+                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                            cur.execute(sql)
+                            
+                            sql = '''
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            cur.execute(sql)
+                        finally:
+                            try:
+                                ssh.close()
+                            except Exception:
+                                pass
+                    if _forced_done:
+                        _log_elapsed('t3_disconnect_done')
                 
                 # VPN Agent 매칭
-                sql = ''
-                if server_protocol == '': # Under 2.2.0 for iOS problem 
-                    sql = '''
+                telecom_column_map = {
+                    'ct': 'is_auto_ct',
+                    'cm': 'is_auto_cm',
+                    'cu': 'is_auto_cu'
+                }
+                auto_columns = []
+                if telecom_hint in telecom_column_map:
+                    auto_columns.append(telecom_column_map[telecom_hint])
+                auto_columns.append('is_auto')
+
+                def fetch_auto_rows(auto_column_name, auto_value):
+                    if server_protocol == '':
+                        # When protocol not specified by client, allow common protocols (IKEV2/OPENVPN/V2RAY)
+                        # Use OR (not AND) so servers supporting any of these can be chosen.
+                        protocol_clause = "(t1.protocol LIKE '%IKEV2%' OR t1.protocol LIKE '%OPENVPN%' OR t1.protocol LIKE '%V2RAY%')"
+                        name_clause = ''
+                    else:
+                        escaped_protocol = _escape_sql_literal(server_protocol or '')
+                        protocol_clause = f"t1.protocol LIKE '%{escaped_protocol}%'"
+                        escaped_failed = _escape_sql_literal(failed_server or '')
+                        name_clause = f" AND t1.name != '{escaped_failed}'"
+
+                    sql_query = f'''
                         SELECT
-                            t1.id, 
+                            t1.id,
                             t2.count,
                             t1.hostdomain,
                             t1.hostip,
@@ -1418,238 +1733,191 @@ def app_new_check_server(request):
                             t1.v2_port
                         FROM titan.tbl_agent3 t1,
                             (SELECT t1.hostip,
-                                Count(t2.nasipaddress) AS count
-                            FROM titan.tbl_agent3 t1
-                                 LEFT JOIN (SELECT *
-                                            FROM   radius.radacct
-                                            WHERE  acctstoptime IS NULL
-                                            ) t2
-                                        ON t1.hostip = t2.nasipaddress
-                            WHERE  is_active OR is_active = 1 AND is_status = 1
-                            GROUP  BY t1.hostip)t2
-                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
+                                    Count(t2.nasipaddress) AS count
+                                FROM titan.tbl_agent3 t1
+                                    LEFT JOIN (SELECT *
+                                               FROM   radius.radacct
+                                               WHERE  acctstoptime IS NULL
+                                              ) t2
+                                           ON t1.hostip = t2.nasipaddress
+                                WHERE  is_active OR is_active = 1 AND is_status = 1
+                                GROUP  BY t1.hostip)t2
+                        WHERE  t1.hostip = t2.hostip AND t1.{auto_column_name} = {auto_value} AND t1.is_active = 1 AND {protocol_clause}{name_clause}
                         ORDER  BY t1.telecom, t2.count
                     '''
-                else :
+                    try:
+                        cur.execute(sql_query)
+                    except Exception as err:
+                        print('ERROR -> Auto column query fail : ', err)
+                        return []
+                    return dictfetchall(cur)
+
+                selected_rows = None
+                selected_auto_column = None
+                selected_auto_value = None
+
+                for candidate_column in auto_columns:
+                    rows = fetch_auto_rows(candidate_column, 1)
+                    if rows:
+                        selected_rows = rows
+                        selected_auto_column = candidate_column
+                        selected_auto_value = 1
+                        break
+
+                    rows = fetch_auto_rows(candidate_column, 2)
+                    if rows:
+                        selected_rows = rows
+                        selected_auto_column = candidate_column
+                        selected_auto_value = 2
+                        break
+
+                _log_elapsed('t4_auto_select')
+                if not selected_rows:
+                    # Final fallback: pick any active/status server matching protocol clause ignoring auto flags
+                    try:
+                        if server_protocol == '':
+                            any_protocol_clause = "(t1.protocol LIKE '%IKEV2%' OR t1.protocol LIKE '%OPENVPN%' OR t1.protocol LIKE '%V2RAY%')"
+                        else:
+                            escaped_protocol2 = _escape_sql_literal(server_protocol or '')
+                            any_protocol_clause = f"t1.protocol LIKE '%{escaped_protocol2}%'"
+                        any_sql = f"""
+                            SELECT
+                                t1.id,
+                                t2.count,
+                                t1.hostdomain,
+                                t1.hostip,
+                                t1.name,
+                                t1.country,
+                                t1.config,
+                                t1.v2_config,
+                                t1.v2_port
+                            FROM titan.tbl_agent3 t1,
+                                 (SELECT t1.hostip, Count(t2.nasipaddress) AS count
+                                  FROM titan.tbl_agent3 t1
+                                  LEFT JOIN (SELECT * FROM radius.radacct WHERE acctstoptime IS NULL) t2
+                                    ON t1.hostip = t2.nasipaddress
+                                  WHERE (t1.is_active = 1 AND t1.is_status = 1)
+                                  GROUP BY t1.hostip) t2
+                            WHERE t1.hostip = t2.hostip AND {any_protocol_clause}
+                            ORDER BY t2.count
+                            LIMIT 1;
+                        """
+                        cur.execute(any_sql)
+                        any_rows = dictfetchall(cur)
+                        if any_rows:
+                            selected_rows = any_rows
+                            selected_auto_column = 'any_active'
+                            selected_auto_value = 0
+                            print('INFO -> Fallback any-active server selected for user', id)
+                        else:
+                            print('INFO -> Agent does not exist with auto filters ' + str(auto_columns) + ' ' + id)
+                            _log_elapsed('no_agent')
+                            return JsonResponse({'result': 700})
+                    except Exception as _any_err:
+                        print('ERROR -> any-active fallback fail:', _any_err)
+                        print('INFO -> Agent does not exist with auto filters ' + str(auto_columns) + ' ' + id)
+                        _log_elapsed('no_agent')
+                        return JsonResponse({'result': 700})
+
+                print('INFO -> Selected auto column : ' + selected_auto_column + ' value : ' + str(selected_auto_value))
+                rows = selected_rows
+                host_name = rows[0]['hostdomain']
+                host_ip = rows[0]['hostip']
+                vpn_server_name = rows[0]['name']
+                vpn_server_country = rows[0]['country']
+                vpn_server_config = rows[0]['config']
+                vpn_server_v2config = rows[0]['v2_config']
+                vpn_server_v2port = rows[0]['v2_port']
+                vpn_server_id = rows[0]['id']
+
+                # Build check SQL only for explicit server selection from client (legacy <2.2.0 case)
+                if name == '': # Under 2.2.0 version
                     sql = '''
                         SELECT
-                            t1.id, 
-                            t2.count,
-                            t1.hostdomain,
-                            t1.hostip,
-                            t1.name,
-                            t1.country,
-                            t1.config,
-                            t1.v2_config,
-                            t1.v2_port
-                        FROM titan.tbl_agent3 t1,
-                            (SELECT t1.hostip,
-                                Count(t2.nasipaddress) AS count
-                            FROM titan.tbl_agent3 t1
-                                 LEFT JOIN (SELECT *
-                                            FROM   radius.radacct
-                                            WHERE  acctstoptime IS NULL
-                                            ) t2
-                                        ON t1.hostip = t2.nasipaddress
-                            WHERE  is_active OR is_active = 1 AND is_status = 1
-                            GROUP  BY t1.hostip)t2
-                        WHERE  t1.hostip = t2.hostip AND t1.is_auto = 1 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
-                        ORDER  BY t1.telecom, t2.count
-                    '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
+                            id,
+                            name,
+                            hostdomain,
+                            hostip,
+                            v2_port,
+                            is_active,
+                            is_status,
+                            country,
+                            pd_name,
+                            telecom,
+                            protocol,
+                            config,
+                            v2_config
+                        FROM titan.tbl_agent3
+                        WHERE hostdomain = '{server_name}'
+                        LIMIT 1;
+                    '''.format(server_name = server_name)
+                else:
+                    sql = '''
+                        SELECT
+                            id,
+                            name,
+                            hostdomain,
+                            hostip,
+                            v2_port,
+                            is_active,
+                            is_status,
+                            country,
+                            pd_name,
+                            telecom,
+                            protocol,
+                            config,
+                            v2_config
+                        FROM titan.tbl_agent3
+                        WHERE hostdomain = '{server_name}' AND name = '{name}'
+                        LIMIT 1;
+                    '''.format(server_name = server_name, name = name)
                 cur.execute(sql)
                 rows = dictfetchall(cur)
-                if len(rows) == 0:
-                    print('INFO -> Agent does not exist here 3 ' + id)
-                    sql = ''
-                    if server_protocol == '': # Under 2.2.0 for iOS problem 
-                        sql = '''
-                            SELECT
-                                t1.id, 
-                                t2.count,
-                                t1.hostdomain,
-                                t1.hostip,
-                                t1.name,
-                                t1.country,
-                                t1.config,
-                                t1.v2_config,
-                                t1.v2_port
-                            FROM titan.tbl_agent3 t1,
-                                (SELECT t1.hostip,
-                                    Count(t2.nasipaddress) AS count
-                                FROM titan.tbl_agent3 t1
-                                    LEFT JOIN (SELECT *
-                                                FROM   radius.radacct
-                                                WHERE  acctstoptime IS NULL
-                                                ) t2
-                                            ON t1.hostip = t2.nasipaddress
-                                WHERE  is_active OR is_active = 1 AND is_status = 1
-                                GROUP  BY t1.hostip)t2
-                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '%IKEV2%' AND t1.protocol LIKE '%OPENVPN%'
-                            ORDER  BY t1.telecom, t2.count
-                        '''
-                    else :
-                        sql = '''
-                            SELECT
-                                t1.id, 
-                                t2.count,
-                                t1.hostdomain,
-                                t1.hostip,
-                                t1.name,
-                                t1.country,
-                                t1.config,
-                                t1.v2_config,
-                                t1.v2_port
-                            FROM titan.tbl_agent3 t1,
-                                (SELECT t1.hostip,
-                                    Count(t2.nasipaddress) AS count
-                                FROM titan.tbl_agent3 t1
-                                    LEFT JOIN (SELECT *
-                                                FROM   radius.radacct
-                                                WHERE  acctstoptime IS NULL
-                                                ) t2
-                                            ON t1.hostip = t2.nasipaddress
-                                WHERE  is_active OR is_active = 1 AND is_status = 1
-                                GROUP  BY t1.hostip)t2
-                            WHERE  t1.hostip = t2.hostip AND t1.is_auto = 2 AND t1.is_active = 1 AND t1.protocol LIKE '{protocol}' AND t1.name != '{failed_server}'
-                            ORDER  BY t1.telecom, t2.count
-                        '''.format(protocol = '%' + str(server_protocol) + '%', failed_server = failed_server)
-                    cur.execute(sql)
-                    rows = dictfetchall(cur)
-                if len(rows) == 0:
-                    print('INFO -> Agent does not exist here 2 ' + id)
-                    return JsonResponse({'result': 700})
-                else:
-                    host_name = rows[0]['hostdomain']
-                    host_ip = rows[0]['hostip']
-                    vpn_server_name = rows[0]['name']
-                    vpn_server_country = rows[0]['country']
-                    vpn_server_config = rows[0]['config']
-                    vpn_server_v2config = rows[0]['v2_config']
-                    vpn_server_v2port = rows[0]['v2_port']
-                    vpn_server_id = rows[0]['id']
 
-                    print('INFO -> optimize server ' + optimize_server)
-                    sql = '''
-                        SELECT t1.hostip,Count(t2.nasipaddress) AS count
-                        FROM titan.tbl_agent3 t1
-                        LEFT JOIN (SELECT *
-                            FROM   radius.radacct
-                            WHERE  acctstoptime IS NULL
-                            ) t2
-                        ON t1.hostip = t2.nasipaddress
-                        WHERE is_active = 1 AND is_status = 1 AND hostdomain = '{optimize_server}'
-                        GROUP  BY t1.hostip
-                    '''.format(optimize_server = optimize_server)
-                    cur.execute(sql)
-                    rows = dictfetchall(cur)
-                    count = 0
-                    if len(rows) > 0:
-                        count = rows[0]['count']
-                    sql = ''
-                    print('INFO -> count >>>>' + str(count))
-                    if optimize_server != '': 
-                        sql = '''
-                            SELECT
-                                id,
-                                name,
-                                hostdomain,
-                                hostip,
-                                v2_port,
-                                is_active,
-                                is_status,
-                                country,
-                                pd_name,
-                                telecom,
-                                protocol,
-                                config,
-                                v2_config
-                            FROM titan.tbl_agent3
-                            WHERE hostdomain = '{optimize_server}' AND cut_number > {count}
-                            LIMIT 1;
-                        '''.format(optimize_server = optimize_server, count = count)
-                    elif name == '': # Under 2.2.0 version
-                        sql = '''
-                            SELECT
-                                id,
-                                name,
-                                hostdomain,
-                                hostip,
-                                v2_port,
-                                is_active,
-                                is_status,
-                                country,
-                                pd_name,
-                                telecom,
-                                protocol,
-                                config,
-                                v2_config
-                            FROM titan.tbl_agent3
-                            WHERE hostdomain = '{server_name}'
-                            LIMIT 1;
-                        '''.format(server_name = server_name)
-                    else :
-                        sql = '''
-                            SELECT
-                                id,
-                                name,
-                                hostdomain,
-                                hostip,
-                                v2_port,
-                                is_active,
-                                is_status,
-                                country,
-                                pd_name,
-                                telecom,
-                                protocol,
-                                config,
-                                v2_config
-                            FROM titan.tbl_agent3
-                            WHERE hostdomain = '{server_name}' AND name = '{name}'
-                            LIMIT 1;
-                        '''.format(server_name = server_name, name = name)
-                    cur.execute(sql)
-                    rows = dictfetchall(cur)
+                # If explicit server lookup failed, treat smart match as active instead of fallback
+                if len(rows) <= 0 :
+                    _log_elapsed('active_smart')
+                    return JsonResponse({'result' : 200 , 
+                                         'vpn_smart_match_id' : vpn_server_id,
+                                         'vpn_smart_match_hostname' : host_name,
+                                         'vpn_smart_match_name' : vpn_server_name,
+                                         'vpn_smart_match_ip' : host_ip,
+                                         'vpn_smart_match_country' : vpn_server_country,
+                                         'vpn_smart_match_config' : vpn_server_config,
+                                         'vpn_smart_match_v2config' : vpn_server_v2config,
+                                         'vpn_smart_match_v2port' : vpn_server_v2port,
+                                         'vpn_username' : username,
+                                         'vpn_password' : password})
+                
+                is_active = rows[0]['is_active']
+                is_status = rows[0]['is_status']
 
-                    if len(rows) <= 0 :
-                        return JsonResponse({'result' : 200 , 
-                                            'vpn_smart_match_id' : vpn_server_id,
-                                            'vpn_smart_match_hostname' : host_name,
-                                            'vpn_smart_match_name' : vpn_server_name,
-                                            'vpn_smart_match_ip' : host_ip,
-                                            'vpn_smart_match_country' : vpn_server_country,
-                                            'vpn_smart_match_config' : vpn_server_config,
-                                            'vpn_smart_match_v2config' : vpn_server_v2config,
-                                            'vpn_smart_match_v2port' : vpn_server_v2port,
-                                            'vpn_username' : username,
-                                            'vpn_password' : password})
-                    
-                    is_active = rows[0]['is_active']
-                    is_status = rows[0]['is_status']
-
-                    if is_active == 1 and is_status == 1 :
-                        return JsonResponse({'result' : 1001 , 
-                                            'vpn_smart_match_id' : rows[0]['id'],
-                                            'vpn_smart_match_hostname' : rows[0]['hostdomain'],
-                                            'vpn_smart_match_ip' : rows[0]['hostip'],
-                                            'vpn_smart_match_name' : rows[0]['name'],
-                                            'vpn_smart_match_country' : rows[0]['country'],
-                                            'vpn_smart_match_config' : rows[0]['config'],
-                                            'vpn_smart_match_v2config' : rows[0]['v2_config'],
-                                            'vpn_smart_match_v2port' : rows[0]['v2_port'],
-                                            'vpn_username' : username,
-                                            'vpn_password' : password}) # 정상
-                    else :
-                        return JsonResponse({'result' : 1002 ,
-                                            'vpn_smart_match_id' : rows[0]['id'],
-                                            'vpn_smart_match_hostname' : host_name,
-                                            'vpn_smart_match_ip' : host_ip,
-                                            'vpn_smart_match_name' : vpn_server_name,
-                                            'vpn_smart_match_country' : vpn_server_country,
-                                            'vpn_smart_match_config' : vpn_server_config,
-                                            'vpn_smart_match_v2config' : vpn_server_v2config,
-                                            'vpn_smart_match_v2port' : vpn_server_v2port,
-                                            'vpn_username' : username,
-                                            'vpn_password' : password})# 점검중
+                if is_active == 1 and is_status == 1 :
+                    _log_elapsed('active')
+                    return JsonResponse({'result' : 1001 , 
+                                        'vpn_smart_match_id' : rows[0]['id'],
+                                        'vpn_smart_match_hostname' : rows[0]['hostdomain'],
+                                        'vpn_smart_match_ip' : rows[0]['hostip'],
+                                        'vpn_smart_match_name' : rows[0]['name'],
+                                        'vpn_smart_match_country' : rows[0]['country'],
+                                        'vpn_smart_match_config' : rows[0]['config'],
+                                        'vpn_smart_match_v2config' : rows[0]['v2_config'],
+                                        'vpn_smart_match_v2port' : rows[0]['v2_port'],
+                                        'vpn_username' : username,
+                                        'vpn_password' : password}) # 정상
+                else :
+                    _log_elapsed('inactive')
+                    return JsonResponse({'result' : 1002 ,
+                                        'vpn_smart_match_id' : rows[0]['id'],
+                                        'vpn_smart_match_hostname' : host_name,
+                                        'vpn_smart_match_ip' : host_ip,
+                                        'vpn_smart_match_name' : vpn_server_name,
+                                        'vpn_smart_match_country' : vpn_server_country,
+                                        'vpn_smart_match_config' : vpn_server_config,
+                                        'vpn_smart_match_v2config' : vpn_server_v2config,
+                                        'vpn_smart_match_v2port' : vpn_server_v2port,
+                                        'vpn_username' : username,
+                                        'vpn_password' : password})# 점검중
     else :
          print('ERROR -> err : NO ID')
          return JsonResponse({'result': 500})
@@ -1660,6 +1928,12 @@ def app_new_check_server(request):
 @csrf_exempt
 def app_stable_server(request):
     if 'id' in request.session:
+        _t0 = time.monotonic()
+        def _elapsed(stage):
+            try:
+                print('INFO -> app_stable_server elapsed(ms):', int((time.monotonic() - _t0)*1000), 'stage:', stage)
+            except Exception:
+                pass
         print("===Called Stable Server Function===")
         email = request.session['email']
         telecom = request.POST.get('telecom')
@@ -1671,8 +1945,26 @@ def app_stable_server(request):
         device = request.POST.get('device')
         
         login_ip = get_client_ip(request)
-	
-        response = requests.get("http://ip-api.com/json/" + login_ip).json()
+
+        # Hardened IP lookup (safe, non-fatal)
+        response = safe_ip_api_lookup(login_ip)
+
+        # Fetch user's allowed simultaneous sessions to record in disconnection logs
+        simultaneous_use = '1'
+        try:
+            with connections['default'].cursor() as _cur_sim:
+                _sql_sim = '''
+                    SELECT value
+                    FROM radius.radcheck
+                    WHERE username = '{email}' AND attribute = 'Simultaneous-Use'
+                    LIMIT 1
+                '''.format(email=email)
+                _cur_sim.execute(_sql_sim)
+                _rows_sim = dictfetchall(_cur_sim)
+                if _rows_sim:
+                    simultaneous_use = str(_rows_sim[0]['value'])
+        except Exception as _sim_err:
+            print('WARN -> fetch Simultaneous-Use fail:', _sim_err)
         
         with connections['default'].cursor() as cur:
             # radius 기본정보 획득
@@ -1708,97 +2000,99 @@ def app_stable_server(request):
                     cur.execute(sql)
                     ssh_info_rows = dictfetchall(cur)
 
-                    ssh = paramiko.SSHClient()
-                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                    print('INFO -> SSH Open: ' + email)
-                    try:
-                        protocol = ''
-                        # timeout 1초
-                        ssh.connect(nasipaddress,
-                                    username=ssh_info_rows[0]['username'],
-                                    password=ssh_info_rows[0]['password'],
-                                    timeout = 1)
+                    if not ssh_info_rows:
+                        print('ERROR -> SSH credentials not found for hostip:', nasipaddress)
+                        # 아무 동작 없이 넘어감 (선택 로직만 계속)
+                    else:
+                        ssh = paramiko.SSHClient()
+                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                        print('INFO -> SSH Open: ' + email)
+                        try:
+                            protocol = ''
+                            # timeout 1초
+                            ssh.connect(nasipaddress,
+                                        username=ssh_info_rows[0]['username'],
+                                        password=ssh_info_rows[0]['password'],
+                                        timeout = 1)
                         			
-                        if nasporttype == 'ISDN' : # openvpn
-                            protocol = 'OPENVPN'
-                            print('INFO -> Openvpn Server telnet login:' + email)
-                            channel = ssh.invoke_shell()
-                            channel.send("telnet 127.0.0.1 1199\n")
-                            time.sleep(0.5)
-                            channel.send("mykakao9898\n")
-                            time.sleep(0.2)
-                            command = 'kill '+email+'\n'
-                            channel.send(command)
-                            time.sleep(0.2)
-                            channel.send("exit\n")
-                            time.sleep(0.2)
-                            channel.send("exit\n")
-                            time.sleep(0.2)
-                            output = channel.recv(65535).decode("utf-8")
-                            print(output)
-                        elif nasportid == '443' : # softether sstp
-                            protocol = 'SSTP'
-                            print('INFO -> SSTP Force Stop:' + email)
-                            sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
-                            command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
-                            print('cmd => ',command)
-                            ssh.exec_command(command)
-                        elif nasporttype == 'V2RAY' : # V2RAY
-                            protocol = 'V2RAY'
-                            print("No Action")
-                        else :
-                            protocol = 'IKEV2'
-                            print('INFO -> IKEV2 Force Stop:' + email)
-                            command = 'strongswan statusall | grep '+email
-                            stdin, stdout, stderr = ssh.exec_command(command)
-                            sa = stdout.read().decode("utf-8").split('\n')[0].split(':')[0].strip()
+                            if nasporttype == 'ISDN' : # openvpn
+                                protocol = 'OPENVPN'
+                                print('INFO -> Openvpn Server telnet login:' + email)
+                                channel = ssh.invoke_shell()
+                                channel.send("telnet 127.0.0.1 1199\n")
+                                time.sleep(0.5)
+                                channel.send("mykakao9898\n")
+                                time.sleep(0.2)
+                                command = 'kill '+email+'\n'
+                                channel.send(command)
+                                time.sleep(0.2)
+                                channel.send("exit\n")
+                                time.sleep(0.2)
+                                channel.send("exit\n")
+                                time.sleep(0.2)
+                                output = channel.recv(65535).decode("utf-8")
+                                print(output)
+                            elif nasportid == '443' : # softether sstp
+                                protocol = 'SSTP'
+                                print('INFO -> SSTP Force Stop:' + email)
+                                sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
+                                command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
+                                print('cmd => ',command)
+                                ssh.exec_command(command)
+                            elif nasporttype == 'V2RAY' : # V2RAY
+                                protocol = 'V2RAY'
+                                print("No Action")
+                            else :
+                                protocol = 'IKEV2'
+                                print('INFO -> IKEV2 Force Stop:' + email)
+                                strongswan_down_nb_safely(ssh, email)
 
-                            command = 'strongswan stroke down-nb '+sa
-                            print('cmd => ',command)
-                            # strongswan 종료시에 alive packet 을 5번 보냄 같은 명령어 두번쓰면 바로 강제종료함.
-                            ssh.exec_command(command)
-                            ssh.exec_command(command)
-                        sql = '''
+                            # 강제 종료 후 레코드 업데이트/로그 적재
+                            sql = '''
+                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                                COMMIT;
+                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                            cur.execute(sql)
+                            
+                            sql = '''
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            cur.execute(sql)
+                        except socket.timeout:
+                            #timeout 걸렸을때 radius 강제 업데이트
+                            print('INFO -> socket.timeout' + email)
+                            sql = '''
                             UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
                             COMMIT;
                         '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
+                            cur.execute(sql)
+                            
+                            sql = '''
                             INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
                             VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
                         '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
-                    except socket.timeout:
-                        #timeout 걸렸을때 radius 강제 업데이트
-                        print('INFO -> socket.timeout' + email)
-                        sql = '''
-                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                            COMMIT;
-                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
+                            cur.execute(sql)
 
-                    except BaseException as err:
-                        print('ERROR -> err : ' + email, err)
-                        sql = '''
-                            UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                            COMMIT;
-                        '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                        cur.execute(sql)
-                        
-                        sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                        cur.execute(sql)
-                    finally:
-                        ssh.close()
+                        except BaseException as err:
+                            print('ERROR -> err : ' + email, err)
+                            sql = '''
+                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                                COMMIT;
+                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
+                            cur.execute(sql)
+                            
+                            sql = '''
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
+                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            cur.execute(sql)
+                        finally:
+                            try:
+                                ssh.close()
+                            except Exception:
+                                pass
+                        _elapsed('forced_disconnect_done')
         
         
         if platform != None:
@@ -1813,7 +2107,7 @@ def app_stable_server(request):
                 platform = platform,
                 app_version = app_version,
                 user_ip = login_ip,
-                user_location = response['country'].replace('\'', '') + " " + response['city'].replace('\'', ''),
+                user_location = (response.get('country') or '').replace('\'', '') + " " + (response.get('city') or '').replace('\'', ''),
                 device_info = device_info,
                 failed_time = datetime.datetime.now())
             st.save()
@@ -1848,8 +2142,10 @@ def app_stable_server(request):
             rows = dictfetchall(cur)
             #return JsonResponse({'result' : 300 })
             if len(rows) <= 0 :
+                _elapsed('no_rows')
                 return JsonResponse({'result' : 300 })
             else :
+                _elapsed('success_rows')
                 return JsonResponse({'result' : 200 , 'data' : rows}) # 정상
     else:
         print('INFO -> Session is invalid')
@@ -1868,7 +2164,7 @@ def app_report_failed_server(request):
         platform = request.POST.get('platform')
         device = request.POST.get('device')
         login_ip = get_client_ip(request)
-        response = requests.get("http://ip-api.com/json/" + login_ip).json()
+        response = safe_ip_api_lookup(login_ip)
         device_info = ''
         if device != None:
             device_info = device
@@ -1880,7 +2176,7 @@ def app_report_failed_server(request):
             platform = platform,
             app_version = app_version,
             user_ip = login_ip,
-            user_location = response['country'].replace('\'', '') + " " + response['city'].replace('\'', ''),
+            user_location = (response.get('country') or '').replace('\'', '') + " " + (response.get('city') or '').replace('\'', ''),
             device_info = device_info,
             failed_time = datetime.datetime.now())
         st.save()
@@ -2135,24 +2431,61 @@ def dec_radius_time(radius_time):
     return radius_time
 
 
-# 상품 가격 획득 함수 (2019.09.10 11:31 점검완료)
+@csrf_exempt
+def app_health(request):
+    """간단한 헬스체크: GeoIP2 로더 상태, 캐시 크기, 시간 반환"""
+    reader_ok = GEOIP2_ASN_READER not in (None, False)
+    return JsonResponse({
+        'result': 200,
+        'time': datetime.datetime.utcnow().isoformat() + 'Z',
+        'geoip2_loaded': reader_ok,
+        'ip_cache_size': len(SAFE_IP_CACHE),
+    })
+
+
+# 상품 가격 획득 함수 (안전판) - 기존 버전 대체
 def getProductPirce(session, month_type, type):
+    """Return product price string for given session/month/currency.
+    Uses filter().first() to avoid DoesNotExist; logs and sends PushPlus alert once per (session,month_type) pair if missing.
+    """
+    qs = TblPrice.objects.filter(type_session=session, type_month=month_type)
+    obj = qs.first()
+    if not obj:
+        key = f'{session}:{month_type}'
+        _missing_price_alert(key, type)
+        return None
     if type == 'KRW':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price
+        return obj.item_price
     elif type == 'USD':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price_usd
+        return obj.item_price_usd
     elif type == 'CNY':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price_cny
-    return price
+        return obj.item_price_cny
+    return None
+
+_MISSING_PRICE_CACHE = {}
+
+def _missing_price_alert(key, currency):
+    now = time.time()
+    last = _MISSING_PRICE_CACHE.get(key)
+    # 30분 내 중복 알림 억제
+    if last and (now - last) < 1800:
+        return
+    _MISSING_PRICE_CACHE[key] = now
+    msg = f'PRICE_MISSING session={key.split(":")[0]} month={key.split(":")[1]} currency={currency}'
+    print('[price-missing]', msg)
+    try:
+        token = getattr(settings, 'PUSHPLUS_TOKEN', '') or os.environ.get('PUSHPLUS_TOKEN', '')
+        if token:
+            endpoint = getattr(settings, 'PUSHPLUS_ENDPOINT', 'https://www.pushplus.plus/send')
+            payload = {
+                'token': token,
+                'title': 'Titan Missing Price',
+                'content': msg,
+                'template': 'txt'
+            }
+            requests.post(endpoint, json=payload, timeout=3)
+    except Exception as e:
+        print('[price-missing] pushplus failed:', e)
 
 
 # 세션과 개월을 입력받아 상품명 생성 (2019.09.10 09:44 점검완료)

@@ -463,6 +463,12 @@ def api_update_agent(request):
 # (2022-08-08)
 @allow_admin
 def api_read_device(request):
+    _t0 = time.monotonic()
+    def _elapsed(stage):
+        try:
+            print('INFO -> api_read_device elapsed(ms):', int((time.monotonic() - _t0) * 1000), 'stage:', stage)
+        except Exception:
+            pass
 
     # datatables 기본 파라미터
     start = int(request.POST.get('start'))
@@ -538,8 +544,8 @@ def api_read_device(request):
     column_name = [
         'x.id',
         'y.email',
-        'y.app_version',
-        'y.device_type',
+        'x.app_version',
+        'x.device_type',
         'x.device_ip',
         'x.device_country',
         'x.device_city',
@@ -563,6 +569,7 @@ def api_read_device(request):
         rows = cur.fetchall()
         total = rows[0][0]
         # print('DEBUG -> total : ', total)
+    _elapsed('count')
 
     # 데이터테이블즈 - 메인 쿼리
     with connections['default'].cursor() as cur:
@@ -584,15 +591,17 @@ def api_read_device(request):
             on x.user_id = y.id
             {wc}
             order by {orderby_col} {orderby_opt}
-            limit {start}, 10
+            limit {start}, {length}
         '''.format(
             wc=wc,
             orderby_col=column_name[orderby_col],
             orderby_opt=orderby_opt,
-            start=start
+            start=start,
+            length=length
         )
         cur.execute(query)
         rows = dictfetchall(cur)
+    _elapsed('select')
 
     ret = {
         "recordsTotal": total,
@@ -600,6 +609,7 @@ def api_read_device(request):
         "draw": draw,
         "data": rows
     }
+    _elapsed('done')
     return JsonResponse(ret)
 
 @allow_admin

@@ -6,7 +6,7 @@ import requests
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_protect, csrf_exempt
+from django.views.decorators.csrf import csrf_protect, csrf_exempt, ensure_csrf_cookie
 from django.db import connections
 from django.db import transaction
 from django.db.models import Max
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 # 로그인 페이지 렌더링 (2020-03-09)
+@ensure_csrf_cookie
 def login(request):
     request.session['x'] = 'x'
     # 로그인 후 이동링크

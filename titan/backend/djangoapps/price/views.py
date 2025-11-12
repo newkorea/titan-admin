@@ -164,17 +164,18 @@ def api_list_subaccounts(request):
     items.extend({'id': su.id, 'email': su.email} for su in subs_list)
     return JsonResponse({'result': 200, 'items': items})
 
-#pushplus 알림
+# pushplus 알림 (settings 기반)
 def send_pushplus_notification(title, content):
-    url = 'http://www.pushplus.plus/send'
-    token = 'f15a46f5e2aa4a4da92f6ec17ad53362'
-    data = {
-        "token": token,
-        "title": title,
-        "content": content
-    }
-    response = requests.post(url, json=data)
-    return response.json()
+    token = getattr(settings, 'PUSHPLUS_TOKEN', '')
+    endpoint = getattr(settings, 'PUSHPLUS_ENDPOINT', 'https://www.pushplus.plus/send')
+    if not token:
+        return {'result': 'skip', 'reason': 'no_token'}
+    data = {"token": token, "title": title, "content": content}
+    try:
+        resp = requests.post(endpoint, json=data, timeout=3)
+        return {'status_code': resp.status_code, 'text': resp.text[:200]}
+    except Exception as e:
+        return {'result': 'error', 'error': str(e)}
 
 
 # 이용가격 테이블 (2020-03-10)
@@ -254,6 +255,22 @@ def api_plz_payment(request):
     product_name = makeProductName(session, month_type)
 
     price = getProductPirce(session, month_type, 'KRW')
+    if not price:
+        notification_title = "결제요청 실패"
+        notification_content = f"사용자 {user_name} 금액없음"
+        send_pushplus_notification(notification_title, notification_content)
+        return JsonResponse({'result': 404, 'message': 'PRICE_NOT_FOUND', 'detail': {
+            'session': session,
+            'month_type': month_type,
+            'currency': 'KRW'
+        }})
+    if price is None:
+        # 가격정보 누락: 404 응답 (기존엔 500 발생)
+        return JsonResponse({'result': 404, 'message': 'PRICE_NOT_FOUND', 'detail': {
+            'session': session,
+            'month_type': month_type,
+            'currency': 'KRW'
+        }})
 
     u1 = TblUser.objects.get(id=user_id)
 
@@ -325,14 +342,26 @@ def api_delete_account(request):
 def api_create_payment(request):
     user_id = request.session['id']
     user_name = request.session['username']
-    pgcode = request.POST.get('pgcode')
-    session = request.POST.get('session')
-    month_type = request.POST.get('month_type')
-    type = request.POST.get('type')
-    create_type = request.POST.get('create_type')
+    pgcode = request.POST.get('pgcode') or 'BANK'
+    session = request.POST.get('session') or '1'
+    month_type = request.POST.get('month_type') or '1'
+    type = request.POST.get('type') or 'A'
+    create_type = request.POST.get('create_type') or 'F'
     product_name = makeProductName(session, month_type)
 
     price = getProductPirce(session, month_type, 'KRW')
+    if not price:
+        # 가격 누락: PushPlus로 간단 알림 후 404 반환
+        try:
+            send_pushplus_notification("결제요청 실패", f"{user_name} 금액없음")
+        except Exception:
+            pass
+        logger.warning('api_create_payment price missing: user=%s session=%s month_type=%s', user_name, session, month_type)
+        return JsonResponse({'result': 404, 'message': 'PRICE_NOT_FOUND', 'detail': {
+            'session': session,
+            'month_type': month_type,
+            'currency': 'KRW'
+        }})
 
     # 대상 사용자 지정 확장: target_user_id가 들어오면 해당 사용자로 결제 요청 생성
     target_user_id = request.POST.get('target_user_id')
@@ -361,10 +390,15 @@ def api_create_payment(request):
         except Exception:
             return JsonResponse({'result': 400, 'message': 'Invalid target_user_id'})
 
-    # Pushplus 알림 전송
-    notification_title = f"결제요청 {type}{price}"
-    notification_content = f"사용자 {user_name}이 결제를 요청하였습니다. 금액: {price}"
-    send_pushplus_notification(notification_title, notification_content)
+    # PushPlus 알림 (간결 버전)
+    notification_title = f"{user_name} {price}"
+    notification_content = notification_title
+    push_result = {}
+    try:
+        push_result = send_pushplus_notification(notification_title, notification_content) or {}
+        logger.info('pushplus payment notify: user=%s price=%s status=%s', user_name, price, push_result.get('status_code') or push_result.get('result'))
+    except Exception as e:
+        logger.warning('pushplus notify failed: %s', e)
 
     # 기존 결제 내역 취소 (이중 결제 방지)
     if create_type == 'F':
@@ -488,14 +522,27 @@ def api_create_payment_for(request):
 
     product_name = makeProductName(session, month_type)
     price = getProductPirce(session, month_type, 'KRW')
+    if not price:
+        try:
+            send_pushplus_notification("결제요청 실패", f"{owner.username} 금액없음")
+        except Exception:
+            pass
+        logger.warning('api_create_payment_for price missing: owner=%s target=%s session=%s month_type=%s', owner.username, target_user.email, session, month_type)
+        return JsonResponse({'result': 404, 'message': 'PRICE_NOT_FOUND', 'detail': {
+            'session': session,
+            'month_type': month_type,
+            'currency': 'KRW'
+        }})
 
-    # Pushplus 알림 전송 (대상 이메일 포함)
-    notification_title = f"결제요청 {type}{price}"
-    notification_content = f"사용자 {owner.username}이(가) 서브계정 {target_user.email} 연장 결제를 요청하였습니다. 금액: {price}"
+    # Pushplus 알림 전송 (대상 이메일 포함) + 로깅
+    notification_title = f"{owner.username} {price}"
+    notification_content = notification_title
+    push_result = {}
     try:
-        send_pushplus_notification(notification_title, notification_content)
-    except Exception:
-        pass
+        push_result = send_pushplus_notification(notification_title, notification_content) or {}
+        logger.info('pushplus payment notify (for): owner=%s target=%s price=%s status=%s', owner.username, target_user.email, price, push_result.get('status_code') or push_result.get('result'))
+    except Exception as e:
+        logger.warning('pushplus notify (for) failed: %s', e)
 
     if create_type == 'F':
         TblSendHistory.objects.filter(

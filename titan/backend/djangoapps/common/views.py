@@ -385,22 +385,21 @@ def dec_radius_time(radius_time):
 
 # 상품 가격 획득 함수 (2019.09.10 11:31 점검완료)
 def getProductPirce(session, month_type, type):
+    """Return product price string for given session/month/currency.
+    Safety improved: returns None if price row missing instead of raising DoesNotExist.
+    Legacy name kept (typo) to avoid refactor ripple.
+    """
+    qs = TblPrice.objects.filter(type_session=session, type_month=month_type)
+    obj = qs.first()
+    if not obj:
+        return None
     if type == 'KRW':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price
+        return obj.item_price
     elif type == 'USD':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price_usd
+        return obj.item_price_usd
     elif type == 'CNY':
-        price = TblPrice.objects.get(
-            type_session = session,
-            type_month = month_type,
-        ).item_price_cny
-    return price
+        return obj.item_price_cny
+    return None
 
 
 # 엑심베이 결제코드 변경 (2020.07.15)

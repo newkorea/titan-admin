@@ -31,17 +31,18 @@ logger = logging.getLogger(__name__)  # 로그 설정
 def api_check_recent_payments(request):
     return JsonResponse({'hasRecentPayments': False})
 
-#pushplus 알림
+# pushplus 알림 (settings 기반)
 def send_pushplus_notification(title, content):
-    url = 'http://www.pushplus.plus/send'
-    token = 'f15a46f5e2aa4a4da92f6ec17ad53362'
-    data = {
-        "token": token,
-        "title": title,
-        "content": content
-    }
-    response = requests.post(url, json=data)
-    return response.json()
+    token = getattr(settings, 'PUSHPLUS_TOKEN', '')
+    endpoint = getattr(settings, 'PUSHPLUS_ENDPOINT', 'https://www.pushplus.plus/send')
+    if not token:
+        return {'result': 'skip', 'reason': 'no_token'}
+    data = {"token": token, "title": title, "content": content}
+    try:
+        resp = requests.post(endpoint, json=data, timeout=3)
+        return {'status_code': resp.status_code, 'text': resp.text[:200]}
+    except Exception as e:
+        return {'result': 'error', 'error': str(e)}
 
 
 # 이용가격 테이블 (2020-03-10)

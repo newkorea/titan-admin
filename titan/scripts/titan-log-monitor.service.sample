@@ -1,0 +1,16 @@
+[Unit]
+Description=Titan uWSGI log monitor -> PushPlus alerts
+After=network.target
+
+[Service]
+Type=simple
+User=newkorea
+Group=www-data
+Environment=PUSHPLUS_TOKEN=__PUT_YOUR_TOKEN__
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/home/newkorea/project/titan/.venv310/bin/python manage.py monitor_uwsgi_log --interval 0.5
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
