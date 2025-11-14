@@ -88,8 +88,8 @@ def api_preview_session_change(request):
     if expire_dt is None:
         try:
             last_st = TblServiceTime.objects.filter(user_id=target_user.id).order_by('-id').first()
-            if last_st and last_st.after_time and last_st.after_time > datetime.datetime.now(timezone('Asia/Seoul')):
-                expire_dt = last_st.after_time
+            if last_st and last_st.after_time:
+                expire_dt = last_st.after_time  # 그대로 사용하고 이후 단계에서 tz 정규화
         except Exception:
             pass
 
