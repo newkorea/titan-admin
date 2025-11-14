@@ -104,9 +104,21 @@ def api_preview_session_change(request):
         return JsonResponse({'result': 200, 'show': False})
 
     # 만료가 지났거나 세션이 동일하면 안내 불필요
-    now_kst = datetime.datetime.now(timezone('Asia/Seoul'))
-    now_local = now_kst.replace(tzinfo=None)  # 비교/계산을 위해 naive 로 통일
-    if expire_dt <= now_local or old_session == new_session:
+    tz = timezone('Asia/Seoul')
+    now_aware = datetime.datetime.now(tz)
+
+    def to_aware(dt):
+        if dt is None:
+            return None
+        return dt if getattr(dt, 'tzinfo', None) else tz.localize(dt)
+
+    expire_aware = to_aware(expire_dt)
+
+    if expire_aware is None:
+        logger.info('preview_skip: expire_dt None after normalization user=%s', email)
+        return JsonResponse({'result': 200, 'show': False, 'details': {'reason': 'NO_EXPIRE'}})
+
+    if expire_aware <= now_aware or old_session == new_session:
         # 만료되었거나 동일세션: 만료되었지만 세션이 실제로 바뀌는지 재확인 후 안내 생성 가능
         reason_code = 'EXPIRED_OR_EQUAL'
         if old_session != new_session:
@@ -133,7 +145,7 @@ def api_preview_session_change(request):
         }})
 
     # 남은 일수 계산: 올림 적용 (부분일 포함)
-    total_seconds = (expire_dt - now_local).total_seconds()
+    total_seconds = (expire_aware - now_aware).total_seconds()
     diff_days = int((total_seconds + 86399) // 86400)  # ceil without math import
     if diff_days < 0:
         return JsonResponse({'result': 200, 'show': False})
@@ -146,7 +158,7 @@ def api_preview_session_change(request):
     converted_days = int(diff_days * scale[old_session] / scale[new_session])
 
     # 예상 만료일 계산: now + months + converted_days
-    expected_expire = now_local + relativedelta(months=month_type) + datetime.timedelta(days=converted_days)
+    expected_expire = now_aware + relativedelta(months=month_type) + datetime.timedelta(days=converted_days)
     # 한국식 표기: M월 D일
     expected_label = f"{expected_expire.month}월 {expected_expire.day}일"
 
