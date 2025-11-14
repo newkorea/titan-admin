@@ -77,8 +77,24 @@ def api_preview_session_change(request):
     old_session = my_radius_session(email)
     expire_dt = my_radius_time(email, 'datetime')
 
+    # Fallback: 라디우스 정보가 비어있으면 DB 이력으로 추정
+    if old_session is None:
+        try:
+            last_paid = TblSendHistory.objects.filter(user_id=target_user.id, status__in=['A','S']).order_by('-id').first()
+            if last_paid:
+                old_session = int(last_paid.session)
+        except Exception:
+            pass
+    if expire_dt is None:
+        try:
+            last_st = TblServiceTime.objects.filter(user_id=target_user.id).order_by('-id').first()
+            if last_st and last_st.after_time and last_st.after_time > datetime.datetime.now(timezone('Asia/Seoul')):
+                expire_dt = last_st.after_time
+        except Exception:
+            pass
+
     if old_session is None or expire_dt is None:
-        # 라디우스 정보가 없거나 만료일 정보가 없으면 미리보기 스킵
+        # 정보 부족 시 미리보기 스킵
         return JsonResponse({'result': 200, 'show': False})
 
     try:
@@ -91,8 +107,9 @@ def api_preview_session_change(request):
     if expire_dt <= now_kst or old_session == new_session:
         return JsonResponse({'result': 200, 'show': False})
 
-    # 남은 일수 계산 (기존 로직은 diff.days 사용)
-    diff_days = (expire_dt - now_kst).days
+    # 남은 일수 계산: 올림 적용 (부분일 포함)
+    total_seconds = (expire_dt - now_kst).total_seconds()
+    diff_days = int((total_seconds + 86399) // 86400)  # ceil without math import
     if diff_days < 0:
         return JsonResponse({'result': 200, 'show': False})
 
