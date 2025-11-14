@@ -34,6 +34,106 @@ def api_check_recent_payments(request):
 
 
 @csrf_exempt
+def api_preview_session_change(request):
+    """세션/기간 변경 시 남은 기간 변환과 예상 만료일을 미리 안내하는 API.
+    - 입력: session(신규), month_type, optional target_user_id
+    - 출력: { result:200, show:bool, message, details:{old_session, remain_days, converted_days, expected_expire_date} }
+    조건:
+      * 로그인 필요
+      * 현재 만료일이 미래이고 old_session != new_session 인 경우에만 show=True
+    """
+    if 'id' not in request.session:
+        return JsonResponse({'result': 403, 'message': 'Not logged in'})
+
+    try:
+        new_session = int((request.POST.get('session') or '1'))
+        month_type = int((request.POST.get('month_type') or '1'))
+    except Exception:
+        return JsonResponse({'result': 400, 'message': 'Invalid parameters'})
+
+    # 결제 대상 사용자 식별 (본인 또는 서브계정)
+    target_user_id = request.POST.get('target_user_id')
+    user_id = request.session['id']
+    target_user = TblUser.objects.get(id=user_id)
+    if target_user_id:
+        try:
+            target_user_id = int(target_user_id)
+            owner = TblUser.objects.get(id=user_id)
+            base_email = owner.email
+            m = re.match(r'^(.+@[^@]+?)_\d+$', base_email)
+            if m:
+                base_email = m.group(1)
+            tu = TblUser.objects.get(id=target_user_id, delete_yn='N')
+            if tu.id == owner.id or tu.parent_user_id == owner.id or (tu.parent_user_id is None and tu.email.startswith(base_email + '_')):
+                target_user = tu
+            else:
+                return JsonResponse({'result': 403, 'message': 'Not allowed target user'})
+        except Exception:
+            return JsonResponse({'result': 400, 'message': 'Invalid target_user_id'})
+
+    email = target_user.email
+
+    # 현재 세션/만료일 조회
+    old_session = my_radius_session(email)
+    expire_dt = my_radius_time(email, 'datetime')
+
+    if old_session is None or expire_dt is None:
+        # 라디우스 정보가 없거나 만료일 정보가 없으면 미리보기 스킵
+        return JsonResponse({'result': 200, 'show': False})
+
+    try:
+        old_session = int(old_session)
+    except Exception:
+        return JsonResponse({'result': 200, 'show': False})
+
+    # 만료가 지났거나 세션이 동일하면 안내 불필요
+    now_kst = datetime.datetime.now(timezone('Asia/Seoul'))
+    if expire_dt <= now_kst or old_session == new_session:
+        return JsonResponse({'result': 200, 'show': False})
+
+    # 남은 일수 계산 (기존 로직은 diff.days 사용)
+    diff_days = (expire_dt - now_kst).days
+    if diff_days < 0:
+        return JsonResponse({'result': 200, 'show': False})
+
+    # 세션 환산 비율 (기존 giveServiceTime 로직 일반화)
+    scale = {1: 83, 2: 140, 3: 220, 4: 280, 5: 350, 6: 433}
+    if old_session not in scale or new_session not in scale:
+        return JsonResponse({'result': 200, 'show': False})
+
+    converted_days = int(diff_days * scale[old_session] / scale[new_session])
+
+    # 예상 만료일 계산: now + months + converted_days
+    expected_expire = now_kst + relativedelta(months=month_type) + datetime.timedelta(days=converted_days)
+    # 한국식 표기: M월 D일
+    expected_label = f"{expected_expire.month}월 {expected_expire.day}일"
+
+    # 증감 표현
+    verb = '줄어들고' if converted_days < diff_days else ('늘어나고' if converted_days > diff_days else '변함없고')
+
+    month_label_map = {1: '1개월', 2: '2개월', 3: '3개월', 6: '6개월', 12: '12개월'}
+    month_label = month_label_map.get(month_type, f"{month_type}개월")
+
+    msg = (
+        f"동시접속사용수가 달라집니다. 현재 {old_session}기기로 {diff_days}일의 기간이 남아있습니다만 "
+        f"{new_session}기기로 변경되면서 {converted_days}일로 {verb} {new_session}기기로 변경된후 "
+        f"{new_session}기기 {month_label}이 추가됩니다. {new_session}기기 변경및 추가입금후 예상 만료일자는 {expected_label}입니다."
+    )
+
+    return JsonResponse({
+        'result': 200,
+        'show': True,
+        'message': msg,
+        'details': {
+            'old_session': old_session,
+            'remain_days': diff_days,
+            'converted_days': converted_days,
+            'expected_expire_date': expected_expire.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    })
+
+
+@csrf_exempt
 def api_prepare_extension_target(request):
     """
     결제 대상 계정 설정 API

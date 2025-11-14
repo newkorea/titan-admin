@@ -12,6 +12,7 @@ from .djangoapps.price import data_callback as PriceCallbackViews
 from .djangoapps.price import data_request as PriceRequestViews
 from .djangoapps.price import data_return as PriceReturnViews
 from .djangoapps.price.views import api_check_recent_payments
+from .djangoapps.price.views import api_preview_session_change
 from .djangoapps.restapi import views as RestAPIViews
 from .djangoapps.price_table import views as PriceTableViews  # 이름을 변경해 충돌 방지
 
@@ -180,5 +181,6 @@ urlpatterns = [
     path('v1/app_disconnect_v2ray', RestAPIViews.app_disconnect_v2ray, name='app_disconnect_v2ray'),        #[api] V2ray set time to acctstoptime
     path('api_check_payment_status', PriceViews.api_check_payment_status, name='api_check_payment_status'), #새롭게 결제승인상태값을 보내줌
     path("api_check_recent_payments",  PriceViews.api_check_recent_payments, name="api_check_recent_payments"),
+    path('api_preview_session_change', api_preview_session_change, name='api_preview_session_change'),
     path('v1/app_health', RestAPIViews.app_health, name='app_health'),
 ]

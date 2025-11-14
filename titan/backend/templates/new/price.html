@@ -1031,62 +1031,87 @@ function createPayment(typeCode, pgcode, session, month_type, imageSrc, typeLabe
     var price = calculatePrice(month_type, session);
     var targetUserId = $('#ext_target_user_id').val();
 
-    // 기존 결제 취소 후 재요청 처리
-    var payload = {
+    // 결제 전에 세션 변경 영향 미리보기
+    var previewPayload = {
         csrfmiddlewaretoken: $('#csrf_token').val(),
-        pgcode: pgcode,
         session: session,
-        month_type: month_type,
-        type: typeCode,
-        create_type: 'F' // ← 기존 R 상태를 취소 처리 후 재생성
+        month_type: month_type
     };
     if (typeof targetUserId !== 'undefined' && targetUserId !== '' && targetUserId !== null) {
-        payload['target_user_id'] = targetUserId;
+        previewPayload['target_user_id'] = targetUserId;
     }
-    $.post("/api_create_payment", payload).done(function(res) {
-        if (res.result === 200 && res.payment_id) {
-            startPaymentCheck(res.payment_id);
-            Swal.fire({
-                html:
-                    '<div style="margin-top: 14px;">' + typeLabel + '</div>' +
-                    '<div style="font-weight: bold; font-size: 30px;">' + price + ' 元</div>' +
-                    '<img style="width: 250px; height: 250px;" src="' + imageSrc + '">' +
-                    '<div style="margin-top: 10px; font-weight: bold; font-size: 36px; color: black;">' + (res.data?.email || '이메일 없음') + '</div>' +
-                    '<div style="margin-top: 15px; font-size: 16px; color:red;">' + typeLabel + ' 결제를 신청하셨습니다.</div>' +
-                    '<div style="font-size: 16px; color:red;">QR 코드를 스캔하여 ' + price + ' 元을 입금해주세요.</div>' +
-                    '<div style="margin-top: 15px; font-size: 16px; color:blue;">입금 후 수동으로 관리자가 확인하여 결제를 완료합니다.</div>' +
-                    '<div style="font-size: 16px; color:blue;">결제 후 <b>결제완료</b> 버튼을 눌러 채널톡으로 알려주세요.</div>',
-                showCancelButton: true,
-                showConfirmButton: true,
-                confirmButtonText: '결제완료',
-                cancelButtonText: '닫기',
-                confirmButtonColor: '#8a4cf7',
-                cancelButtonColor: '#cccccc',
-                reverseButtons: true,
-                allowOutsideClick: false,
-            }).then(function(result) {
-                if (result.value) {
-                    $("#progressBarContainer").show();
-                } else {
-                    closeProgressPopup();
-                }
-            });
 
-            setTimeout(() => {
-                if (Swal.isVisible()) {
-                    Swal.close();
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'QR 유효시간 만료',
-                        text: '1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요.',
-                        confirmButtonText: '확인',
-                        confirmButtonColor: '#8a4cf7'
-                    });
-                }
-            }, 60000);
-        } else {
-            alert("결제 요청 실패: " + res.message);
+    function proceedCreatePayment() {
+        // 기존 결제 취소 후 재요청 처리
+        var payload = {
+            csrfmiddlewaretoken: $('#csrf_token').val(),
+            pgcode: pgcode,
+            session: session,
+            month_type: month_type,
+            type: typeCode,
+            create_type: 'F' // ← 기존 R 상태를 취소 처리 후 재생성
+        };
+        if (typeof targetUserId !== 'undefined' && targetUserId !== '' && targetUserId !== null) {
+            payload['target_user_id'] = targetUserId;
         }
+        $.post("/api_create_payment", payload).done(function(res) {
+            if (res.result === 200 && res.payment_id) {
+                startPaymentCheck(res.payment_id);
+                Swal.fire({
+                    html:
+                        '<div style="margin-top: 14px;">' + typeLabel + '</div>' +
+                        '<div style="font-weight: bold; font-size: 30px;">' + price + ' 元</div>' +
+                        '<img style="width: 250px; height: 250px;" src="' + imageSrc + '">' +
+                        '<div style="margin-top: 10px; font-weight: bold; font-size: 36px; color: black;">' + (res.data?.email || '이메일 없음') + '</div>' +
+                        '<div style="margin-top: 15px; font-size: 16px; color:red;">' + typeLabel + ' 결제를 신청하셨습니다.</div>' +
+                        '<div style="font-size: 16px; color:red;">QR 코드를 스캔하여 ' + price + ' 元을 입금해주세요.</div>' +
+                        '<div style="margin-top: 15px; font-size: 16px; color:blue;">입금 후 수동으로 관리자가 확인하여 결제를 완료합니다.</div>' +
+                        '<div style="font-size: 16px; color:blue;">결제 후 <b>결제완료</b> 버튼을 눌러 채널톡으로 알려주세요.</div>',
+                    showCancelButton: true,
+                    showConfirmButton: true,
+                    confirmButtonText: '결제완료',
+                    cancelButtonText: '닫기',
+                    confirmButtonColor: '#8a4cf7',
+                    cancelButtonColor: '#cccccc',
+                    reverseButtons: true,
+                    allowOutsideClick: false,
+                }).then(function(result) {
+                    if (result.value) {
+                        $("#progressBarContainer").show();
+                    } else {
+                        closeProgressPopup();
+                    }
+                });
+
+                setTimeout(() => {
+                    if (Swal.isVisible()) {
+                        Swal.close();
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'QR 유효시간 만료',
+                            text: '1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요.',
+                            confirmButtonText: '확인',
+                            confirmButtonColor: '#8a4cf7'
+                        });
+                    }
+                }, 60000);
+            } else {
+                alert("결제 요청 실패: " + res.message);
+            }
+        });
+    }
+
+    $.post('/api_preview_session_change', previewPayload).done(function(pre){
+        if (pre && pre.result === 200 && pre.show && pre.message) {
+            Swal.fire({icon:'info', title:'세션 변경 안내', html: pre.message.replaceAll('\n','<br>'), showCancelButton:true, confirmButtonText:'계속 진행', cancelButtonText:'취소'}).then(function(r){
+                if (r.value) proceedCreatePayment();
+            });
+        } else {
+            proceedCreatePayment();
+        }
+    }).fail(function(){
+        // 미리보기 실패시에도 결제 진행
+        proceedCreatePayment();
     });
 }
 
