@@ -95,7 +95,8 @@ def api_preview_session_change(request):
 
     if old_session is None or expire_dt is None:
         # 정보 부족 시 미리보기 스킵
-        return JsonResponse({'result': 200, 'show': False})
+        logger.info('preview_skip: no_data user=%s old_session=%s expire=%s new_session=%s month_type=%s', email, old_session, expire_dt, new_session, month_type)
+        return JsonResponse({'result': 200, 'show': False, 'details': {'reason': 'NO_DATA'}})
 
     try:
         old_session = int(old_session)
@@ -115,6 +116,7 @@ def api_preview_session_change(request):
             simple_msg = (
                 f"동시접속사용수가 달라집니다. 기존 {old_session}기기에서 {new_session}기기로 변경됩니다. 남은기간이 없거나 계산할 수 없어 변환 안내를 생략하고 바로 {new_session}기기 {month_label}이 추가 적용됩니다."\
             )
+            logger.info('preview_simple: user=%s old=%s new=%s remain=0 reason=%s', email, old_session, new_session, reason_code)
             return JsonResponse({'result': 200, 'show': True, 'message': simple_msg, 'details': {
                 'old_session': old_session,
                 'new_session': new_session,
@@ -123,6 +125,7 @@ def api_preview_session_change(request):
                 'expected_expire_date': None,
                 'reason': reason_code
             }})
+        logger.info('preview_hide: user=%s old=%s new=%s reason=%s', email, old_session, new_session, reason_code)
         return JsonResponse({'result': 200, 'show': False, 'details': {
             'old_session': old_session,
             'new_session': new_session,
@@ -159,6 +162,7 @@ def api_preview_session_change(request):
         f"{new_session}기기 {month_label}이 추가됩니다. {new_session}기기 변경및 추가입금후 예상 만료일자는 {expected_label}입니다."
     )
 
+    logger.info('preview_normal: user=%s old=%s new=%s remain=%s converted=%s expected=%s', email, old_session, new_session, diff_days, converted_days, expected_expire)
     return JsonResponse({
         'result': 200,
         'show': True,
