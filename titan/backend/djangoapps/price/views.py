@@ -105,7 +105,28 @@ def api_preview_session_change(request):
     # 만료가 지났거나 세션이 동일하면 안내 불필요
     now_kst = datetime.datetime.now(timezone('Asia/Seoul'))
     if expire_dt <= now_kst or old_session == new_session:
-        return JsonResponse({'result': 200, 'show': False})
+        # 만료되었거나 동일세션: 만료되었지만 세션이 실제로 바뀌는지 재확인 후 안내 생성 가능
+        reason_code = 'EXPIRED_OR_EQUAL'
+        if old_session != new_session:
+            # 남은기간 정보가 없거나 만료라 변환 계산 없음 -> 단순 안내만
+            month_label_map = {1: '1개월', 2: '2개월', 3: '3개월', 6: '6개월', 12: '12개월'}
+            month_label = month_label_map.get(month_type, f"{month_type}개월")
+            simple_msg = (
+                f"동시접속사용수가 달라집니다. 기존 {old_session}기기에서 {new_session}기기로 변경됩니다. 남은기간이 없거나 계산할 수 없어 변환 안내를 생략하고 바로 {new_session}기기 {month_label}이 추가 적용됩니다."\
+            )
+            return JsonResponse({'result': 200, 'show': True, 'message': simple_msg, 'details': {
+                'old_session': old_session,
+                'new_session': new_session,
+                'remain_days': 0,
+                'converted_days': 0,
+                'expected_expire_date': None,
+                'reason': reason_code
+            }})
+        return JsonResponse({'result': 200, 'show': False, 'details': {
+            'old_session': old_session,
+            'new_session': new_session,
+            'reason': reason_code
+        }})
 
     # 남은 일수 계산: 올림 적용 (부분일 포함)
     total_seconds = (expire_dt - now_kst).total_seconds()
@@ -143,9 +164,11 @@ def api_preview_session_change(request):
         'message': msg,
         'details': {
             'old_session': old_session,
+            'new_session': new_session,
             'remain_days': diff_days,
             'converted_days': converted_days,
-            'expected_expire_date': expected_expire.strftime('%Y-%m-%d %H:%M:%S')
+            'expected_expire_date': expected_expire.strftime('%Y-%m-%d %H:%M:%S'),
+            'reason': 'NORMAL'
         }
     })
 
