@@ -1937,22 +1937,6 @@ def app_new_check_server(request):
                 is_active = rows[0]['is_active']
                 is_status = rows[0]['is_status']
 
-                # 중국 통신사 사용자: 항상 ping 최적 서버로 배정 (기존 서버 무시)
-                if telecom_hint and telecom_hint in ('ct', 'cm', 'cu') and selected_method and selected_method.startswith('ping_ranked'):
-                    _log_elapsed('active_cn_override')
-                    print(f'INFO -> CN telecom override: old={rows[0]["name"]}, new={vpn_server_name}, telecom={telecom_hint}')
-                    return JsonResponse({'result' : 200 ,
-                                        'vpn_smart_match_id' : vpn_server_id,
-                                        'vpn_smart_match_hostname' : host_name,
-                                        'vpn_smart_match_ip' : host_ip,
-                                        'vpn_smart_match_name' : vpn_server_name,
-                                        'vpn_smart_match_country' : vpn_server_country,
-                                        'vpn_smart_match_config' : vpn_server_config,
-                                        'vpn_smart_match_v2config' : vpn_server_v2config,
-                                        'vpn_smart_match_v2port' : vpn_server_v2port,
-                                        'vpn_username' : username,
-                                        'vpn_password' : password})
-
                 if is_active == 1 and is_status == 1 :
                     _log_elapsed('active')
                     return JsonResponse({'result' : 1001 , 
