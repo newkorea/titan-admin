@@ -1,0 +1,321 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .qa-stats { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .qa-stat-card { background: #f8f9fa; border-radius: 8px; padding: 12px 18px; min-width: 120px; text-align: center; border: 1px solid #e9ecef; }
+    .qa-stat-card .num { font-size: 24px; font-weight: bold; color: #2196F3; }
+    .qa-stat-card .label { font-size: 12px; color: #666; }
+    .category-badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; color: #fff; }
+    .cat-GENERIC { background: #6c757d; } .cat-DOWNLOAD { background: #28a745; }
+    .cat-PAYMENT { background: #dc3545; } .cat-SPEED { background: #fd7e14; }
+    .cat-WINDOWS_FAIL { background: #007bff; } .cat-LOGIN { background: #6f42c1; }
+    .cat-CONCURRENT { background: #17a2b8; }
+    .active-badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+    .active-on { background: #d4edda; color: #155724; } .active-off { background: #f8d7da; color: #721c24; }
+    .qa-text-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .qa-text-cell:hover { text-decoration: underline; }
+    #qa-modal .modal-dialog { max-width: 750px; }
+    #qa-modal textarea { min-height: 120px; }
+    .filter-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .filter-row select, .filter-row input { height: 36px; }
+</style>
+</%block>
+
+<%block name="title">챗봇 Q&A 관리</%block>
+<%block name="subtitle">채널톡 자동응답 Q&A 데이터 관리 (총 건수는 검색 결과에 표시됩니다)</%block>
+
+<%block name="content">
+
+<!-- 통계 카드 -->
+<div class="qa-stats" id="stats-area"></div>
+
+<!-- 필터 -->
+<div class="filter-row">
+    <select id="filter-category" class="form-control" style="width:150px;">
+        <option value="">전체 카테고리</option>
+        <option value="GENERIC">일반</option>
+        <option value="DOWNLOAD">다운로드/설치</option>
+        <option value="PAYMENT">결제/연장</option>
+        <option value="SPEED">속도</option>
+        <option value="WINDOWS_FAIL">윈도우오류</option>
+        <option value="LOGIN">로그인</option>
+        <option value="CONCURRENT">동시접속</option>
+    </select>
+    <select id="filter-active" class="form-control" style="width:130px;">
+        <option value="">전체 상태</option>
+        <option value="1">활성</option>
+        <option value="0">비활성</option>
+    </select>
+    <input type="text" id="filter-search" class="form-control" placeholder="질문/답변 검색..." style="width:250px;">
+    <button class="btn btn-primary" onclick="reloadData()"><i class="fa fa-search"></i> 검색</button>
+    <button class="btn btn-success" onclick="openCreateModal()"><i class="fa fa-plus"></i> 새 Q&A 등록</button>
+</div>
+
+<!-- 테이블 -->
+<table id="qa-table" class="display table table-striped table-bordered" style="width:100%">
+    <thead>
+        <tr>
+            <th style="width:50px">ID</th>
+            <th style="width:100px">카테고리</th>
+            <th>질문</th>
+            <th>답변</th>
+            <th style="width:60px">상태</th>
+            <th style="width:60px">매칭수</th>
+            <th style="width:60px">우선순위</th>
+            <th style="width:110px">수정일</th>
+            <th style="width:100px">관리</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Q&A 등록/수정 모달 -->
+<div class="modal fade" id="qa-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title">Q&A 등록</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>카테고리</label>
+                    <select id="edit-category" class="form-control">
+                        <option value="GENERIC">일반</option>
+                        <option value="DOWNLOAD">다운로드/설치</option>
+                        <option value="PAYMENT">결제/연장</option>
+                        <option value="SPEED">속도</option>
+                        <option value="WINDOWS_FAIL">윈도우오류</option>
+                        <option value="LOGIN">로그인</option>
+                        <option value="CONCURRENT">동시접속</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>질문 <span class="text-danger">*</span></label>
+                    <textarea id="edit-question" class="form-control" rows="3" placeholder="고객이 할 수 있는 질문"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>답변 <span class="text-danger">*</span></label>
+                    <textarea id="edit-answer" class="form-control" rows="5" placeholder="자동응답 내용"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>활성화</label>
+                            <select id="edit-active" class="form-control">
+                                <option value="1">활성</option>
+                                <option value="0">비활성</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>우선순위</label>
+                            <input type="number" id="edit-priority" class="form-control" value="0" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="btn-save" onclick="saveQA()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상세보기 모달 -->
+<div class="modal fade" id="detail-modal" tabindex="-1">
+    <div class="modal-dialog" style="max-width:700px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Q&A 상세</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" id="detail-body" style="white-space:pre-wrap; word-break:break-all;"></div>
+        </div>
+    </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+var catLabels = {
+    'GENERIC': '일반', 'DOWNLOAD': '다운로드/설치', 'PAYMENT': '결제/연장',
+    'SPEED': '속도', 'WINDOWS_FAIL': '윈도우오류', 'LOGIN': '로그인', 'CONCURRENT': '동시접속'
+};
+
+var qaTable;
+var csrf_token = $('#csrf_token').html();
+
+$(document).ready(function() {
+    loadStats();
+    initTable();
+});
+
+function loadStats() {
+    $.post('/api/v1/read/chatbot_qa_stats', { csrfmiddlewaretoken: csrf_token }, function(res) {
+        if (res.result !== 200) return;
+        var html = '<div class="qa-stat-card"><div class="num">' + res.total + '</div><div class="label">전체</div></div>';
+        res.data.forEach(function(r) {
+            html += '<div class="qa-stat-card"><div class="num">' + r.cnt + '</div><div class="label">' +
+                    (catLabels[r.category] || r.category) + ' (활성:' + r.active_cnt + ')</div></div>';
+        });
+        $('#stats-area').html(html);
+    });
+}
+
+function initTable() {
+    qaTable = $('#qa-table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/api/v1/read/chatbot_qa',
+            type: 'POST',
+            data: function(d) {
+                d.csrfmiddlewaretoken = csrf_token;
+                d.category = $('#filter-category').val();
+                d.is_active = $('#filter-active').val();
+                d.search = { value: $('#filter-search').val() };
+            }
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'category', render: function(d) {
+                return '<span class="category-badge cat-' + d + '">' + (catLabels[d] || d) + '</span>';
+            }},
+            { data: 'question', render: function(d, t, row) {
+                var short = d.length > 60 ? d.substring(0,60) + '...' : d;
+                return '<span class="qa-text-cell" onclick="showDetail(' + row.id + ')" title="클릭하여 상세보기">' + escHtml(short) + '</span>';
+            }},
+            { data: 'answer', render: function(d) {
+                var short = d.length > 60 ? d.substring(0,60) + '...' : d;
+                return '<span class="qa-text-cell">' + escHtml(short) + '</span>';
+            }},
+            { data: 'is_active', render: function(d, t, row) {
+                if (d == 1) return '<span class="active-badge active-on" style="cursor:pointer" onclick="toggleActive(' + row.id + ')">활성</span>';
+                return '<span class="active-badge active-off" style="cursor:pointer" onclick="toggleActive(' + row.id + ')">비활성</span>';
+            }},
+            { data: 'hit_count' },
+            { data: 'priority' },
+            { data: 'updated_at' },
+            { data: null, orderable: false, render: function(d, t, row) {
+                return '<button class="btn btn-xs btn-info" onclick="openEditModal(' + row.id + ')"><i class="fa fa-edit"></i></button> ' +
+                       '<button class="btn btn-xs btn-danger" onclick="deleteQA(' + row.id + ')"><i class="fa fa-trash"></i></button>';
+            }}
+        ],
+        order: [[0, 'desc']],
+        pageLength: 20,
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ko.json' },
+        searching: false,
+    });
+}
+
+function reloadData() {
+    qaTable.ajax.reload();
+    loadStats();
+}
+
+function escHtml(s) {
+    return $('<div>').text(s).html();
+}
+
+function openCreateModal() {
+    $('#modal-title').text('Q&A 등록');
+    $('#edit-id').val('');
+    $('#edit-category').val('GENERIC');
+    $('#edit-question').val('');
+    $('#edit-answer').val('');
+    $('#edit-active').val('1');
+    $('#edit-priority').val('0');
+    $('#qa-modal').modal('show');
+}
+
+function openEditModal(id) {
+    $.post('/api/v1/read/chatbot_qa_detail', { qa_id: id, csrfmiddlewaretoken: csrf_token }, function(res) {
+        if (res.result !== 200) { alert('데이터를 불러올 수 없습니다.'); return; }
+        var d = res.data;
+        $('#modal-title').text('Q&A 수정 (#' + d.id + ')');
+        $('#edit-id').val(d.id);
+        $('#edit-category').val(d.category);
+        $('#edit-question').val(d.question);
+        $('#edit-answer').val(d.answer);
+        $('#edit-active').val(d.is_active);
+        $('#edit-priority').val(d.priority);
+        $('#qa-modal').modal('show');
+    });
+}
+
+function saveQA() {
+    var id = $('#edit-id').val();
+    var url = id ? '/api/v1/update/chatbot_qa' : '/api/v1/create/chatbot_qa';
+    var params = {
+        csrfmiddlewaretoken: csrf_token,
+        category: $('#edit-category').val(),
+        question: $('#edit-question').val(),
+        answer: $('#edit-answer').val(),
+        is_active: $('#edit-active').val(),
+        priority: $('#edit-priority').val(),
+    };
+    if (id) params.qa_id = id;
+
+    $.post(url, params, function(res) {
+        if (res.result === 200) {
+            $('#qa-modal').modal('hide');
+            reloadData();
+            swal(res.title || '성공', res.text || '저장되었습니다.', 'success');
+        } else {
+            swal(res.title || '오류', res.text || '저장 실패', 'error');
+        }
+    });
+}
+
+function deleteQA(id) {
+    swal({
+        title: '삭제 확인',
+        text: 'Q&A #' + id + '을(를) 삭제하시겠습니까?',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: '삭제',
+        cancelButtonText: '취소'
+    }, function(confirmed) {
+        if (confirmed) {
+            $.post('/api/v1/delete/chatbot_qa', { qa_id: id, csrfmiddlewaretoken: csrf_token }, function(res) {
+                if (res.result === 200) {
+                    reloadData();
+                    swal(res.title || '성공', res.text || '삭제되었습니다.', 'success');
+                }
+            });
+        }
+    });
+}
+
+function toggleActive(id) {
+    $.post('/api/v1/update/chatbot_qa_toggle', { qa_id: id, csrfmiddlewaretoken: csrf_token }, function(res) {
+        if (res.result === 200) reloadData();
+    });
+}
+
+function showDetail(id) {
+    $.post('/api/v1/read/chatbot_qa_detail', { qa_id: id, csrfmiddlewaretoken: csrf_token }, function(res) {
+        if (res.result !== 200) return;
+        var d = res.data;
+        var html = '<strong>카테고리:</strong> ' + (catLabels[d.category] || d.category) + '\n' +
+                   '<strong>매칭횟수:</strong> ' + d.hit_count + '  <strong>우선순위:</strong> ' + d.priority + '\n' +
+                   '<strong>등록일:</strong> ' + d.created_at + '  <strong>수정일:</strong> ' + d.updated_at + '\n\n' +
+                   '<strong>질문:</strong>\n' + escHtml(d.question) + '\n\n' +
+                   '<strong>답변:</strong>\n' + escHtml(d.answer);
+        $('#detail-body').html(html);
+        $('#detail-modal').modal('show');
+    });
+}
+
+$('#filter-search').on('keypress', function(e) {
+    if (e.which === 13) reloadData();
+});
+</script>
+</%block>

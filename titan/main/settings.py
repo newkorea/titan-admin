@@ -22,7 +22,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # --- 서비스 전역 상수(민감 아님) ---
 ACTIVE_AES_KEY = ''  # 로컬에서 덮어쓰기
 FULL_URL  = 'titan.jobjapan.com'
-FULL_URL2 = 'tlb.shanghai.co.kr'
+FULL_URL2 = 'titanvpn.kr'
 FULL_URL3 = 'tl.jobjapan.net'
 MY_URL    = 'aws14.titanvpn.kr'
 
@@ -140,6 +140,10 @@ DATABASES = {
         'PASSWORD': '',  # settings_local.py에서 덮어쓰기
         'HOST': '218.158.57.48',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': 'SET NAMES utf8mb4',
+        },
     },
     'radius': {
         'ENGINE': 'django.db.backends.mysql',
@@ -148,6 +152,10 @@ DATABASES = {
         'PASSWORD': '',  # settings_local.py에서 덮어쓰기
         'HOST': '218.158.57.48',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': 'SET NAMES utf8mb4',
+        },
     },
 }
 

@@ -21,6 +21,7 @@ from backend.models import *
 from backend.models_radius import *
 from backend.djangoapps.common.views import *
 from backend.djangoapps.common.payletter import Payletter
+from backend.djangoapps.common.smtp import send_email
 from django.utils import translation
 from django.contrib.sessions.models import Session
 
@@ -290,6 +291,7 @@ def mypage(request):
 
     context['subaccounts'] = subaccounts
     context['base_email'] = base_email
+    context['LANGUAGE_CODE'] = LANGUAGE_CODE
 
     # Determine next available subaccount email suffix; fall back gracefully on error
     next_email = ''
@@ -402,3 +404,131 @@ def change_password_action(request):
             return JsonResponse({'result': '500', 'text': _('An error occurred while changing the password.') + f' {str(e)}'})
 
     return JsonResponse({'result': '400', 'text': _('Invalid request method.')})
+
+
+@csrf_protect
+def api_change_sub_password_direct_v2(request):
+    if 'id' not in request.session:
+        return JsonResponse({'result': 403, 'text': _('Please log in.')})
+    
+    if request.method != 'POST':
+        return JsonResponse({'result': 400, 'text': _('Invalid request method.')})
+
+    master_id = request.session['id']
+    target_user_id = request.POST.get('target_user_id')
+    master_password = request.POST.get('master_password')
+    new_password = request.POST.get('new_password')
+
+    if not all([target_user_id, master_password, new_password]):
+        return JsonResponse({'result': 400, 'text': _('Missing parameters.')})
+
+    # 1. Verify Master Password
+    try:
+        master_user = TblUser.objects.get(id=master_id)
+    except TblUser.DoesNotExist:
+        return JsonResponse({'result': 404, 'text': _('User not found.')})
+
+    if not master_password:
+         return JsonResponse({'result': 400, 'text': _('Master password is required.')})
+
+    # Inline password check to ensure no import issues
+    try:
+        hashed_text = master_user.password
+        if ':' not in hashed_text:
+             # Fallback for legacy passwords or plain text (should not happen but for safety)
+             if hashed_text != master_password:
+                 return JsonResponse({'result': 400, 'text': _('Master password is incorrect (legacy).')})
+        else:
+            _hashed, salt = hashed_text.split(':')
+            calculated = hashlib.sha256(salt.encode() + master_password.encode()).hexdigest()
+            if _hashed != calculated:
+                return JsonResponse({'result': 400, 'text': _('Master password is incorrect.')})
+    except Exception as e:
+        print(f"DEBUG: Password check error: {e}")
+        return JsonResponse({'result': 400, 'text': _('Master password check failed.')})
+
+    # 2. Verify Target User is a sub-account of Master
+    try:
+        target_user = TblUser.objects.get(id=target_user_id, delete_yn='N')
+    except TblUser.DoesNotExist:
+        return JsonResponse({'result': 404, 'text': _('Sub-account not found.')})
+
+    base_email = master_user.email
+    m = re.match(r'^(.+@[^@]+?)_\d+$', base_email)
+    if m:
+        base_email = m.group(1)
+        
+    is_child = False
+    if target_user.parent_user_id == master_user.id:
+        is_child = True
+    elif target_user.parent_user_id is None and target_user.email.startswith(base_email + '_'):
+        is_child = True
+        
+    if not is_child:
+        return JsonResponse({'result': 403, 'text': _('Not authorized to modify this account.')})
+
+    # 3. Verify Target User is a "created" sub-account (ends with _number)
+    if not re.search(r'_\d+$', target_user.email):
+        return JsonResponse({'result': 400, 'text': _('This account requires email verification to change password.')})
+
+    # 4. Update Password
+    try:
+        new_hash = hashText(new_password)
+        target_user.password = new_hash
+        target_user.save()
+        
+        # Update Radius if needed
+        try:
+            radcheck = Radcheck.objects.using('radius').get(username=target_user.email, attribute='Cleartext-Password')
+            radcheck.value = new_password
+            radcheck.save(using='radius')
+        except Radcheck.DoesNotExist:
+            pass
+            
+        return JsonResponse({'result': 200})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'text': str(e)})
+
+
+@csrf_protect
+def api_send_password_reset_for_sub(request):
+    if 'id' not in request.session:
+        return JsonResponse({'result': 403, 'text': _('Please log in.')})
+        
+    target_user_id = request.POST.get('target_user_id')
+    master_id = request.session['id']
+    LANGUAGE_CODE = request.LANGUAGE_CODE
+
+    try:
+        master_user = TblUser.objects.get(id=master_id)
+        target_user = TblUser.objects.get(id=target_user_id, delete_yn='N')
+    except TblUser.DoesNotExist:
+        return JsonResponse({'result': 404, 'text': _('User not found.')})
+
+    # Check ownership
+    base_email = master_user.email
+    m = re.match(r'^(.+@[^@]+?)_\d+$', base_email)
+    if m:
+        base_email = m.group(1)
+        
+    is_child = False
+    if target_user.parent_user_id == master_user.id:
+        is_child = True
+    elif target_user.parent_user_id is None and target_user.email.startswith(base_email + '_'):
+        is_child = True
+        
+    if not is_child:
+        return JsonResponse({'result': 403, 'text': _('Not authorized.')})
+
+    # Send Email
+    try:
+        lang = 'ko'
+        if LANGUAGE_CODE == 'en':
+            lang = 'en'
+        elif LANGUAGE_CODE == 'zh':
+            lang = 'zh'
+            
+        send_email(target_user.email, 2, lang)
+        return JsonResponse({'result': 200})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'text': _('Failed to send email.')})

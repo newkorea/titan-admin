@@ -64,13 +64,13 @@
             <!-- Subaccount selection dropdown -->
             <div class="white-bg shadow-sm p-3 rounded mb-3" style="border:1px solid #eee;">
                 <div class="d-flex flex-wrap align-items-center">
-                    <span class="badge badge-success badge-pill mb-2 mr-3" style="font-size:13px; padding:6px 14px;">연장할 아이디</span>
+                    <span class="badge badge-success badge-pill mb-2 mr-3" style="font-size:13px; padding:6px 14px;">${_('Account to extend')}</span>
                     <select id="ext_account_select" class="form-control form-control-sm mb-2" style="max-width:280px;">
-                        <option value="">불러오는 중...</option>
+                        <option value="">${_('Loading...')}</option>
                     </select>
                     <div id="ext_account_status" class="ml-3 mb-2" style="font-size:18px;font-weight:bold;color:#0d6efd;"></div>
                 </div>
-                <div class="mt-1" style="font-weight:700; font-size:18px; color:#333;">드롭다운에서 연장할 아이디를 선택하거나 드롭다운 맨밑의 <span style="color:#0d6efd;">'계정추가'</span>로 다른 계정을 등록하세요.</div>
+                <div class="mt-1" style="font-weight:700; font-size:18px; color:#333;">${_('Select the account to extend from the dropdown, or use Add Account at the bottom to register another account.')}</div>
             </div>
 
             <span class="badge badge-success badge-pill mb-8">Step1. ${_('Select a Period')}</span>
@@ -341,7 +341,7 @@
                             </div>
                             <div class="media-body">
                               <h5 class="mb-0">
-                                SSG페이
+                                ${_('SSG Pay')}
                                 <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
                                 <span class="p-bad p-bad-blue">${_('Payment module')}</span>
                               </h5>
@@ -376,7 +376,7 @@
                             </div>
                             <div class="media-body">
                               <h5 class="mb-0">
-                                가상계좌(무통장)
+                                ${_('Virtual Account (Bank Transfer)')}
                                 <span class="p-bad p-bad-pub ml-20">${_('Korea')}</span>
                                 <span class="p-bad p-bad-blue">${_('Payment module')}</span>
                               </h5>
@@ -484,7 +484,7 @@
     <input hidden type="text" id="payerid" name="payerid"><br>
     <input hidden type="text" id="payeremail" name="payeremail"><br>
     <input hidden type="text" id="servicename" name="servicename"><br>
-    <input hidden type="text" id="returnurl" name="returnurl"><br>
+    <input hidden type="text" id="pl_returnurl" name="returnurl"><br>
     <input hidden type="text" id="backurl" name="backurl"><br>
     <input hidden type="text" id="custom" name="custom"><br>
     <input hidden type="text" id="pginfo" name="pginfo"><br>
@@ -508,14 +508,14 @@
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 ">
-    <div style="margin-bottom: 10px; font-weight: bold;">결제 진행 중...</div>
+    <div style="margin-bottom: 10px; font-weight: bold;">${_('Payment in progress...')}</div>
     <div style="width: 100%; height: 30px; background-color: #ddd; border-radius: 5px; overflow: hidden;">
         <div id="progressBar" style="width: 0%; height: 100%; background-color: #007bff; text-align: center; line-height: 30px; color: white; border-radius: 5px;">
             0%
         </div>
     </div>
     <div id="progressText" style="margin-top: 10px; font-size: 14px; color: #333;">
-        결제하신 내용을 확인하고 있습니다. 잠시만 기다려주세요.
+        ${_('Checking your payment. Please wait a moment.')}
     </div>
 </div>
 
@@ -526,6 +526,9 @@
 $( document ).ready(function() {
     // 초기 서브계정 목록 로드
     loadSubaccountList();
+    
+    // 관리자 설정에서 결제 방식 활성화 상태 불러오기
+    loadPaymentMethodStatus();
 
     $( ".hackx" ).click(function(e) {
         $(".hackx").removeClass("hackx-pick");
@@ -729,31 +732,103 @@ function calculatePrice(month, session) {
 function checkRecentPaymentsAndProceed(pgcode, month_type, session, paymentFunction, type) {
     $.post("/api_check_recent_payments", {
         csrfmiddlewaretoken: $('#csrf_token').val(),
-        type: type // 요청한 결제 타입 추가 ('A' 또는 'W')
+        type: type
     }).done(function(data) {
         console.log("최근 결제 확인 결과:", data.hasRecentPayments);
 
         if (data.hasRecentPayments) {
-            console.log("최근 결제가 감지됨. 1분 대기 중...");
-            Swal.fire({
-                icon: 'warning',
-                title: '잠시 후 다시 시도해주세요',
-                text: '현재 다른 고객의 요청을 처리 중입니다. 1분 후 다시 시도하세요!',
-                confirmButtonText: '확인',
-                confirmButtonColor: '#007bff'
-            });
+            // 오늘 이미 승인된 결제가 있음 → 안내 팝업
+            var lang = '${LANGUAGE_CODE}';
+            var email = data.email || '';
+            var expiration = data.expiration || '-';
+            var simUse = data.simultaneous_use || '-';
+            var approvedCount = data.approved_count || 0;
 
-            setTimeout(() => {
-                console.log("1분 대기 후 결제 진행");
-                paymentFunction(pgcode, month_type, session);
-            }, 60000); // 1분 대기 (60,000ms)
+            // 승인 내역 테이블 구성
+            var listHtml = '';
+            if (data.approved_list && data.approved_list.length > 0) {
+                var thType = lang==='en'?'Type':(lang==='zh'?'类型':'결제종류');
+                var thSession = lang==='en'?'Sessions':(lang==='zh'?'会话':'세션');
+                var thPeriod = lang==='en'?'Period':(lang==='zh'?'期限':'기간');
+                var thAmount = lang==='en'?'Amount':(lang==='zh'?'金额':'금액');
+                var thTime = lang==='en'?'Approved':(lang==='zh'?'批准时间':'승인시간');
+                listHtml = '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;">';
+                listHtml += '<tr style="background:#f0f0f0;"><th style="padding:6px;border:1px solid #ddd;">'+thType+'</th><th style="padding:6px;border:1px solid #ddd;">'+thSession+'</th><th style="padding:6px;border:1px solid #ddd;">'+thPeriod+'</th><th style="padding:6px;border:1px solid #ddd;">'+thAmount+'</th><th style="padding:6px;border:1px solid #ddd;">'+thTime+'</th></tr>';
+                for (var i = 0; i < data.approved_list.length; i++) {
+                    var item = data.approved_list[i];
+                    var typeLabel = item.type === 'W' ? 'WeChat' : (item.type === 'A' ? 'Alipay' : item.type);
+                    var unitDev = lang==='en'?' devices':(lang==='zh'?'台':'대');
+                    var unitMon = lang==='en'?' months':(lang==='zh'?'个月':'개월');
+                    var unitCur = lang==='en'?' KRW':(lang==='zh'?'韩元':'원');
+                    listHtml += '<tr>';
+                    listHtml += '<td style="padding:5px;border:1px solid #ddd;">' + typeLabel + '</td>';
+                    listHtml += '<td style="padding:5px;border:1px solid #ddd;">' + item.session + unitDev + '</td>';
+                    listHtml += '<td style="padding:5px;border:1px solid #ddd;">' + item.month_type + unitMon + '</td>';
+                    listHtml += '<td style="padding:5px;border:1px solid #ddd;">' + Number(item.krw).toLocaleString() + unitCur + '</td>';
+                    listHtml += '<td style="padding:5px;border:1px solid #ddd;">' + item.accept_date + '</td>';
+                    listHtml += '</tr>';
+                }
+                listHtml += '</table>';
+            }
+
+            var title, line1, line2, line3, confirmText, cancelText;
+            if (lang === 'en') {
+                title = 'Payment Already Completed';
+                line1 = 'You have ' + approvedCount + ' approved payment(s) within the last 24 hours.';
+                line2 = '<b>Expiry Date:</b> ' + expiration + '<br><b>Concurrent Connections:</b> ' + simUse;
+                line3 = 'If you want to make an additional payment, click the <b>Additional Payment</b> button.<br>If your payment was processed correctly, click <b>Cancel</b>.';
+                confirmText = 'Additional Payment';
+                cancelText = 'Cancel';
+            } else if (lang === 'zh') {
+                title = '24小时内已完成付款';
+                line1 = '最近24小时内已有 ' + approvedCount + ' 笔付款已被批准。';
+                line2 = '<b>到期日：</b>' + expiration + '<br><b>同时连接数：</b>' + simUse;
+                line3 = '如需追加付款，请点击 <b>追加付款</b> 按钮。<br>如果付款已正确处理，请点击 <b>取消</b>。';
+                confirmText = '追加付款';
+                cancelText = '取消';
+            } else {
+                title = '이미 결제가 완료되었습니다';
+                line1 = '최근 24시간 이내 승인된 결제가 <b>' + approvedCount + '건</b> 있습니다.';
+                line2 = '<b>만료일자:</b> ' + expiration + '<br><b>동시접속 가능수:</b> ' + simUse + '대';
+                line3 = '추가결제를 원하시면 <b>추가결제</b> 버튼을 눌러주세요.<br>결제가 제대로 되었다면 <b>취소</b> 버튼을 눌러주세요.';
+                confirmText = '추가결제';
+                cancelText = '취소';
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: title,
+                html:
+                    '<div style="text-align:center;margin-top:10px;">' +
+                    '<div style="font-size:16px;color:#333;">' + line1 + '</div>' +
+                    '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e0e0e0;">' +
+                    '<div style="font-size:18px;font-weight:bold;color:#2c3e50;margin-bottom:8px;">📋 ' + email + '</div>' +
+                    '<div style="font-size:16px;color:#444;">' + line2 + '</div>' +
+                    '</div>' +
+                    listHtml +
+                    '<div style="margin-top:15px;font-size:14px;color:#666;">' + line3 + '</div>' +
+                    '</div>',
+                showCancelButton: true,
+                confirmButtonText: confirmText,
+                cancelButtonText: cancelText,
+                confirmButtonColor: '#e67e22',
+                cancelButtonColor: '#95a5a6',
+                reverseButtons: true,
+                allowOutsideClick: false,
+            }).then(function(result) {
+                if (result.value) {
+                    // 추가결제 → QR 팝업 진행
+                    paymentFunction(pgcode, month_type, session);
+                }
+                // 취소 → 아무것도 안 함
+            });
         } else {
             console.log("최근 결제 없음. 즉시 결제 진행");
             paymentFunction(pgcode, month_type, session);
         }
     }).fail(function() {
         console.error("최근 결제 확인 요청 실패");
-        paymentFunction(pgcode, month_type, session); // 오류 발생 시에도 진행
+        paymentFunction(pgcode, month_type, session);
     });
 }
 
@@ -769,12 +844,13 @@ function payment() {
     console.log('session -> ', session);
    
    // 필수 선택값 점검: 개별 항목별로 안내
+   var _lang = '${LANGUAGE_CODE}';
    var monthValid = month_type !== undefined && month_type !== null && String(month_type).trim() !== '' && parseInt(month_type, 10) > 0;
    if (!monthValid) {
         Swal.fire({
             icon: 'warning',
-            title: '알림',
-            text: '사용기간을 선택해주세요.',
+            title: _lang==='en'?'Notice':(_lang==='zh'?'提示':'알림'),
+            text: _lang==='en'?'Please select a usage period.':(_lang==='zh'?'请选择使用期限。':'사용기간을 선택해주세요.'),
             confirmButtonColor: swalColor('error'),
         });
         return false;
@@ -783,8 +859,8 @@ function payment() {
    if (!sessionValid) {
         Swal.fire({
             icon: 'warning',
-            title: '알림',
-            text: '동시접속수를 선택해주세요.',
+            title: _lang==='en'?'Notice':(_lang==='zh'?'提示':'알림'),
+            text: _lang==='en'?'Please select the number of concurrent connections.':(_lang==='zh'?'请选择同时连接数。':'동시접속수를 선택해주세요.'),
             confirmButtonColor: swalColor('error'),
         });
         return false;
@@ -805,10 +881,56 @@ function payment() {
         return false;
     }
     if (pgcode == 'WECHAT_IV') {
-        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); // WeChat Pay (W)
+        // WeChat 결제 활성화 여부 확인
+        $.ajax({
+            url: '/api_get_payment_methods',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) {
+                if(data && !data.wechat_enabled) {
+                    var _wl = '${LANGUAGE_CODE}';
+                    Swal.fire({
+                        icon: 'error',
+                        title: _wl==='en'?'Notice':(_wl==='zh'?'提示':'알림'),
+                        text: _wl==='en'?'This payment method is currently unavailable. Please use another method.':(_wl==='zh'?'该支付方式当前不可用，请使用其他支付方式。':'현재 해당 결제가 불가능한 상태입니다. 다른 결제도구를 사용해주세요.'),
+                        confirmButtonColor: swalColor('error'),
+                    });
+                    pgcode = ''; // 진행 중지
+                    return false;
+                }
+            }
+        });
+        
+        if(pgcode) {
+            checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); // WeChat Pay (W)
+        }
         return false;
     } else if (pgcode == 'ALIPAY_IV') {
-        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); // Alipay (A)
+        // Alipay 결제 활성화 여부 확인
+        $.ajax({
+            url: '/api_get_payment_methods',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) {
+                if(data && !data.alipay_enabled) {
+                    var _al = '${LANGUAGE_CODE}';
+                    Swal.fire({
+                        icon: 'error',
+                        title: _al==='en'?'Notice':(_al==='zh'?'提示':'알림'),
+                        text: _al==='en'?'This payment method is currently unavailable. Please use another method.':(_al==='zh'?'该支付方式当前不可用，请使用其他支付方式。':'현재 해당 결제가 불가능한 상태입니다. 다른 결제도구를 사용해주세요.'),
+                        confirmButtonColor: swalColor('error'),
+                    });
+                    pgcode = ''; // 진행 중지
+                    return false;
+                }
+            }
+        });
+        
+        if(pgcode) {
+            checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); // Alipay (A)
+        }
         return false;
     }else if (pgcode == 'sendmoney') { // 수동
         titan_bank(pgcode, month_type, session);
@@ -817,10 +939,11 @@ function payment() {
         payletter_korea(pgcode, month_type, session);
         return false;
     } else {
+        var _lang2 = '${LANGUAGE_CODE}';
         Swal.fire({
             type: 'error',
-            title: '알림',
-            text: '결제방식을 선택해주세요.',
+            title: _lang2==='en'?'Notice':(_lang2==='zh'?'提示':'알림'),
+            text: _lang2==='en'?'Please select a payment method.':(_lang2==='zh'?'请选择支付方式。':'결제방식을 선택해주세요.'),
             confirmButtonColor: swalColor('error'),
         }).then(function(result) { /* pass */ })
     }
@@ -850,7 +973,7 @@ function payletter_global(pgcode, month_type, session) {
             $('#payerid').val(data.payerid);
             $('#payeremail').val(data.payeremail);
             $('#servicename').val(data.servicename);
-            $('#returnurl').val(data.returnurl);
+            $('#pl_returnurl').val(data.returnurl);
             $('#backurl').val(data.backurl);
             $('#custom').val(data.custom);
             $('#pginfo').val(data.pginfo);
@@ -968,7 +1091,16 @@ function startPaymentCheck(paymentId) {
 
     $("#progressBarContainer").show();
     $("#progressBar").css('width', '0%').text('0%');
-    $("#progressText").text("결제하신 내용을 확인하고 있습니다. 잠시만 기다려주세요.");
+    var lang = '${LANGUAGE_CODE}';
+    var progressText;
+    if (lang === 'en') {
+        progressText = 'We are verifying your payment. Please wait a moment.';
+    } else if (lang === 'zh') {
+        progressText = '正在确认您的付款，请稍候。';
+    } else {
+        progressText = '결제하신 내용을 확인하고 있습니다. 잠시만 기다려주세요.';
+    }
+    $("#progressText").text(progressText);
 
     paymentCheckInterval = setInterval(function () {
         if (forceStop) {
@@ -990,11 +1122,26 @@ function startPaymentCheck(paymentId) {
                 clearInterval(paymentCheckInterval);
                 $("#progressBar").css('width', '100%').text('100%');
 
+                var successTitle, successText, successOk;
+                if (lang === 'en') {
+                    successTitle = 'Payment Successful';
+                    successText = 'Your payment has been completed successfully.';
+                    successOk = 'OK';
+                } else if (lang === 'zh') {
+                    successTitle = '支付成功';
+                    successText = '您的支付已成功完成。';
+                    successOk = '确认';
+                } else {
+                    successTitle = '결제 성공';
+                    successText = '결제가 성공적으로 완료되었습니다.';
+                    successOk = '확인';
+                }
+
                 Swal.fire({
                     icon: 'success',
-                    title: '결제 성공',
-                    text: '결제가 성공적으로 완료되었습니다.',
-                    confirmButtonText: '확인'
+                    title: successTitle,
+                    text: successText,
+                    confirmButtonText: successOk
                 }).then(() => {
                     closeProgressPopup();
                     window.location.href = "/mypage";
@@ -1005,11 +1152,26 @@ function startPaymentCheck(paymentId) {
         if (elapsedTime >= maxTime) {
             clearInterval(paymentCheckInterval);
             forceStop = true;
+            var failTitle, failText, failBtn;
+            if (lang === 'en') {
+                failTitle = 'Payment Verification Failed';
+                failText = 'Payment verification failed. Please contact the administrator.';
+                failBtn = 'Contact Support';
+            } else if (lang === 'zh') {
+                failTitle = '支付确认失败';
+                failText = '支付确认失败，请联系管理员。';
+                failBtn = '联系客服';
+            } else {
+                failTitle = '결제 확인 실패';
+                failText = '결제 확인이 실패하였습니다. 관리자에게 문의하세요.';
+                failBtn = '관리자 문의';
+            }
+
             Swal.fire({
                 icon: 'error',
-                title: '결제 확인 실패',
-                text: '결제 확인이 실패하였습니다. 관리자에게 문의하세요.',
-                confirmButtonText: '관리자 문의'
+                title: failTitle,
+                text: failText,
+                confirmButtonText: failBtn
             }).then(() => {
                 closeProgressPopup();
                 window.open('https://titan.channel.io', '_blank');
@@ -1057,20 +1219,48 @@ function createPayment(typeCode, pgcode, session, month_type, imageSrc, typeLabe
         $.post("/api_create_payment", payload).done(function(res) {
             if (res.result === 200 && res.payment_id) {
                 startPaymentCheck(res.payment_id);
+
+                var lang = '${LANGUAGE_CODE}';
+                var emailLabel = (res.data?.email || (lang==='en'?'No email':(lang==='zh'?'无邮箱':'이메일 없음')));
+                var line1, line2, line3, line4, confirmText, cancelText;
+
+                if (lang === 'en') {
+                    line1 = typeLabel + ' payment has been requested.';
+                    line2 = 'Please scan the QR code and pay ' + price + ' CNY.';
+                    line3 = 'After the transfer, an admin will manually confirm and complete the payment.';
+                    line4 = 'After payment, click the <b>Payment Completed</b> button and let us know via Channel Talk.';
+                    confirmText = 'Payment Completed';
+                    cancelText = 'Close';
+                } else if (lang === 'zh') {
+                    line1 = typeLabel + ' 支付已申请。';
+                    line2 = '请扫描二维码支付 ' + price + ' 元。';
+                    line3 = '付款完成后，管理员会人工确认并完成充值。';
+                    line4 = '付款后请点击 <b>付款完成</b> 按钮，并通过 Channel Talk 告知我们。';
+                    confirmText = '付款完成';
+                    cancelText = '关闭';
+                } else {
+                    line1 = typeLabel + ' 결제를 신청하셨습니다.';
+                    line2 = 'QR 코드를 스캔하여 ' + price + ' 元을 입금해주세요.';
+                    line3 = '입금 후 수동으로 관리자가 확인하여 결제를 완료합니다.';
+                    line4 = '결제 후 <b>결제완료</b> 버튼을 눌러 채널톡으로 알려주세요.';
+                    confirmText = '결제완료';
+                    cancelText = '닫기';
+                }
+
                 Swal.fire({
                     html:
                         '<div style="margin-top: 14px;">' + typeLabel + '</div>' +
                         '<div style="font-weight: bold; font-size: 30px;">' + price + ' 元</div>' +
                         '<img style="width: 250px; height: 250px;" src="' + imageSrc + '">' +
-                        '<div style="margin-top: 10px; font-weight: bold; font-size: 36px; color: black;">' + (res.data?.email || '이메일 없음') + '</div>' +
-                        '<div style="margin-top: 15px; font-size: 16px; color:red;">' + typeLabel + ' 결제를 신청하셨습니다.</div>' +
-                        '<div style="font-size: 16px; color:red;">QR 코드를 스캔하여 ' + price + ' 元을 입금해주세요.</div>' +
-                        '<div style="margin-top: 15px; font-size: 16px; color:blue;">입금 후 수동으로 관리자가 확인하여 결제를 완료합니다.</div>' +
-                        '<div style="font-size: 16px; color:blue;">결제 후 <b>결제완료</b> 버튼을 눌러 채널톡으로 알려주세요.</div>',
+                        '<div style="margin-top: 10px; font-weight: bold; font-size: 36px; color: black;">' + emailLabel + '</div>' +
+                        '<div style="margin-top: 15px; font-size: 16px; color:red;">' + line1 + '</div>' +
+                        '<div style="font-size: 16px; color:red;">' + line2 + '</div>' +
+                        '<div style="margin-top: 15px; font-size: 16px; color:blue;">' + line3 + '</div>' +
+                        '<div style="font-size: 16px; color:blue;">' + line4 + '</div>',
                     showCancelButton: true,
                     showConfirmButton: true,
-                    confirmButtonText: '결제완료',
-                    cancelButtonText: '닫기',
+                    confirmButtonText: confirmText,
+                    cancelButtonText: cancelText,
                     confirmButtonColor: '#8a4cf7',
                     cancelButtonColor: '#cccccc',
                     reverseButtons: true,
@@ -1086,24 +1276,53 @@ function createPayment(typeCode, pgcode, session, month_type, imageSrc, typeLabe
                 setTimeout(() => {
                     if (Swal.isVisible()) {
                         Swal.close();
+                        var lang = '${LANGUAGE_CODE}';
+                        var title, text, okText;
+                        if (lang === 'en') {
+                            title = 'QR Code Expired';
+                            text = 'The QR code window has been closed after 1 minute. Please try again.';
+                            okText = 'OK';
+                        } else if (lang === 'zh') {
+                            title = 'QR 码已过期';
+                            text = '1 分钟后二维码窗口已关闭，请重新尝试。';
+                            okText = '确认';
+                        } else {
+                            title = 'QR 유효시간 만료';
+                            text = '1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요.';
+                            okText = '확인';
+                        }
                         Swal.fire({
                             icon: 'info',
-                            title: 'QR 유효시간 만료',
-                            text: '1분이 지나 QR코드 창이 닫혔습니다. 다시 시도해주세요.',
-                            confirmButtonText: '확인',
+                            title: title,
+                            text: text,
+                            confirmButtonText: okText,
                             confirmButtonColor: '#8a4cf7'
                         });
                     }
                 }, 60000);
             } else {
-                alert("결제 요청 실패: " + res.message);
+                var _fl = '${LANGUAGE_CODE}';
+                alert((_fl==='en'?'Payment request failed: ':(_fl==='zh'?'支付请求失败：':'결제 요청 실패: ')) + res.message);
             }
         });
     }
 
     $.post('/api_preview_session_change', previewPayload).done(function(pre){
         if (pre && pre.result === 200 && pre.show && pre.message) {
-            Swal.fire({icon:'info', title:'세션 변경 안내', html: pre.message.replaceAll('\n','<br>'), showCancelButton:true, confirmButtonText:'계속 진행', cancelButtonText:'취소'}).then(function(r){
+            var lang = '${LANGUAGE_CODE}';
+            var title = '세션 변경 안내';
+            var confirmText = '계속 진행';
+            var cancelText = '취소';
+            if (lang === 'en') {
+                title = 'Session Change Notice';
+                confirmText = 'Continue';
+                cancelText = 'Cancel';
+            } else if (lang === 'zh') {
+                title = '设备数变更提示';
+                confirmText = '继续';
+                cancelText = '取消';
+            }
+            Swal.fire({icon:'info', title:title, html: pre.message.replaceAll('\n','<br>'), showCancelButton:true, confirmButtonText:confirmText, cancelButtonText:cancelText}).then(function(r){
                 if (r.value) proceedCreatePayment();
             });
         } else {
@@ -1138,7 +1357,7 @@ function loadSubaccountList(selectId) {
             res.items.forEach(function(item){
                 sel.append('<option value="'+item.id+'">'+item.email+'</option>');
             });
-            sel.append('<option value="__add__">+ 계정추가</option>');
+            sel.append('<option value="__add__">+ ' + ('${LANGUAGE_CODE}'==='en'?'Add Account':('${LANGUAGE_CODE}'==='zh'?'添加账户':'계정추가')) + '</option>');
             var selectedVal = selectId ? String(selectId) : (res.items.length ? String(res.items[0].id) : '');
             if (selectedVal) {
                 sel.val(selectedVal);
@@ -1149,10 +1368,10 @@ function loadSubaccountList(selectId) {
                 $('#ext_account_status').text('');
             }
         } else {
-            $('#ext_account_select').html('<option value="">로드 실패</option>');
+            $('#ext_account_select').html('<option value="">' + ('${LANGUAGE_CODE}'==='en'?'Load failed':('${LANGUAGE_CODE}'==='zh'?'加载失败':'로드 실패')) + '</option>');
         }
     }).fail(function(){
-        $('#ext_account_select').html('<option value="">네트워크 오류</option>');
+        $('#ext_account_select').html('<option value="">' + ('${LANGUAGE_CODE}'==='en'?'Network error':('${LANGUAGE_CODE}'==='zh'?'网络错误':'네트워크 오류')) + '</option>');
     });
 }
 
@@ -1167,21 +1386,53 @@ $(document).on('change', '#ext_account_select', function(){
     }
 });
 
+// 관리자 설정에서 결제 방식 활성화 상태 불러오기
+function loadPaymentMethodStatus() {
+    $.ajax({
+        url: '/api_get_payment_methods',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if(data && data.result === 200) {
+                // WeChat 아이콘 처리
+                if(!data.wechat_enabled) {
+                    $('#WECHAT_IV').css('opacity', '0.5').css('pointer-events', 'none').css('cursor', 'not-allowed');
+                } else {
+                    $('#WECHAT_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+                }
+                
+                // Alipay 아이콘 처리
+                if(!data.alipay_enabled) {
+                    $('#ALIPAY_IV').css('opacity', '0.5').css('pointer-events', 'none').css('cursor', 'not-allowed');
+                } else {
+                    $('#ALIPAY_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+                }
+            }
+        },
+        error: function() {
+            // 기본값: 활성화
+            $('#WECHAT_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+            $('#ALIPAY_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+        }
+    });
+}
+
 // 계정추가 팝업
 function showAddAccountPopup() {
+    var _pl = '${LANGUAGE_CODE}';
     Swal.fire({
-        title: '계정 추가',
-        html: '<input id="add_email" type="text" class="swal2-input" placeholder="이메일">'
-            + '<input id="add_password" type="password" class="swal2-input" placeholder="비밀번호">'
-            + '<div style="font-size:12px;color:#666;margin-top:4px;">해당 계정 비밀번호로 인증 후 서브계정으로 편입됩니다.</div>',
-        confirmButtonText: '확인',
-        cancelButtonText: '취소',
+        title: _pl==='en'?'Add Account':(_pl==='zh'?'添加账户':'계정 추가'),
+        html: '<input id="add_email" type="text" class="swal2-input" placeholder="' + (_pl==='en'?'Email':(_pl==='zh'?'电子邮件':'이메일')) + '">'
+            + '<input id="add_password" type="password" class="swal2-input" placeholder="' + (_pl==='en'?'Password':(_pl==='zh'?'密码':'비밀번호')) + '">'
+            + '<div style="font-size:12px;color:#666;margin-top:4px;">' + (_pl==='en'?'This account will be verified and added as a sub-account.':(_pl==='zh'?'该账户将通过密码验证后添加为子账户。':'해당 계정 비밀번호로 인증 후 서브계정으로 편입됩니다.')) + '</div>',
+        confirmButtonText: _pl==='en'?'Confirm':(_pl==='zh'?'确认':'확인'),
+        cancelButtonText: _pl==='en'?'Cancel':(_pl==='zh'?'取消':'취소'),
         showCancelButton: true,
         preConfirm: () => {
             const email = $('#add_email').val().trim();
             const pw = $('#add_password').val();
             if(!email || !pw) {
-                Swal.showValidationMessage('이메일과 비밀번호를 입력하세요');
+                Swal.showValidationMessage(_pl==='en'?'Please enter email and password.':(_pl==='zh'?'请输入电子邮件和密码。':'이메일과 비밀번호를 입력하세요'));
                 return false;
             }
             return {email: email, password: pw};
@@ -1189,23 +1440,23 @@ function showAddAccountPopup() {
     }).then(function(result){
         if (result.value) {
             var data = result.value;
-            Swal.fire({title:'처리 중...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+            Swal.fire({title:_pl==='en'?'Processing...':(_pl==='zh'?'处理中...':'처리 중...'),allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
             $.post('/api_prepare_extension_target', {
                 csrfmiddlewaretoken: $('#csrf_token').val(),
                 email: data.email,
                 password: data.password
             }).done(function(res){
                 if(res.result === 200){
-                    Swal.fire({icon:'success',title:'등록 완료',text:res.target_email+' 서브계정 설정되었습니다.'});
+                    Swal.fire({icon:'success',title:_pl==='en'?'Registration Complete':(_pl==='zh'?'注册完成':'등록 완료'),text:res.target_email+(_pl==='en'?' has been added as a sub-account.':(_pl==='zh'?' 已设置为子账户。':' 서브계정 설정되었습니다.'))});
                     // 목록 재로딩 후 선택
                     loadSubaccountList(res.target_user_id);
                 } else {
-                    Swal.fire({icon:'error',title:'실패',text: res.text || res.message || '오류'}).then(()=>{
+                    Swal.fire({icon:'error',title:_pl==='en'?'Failed':(_pl==='zh'?'失败':'실패'),text: res.text || res.message || (_pl==='en'?'Error':(_pl==='zh'?'错误':'오류'))}).then(()=>{
                         showAddAccountPopup();
                     });
                 }
             }).fail(function(){
-                Swal.fire({icon:'error',title:'네트워크 오류'}).then(()=>{
+                Swal.fire({icon:'error',title:_pl==='en'?'Network Error':(_pl==='zh'?'网络错误':'네트워크 오류')}).then(()=>{
                     showAddAccountPopup();
                 });
             });

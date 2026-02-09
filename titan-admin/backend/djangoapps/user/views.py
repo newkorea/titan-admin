@@ -4,10 +4,14 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
 from django.db import connections
 from django.conf import settings
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
 from backend.djangoapps.common.views import *
 from backend.djangoapps.common.swal import get_swal
 from backend.models import *
 from django.db import transaction
+from urllib.parse import quote
 
 
 # (2020-03-16)
@@ -186,9 +190,12 @@ def api_update_block_user(request):
             initServiceTime(user)
         title, text = get_swal('SUCCESS_BLOCK')
         return JsonResponse({'result': 200, 'title': title, 'text': text})
-    except BaseException as err:
-        title, text = get_swal('UNKNOWN_ERROR')
-        return JsonResponse({'result': 500, 'title': title, 'text': text})
+    except smtplib.SMTPException as err:
+        # SMTP 단계에서 실패한 경우: 관리자에게 디버그 메시지 전달
+        return JsonResponse({'result': 500, 'title': '알림', 'text': '메일 전송 중 오류가 발생했습니다', 'debug': str(err)})
+    except Exception as err:
+        # 기타 예외도 동일한 사용자 메시지 + 디버그 포함
+        return JsonResponse({'result': 500, 'title': '알림', 'text': '메일 전송 중 오류가 발생했습니다', 'debug': str(err)})
 
 # (2020-04-06)
 @allow_admin
@@ -603,6 +610,94 @@ def api_delete_user(request):
 
     title, text = get_swal('SUCCESS_DELETE_USER')
     return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# (2025-11-19) 본인인증 메일 재전송 (관리자)
+@allow_admin
+def api_send_verify_email(request):
+    email = request.POST.get('email', '').strip()
+    if not email:
+        title, text = get_swal('NULL_EMAIL')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 대상 유저 존재 확인
+    try:
+        TblUser.objects.get(email=email)
+    except BaseException:
+        title, text = get_swal('NOT_USER')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 메일 발송 처리
+    try:
+        print('[verify_email] start for', email)
+        aes = AESCipher()
+        before = datetime.datetime.now()
+        before_time = before.strftime('%Y-%m-%d %H:%M')
+        token_bytes = aes.encrypt(before_time + '|' + email)
+        enc_email = quote(token_bytes.decode('ascii'))
+        print('[verify_email] token generated length=', len(token_bytes))
+
+        subject = 'TITAN NETWORKS Account Activation Email'
+        content = (
+            f"""
+            <div style="width: 600px; border: solid 1px #bbbbbb; text-align: center; border: solid 6px #673AB7;">
+              <div style='background-color: #673AB7; text-align: center; color: #ffffff; padding: 15px;'>
+                TITAN NETWORKS
+              </div>
+              <div style="margin-top: 30px; margin-bottom: 10px; font-weight: bold; font-size: 20px;">
+                회원가입 인증 메일입니다
+              </div>
+              <div style="font-size: 14px; margin-bottom: 35px;">
+                회원가입이 완료되었습니다
+              </div>
+              <div style="border-top: solid 1px #bbbbbb; border-bottom: solid 1px #bbbbbb; padding: 20px; font-size: 15px;">
+                <div style="font-size: 12px; color: #6f6f6f;">이메일 인증 확인</div>
+                <div style="margin-top: 5px;">
+                  <a href='http://{settings.FULL_URL}/api_login_active?active_code={enc_email}'>여기를 클릭하시면 인증이 완료됩니다</a>
+                </div>
+              </div>
+              <div style="border-top: solid 1px #bbbbbb; border-bottom: solid 1px #bbbbbb; padding: 20px; font-size: 15px;">
+                <div style="font-size: 12px; color: #6f6f6f;">위링크로 확인이 안되시면 아래 링크를 이용해주세요!</div>
+                <div style="margin-top: 5px;">
+                  <a href='http://{settings.FULL_URL2}/api_login_active?active_code={enc_email}'>이메일인증을 위한 두번째 링크</a>
+                </div>
+                <div style="margin-top: 5px;">
+                  <a href='http://{settings.FULL_URL3}/api_login_active?active_code={enc_email}'>이메일인증을 위한 세번째 링크</a>
+                </div>
+              </div>
+              <div style="padding: 35px; font-size: 14px;">TITAN NETWORKS을 이용해 주셔서 감사합니다</div>
+              <div style="padding: 20px; background: #f5f5f5; font-size: 14px;">본 메일은 발신전용 메일입니다</div>
+            </div>
+            """
+        )
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = settings.SMTP_EMAIL
+        msg['To'] = email
+        msg.attach(MIMEText(content, 'html', _charset='utf-8'))
+
+        print('[verify_email] smtp connect', settings.SMTP_HOST, settings.SMTP_PORT)
+        server = smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT)
+        print('[verify_email] smtp login as', settings.SMTP_ID)
+        server.login(settings.SMTP_ID, settings.SMTP_PW)
+        print('[verify_email] smtp send start')
+        server.sendmail(settings.SMTP_EMAIL, [email], msg.as_string())
+        server.quit()
+        print('[verify_email] smtp send ok')
+
+        title, text = get_swal('SUCCESS_SIGNUP')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except smtplib.SMTPException as err:
+        import traceback
+        print('[verify_email][SMTPException]', repr(err))
+        traceback.print_exc()
+        return JsonResponse({'result': 500, 'title': '알림', 'text': '메일 전송 중 오류가 발생했습니다', 'debug': str(err)})
+    except Exception as err:
+        import traceback
+        print('[verify_email][Exception]', repr(err))
+        traceback.print_exc()
+        return JsonResponse({'result': 500, 'title': '알림', 'text': '메일 전송 중 오류가 발생했습니다', 'debug': str(err)})
 
 
 # (2020-03-17)

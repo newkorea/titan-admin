@@ -290,7 +290,7 @@ function add_notification(){
         html: '' +
               '<div class="form-group tal">'+
               '<label>플랫폼</label>'+
-		      '<select class="form-control" id="platform" name="platform">'+
+		      '<select class="form-control" id="platform" name="platform" onchange="toggleUserEmails();">'+
 		        '<option value="All">All</option>'+
 		        '<option value="User">User</option>'+
 		        '<option value="Windows">Windows</option>'+
@@ -298,6 +298,10 @@ function add_notification(){
 		        '<option value="Android">Android</option>'+
 		        '<option value="iOS">iOS</option>'+
 		      '</select>'+
+              '</div>'+
+              '<div class="form-group tal" id="user_emails_wrap" style="display:none;">'+
+              '<label class="fz12">대상 유저 이메일 <small style="color:#888;">(여러 명은 쉼표 또는 줄바꿈으로 구분)</small></label>'+
+              '<textarea id="user_emails" class="form-control" style="height:80px;" placeholder="user1@example.com, user2@example.com"></textarea>'+
               '</div>'+
               '<div class="form-group tal">'+
               '<label class="fz12">종료 날짜</label>'+
@@ -318,7 +322,8 @@ function add_notification(){
         confirmButtonText: '등록',
         cancelButtonText: "닫기",
         confirmButtonColor: swalColor('base'),
-        showCancelButton: true
+        showCancelButton: true,
+        didOpen: function() { toggleUserEmails(); }
     }).then(function (result){
         if (result.value) {
             var content_ko = $('#content_ko').val();
@@ -326,6 +331,7 @@ function add_notification(){
             var content_zh = $('#content_zh').val();
             var end_date = $('#end_date').val();
             var platform = $('#platform').val();
+            var user_emails = $('#user_emails').val();
             var currentDate = new Date();
             var endDate = new Date(end_date);
             if (content_ko == "" || content_en == "" || content_zh == "" || end_date == "") {
@@ -337,6 +343,13 @@ function add_notification(){
                   type: 'error',
                   confirmButtonColor: swalColor('error')
                 })
+        	} else if (platform == 'User' && user_emails.trim() == '') {
+        		Swal.fire({
+                  title: '',
+                  text: '대상 유저 이메일을 입력해주세요.',
+                  type: 'error',
+                  confirmButtonColor: swalColor('error')
+                })
         	} else {
 	            $.post("/api/v1/create/notification", {
 	                csrfmiddlewaretoken: csrf_token,
@@ -344,13 +357,24 @@ function add_notification(){
 	                content_en: content_en,
 	                content_zh: content_zh,
 	                end_date: end_date,
-	                platform: platform
+	                platform: platform,
+	                user_emails: user_emails
 	            })
 	            .done(function (data) {
 	                if (data.result == 200) {
+	                    var msg = data.text || '등록되었습니다.';
+	                    if (data.user_results && data.user_results.length > 0) {
+	                        var ok = data.user_results.filter(function(r){ return r.status == 'ok'; }).length;
+	                        var fail = data.user_results.filter(function(r){ return r.status != 'ok'; });
+	                        msg += '\n\n유저 추가: ' + ok + '명 성공';
+	                        if (fail.length > 0) {
+	                            msg += ', ' + fail.length + '명 실패';
+	                            fail.forEach(function(f){ msg += '\n  - ' + f.email + ': ' + f.reason; });
+	                        }
+	                    }
 	                    Swal.fire({
-	                      title: data.title,
-	                      text: data.text,
+	                      title: data.title || '성공',
+	                      text: msg,
 	                      type: 'success',
 	                      confirmButtonColor: swalColor('success')
 	                    })
@@ -368,6 +392,13 @@ function add_notification(){
         	}
         }
     })
+}
+function toggleUserEmails() {
+    var sel = document.getElementById('platform');
+    var wrap = document.getElementById('user_emails_wrap');
+    if (sel && wrap) {
+        wrap.style.display = sel.value === 'User' ? 'block' : 'none';
+    }
 }
 function add_user(notification_id){
     var csrf_token = $('#csrf_token').html();

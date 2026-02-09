@@ -30,17 +30,90 @@ logger = logging.getLogger(__name__)  # 로그 설정
 
 @csrf_exempt
 def api_check_recent_payments(request):
-    return JsonResponse({'hasRecentPayments': False})
+    """최근 24시간 이내 승인된 결제가 있는지 확인하는 API.
+
+    동일 사용자(이메일) 기준으로 최근 24시간 이내 승인(status='A')된
+    알리페이/위챗 결제가 있으면 결제 내역 + 계정 정보를 반환한다.
+    """
+    if 'id' not in request.session:
+        return JsonResponse({'hasRecentPayments': False})
+
+    user_id = request.session['id']
+    req_type = request.POST.get('type', '')  # 'A' or 'W'
+
+    try:
+        user = TblUser.objects.get(id=user_id)
+        email = user.email
+    except Exception:
+        return JsonResponse({'hasRecentPayments': False})
+
+    # 24시간 전 기준
+    since = datetime.datetime.now() - datetime.timedelta(hours=24)
+
+    # 최근 24시간 내 승인된 알리/위챗 결제 조회
+    # status='A'(관리자승인) 또는 'S'(결제완료) 모두 승인 처리된 건
+    approved_today = TblSendHistory.objects.filter(
+        user_id=user_id,
+        status__in=['A', 'S'],
+        type__in=['A', 'W'],
+        accept_date__gte=since
+    ).order_by('-id')
+
+    if not approved_today.exists():
+        return JsonResponse({'hasRecentPayments': False})
+
+    # 가장 최근 승인 건
+    latest = approved_today.first()
+
+    # 만료일, 동시접속수 조회
+    expire_str = ''
+    sim_use = ''
+    try:
+        expire_dt = my_radius_time(email, 'str')
+        if expire_dt:
+            expire_str = expire_dt
+    except Exception:
+        pass
+    try:
+        sim = my_radius_session(email)
+        if sim:
+            sim_use = str(sim)
+    except Exception:
+        pass
+
+    # 오늘 승인 내역 목록
+    approved_list = []
+    for item in approved_today[:5]:
+        approved_list.append({
+            'id': item.id,
+            'session': str(item.session),
+            'month_type': str(item.month_type),
+            'krw': str(item.krw),
+            'type': item.type,
+            'accept_date': item.accept_date.strftime('%Y-%m-%d %H:%M') if item.accept_date else '',
+            'product_name': item.product_name or '',
+        })
+
+    return JsonResponse({
+        'hasRecentPayments': True,
+        'email': email,
+        'expiration': expire_str,
+        'simultaneous_use': sim_use,
+        'approved_count': approved_today.count(),
+        'approved_list': approved_list,
+        'latest': approved_list[0] if approved_list else {},
+    })
 
 
 @csrf_exempt
 def api_preview_session_change(request):
-    """세션/기간 변경 시 남은 기간 변환과 예상 만료일을 미리 안내하는 API.
+    """세션 수 변경 시, 기존 만료일과 변경 후/결제 후 예상 만료일을 미리 안내.
+
+    단순 버전을 유지하되, 날짜 계산을 giveServiceTime 로직과 최대한 맞춰서
+    '텍스트용으로만' 수행한다.
+
     - 입력: session(신규), month_type, optional target_user_id
-    - 출력: { result:200, show:bool, message, details:{old_session, remain_days, converted_days, expected_expire_date} }
-    조건:
-      * 로그인 필요
-      * 현재 만료일이 미래이고 old_session != new_session 인 경우에만 show=True
+    - 출력: { result:200, show:bool, message, details:{...} }
     """
     if 'id' not in request.session:
         return JsonResponse({'result': 403, 'message': 'Not logged in'})
@@ -51,7 +124,7 @@ def api_preview_session_change(request):
     except Exception:
         return JsonResponse({'result': 400, 'message': 'Invalid parameters'})
 
-    # 결제 대상 사용자 식별 (본인 또는 서브계정)
+    # 결제 대상 사용자 식별 (본인 또는 서브계정) - 기존 로직 그대로 사용
     target_user_id = request.POST.get('target_user_id')
     user_id = request.session['id']
     target_user = TblUser.objects.get(id=user_id)
@@ -73,14 +146,16 @@ def api_preview_session_change(request):
 
     email = target_user.email
 
-    # 현재 세션/만료일 조회
+    LANGUAGE_CODE = getattr(request, 'LANGUAGE_CODE', 'ko') or 'ko'
+
+    # 현재 세션/만료일 조회 (my_radius_time 은 naive datetime 반환)
     old_session = my_radius_session(email)
     expire_dt = my_radius_time(email, 'datetime')
 
     # Fallback: 라디우스 정보가 비어있으면 DB 이력으로 추정
     if old_session is None:
         try:
-            last_paid = TblSendHistory.objects.filter(user_id=target_user.id, status__in=['A','S']).order_by('-id').first()
+            last_paid = TblSendHistory.objects.filter(user_id=target_user.id, status__in=['A', 'S']).order_by('-id').first()
             if last_paid:
                 old_session = int(last_paid.session)
         except Exception:
@@ -89,103 +164,118 @@ def api_preview_session_change(request):
         try:
             last_st = TblServiceTime.objects.filter(user_id=target_user.id).order_by('-id').first()
             if last_st and last_st.after_time:
-                expire_dt = last_st.after_time  # 그대로 사용하고 이후 단계에서 tz 정규화
+                expire_dt = last_st.after_time
         except Exception:
             pass
 
-    if old_session is None or expire_dt is None:
-        # 정보 부족 시 미리보기 스킵
-        logger.info('preview_skip: no_data user=%s old_session=%s expire=%s new_session=%s month_type=%s', email, old_session, expire_dt, new_session, month_type)
-        return JsonResponse({'result': 200, 'show': False, 'details': {'reason': 'NO_DATA'}})
-
     try:
-        old_session = int(old_session)
+        old_session = int(old_session) if old_session is not None else None
     except Exception:
-        return JsonResponse({'result': 200, 'show': False})
+        old_session = None
 
-    # 만료가 지났거나 세션이 동일하면 안내 불필요
-    tz = timezone('Asia/Seoul')
-    # 표준화: 모두 KST 기준의 naive 로 비교/연산
-    def to_naive_local(dt):
-        if dt is None:
-            return None
-        if getattr(dt, 'tzinfo', None):
-            try:
-                return dt.astimezone(tz).replace(tzinfo=None)
-            except Exception:
-                return dt.replace(tzinfo=None)
-        return dt
-
-    now_local = datetime.datetime.now(tz).replace(tzinfo=None)
-    expire_local = to_naive_local(expire_dt)
-
-    if expire_local is None:
-        logger.info('preview_skip: expire_dt None after normalization user=%s', email)
-        return JsonResponse({'result': 200, 'show': False, 'details': {'reason': 'NO_EXPIRE'}})
-
-    try:
-        expired_or_equal = (expire_local <= now_local) or (old_session == new_session)
-    except TypeError:
-        # 안전장치: 비교 오류 시 단순안내로 진행
-        expired_or_equal = (old_session == new_session)
-
-    if expired_or_equal:
-        # 만료되었거나 동일세션: 만료되었지만 세션이 실제로 바뀌는지 재확인 후 안내 생성 가능
-        reason_code = 'EXPIRED_OR_EQUAL'
-        if old_session != new_session:
-            # 남은기간 정보가 없거나 만료라 변환 계산 없음 -> 단순 안내만
-            month_label_map = {1: '1개월', 2: '2개월', 3: '3개월', 6: '6개월', 12: '12개월'}
-            month_label = month_label_map.get(month_type, f"{month_type}개월")
-            simple_msg = (
-                f"동시접속사용수가 달라집니다. 기존 {old_session}기기에서 {new_session}기기로 변경됩니다. 남은기간이 없거나 계산할 수 없어 변환 안내를 생략하고 바로 {new_session}기기 {month_label}이 추가 적용됩니다."\
-            )
-            logger.info('preview_simple: user=%s old=%s new=%s remain=0 reason=%s', email, old_session, new_session, reason_code)
-            return JsonResponse({'result': 200, 'show': True, 'message': simple_msg, 'details': {
+    # 세션 정보가 없거나, 기존/신규 세션이 같으면 안내 필요 없음
+    if old_session is None or old_session == new_session:
+        logger.info('preview_simple_skip: user=%s old=%s new=%s', email, old_session, new_session)
+        return JsonResponse({
+            'result': 200,
+            'show': False,
+            'details': {
                 'old_session': old_session,
                 'new_session': new_session,
-                'remain_days': 0,
-                'converted_days': 0,
-                'expected_expire_date': None,
-                'reason': reason_code
-            }})
-        logger.info('preview_hide: user=%s old=%s new=%s reason=%s', email, old_session, new_session, reason_code)
-        return JsonResponse({'result': 200, 'show': False, 'details': {
-            'old_session': old_session,
-            'new_session': new_session,
-            'reason': reason_code
-        }})
+                'reason': 'NO_CHANGE_OR_NO_DATA'
+            }
+        })
 
-    # 남은 일수 계산: 올림 적용 (부분일 포함)
-    total_seconds = (expire_local - now_local).total_seconds()
-    diff_days = int((total_seconds + 86399) // 86400)  # ceil without math import
-    if diff_days < 0:
-        return JsonResponse({'result': 200, 'show': False})
+    # 여기서부터는 안내용 날짜 계산 (timezone 은 모두 naive 로 통일)
+    now_dt = datetime.datetime.now()
 
-    # 세션 환산 비율 (기존 giveServiceTime 로직 일반화)
+    def format_date(dt, lang):
+        if dt is None:
+            return ''
+        if lang == 'ko':
+            return dt.strftime('%Y년 %m월 %d일')
+        elif lang == 'en':
+            return dt.strftime('%Y-%m-%d')
+        elif lang == 'zh':
+            return dt.strftime('%Y年%m月%d日')
+        return dt.strftime('%Y-%m-%d')
+
+    # 만료일이 없으면 "기존 만료일 없음" 으로 안내
+    if expire_dt is None:
+        after_pay_expire = get_add_time(now_dt, month_type, 0)
+        after_pay_str = format_date(after_pay_expire, LANGUAGE_CODE)
+
+        if LANGUAGE_CODE == 'en':
+            msg = (
+                f"The number of concurrent sessions will change. It will change from {old_session} device(s) to {new_session} device(s). "
+                f"We cannot check the current remaining period/expiry date. After this payment, the expected expiry date will be {after_pay_str}."
+            )
+        elif LANGUAGE_CODE == 'zh':
+            msg = (
+                f"同时在线设备数将发生变化，将从 {old_session} 台变为 {new_session} 台。"
+                f"目前无法确认剩余时间/到期日。付款完成后，预计到期日为 {after_pay_str}。"
+            )
+        else:  # ko
+            msg = (
+                f"동시접속사용수가 달라집니다. 기존 {old_session}기기에서 {new_session}기기로 변경됩니다. "
+                f"현재는 남은기간/만료일 정보를 확인할 수 없으며, 결제 후 예상 만료일은 {after_pay_str} 입니다."
+            )
+
+        logger.info('preview_date_noexpire: user=%s old=%s new=%s', email, old_session, new_session)
+        return JsonResponse({
+            'result': 200,
+            'show': True,
+            'message': msg,
+            'details': {
+                'old_session': old_session,
+                'new_session': new_session,
+                'current_expire': None,
+                'expected_expire_after_change': None,
+                'expected_expire_after_payment': after_pay_expire.strftime('%Y-%m-%d %H:%M:%S'),
+                'reason': 'SESSION_CHANGED_NOEXPIRE'
+            }
+        })
+
+    # 여기부터는 expire_dt, now_dt 둘 다 naive datetime 이라고 가정
+    diff = expire_dt - now_dt
+    remain_days = diff.days
+    if remain_days < 0:
+        remain_days = 0
+
+    # giveServiceTime 의 비율과 동일하게 환산
     scale = {1: 83, 2: 140, 3: 220, 4: 280, 5: 350, 6: 433}
-    if old_session not in scale or new_session not in scale:
-        return JsonResponse({'result': 200, 'show': False})
+    converted_remain_days = remain_days
+    if old_session in scale and new_session in scale and remain_days > 0:
+        converted_remain_days = int(remain_days * scale[old_session] / scale[new_session])
 
-    converted_days = int(diff_days * scale[old_session] / scale[new_session])
+    changed_expire = now_dt + datetime.timedelta(days=converted_remain_days)
+    after_pay_expire = get_add_time(changed_expire, month_type, 0)
 
-    # 예상 만료일 계산: now + months + converted_days
-    expected_expire = now_local + relativedelta(months=month_type) + datetime.timedelta(days=converted_days)
-    # 한국식 표기: M월 D일
-    expected_label = f"{expected_expire.month}월 {expected_expire.day}일"
+    current_expire_str = format_date(expire_dt, LANGUAGE_CODE)
+    changed_expire_str = format_date(changed_expire, LANGUAGE_CODE)
+    after_pay_str = format_date(after_pay_expire, LANGUAGE_CODE)
 
-    # 증감 표현
-    verb = '줄어들고' if converted_days < diff_days else ('늘어나고' if converted_days > diff_days else '변함없고')
+    if LANGUAGE_CODE == 'en':
+        msg = (
+            f"The number of concurrent sessions will change. Based on your current {old_session} device(s), the current expiry date is {current_expire_str}. "
+            f"If you change to {new_session} device(s), the expected expiry date after converting the remaining period will be {changed_expire_str}, "
+            f"and after completing this payment for {new_session} device(s) and {month_type} month(s), the expected expiry date will be {after_pay_str}."
+        )
+    elif LANGUAGE_CODE == 'zh':
+        msg = (
+            f"同时在线设备数将发生变化。以当前 {old_session} 台设备为基准，目前到期日为 {current_expire_str}。"
+            f"如果变更为 {new_session} 台，根据剩余时间换算后的预计到期日为 {changed_expire_str}，"
+            f"完成本次 {new_session} 台 {month_type} 个月的付款后，预计到期日为 {after_pay_str}。"
+        )
+    else:  # ko
+        msg = (
+            f"동시접속사용수가 달라집니다. 기존 {old_session}기기 기준 현재 만료일자는 {current_expire_str} 입니다. "
+            f"이를 {new_session}기기로 변경하면 남은기간 환산 기준 예상 만료일은 {changed_expire_str} 가 되며, "
+            f"이번에 선택하신 {new_session}기기 {month_type}개월 결제까지 완료하면 예상 만료일은 {after_pay_str} 가 됩니다."
+        )
 
-    month_label_map = {1: '1개월', 2: '2개월', 3: '3개월', 6: '6개월', 12: '12개월'}
-    month_label = month_label_map.get(month_type, f"{month_type}개월")
-
-    msg = (
-        f"동시접속사용수가 달라집니다. 현재 {old_session}기기로 {diff_days}일의 기간이 남아있습니다만 "
-        f"{new_session}기기로 변경되면서 {converted_days}일로 {verb} {new_session}기기로 변경된후 "
-        f"{new_session}기기 {month_label}이 추가됩니다. {new_session}기기 변경및 추가입금후 예상 만료일자는 {expected_label}입니다."
-    )
-
-    logger.info('preview_normal: user=%s old=%s new=%s remain=%s converted=%s expected=%s', email, old_session, new_session, diff_days, converted_days, expected_expire)
+    logger.info('preview_date_full: user=%s old=%s new=%s lang=%s current=%s changed=%s after_pay=%s',
+                email, old_session, new_session, LANGUAGE_CODE, current_expire_str, changed_expire_str, after_pay_str)
     return JsonResponse({
         'result': 200,
         'show': True,
@@ -193,10 +283,11 @@ def api_preview_session_change(request):
         'details': {
             'old_session': old_session,
             'new_session': new_session,
-            'remain_days': diff_days,
-            'converted_days': converted_days,
-            'expected_expire_date': expected_expire.strftime('%Y-%m-%d %H:%M:%S'),
-            'reason': 'NORMAL'
+            'current_expire': expire_dt.strftime('%Y-%m-%d %H:%M:%S'),
+            'expected_expire_after_change': changed_expire.strftime('%Y-%m-%d %H:%M:%S'),
+            'expected_expire_after_payment': after_pay_expire.strftime('%Y-%m-%d %H:%M:%S'),
+            'reason': 'SESSION_CHANGED_WITH_DATES',
+            'language': LANGUAGE_CODE
         }
     })
 
@@ -733,3 +824,30 @@ def api_create_payment_for(request):
     )
 
     return JsonResponse({'result': 200, 'payment_id': history.id, 'data': {'email': target_user.email}})
+
+# 국제 결제 방식(WeChat, Alipay) 활성화 여부 읽기 (사용자 페이지용)
+@csrf_exempt
+def api_get_payment_methods(request):
+    try:
+        # 공유 설정 파일에서 읽기
+        config_file = '/home/newkorea/project/payment_methods_config.json'
+        wechat_enabled = True
+        alipay_enabled = True
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                wechat_enabled = config.get('wechat_enabled', True)
+                alipay_enabled = config.get('alipay_enabled', True)
+        
+        return JsonResponse({
+            'result': 200,
+            'wechat_enabled': wechat_enabled,
+            'alipay_enabled': alipay_enabled
+        })
+    except Exception as e:
+        return JsonResponse({
+            'result': 400,
+            'wechat_enabled': True,
+            'alipay_enabled': True
+        })

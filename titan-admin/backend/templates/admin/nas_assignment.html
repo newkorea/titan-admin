@@ -1,0 +1,357 @@
+## -*- coding: utf-8 -*-
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    /* ===== 요약 카드 ===== */
+    .summary-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .summary-card {
+        flex: 1; min-width: 220px; border-radius: 10px; padding: 20px; color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12); position: relative; overflow: hidden;
+        cursor: pointer; transition: transform 0.15s;
+    }
+    .summary-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+    .summary-card .card-icon { position: absolute; right: 16px; top: 16px; font-size: 36px; opacity: 0.3; }
+    .summary-card .card-value { font-size: 28px; font-weight: 800; }
+    .summary-card .card-sub { font-size: 14px; opacity: 0.9; margin-top: 2px; }
+    .summary-card .card-label { font-size: 13px; opacity: 0.8; margin-top: 6px; }
+    .bg-ct { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .bg-cm { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .bg-cu { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+    .bg-info { background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); }
+
+    /* ===== 섹션 ===== */
+    .section-header {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 18px; font-weight: 700; margin: 24px 0 12px;
+        border-bottom: 2px solid #eee; padding-bottom: 8px;
+    }
+    .section-header .tc-dot {
+        display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+    }
+    .check-time { font-size: 12px; color: #888; font-weight: 400; margin-left: auto; }
+
+    /* ===== 서버 테이블 ===== */
+    .server-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .server-table th {
+        background: #f8f9fa; padding: 10px 8px; text-align: left;
+        border-bottom: 2px solid #dee2e6; font-weight: 700; white-space: nowrap;
+    }
+    .server-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .server-table tr:hover { background: #f5f7fa; }
+    .server-table tr.top-server { background: #fff9e6; }
+    .server-table tr.top-server:hover { background: #fff3cd; }
+    .server-table tr.not-assignable { opacity: 0.5; }
+
+    .rank-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 800; color: #fff;
+    }
+    .rank-1 { background: #f1c40f; color: #333; }
+    .rank-2 { background: #95a5a6; }
+    .rank-3 { background: #cd7f32; }
+    .rank-other { background: #bdc3c7; color: #555; }
+
+    .isp-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 11px; font-weight: 700;
+    }
+    .isp-KT { background: #ffe0e0; color: #c0392b; }
+    .isp-SK { background: #e0f0ff; color: #2980b9; }
+    .isp-LG { background: #e0ffe0; color: #27ae60; }
+    .isp-EM { background: #f0e0ff; color: #8e44ad; }
+
+    .conn-bar {
+        display: inline-block; height: 8px; border-radius: 4px; min-width: 4px;
+        background: #3498db; vertical-align: middle;
+    }
+    .conn-bar.full { background: #e74c3c; }
+
+    .ping-val { font-weight: 600; }
+    .ping-good { color: #27ae60; }
+    .ping-ok { color: #f39c12; }
+    .ping-bad { color: #e74c3c; }
+    .ping-na { color: #bbb; font-style: italic; }
+
+    .score-val { font-weight: 700; font-size: 14px; }
+
+    .auto-off { color: #e74c3c; font-weight: 700; }
+    .auto-on { color: #27ae60; }
+
+    /* ===== 탭 ===== */
+    .tc-tabs { display: flex; gap: 0; border-bottom: 2px solid #dee2e6; margin-bottom: 0; }
+    .tc-tab {
+        padding: 10px 24px; cursor: pointer; font-weight: 600; font-size: 14px;
+        border: 2px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0;
+        color: #888; transition: all 0.15s; margin-bottom: -2px;
+    }
+    .tc-tab:hover { color: #333; background: #f8f9fa; }
+    .tc-tab.active { color: #333; background: #fff; border-color: #dee2e6; }
+
+    .tc-panel { display: none; }
+    .tc-panel.active { display: block; }
+
+    /* ===== 필터 바 ===== */
+    .filter-bar {
+        display: flex; gap: 12px; align-items: center; margin: 12px 0;
+        padding: 10px 16px; background: #f8f9fa; border-radius: 8px;
+    }
+    .filter-bar input {
+        padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px;
+        font-size: 13px; width: 200px;
+    }
+    .filter-bar select {
+        padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px;
+        font-size: 13px;
+    }
+    .filter-bar label { font-size: 13px; color: #666; display: flex; align-items: center; gap: 4px; }
+
+    /* ===== 로딩 ===== */
+    .loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.8); display: flex; align-items: center;
+        justify-content: center; z-index: 9999; font-size: 18px; color: #666;
+    }
+    .loading-overlay .spinner {
+        width: 40px; height: 40px; border: 4px solid #ddd;
+        border-top-color: #3498db; border-radius: 50%;
+        animation: spin 0.8s linear infinite; margin-right: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</%block>
+
+<%block name="content">
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div> 데이터 로딩 중...
+</div>
+
+<div id="main-content" style="display:none;">
+    <h4 style="margin-bottom:4px;">서버 배정 현황</h4>
+    <p style="color:#888; font-size:13px; margin-bottom:16px;">
+        중국 3대 통신사별 NAS 서버 배정 현황 (Ping 실측 기반)
+        <span id="last-check-time" class="check-time" style="margin-left:12px;"></span>
+    </p>
+
+    <!-- 요약 카드 -->
+    <div class="summary-cards" id="summary-cards"></div>
+
+    <!-- 탭 -->
+    <div class="tc-tabs" id="tc-tabs"></div>
+
+    <!-- 탭 패널 -->
+    <div id="tc-panels"></div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+var csrf_token = '${request.META.get("CSRF_COOKIE", "")}';
+$(function() {
+    loadAssignmentData();
+});
+
+function loadAssignmentData() {
+    $.getJSON('/api/v1/read/nas_assignment', function(resp) {
+        $('#loading-overlay').hide();
+        $('#main-content').show();
+        if (resp.result !== 200) { alert('데이터 로딩 실패'); return; }
+        renderAll(resp);
+    }).fail(function() {
+        $('#loading-overlay').html('<span style="color:#e74c3c;">데이터 로딩 실패</span>');
+    });
+}
+
+function renderAll(data) {
+    var telecoms = data.telecoms;
+    var maxConn = data.max_conn || 70;
+    if (data.last_check) {
+        $('#last-check-time').html('<i class="fa fa-clock-o"></i> 마지막 측정: ' + data.last_check);
+    }
+
+    // 요약 카드
+    var cardHtml = '';
+    var tcOrder = ['ct', 'cm', 'cu'];
+    var tcLabels = {ct: 'China Telecom', cm: 'China Mobile', cu: 'China Unicom'};
+    var bgClasses = {ct: 'bg-ct', cm: 'bg-cm', cu: 'bg-cu'};
+    var icons = {ct: 'fa-globe', cm: 'fa-mobile', cu: 'fa-link'};
+
+    tcOrder.forEach(function(tc) {
+        var d = telecoms[tc];
+        var top = d.top_server;
+        cardHtml += '<div class="summary-card ' + bgClasses[tc] + '" onclick="switchTab(\'' + tc + '\')">'
+            + '<div class="card-icon"><i class="fa ' + icons[tc] + '"></i></div>'
+            + '<div class="card-value">' + (top ? top.name : '-') + '</div>'
+            + '<div class="card-sub">' + (top ? 'Ping ' + top.ping_avg.toFixed(1) + 'ms / Score ' + top.score.toFixed(1) : 'No data') + '</div>'
+            + '<div class="card-label">' + d.name + ' — 배정가능 ' + d.assignable_count + '대 / 전체 ' + d.total_count + '대</div>'
+            + '</div>';
+    });
+
+    // 전체 현황 카드
+    var totalAssignable = 0;
+    tcOrder.forEach(function(tc) { totalAssignable += telecoms[tc].assignable_count; });
+    cardHtml += '<div class="summary-card bg-info">'
+        + '<div class="card-icon"><i class="fa fa-bar-chart"></i></div>'
+        + '<div class="card-value">' + maxConn + '</div>'
+        + '<div class="card-sub">서버당 최대 접속자</div>'
+        + '<div class="card-label">Score = Ping×0.7 + 접속자×0.3</div>'
+        + '</div>';
+
+    $('#summary-cards').html(cardHtml);
+
+    // 탭
+    var tabHtml = '';
+    tcOrder.forEach(function(tc, i) {
+        var d = telecoms[tc];
+        tabHtml += '<div class="tc-tab' + (i === 0 ? ' active' : '') + '" data-tc="' + tc + '" onclick="switchTab(\'' + tc + '\')">'
+            + '<span class="tc-dot" style="background:' + d.color + ';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;"></span>'
+            + d.name + ' (' + d.assignable_count + ')</div>';
+    });
+    $('#tc-tabs').html(tabHtml);
+
+    // 패널
+    var panelHtml = '';
+    tcOrder.forEach(function(tc, i) {
+        var d = telecoms[tc];
+        panelHtml += '<div class="tc-panel' + (i === 0 ? ' active' : '') + '" id="panel-' + tc + '">';
+        panelHtml += '<div class="filter-bar">'
+            + '<input type="text" placeholder="서버명 / IP 검색..." oninput="filterTable(\'' + tc + '\', this.value)">'
+            + '<label><input type="checkbox" checked onchange="toggleAutoOnly(\'' + tc + '\', this.checked)"> 배정대상(is_auto=1)만</label>'
+            + '</div>';
+        panelHtml += renderTable(d.servers, maxConn, tc);
+        panelHtml += '</div>';
+    });
+    $('#tc-panels').html(panelHtml);
+}
+
+function renderTable(servers, maxConn, tc) {
+    var html = '<table class="server-table" id="table-' + tc + '">'
+        + '<thead><tr>'
+        + '<th>순위</th><th>서버명</th><th>IP</th><th>한국ISP</th>'
+        + '<th>Ping Avg</th><th>Ping Min</th><th>Ping Max</th>'
+        + '<th>접속자</th><th>Score</th><th>is_auto</th><th>상태</th>'
+        + '</tr></thead><tbody>';
+
+    servers.forEach(function(s) {
+        var cls = '';
+        if (s.rank === 1) cls = 'top-server';
+        else if (!s.is_assignable) cls = 'not-assignable';
+
+        html += '<tr class="' + cls + '" data-name="' + s.name + '" data-ip="' + s.ip + '" data-auto="' + s.is_auto + '">';
+
+        // 순위
+        if (s.rank) {
+            var rc = s.rank <= 3 ? 'rank-' + s.rank : 'rank-other';
+            html += '<td><span class="rank-badge ' + rc + '">' + s.rank + '</span></td>';
+        } else {
+            html += '<td style="color:#ccc;">-</td>';
+        }
+
+        // 서버명
+        html += '<td><strong>' + s.name + '</strong></td>';
+        html += '<td style="font-size:12px;color:#666;">' + s.ip + '</td>';
+
+        // 한국ISP
+        html += '<td><span class="isp-badge isp-' + s.kr_isp + '">' + s.kr_isp + '</span></td>';
+
+        // Ping
+        ['ping_avg', 'ping_min', 'ping_max'].forEach(function(key) {
+            if (s[key] !== null) {
+                var pc = s[key] < 50 ? 'ping-good' : s[key] < 80 ? 'ping-ok' : 'ping-bad';
+                html += '<td class="ping-val ' + pc + '">' + s[key].toFixed(1) + 'ms</td>';
+            } else {
+                html += '<td class="ping-na">N/A</td>';
+            }
+        });
+
+        // 접속자
+        var connPct = Math.min((s.conn_count / maxConn) * 100, 100);
+        var barCls = s.conn_count >= maxConn ? 'conn-bar full' : 'conn-bar';
+        html += '<td>' + s.conn_count + '/' + maxConn
+            + ' <span class="' + barCls + '" style="width:' + connPct + 'px;"></span></td>';
+
+        // Score
+        if (s.score !== null) {
+            html += '<td class="score-val">' + s.score.toFixed(1) + '</td>';
+        } else {
+            html += '<td class="ping-na">-</td>';
+        }
+
+// is_auto (clickable toggle)
+        html += '<td><span class="auto-toggle ' + (s.is_auto ? 'auto-on' : 'auto-off') + '" '
+            + 'data-name="' + s.name + '" style="cursor:pointer;" title="클릭하여 토글">'
+            + (s.is_auto ? '● ON' : '○ OFF') + '</span></td>';
+
+        // 상태
+        if (s.is_assignable) {
+            if (s.rank === 1) {
+                html += '<td><span style="background:#2ecc71;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">★ 배정중</span></td>';
+            } else {
+                html += '<td><span style="color:#27ae60;font-size:12px;">대기</span></td>';
+            }
+        } else {
+            var reason = '';
+            if (!s.is_auto) reason = 'auto OFF';
+            else if (s.ping_avg === null) reason = 'ping 없음';
+            else if (s.conn_count >= maxConn) reason = '접속자 초과';
+            html += '<td><span style="color:#e74c3c;font-size:12px;">' + reason + '</span></td>';
+        }
+
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    return html;
+}
+
+function switchTab(tc) {
+    $('.tc-tab').removeClass('active');
+    $('.tc-tab[data-tc="' + tc + '"]').addClass('active');
+    $('.tc-panel').removeClass('active');
+    $('#panel-' + tc).addClass('active');
+}
+
+function filterTable(tc, keyword) {
+    var kw = keyword.toLowerCase();
+    $('#table-' + tc + ' tbody tr').each(function() {
+        var name = $(this).data('name').toLowerCase();
+        var ip = $(this).data('ip').toLowerCase();
+        $(this).toggle(name.indexOf(kw) >= 0 || ip.indexOf(kw) >= 0);
+    });
+}
+
+function toggleAutoOnly(tc, checked) {
+    $('#table-' + tc + ' tbody tr').each(function() {
+        if (checked && $(this).data('auto') == 0) {
+            $(this).hide();
+        } else {
+            $(this).show();
+        }
+    });
+}
+
+// is_auto ON/OFF 토글
+$(document).on('click', '.auto-toggle', function() {
+    var $el = $(this);
+    var name = $el.data('name');
+    if (!confirm(name + ' 서버의 is_auto를 변경하시겠습니까?')) return;
+    $.post('/api/v1/update/toggle_is_auto', {csrfmiddlewaretoken: csrf_token, name: name}, function(resp) {
+        if (resp.result === 200) {
+            var isOn = resp.is_auto === 1;
+            $el.removeClass('auto-on auto-off').addClass(isOn ? 'auto-on' : 'auto-off')
+               .html(isOn ? '● ON' : '○ OFF');
+            $el.closest('tr').data('auto', resp.is_auto);
+            if (isOn && resp.ping_triggered) {
+                // ping 측정이 트리거됨 → 안내 후 30초 뒤 새로고침
+                alert(name + ' → ON 전환 완료!\nping 측정이 시작되었습니다. 약 30초 후 자동 새로고침됩니다.');
+                setTimeout(loadAssignmentData, 30000);
+            } else {
+                setTimeout(loadAssignmentData, 500);
+            }
+        } else {
+            alert('변경 실패: ' + (resp.msg || ''));
+        }
+    }).fail(function() { alert('서버 통신 오류'); });
+});
+</script>
+</%block>

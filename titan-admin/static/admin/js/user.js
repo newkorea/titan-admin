@@ -421,6 +421,7 @@ function change_password(user_id){
 }
 // 활성화 버튼 클릭
 function change_active(user_id){
+    var footerHtml = '<button type="button" id="swal-send-verify" class="swal2-styled" style="margin:0 5px; background-color:#3b8ddb;" onclick="return __sendVerifyForId('+user_id+');">인증메일전송</button>';
     swal.fire({
         title: '활성화 상태 변경',
         html: ''+
@@ -438,9 +439,15 @@ function change_active(user_id){
         confirmButtonText: '수정',
         cancelButtonText: '취소',
         confirmButtonColor: swalColor('base'),
-        showCancelButton: true
+        showCancelButton: true,
+        showDenyButton: true,
+        denyButtonText: '인증메일전송',
+        footer: footerHtml
     }).then(function (result) {
-        if (result.value) {
+        if (result.isDenied) {
+            __sendVerifyForId(user_id);
+        }
+        else if (result.value) {
             var change_active = $("#change_active").val();
             var change_reason = $("#change_reason").val();
             $.post("/api/v1/update/user_active", {
@@ -469,6 +476,86 @@ function change_active(user_id){
             })
         }
     })
+}
+
+// Helper: find user email from current datatable cache
+function __findUserEmailById(uid){
+    try{
+        var rows = datatable.rows().data();
+        for (var i=0; i<rows.length; i++){
+            var r = rows[i];
+            if (String(r.id) === String(uid)){
+                return r.email;
+            }
+        }
+    }catch(e){}
+    return null;
+}
+
+// Admin resend verification for specific user id
+function __sendVerifyForId(uid){
+    var email = __findUserEmailById(uid);
+    function doSend(targetEmail){
+        if (!targetEmail){
+            Swal.fire({
+                title: '알림',
+                text: '이메일을 입력해주세요',
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            });
+            return;
+        }
+        Swal.fire({title:'전송 중...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+        $.post('/api/v1/send/verify_email', {
+            csrfmiddlewaretoken: csrf_token,
+            email: targetEmail
+        }).done(function(res){
+            Swal.close();
+            if (res && res.result == 200){
+                Swal.fire({
+                    title: res.title,
+                    text: res.text,
+                    type: 'success',
+                    confirmButtonColor: swalColor('success')
+                });
+            } else {
+                Swal.fire({
+                    title: (res && res.title) || '알림',
+                    text: (res && res.text) || '메일 전송 실패',
+                    type: 'error',
+                    confirmButtonColor: swalColor('error')
+                });
+            }
+        }).fail(function(){
+            Swal.close();
+            Swal.fire({
+                title: '네트워크 오류',
+                text: '다시 시도해주세요',
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            });
+        });
+    }
+
+    if (email){
+        doSend(email);
+    } else {
+        // Fallback prompt when email not found in current page cache
+        Swal.fire({
+            title: '인증메일 전송',
+            input: 'text',
+            inputLabel: '이메일을 입력하세요',
+            inputValue: '',
+            showCancelButton: true,
+            confirmButtonText: '전송',
+            cancelButtonText: '취소',
+            confirmButtonColor: swalColor('base')
+        }).then(function(r){
+            if (r.value){
+                doSend(r.value);
+            }
+        });
+    }
 }
 
 // 탈퇴 버튼 클릭

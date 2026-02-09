@@ -195,6 +195,11 @@
                                 <span>${user.email}</span>
                             </div>
                             <div class="ml-auto">
+                                % if user.is_active == 0:
+                                <button onclick="sendVerifyEmail()" class="btn btn-lg btn-block solid-btn border-radius" style="font-size:14px;padding:8px; margin-bottom: 5px; background:#28a745; border-color:#28a745;">
+                                    메일인증
+                                </button>
+                                % endif
                                 <button onclick="location.href='/forgot_password?email=${user.email}'" class="btn btn-lg btn-block solid-btn border-radius" style="font-size:14px;padding:8px; margin-bottom: 5px;">
 				                    ${_('Change password')}
 				                </button>
@@ -405,6 +410,7 @@
                                         <td>${sa.get('regist_date').strftime('%Y-%m-%d %H:%M:%S') if sa.get('regist_date') else ''}</td>
                                         <td class="text-center">
                                             <button class="btn btn-primary btn-sm" data-subid="${sa['id']}" data-subemail="${sa['email']}" onclick="goExtendPrice(this)">${_('Request Extension')}</button>
+                                            <button class="btn btn-secondary btn-sm ml-1" data-subid="${sa['id']}" data-subemail="${sa['email']}" onclick="changeSubPassword(this)">${_('Change Password')}</button>
                                         </td>
                                     </tr>
                                     % endfor
@@ -418,11 +424,11 @@
                         </div>
                         <div class="mt-3 subaccount-action-box text-center">
                             <div class="action-text">
-                                ${base_email} 기준으로 기존 가입 계정을 편입하거나 신규 하위계정을 생성할 수 있습니다.
+                                ${_('You can merge existing accounts or create new sub-accounts based on')} ${base_email}.
                             </div>
                             <div class="action-buttons">
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="btn_add_existing_subaccount">기존계정추가</button>
-                                <button type="button" class="btn btn-primary btn-sm" id="btn_add_new_subaccount" data-next-email="${next_sub_email}">새하위계정추가</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btn_add_existing_subaccount">${_('Add Existing Account')}</button>
+                                <button type="button" class="btn btn-primary btn-sm" id="btn_add_new_subaccount" data-next-email="${next_sub_email}">${_('Add New Sub-Account')}</button>
                             </div>
                         </div>
                     </div>
@@ -496,11 +502,12 @@ $(document).on('click', '#btn_add_existing_subaccount', function(){
 
 $(document).on('click', '#btn_add_new_subaccount', function(){
     const nextEmail = $(this).data('next-email');
+    var _nl = '${LANGUAGE_CODE}';
     if (!nextEmail) {
         Swal.fire({
             icon: 'error',
-            title: '오류',
-            text: '추천 이메일 정보를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.',
+            title: _nl==='en'?'Error':(_nl==='zh'?'错误':'오류'),
+            text: _nl==='en'?'Cannot load recommended email info. Please refresh and try again.':(_nl==='zh'?'无法加载推荐邮箱信息，请刷新后重试。':'추천 이메일 정보를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.'),
             confirmButtonColor: '#8a4cf7'
         });
         return;
@@ -509,12 +516,14 @@ $(document).on('click', '#btn_add_new_subaccount', function(){
 });
 
 function showExistingAccountPopup() {
+    var _el = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _el==='en'?en:(_el==='zh'?zh:ko); };
     const popupHtml = [
     '<div class="existing-account-form">',
-    '<h3 class="existing-account-title">기존계정추가</h3>',
-        '<p>이미 가입된 계정 정보를 입력하면 서브계정으로 편입됩니다.</p>',
+    '<h3 class="existing-account-title">' + _t('기존계정추가','添加现有账户','Add Existing Account') + '</h3>',
+        '<p>' + _t('이미 가입된 계정 정보를 입력하면 서브계정으로 편입됩니다.','输入已注册的账户信息即可将其添加为子账户。','Enter the credentials of an existing account to add it as a sub-account.') + '</p>',
         '<div class="form-group">',
-        '<label class="pb-1">이메일</label>',
+        '<label class="pb-1">' + _t('이메일','电子邮件','Email') + '</label>',
     '<div class="input-group input-group-merge">',
     '<span class="input-border"></span>',
     '<div class="input-icon"><span class="ti-email color-primary"></span></div>',
@@ -522,11 +531,11 @@ function showExistingAccountPopup() {
         '</div>',
         '</div>',
         '<div class="form-group">',
-        '<label class="pb-1">비밀번호</label>',
+        '<label class="pb-1">' + _t('비밀번호','密码','Password') + '</label>',
     '<div class="input-group input-group-merge">',
     '<span class="input-border"></span>',
     '<div class="input-icon"><span class="ti-lock color-primary"></span></div>',
-    '<input id="mypage_add_password" type="password" class="form-control" placeholder="비밀번호를 입력하세요" autocomplete="new-password" value="">',
+    '<input id="mypage_add_password" type="password" class="form-control" placeholder="' + _t('비밀번호를 입력하세요','请输入密码','Enter password') + '" autocomplete="new-password" value="">',
         '</div>',
         '</div>',
         '</div>'
@@ -535,8 +544,8 @@ function showExistingAccountPopup() {
     Swal.fire({
         html: popupHtml,
         showCancelButton: true,
-        confirmButtonText: '확인',
-        cancelButtonText: '취소',
+        confirmButtonText: _t('확인','确认','Confirm'),
+        cancelButtonText: _t('취소','取消','Cancel'),
         reverseButtons: true,
         focusConfirm: false,
         width: '34rem',
@@ -547,7 +556,7 @@ function showExistingAccountPopup() {
             const email = $('#mypage_add_email').val().trim();
             const pw = $('#mypage_add_password').val();
             if (!email || !pw) {
-                Swal.showValidationMessage('이메일과 비밀번호를 입력하세요');
+                Swal.showValidationMessage(_t('이메일과 비밀번호를 입력하세요','请输入电子邮件和密码','Please enter email and password'));
                 return false;
             }
             return {email: email, password: pw};
@@ -567,7 +576,7 @@ function showExistingAccountPopup() {
         }
     }).then(function(result){
         if (result.value) {
-            Swal.fire({title:'처리 중...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+            Swal.fire({title:_t('처리 중...','处理中...','Processing...'),allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
             $.post('/api_prepare_extension_target', {
                 csrfmiddlewaretoken: csrfToken,
                 email: result.value.email,
@@ -577,8 +586,8 @@ function showExistingAccountPopup() {
                     const successEmail = res.target_email || result.value.email;
                     Swal.fire({
                         icon: 'success',
-                        title: '등록 완료',
-                        text: successEmail + ' 서브계정으로 추가되었습니다.',
+                        title: _t('등록 완료','注册完成','Registration Complete'),
+                        text: successEmail + _t(' 서브계정으로 추가되었습니다.',' 已添加为子账户。',' has been added as a sub-account.'),
                         confirmButtonColor: '#8a4cf7'
                     }).then(function(){
                         window.location.reload();
@@ -587,7 +596,7 @@ function showExistingAccountPopup() {
                     const message = buildExistingAccountError(res);
                     Swal.fire({
                         icon: 'error',
-                        title: '실패',
+                        title: _t('실패','失败','Failed'),
                         text: message,
                         confirmButtonColor: '#8a4cf7'
                     }).then(function(){
@@ -597,8 +606,8 @@ function showExistingAccountPopup() {
             }).fail(function(){
                 Swal.fire({
                     icon: 'error',
-                    title: '네트워크 오류',
-                    text: '다시 시도해주세요.',
+                    title: _t('네트워크 오류','网络错误','Network Error'),
+                    text: _t('다시 시도해주세요.','请重试。','Please try again.'),
                     confirmButtonColor: '#8a4cf7'
                 }).then(function(){
                     showExistingAccountPopup();
@@ -609,23 +618,145 @@ function showExistingAccountPopup() {
 }
 
 function buildExistingAccountError(res) {
+    var _el = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _el==='en'?en:(_el==='zh'?zh:ko); };
     if (!res) {
-        return '오류가 발생했습니다.';
+        return _t('오류가 발생했습니다.','发生了错误。','An error occurred.');
     }
     if (res.code === 'SELF_ASSIGN') {
-        return '자신의 계정은 하위계정으로 추가할 수 없습니다.';
+        return _t('자신의 계정은 하위계정으로 추가할 수 없습니다.','无法将自己的账户添加为子账户。','You cannot add your own account as a sub-account.');
     }
     if (res.code === 'ALREADY_SUB') {
-        return '이미 다른 계정의 하위계정이어서 편입할 수 없습니다.';
+        return _t('이미 다른 계정의 하위계정이어서 편입할 수 없습니다.','该账户已是其他账户的子账户，无法添加。','This account is already a sub-account of another account.');
     }
     if (res.code === 'HAS_CHILD') {
-        return '이미 다른 하위계정을 보유하고 있어 편입할 수 없습니다.';
+        return _t('이미 다른 하위계정을 보유하고 있어 편입할 수 없습니다.','该账户已拥有子账户，无法添加。','This account already has sub-accounts and cannot be merged.');
     }
-    return res.text || res.message || '오류가 발생했습니다.';
+    return res.text || res.message || _t('오류가 발생했습니다.','发生了错误。','An error occurred.');
+}
+
+function sendVerifyEmail(){
+    var _vl = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _vl==='en'?en:(_vl==='zh'?zh:ko); };
+    Swal.fire({title:_t('처리 중...','处理中...','Processing...'),allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+    $.post('/api_send_verify_email', {
+        csrfmiddlewaretoken: csrfToken
+    }).done(function(data){
+        Swal.close();
+        if (data && data.result == 200){
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'success',
+                confirmButtonColor: swalColor('success')
+            });
+        } else {
+            Swal.fire({
+                title: (data && data.title) || _t('오류','错误','Error'),
+                text: (data && data.text) || _t('메일 전송에 실패했습니다. 다시 시도해주세요.','邮件发送失败，请重试。','Failed to send email. Please try again.'),
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            });
+        }
+    }).fail(function(){
+        Swal.close();
+        Swal.fire({
+            title: _t('네트워크 오류','网络错误','Network Error'),
+            text: _t('다시 시도해주세요.','请重试。','Please try again.'),
+            type: 'error',
+            confirmButtonColor: swalColor('error')
+        });
+    });
 }
 
 // Session deletion functions have been removed as the session list is now read-only.
 
 // Password change form removed
+
+function changeSubPassword(el) {
+    const subId = $(el).data('subid');
+    const subEmail = $(el).data('subemail');
+    var _cl = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _cl==='en'?en:(_cl==='zh'?zh:ko); };
+    
+    // Check if it's a "created" sub-account (ends with _number)
+    const isCreatedSub = /_\d+$/.test(subEmail);
+    
+    if (isCreatedSub) {
+        // Case A: Created Sub-account -> Master Password required
+        Swal.fire({
+            title: _t('하위계정 비밀번호 변경','更改子账户密码','Change Sub-Account Password'),
+            html: 
+                '<p class="text-muted mb-3">' + _t('마스터 계정의 비밀번호를 입력하여 하위계정의 비밀번호를 변경합니다.','输入主账户密码以更改子账户密码。','Enter master account password to change sub-account password.') + '</p>' +
+                '<input id="master_password" type="password" class="form-control mb-2" placeholder="' + _t('마스터 계정 비밀번호','主账户密码','Master account password') + '">' +
+                '<input id="new_sub_password" type="password" class="form-control mb-2" placeholder="' + _t('새로운 비밀번호','新密码','New password') + '">' +
+                '<input id="new_sub_password_confirm" type="password" class="form-control" placeholder="' + _t('새로운 비밀번호 확인','确认新密码','Confirm new password') + '">',
+            showCancelButton: true,
+            confirmButtonText: _t('변경','更改','Change'),
+            cancelButtonText: _t('취소','取消','Cancel'),
+            confirmButtonColor: '#8a4cf7',
+            preConfirm: () => {
+                const masterPw = $('#master_password').val();
+                const newPw = $('#new_sub_password').val();
+                const newPwConfirm = $('#new_sub_password_confirm').val();
+                
+                if (!masterPw || !newPw || !newPwConfirm) {
+                    Swal.showValidationMessage(_t('모든 필드를 입력해주세요.','请填写所有字段。','Please fill in all fields.'));
+                    return false;
+                }
+                if (newPw !== newPwConfirm) {
+                    Swal.showValidationMessage(_t('새로운 비밀번호가 일치하지 않습니다.','新密码不匹配。','New passwords do not match.'));
+                    return false;
+                }
+                return { masterPw, newPw };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({title:_t('처리 중...','处理中...','Processing...'),allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+                $.post('/api_change_sub_password_direct', {
+                    csrfmiddlewaretoken: csrfToken,
+                    target_user_id: subId,
+                    master_password: result.value.masterPw,
+                    new_password: result.value.newPw
+                }).done(function(res) {
+                    if (res.result === 200) {
+                        Swal.fire(_t('성공','成功','Success'), _t('비밀번호가 변경되었습니다.','密码已更改。','Password has been changed.'), 'success');
+                    } else {
+                        Swal.fire(_t('실패','失败','Failed'), res.text || _t('오류가 발생했습니다.','发生了错误。','An error occurred.'), 'error');
+                    }
+                }).fail(function() {
+                    Swal.fire(_t('오류','错误','Error'), _t('서버 통신 오류','服务器通信错误','Server communication error'), 'error');
+                });
+            }
+        });
+    } else {
+        // Case B: Existing Account -> Email Verification required
+        Swal.fire({
+            title: _t('비밀번호 변경','更改密码','Change Password'),
+            text: _t('기존 계정의 비밀번호를 변경하려면 해당 이메일로 인증이 필요합니다. 인증 메일을 발송하시겠습니까?','要更改现有账户的密码，需要通过电子邮件验证。是否发送验证邮件？','To change the password for an existing account, email verification is required. Send verification email?'),
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: _t('인증 메일 발송','发送验证邮件','Send Verification Email'),
+            cancelButtonText: _t('취소','取消','Cancel'),
+            confirmButtonColor: '#8a4cf7'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({title:_t('처리 중...','处理中...','Processing...'),allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+                $.post('/api_send_password_reset_for_sub', {
+                    csrfmiddlewaretoken: csrfToken,
+                    target_user_id: subId
+                }).done(function(res) {
+                    if (res.result === 200) {
+                        Swal.fire(_t('발송 완료','发送完成','Sent'), _t('해당 이메일로 비밀번호 변경 링크가 발송되었습니다.','密码重置链接已发送至该邮箱。','A password reset link has been sent to the email.'), 'success');
+                    } else {
+                        Swal.fire(_t('실패','失败','Failed'), res.text || _t('오류가 발생했습니다.','发生了错误。','An error occurred.'), 'error');
+                    }
+                }).fail(function() {
+                    Swal.fire(_t('오류','错误','Error'), _t('서버 통신 오류','服务器通信错误','Server communication error'), 'error');
+                });
+            }
+        });
+    }
+}
 </script>
 </%block>

@@ -118,6 +118,7 @@ def api_create_notification(request):
     content_zh = request.POST.get('content_zh')
     platform = request.POST.get('platform')
     end_date = request.POST.get('end_date')
+    user_emails = request.POST.get('user_emails', '')
     # 존재여부 체크
     sh = TblNotice(
         content_ko = content_ko,
@@ -128,7 +129,32 @@ def api_create_notification(request):
         delete_yn = 'N',
         regist_date = datetime.datetime.now())
     sh.save()
-    return JsonResponse({'result': 200})
+
+    # User 플랫폼인 경우 이메일 목록으로 유저 자동 추가
+    user_results = []
+    if platform == 'User' and user_emails.strip():
+        import re
+        emails = [e.strip() for e in re.split(r'[,\n;\s]+', user_emails) if e.strip()]
+        for email in emails:
+            try:
+                u1 = TblUser.objects.get(email=email)
+                # 중복 체크
+                existing = TblNoticeUser.objects.filter(notice_id=sh.id, user_id=u1.id).count()
+                if existing > 0:
+                    user_results.append({'email': email, 'status': 'duplicate', 'reason': '이미 추가됨'})
+                else:
+                    TblNoticeUser(
+                        user_id=u1.id,
+                        notice_id=sh.id,
+                        regist_date=datetime.datetime.now()
+                    ).save()
+                    user_results.append({'email': email, 'status': 'ok'})
+            except TblUser.DoesNotExist:
+                user_results.append({'email': email, 'status': 'not_found', 'reason': '존재하지 않는 이메일'})
+            except Exception as e:
+                user_results.append({'email': email, 'status': 'error', 'reason': str(e)})
+
+    return JsonResponse({'result': 200, 'user_results': user_results})
 
 # (2023-05-25) Added By Zhao
 @allow_admin

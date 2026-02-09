@@ -526,12 +526,20 @@ def api_login_forgotpassword(request):
         try:
             # 이메일 전송 로직
             print('INFO -> SMTP logic start')
+
+            # Support alias login IDs like "softcan@naver.com_1" by sending the email to the base mailbox
+            # while the activation link targets the actual account email (with suffix).
+            base_email = u1.email
+            m = re.match(r"^(.+@[^@]+?)_\d+$", u1.email)
+            if m:
+                base_email = m.group(1)
+
             if LANGUAGE_CODE == 'en':
-                send_email(u1.email, 2, 'en')
+                send_email(base_email, 2, 'en', account_email=u1.email)
             elif LANGUAGE_CODE == 'zh':
-                send_email(u1.email, 2, 'zh')
+                send_email(base_email, 2, 'zh', account_email=u1.email)
             else:
-                send_email(u1.email, 2, 'ko')
+                send_email(base_email, 2, 'ko', account_email=u1.email)
             print('INFO -> SMTP logic end')
             title, text = get_swal(LANGUAGE_CODE, 'SUCCESS_FORGOT')
             return JsonResponse({'result': 200, 'title': title, 'text': text})
@@ -656,6 +664,49 @@ def api_reset_password(request):
 
     u1 = TblUser.objects.get(email=target_email)
     u1.password = regist_hash_password
+    # 비활성 계정도 비밀번호 재설정 시 활성화 처리
+    if getattr(u1, 'is_active', 0) == 0:
+        u1.is_active = 1
+        try:
+            u1.active_date = datetime.datetime.now()
+        except Exception:
+            pass
     u1.save()
     title, text = get_swal(LANGUAGE_CODE, 'SUCCESS_RESET')
     return JsonResponse({'result': 200, 'title': title, 'text': text})
+
+
+# 메일 인증 재전송 (사용자용)
+@csrf_protect
+def api_send_verify_email(request):
+    LANGUAGE_CODE = request.LANGUAGE_CODE
+    if 'id' not in request.session:
+        return JsonResponse({'result': 403, 'title': _('Notification'), 'text': _('Please log in.')})
+
+    try:
+        u1 = TblUser.objects.get(id=request.session['id'], delete_yn='N')
+    except TblUser.DoesNotExist:
+        return JsonResponse({'result': 404, 'title': _('Error!'), 'text': _('User not found.')})
+
+    try:
+        base_email = u1.email
+        m = re.match(r"^(.+@[^@]+?)_\d+$", u1.email)
+        if m:
+            base_email = m.group(1)
+
+        lang = 'ko'
+        if LANGUAGE_CODE == 'en':
+            lang = 'en'
+        elif LANGUAGE_CODE == 'zh':
+            lang = 'zh'
+
+        send_email(base_email, 1, lang, account_email=u1.email)
+        title, text = get_swal(LANGUAGE_CODE, 'SUCCESS_SIGNUP')
+        return JsonResponse({'result': 200, 'title': title, 'text': text})
+    except Exception as err:
+        logger.exception('SMTP send failed for verification email to %s', u1.email)
+        return JsonResponse({
+            'result': 500,
+            'title': _('Error!'),
+            'text': _('Failed to send email. Please contact the administrator.')
+        }, status=500)

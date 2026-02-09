@@ -221,6 +221,15 @@ def approve_payment_api(request):
                 payment_request.api_date = api_datetime_naive
                 payment_request.save()
 
+                # 같은 사용자의 나머지 대기/취소 건 정리 (R=요청, U=사용자취소, C=관리자취소)
+                TblSendHistory.objects.filter(
+                    user_id=user_id,
+                    status__in=['R', 'U', 'C']
+                ).exclude(id=payment_request.id).update(
+                    status='D',
+                    cancel_date=datetime.datetime.now()
+                )
+
                 log_entry.status = "APPROVED"
                 log_entry.result_message = "결제 승인 완료"
                 log_entry.save()
@@ -630,9 +639,19 @@ def api_read_bank(request):
         'x.id',
         'y.email',
         'y.username',
+        'y.regist_date',
         'x.session',
         'x.month_type',
-        'x.krw'
+        'x.krw',
+        'x.status',
+        'x.regist_date',
+        'x.status',
+        'x.cancel_date',
+        'x.status',
+        'x.accept_date',
+        'x.status',
+        'x.refund_date',
+        'x.type'
     ]
 
     # 데이터테이블즈 - 카운팅 쿼리
@@ -695,7 +714,7 @@ def api_read_bank(request):
 # (2020-03-18) 25-08-25 수정 
 @allow_admin
 def api_create_bank(request):
-    note_email = request.POST.get('note_email')
+    note_email = (request.POST.get('note_email') or '').strip()  # ✅ 앞뒤 공백 제거
     note_session = request.POST.get('note_session')
     note_month = request.POST.get('note_month')
     note_type = (request.POST.get('note_type') or '').strip().upper()   # ✅ 정규화
@@ -711,6 +730,24 @@ def api_create_bank(request):
         user = TblUser.objects.get(email=note_email)
     except BaseException as err:
         title, text = get_swal('NOT_USER')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    force = (request.POST.get('force') or '').upper() == 'Y'
+    # 이메일 활성화 (본인인증) 여부 확인: 비활성 상태면 안내 후 409 반환, force=Y 면 통과
+    try:
+        if user.is_active != 1 and not force:  # 1 이 활성(본인인증 완료)로 가정
+            # 프론트에서 '계속연장' 버튼을 제공하여 재요청(force=Y) 가능
+            title, text = get_swal('NOT_ACTIVE')
+            # 클라이언트가 먼저 "등록 확인" 단계에서 경고 문구를 추가로 보여줄 수 있도록 플래그 전달
+            return JsonResponse({'result': 409, 'title': title, 'text': text, 'can_force': True, 'inactive': True})
+        # 연장불가 / 지역차단 상태(X) 인 경우 생성 자체를 막음 (override 불가)
+        if (user.black_yn or '').upper() == 'X':
+            title = '알림'
+            text = '연장불가 상태의 사용자입니다 (black_yn = X)'
+            return JsonResponse({'result': 500, 'title': title, 'text': text})
+    except BaseException:
+        # 예외시 오류 처리
+        title, text = get_swal('UNKNOWN_ERROR')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
         
     price = getProductPirce(note_session, note_month, 'KRW')
@@ -760,6 +797,14 @@ def api_update_bank(request):
             history.accept_date = datetime.datetime.now()
             # 시간충전
             giveServiceTime(user_id, session, month_type)
+            # 같은 사용자의 나머지 대기/취소 건 정리 (R=요청, U=사용자취소, C=관리자취소)
+            TblSendHistory.objects.filter(
+                user_id=user_id,
+                status__in=['R', 'U', 'C']
+            ).exclude(id=history.id).update(
+                status='D',
+                cancel_date=datetime.datetime.now()
+            )
         elif type == 'Z':
             history.refund_date = datetime.datetime.now()
             # 시간초기화
@@ -798,220 +843,121 @@ def api_delete_by_status(request):
 
 # (2022-08-08)
 def refundPayment(user_id, session, month_type):
-    # 유저객체 획득
+    """환불 처리: tbl_service_time에서 해당 결제의 '변경 전' 상태를 찾아서 복원한다.
+
+    giveServiceTime이 결제 시 기록한 tbl_service_time의 prev_time_rad(결제 전 만료일),
+    diff 필드(세션 변경 정보 포함)를 사용하여 결제 직전 상태로 되돌린다.
+    """
+    import re as _re
     print("================ User Refund ===============", "")
-    u1 = TblUser.objects.get(id = user_id)
+    u1 = TblUser.objects.get(id=user_id)
     email = u1.email
 
-    # Radcheck의 session 변경 (merge 로직)
-    rc = Radcheck.objects.using('radius').filter(
-        username = email,
-        attribute = 'Simultaneous-Use'
-    )
+    # 이 결제에 해당하는 tbl_service_time 기록 찾기
+    # giveServiceTime이 만든 기록: diff 에 '구매' 또는 시간(분) 값, reason=''
+    # 가장 최근 구매 기록을 찾는다
+    purchase_st = TblServiceTime.objects.filter(
+        user_id=user_id
+    ).exclude(
+        diff='환불'
+    ).exclude(
+        diff='회원탈퇴'
+    ).exclude(
+        reason='추천보상'
+    ).order_by('-id').first()
 
-    print("Email               ====> ", email)
-    # Radcheck의 time 변경 (merge 로직)
-    rce = Radcheck.objects.using('radius').filter(
-        username = email,
-        attribute = 'Expiration'
-    )
-    my_time = my_expire_time(email, 'datetime')
-    print("My Time             ====> ", my_time)
-    if len(rce) == 0:
-        rcei = Radcheck(
-            username = email,
-            attribute = 'Expiration',
-            op = ':=',
-            value = '01 Jan 2010 00:00:00 KST'
+    if purchase_st and purchase_st.prev_time_rad:
+        # 결제 전 만료일 복원
+        restore_time_rad = purchase_st.prev_time_rad
+        restore_time = str(purchase_st.prev_time)
+        print("Restore From ServiceTime ID  ====> ", purchase_st.id)
+        print("Restore Time (rad)           ====> ", restore_time_rad)
+
+        # 세션 변경이 있었는지 확인: diff 에 "구매 + 세션 변경(X->Y)" 패턴
+        restore_session = None
+        diff_str = str(purchase_st.diff) if purchase_st.diff else ''
+        session_match = _re.search(r'세션 변경\((\d+)->(\d+)\)', diff_str)
+        if session_match:
+            restore_session = session_match.group(1)  # 변경 전 세션으로 복원
+            print("Restore Session              ====> ", restore_session)
+
+        # Radcheck Expiration 복원
+        rce = Radcheck.objects.using('radius').filter(
+            username=email,
+            attribute='Expiration'
         )
-        rcei.save(using='radius')
-        prev_time = ''
-        prev_time_rad = ''
-    else:
-        if my_time > datetime.datetime.now():
-            rcu = rc.first()
-            if int(rcu.value) == 1:
-                if int(session) == 1:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 2:
-                    new_days = int(int(month_type) * 30.4 * 140 / 83) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 3:
-                    new_days = int(int(month_type) * 30.4 * 220 / 83) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 4:
-                    new_days = int(int(month_type) * 30.4 * 280 / 83) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 5:
-                    new_days = int(int(month_type) * 30.4 * 350 / 83) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 6:
-                    new_days = int(int(month_type) * 30.4 * 433 / 83) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-            elif int(rcu.value) == 2:
-                if int(session) == 1:
-                    new_days = int(int(month_type) * 30.4 * 83 / 140) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 2:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 3:
-                    new_days = int(int(month_type) * 30.4 * 220 / 140) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 4:
-                    new_days = int(int(month_type) * 30.4 * 280 / 140) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 5:
-                    new_days = int(int(month_type) * 30.4 * 350 / 140) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 6:
-                    new_days = int(int(month_type) * 30.4 * 433 / 140) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-            elif int(rcu.value) == 3:
-                if int(session) == 1:
-                    new_days = int(int(month_type) * 30.4 * 83 / 220) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 2:
-                    new_days = int(int(month_type) * 30.4 * 140 / 220) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 3:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 4:
-                    new_days = int(int(month_type) * 30.4 * 280 / 220) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 5:
-                    new_days = int(int(month_type) * 30.4 * 350 / 220) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 6:
-                    new_days = int(int(month_type) * 30.4 * 433 / 220) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-            elif int(rcu.value) == 4:
-                if int(session) == 1:
-                    new_days = int(int(month_type) * 30.4 * 83 / 280) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 2:
-                    new_days = int(int(month_type) * 30.4 * 140 / 280) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 3:
-                    new_days = int(int(month_type) * 30.4 * 220 / 280) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 4:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 5:
-                    new_days = int(int(month_type) * 30.4 * 350 / 280) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 6:
-                    new_days = int(int(month_type) * 30.4 * 433 / 280) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-            elif int(rcu.value) == 5:
-                if int(session) == 1:
-                    new_days = int(int(month_type) * 30.4 * 83 / 350) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 2:
-                    new_days = int(int(month_type) * 30.4 * 140 / 350) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 3:
-                    new_days = int(int(month_type) * 30.4 * 220 / 350) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 4:
-                    new_days = int(int(month_type) * 30.4 * 280 / 350) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 5:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 6:
-                    new_days = int(int(month_type) * 30.4 * 433 / 350) 
-                    add_time = get_time_other_session(my_time, new_days)
-            elif int(rcu.value) == 6:
-                if int(session) == 1:
-                    new_days = int(int(month_type) * 30.4 * 83 / 433) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 2:
-                    new_days = int(int(month_type) * 30.4 * 140 / 433) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 3:
-                    new_days = int(int(month_type) * 30.4 * 220 / 433) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 4:
-                    new_days = int(int(month_type) * 30.4 * 280 / 433) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                elif int(session) == 6:
-                    add_time = get_old_time(my_time, month_type)
-                    print("Deleted Months        ====> ", month_type)
-                elif int(session) == 5:
-                    new_days = int(int(month_type) * 30.4 * 350 / 433) 
-                    add_time = get_time_other_session(my_time, new_days)
-                    print("Deleted Days        ====> ", new_days)
-                
-            print("User Session        ====> ", rcu.value)
-            print("Refund Session        ====> ", session)
-            
-            print("New Time            ====> ", add_time)
+        if rce.exists():
             rceu = rce.first()
             prev_time_rad = rceu.value
             prev_time = dec_radius_time(rceu.value)
-            after_time = add_time
-            after_time_rad = change_date(add_time)
-            
-            rceu.value = change_date(add_time)
+            rceu.value = restore_time_rad
             rceu.save(using='radius')
-        else :
-            print("Expired             ====> ", "TRUE")
+        else:
+            rcei = Radcheck(
+                username=email,
+                attribute='Expiration',
+                op=':=',
+                value=restore_time_rad
+            )
+            rcei.save(using='radius')
+            prev_time_rad = ''
+            prev_time = ''
+
+        # 세션 복원 (세션 변경이 있었던 경우)
+        if restore_session:
+            rc = Radcheck.objects.using('radius').filter(
+                username=email,
+                attribute='Simultaneous-Use'
+            )
+            if rc.exists():
+                rcu = rc.first()
+                print("Session Before Refund        ====> ", rcu.value)
+                rcu.value = int(restore_session)
+                rcu.save(using='radius')
+                print("Session After Refund         ====> ", restore_session)
+
+        after_time = restore_time
+        after_time_rad = restore_time_rad
+    else:
+        # fallback: tbl_service_time 기록이 없는 경우 만료 처리
+        print("No purchase ServiceTime record found, setting expired")
+        rce = Radcheck.objects.using('radius').filter(
+            username=email,
+            attribute='Expiration'
+        )
+        if rce.exists():
             rceu = rce.first()
             prev_time_rad = rceu.value
             prev_time = dec_radius_time(rceu.value)
-            after_time = '2010-01-01 00:00:00'
-            after_time_rad = '01 Jan 2010 00:00:00 KST'
-            
             rceu.value = '01 Jan 2010 00:00:00 KST'
             rceu.save(using='radius')
-            
-    #time_diff = after_time - prev_time
-    #time_diff = round((time_diff).total_seconds()/60)
-    
+        else:
+            rcei = Radcheck(
+                username=email,
+                attribute='Expiration',
+                op=':=',
+                value='01 Jan 2010 00:00:00 KST'
+            )
+            rcei.save(using='radius')
+            prev_time_rad = ''
+            prev_time = ''
+        after_time = '2010-01-01 00:00:00'
+        after_time_rad = '01 Jan 2010 00:00:00 KST'
+
+    # 환불 기록 저장
     reason = "환불"
     st = TblServiceTime(
-        user_id = user_id,
-        prev_time = prev_time,
-        prev_time_rad = prev_time_rad,
-        after_time = after_time,
-        after_time_rad = after_time_rad,
-        diff = reason,
-        reason = reason,
-        regist_date = datetime.datetime.now())
+        user_id=user_id,
+        prev_time=prev_time,
+        prev_time_rad=prev_time_rad,
+        after_time=after_time,
+        after_time_rad=after_time_rad,
+        diff=reason,
+        reason=reason,
+        regist_date=datetime.datetime.now()
+    )
     st.save()
-    
+
     print("=============== User Refund END ============", "")
     
 
@@ -1053,16 +999,81 @@ def api_read_ready_data(request):
 def api_check_session(request):
     email = request.POST.get('email')
     session = request.POST.get('session')
+    # 이메일 활성화 상태 확인 (없으면 False)
+    inactive = False
+    try:
+        u = TblUser.objects.get(email=email)
+        inactive = (u.is_active != 1)
+    except BaseException:
+        inactive = False
     rc = Radcheck.objects.using('radius').filter(
         username = email,
         attribute = 'Simultaneous-Use'
     )
     if len(rc) == 0:
         print("New User")
-        return JsonResponse({'result': 400})
+        return JsonResponse({'result': 400, 'inactive': inactive})
     else:
         rcu = rc.first()
         if rcu.value != session :
-            return JsonResponse({'result': 200, 'old_session':rcu.value})
+            return JsonResponse({'result': 200, 'old_session':rcu.value, 'inactive': inactive})
         else :
-            return JsonResponse({'result': 400})  
+            return JsonResponse({'result': 400, 'inactive': inactive})
+
+# 국제 결제 방식(WeChat, Alipay) 활성화 여부 읽기
+@allow_admin
+def api_read_payment_methods(request):
+    try:
+        # 공유 설정 파일에서 읽기
+        config_file = '/home/newkorea/project/payment_methods_config.json'
+        wechat_enabled = True
+        alipay_enabled = True
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                wechat_enabled = config.get('wechat_enabled', True)
+                alipay_enabled = config.get('alipay_enabled', True)
+        
+        return JsonResponse({
+            'result': 200,
+            'wechat_enabled': wechat_enabled,
+            'alipay_enabled': alipay_enabled,
+            'title': '조회 성공',
+            'text': '결제 방식 설정을 조회했습니다.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'result': 400,
+            'title': '조회 실패',
+            'text': str(e)
+        })
+
+# 국제 결제 방식(WeChat, Alipay) 활성화 여부 업데이트
+@allow_admin
+def api_update_payment_methods(request):
+    try:
+        wechat_enabled = request.POST.get('wechat_enabled') == 'true'
+        alipay_enabled = request.POST.get('alipay_enabled') == 'true'
+        
+        # 공유 설정 파일에 저장
+        config_file = '/home/newkorea/project/payment_methods_config.json'
+        config = {
+            'wechat_enabled': wechat_enabled,
+            'alipay_enabled': alipay_enabled
+        }
+        
+        with open(config_file, 'w') as f:
+            json.dump(config, f)
+        
+        return JsonResponse({
+            'result': 200,
+            'title': '저장 성공',
+            'text': '결제 방식 설정이 저장되었습니다.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'result': 400,
+            'title': '저장 실패',
+            'text': str(e)
+        })  

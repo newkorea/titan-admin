@@ -651,6 +651,8 @@ class AESCipher(object):
 
     def encrypt(self, raw):
         raw = self._pad(raw)
+        if isinstance(raw, str):
+            raw = raw.encode('utf-8')
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CBC, iv)
         return base64.b64encode(iv + cipher.encrypt(raw))

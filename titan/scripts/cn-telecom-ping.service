@@ -1,0 +1,14 @@
+[Unit]
+Description=NAS to China Telecom ping measurement
+
+[Service]
+Type=oneshot
+User=newkorea
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/usr/bin/python3 /home/newkorea/project/titan/scripts/cn_telecom_ping.py
+StandardOutput=append:/home/newkorea/project/titan/logs/cn_telecom_ping.log
+StandardError=append:/home/newkorea/project/titan/logs/cn_telecom_ping.log
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -33,15 +33,15 @@
                 <table class="table see-table" id="transaction-table" style="font-size:14px;">
                     <thead class="thead-light">
                         <tr>
-                          <th>번호</th>
-                          <th>상품</th>
-                          <th>세션</th>
-                          <th>시간</th>
-                          <th>금액</th>
-                          <th>상태표기</th>
-                          <th>결제구분</th>
-                          <th>요청시간</th>
-                          <th>거래명세서</th>
+                          <th>${_('No.')}</th>
+                          <th>${_('Product')}</th>
+                          <th>${_('Session')}</th>
+                          <th>${_('Period')}</th>
+                          <th>${_('Amount')}</th>
+                          <th>${_('Status')}</th>
+                          <th>${_('Payment Type')}</th>
+                          <th>${_('Request Time')}</th>
+                          <th>${_('Receipt')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,29 +64,32 @@
 $(document).ready(function () {
     console.log("🚀 transaction.html의 JS가 실행됨!");
 
+    var _tl = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _tl==='en'?en:(_tl==='zh'?zh:ko); };
+
     var paymentTypeMap = {
-        "creditcard": "한국신용카드",
-        "PLCreditCard": "해외신용카드",
+        "creditcard": _t('한국신용카드','韩国信用卡','Korea Credit Card'),
+        "PLCreditCard": _t('해외신용카드','国际信用卡','Intl Credit Card'),
         "PLUnionPay": "银联卡",
-        "WECHAT": "WECHAT",
-        "toss": "토스페이",
-        "kakaopay": "카카오페이",
-        "payco": "페이코",
+        "WECHAT": "WeChat",
+        "toss": _t('토스페이','Toss Pay','Toss Pay'),
+        "kakaopay": _t('카카오페이','Kakao Pay','Kakao Pay'),
+        "payco": _t('페이코','PAYCO','PAYCO'),
         "kftc": "KFTC",
-        "virtualaccount": "가상계좌",
-        "apple": "애플페이",
-        "ssgpay": "SSG페이",
-        "PLCreditCartMpi": "해외신용카드"
+        "virtualaccount": _t('가상계좌','虚拟账户','Virtual Account'),
+        "apple": _t('애플페이','Apple Pay','Apple Pay'),
+        "ssgpay": _t('SSG페이','SSG Pay','SSG Pay'),
+        "PLCreditCartMpi": _t('해외신용카드','国际信用卡','Intl Credit Card')
     };
 
     var statusMap = {
-        "N": "결제완료",
-        "A": "자동승인",
-        "C": "관리자취소",
-        "U": "사용자취소",
-        "R": "결제요청",
-        "Z": "환불완료",
-		"S": "관리자승인"
+        "N": _t('결제완료','支付完成','Payment Complete'),
+        "A": _t('자동승인','自动批准','Auto Approved'),
+        "C": _t('관리자취소','管理员取消','Admin Cancelled'),
+        "U": _t('사용자취소','用户取消','User Cancelled'),
+        "R": _t('결제요청','支付请求','Payment Requested'),
+        "Z": _t('환불완료','退款完成','Refund Complete'),
+		"S": _t('관리자승인','管理员批准','Admin Approved')
     };
 
     var datatable = $('#transaction-table').DataTable({
@@ -130,7 +133,7 @@ $(document).ready(function () {
             {
                 data: "tid",
                 render: function (data) {
-                    return data ? `<button class="btn btn-info show-receipt" data-tid="` + data + `">보기</button>` : `<button class="btn btn-secondary" disabled>없음</button>`;
+                    return data ? `<button class="btn btn-info show-receipt" data-tid="` + data + `">` + _t('보기','查看','View') + `</button>` : `<button class="btn btn-secondary" disabled>` + _t('없음','无','N/A') + `</button>`;
                 }
             }
         ]
@@ -146,7 +149,7 @@ $(document).ready(function () {
         console.log("📝 [DEBUG] 버튼 HTML:", $(this).prop('outerHTML'));
 
         if (!transaction_id || transaction_id.trim() === "") {
-            alert("⚠️ 이 거래에는 거래명세서가 없습니다.");
+            alert(_t('⚠️ 이 거래에는 거래명세서가 없습니다.','⚠️ 该交易没有交易明细。','⚠️ No receipt available for this transaction.'));
             return;
         }
 
@@ -163,9 +166,9 @@ $(document).ready(function () {
             success: function (response) {
                 console.log("✅ 거래명세서 응답:", response);
                 if (response.status === "success" && response.receipt_url) {
-                    window.open(response.receipt_url, "거래명세서", "width=800,height=600");
+                    window.open(response.receipt_url, _t('거래명세서','交易明细','Receipt'), "width=800,height=600");
                 } else {
-                    alert("⚠️ 거래명세서를 가져올 수 없습니다.");
+                    alert(_t('⚠️ 거래명세서를 가져올 수 없습니다.','⚠️ 无法获取交易明细。','⚠️ Unable to retrieve the receipt.'));
                     console.log("🚨 [DEBUG] 거래명세서 응답 상세:", response);
                 }
             },

@@ -168,10 +168,11 @@ function signup() {
     // 이메일 주소의 유효성을 확인
     if (!isValidEmail(regist_email)) {
         // 유효하지 않은 이메일 주소일 경우 사용자에게 알림
+        var _sl = '${LANGUAGE_CODE}';
         Swal.fire({
             icon: 'error',
-            title: 'Invalid Email Address',
-            text: 'Please enter a valid email address. 정확한 이메일형식으로 넣어주세요.',
+            title: _sl==='en'?'Invalid Email Address':(_sl==='zh'?'无效的电子邮件地址':'유효하지 않은 이메일 주소'),
+            text: _sl==='en'?'Please enter a valid email address.':(_sl==='zh'?'请输入有效的电子邮件地址。':'정확한 이메일형식으로 넣어주세요.'),
             confirmButtonColor: swalColor('error')
         });
         return;

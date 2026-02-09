@@ -585,3 +585,550 @@ msgstr "연장신청"
 
 
 
+
+# ===== FAQ Page Translations =====
+msgid "Frequently Asked Questions"
+msgstr "자주 묻는 질문"
+
+msgid "Download / Install"
+msgstr "다운로드 / 설치"
+
+msgid "Titan VPN is not available on the Google Play Store."
+msgstr "타이탄VPN은 구글 플레이스토어에서 검색되지 않습니다."
+
+msgid "Please install the APK directly using the method below."
+msgstr "아래 방법으로 직접 APK를 설치해주세요."
+
+msgid "Open the following URL in your phone browser"
+msgstr "스마트폰 브라우저에서 아래 주소 접속"
+
+msgid "Click [Download] → Download the APK file"
+msgstr "[다운로드] 버튼 클릭 → APK 파일 다운로드"
+
+msgid "Enable \"Unknown Sources\" and install"
+msgstr "'알 수 없는 소스 허용' 설정 후 설치"
+
+msgid "Settings → Security → Unknown Sources"
+msgstr "설정 → 보안 → 알 수 없는 소스 허용"
+
+msgid "Launch the app → Enter ID/Password → Select server → Connect"
+msgstr "앱 실행 → 아이디/비번 입력 → 서버 선택 → 연결"
+
+msgid "iPhone/iPad"
+msgstr "아이폰/아이패드"
+
+msgid "Search for \"Titan VPN\" on the App Store"
+msgstr "App Store에서 \"타이탄VPN\" 검색"
+
+msgid "Install and launch the app"
+msgstr "설치 후 앱 실행"
+
+msgid "Enter ID/Password → Select server → Connect"
+msgstr "아이디/비번 입력 → 서버 선택 → 연결"
+
+msgid "Titan VPN is not searchable with a China region Apple ID."
+msgstr "중국지역 Apple ID에서는 타이탄VPN이 검색되지 않습니다."
+
+msgid "Temporarily change your Apple ID region to Korea, or"
+msgstr "한국지역으로 Apple ID 지역을 일시 변경 후 설치하거나"
+
+msgid "Use a shared Apple ID provided by Titan. (Contact support for shared ID)"
+msgstr "타이탄에서 임시 제공하는 공유 Apple ID 사용 가능 (공유 ID 필요 시 상담사에 문의)"
+
+msgid "Windows PC"
+msgstr "윈도우 PC"
+
+msgid "Visit"
+msgstr "접속"
+
+msgid "in your PC browser"
+msgstr "PC 브라우저에서"
+
+msgid "Click [Windows Download] → Run the installer"
+msgstr "[Windows 다운로드] 클릭 → 설치파일 실행"
+
+msgid "After installation, enter ID/Password → Select server → Connect"
+msgstr "설치 완료 후 아이디/비번 입력 → 서버 선택 → 연결"
+
+msgid "MacBook"
+msgstr "맥북"
+
+msgid "Click [macOS Download] from the site above"
+msgstr "위 사이트에서 [macOS 다운로드] 클릭"
+
+msgid "Run the DMG file → Drag to Applications"
+msgstr "DMG 파일 실행 → Applications에 드래그"
+
+msgid "Launch the app → Enter ID/Password → Connect"
+msgstr "앱 실행 → 아이디/비번 입력 → 연결"
+
+msgid "If installation is blocked due to security:"
+msgstr "보안 문제로 설치가 안 될 경우:"
+
+msgid "Mac Settings → Privacy & Security → Click \"Open Anyway\" at the bottom"
+msgstr "맥 설정 → 개인정보 및 보안 → 하단에서 '확인 없이 열기' 클릭"
+
+msgid "If you cannot access the site from China, use the backup address"
+msgstr "중국에서 사이트 접속이 안 되시면 보조 주소를 이용해주세요"
+
+msgid "Payment / Renewal / Pricing"
+msgstr "결제 / 연장 / 가격"
+
+msgid "Products & Pricing"
+msgstr "상품 종류 및 가격"
+
+msgid "View pricing page"
+msgstr "가격표 보기"
+
+msgid "Korean Auto-Payment"
+msgstr "한국결제시스템 자동결제"
+
+msgid "Line"
+msgstr "라인"
+
+msgid "1 simultaneous connection"
+msgstr "1대 동시접속"
+
+msgid "2 simultaneous connections"
+msgstr "2대 동시접속"
+
+msgid "6 simultaneous connections"
+msgstr "6대 동시접속"
+
+msgid "from"
+msgstr ""
+
+msgid "month"
+msgstr "월"
+
+msgid "China Alipay / WeChat Pay"
+msgstr "중국 알리페이 / 위챗페이"
+
+msgid "Discounts available for 3/6/12-month plans"
+msgstr "3개월/6개월/12개월 장기 결제 시 할인"
+
+msgid "Payment Methods"
+msgstr "결제 방법"
+
+msgid "Credit Card (Korean / International)"
+msgstr "신용카드 (한국/해외 카드)"
+
+msgid "How to Renew"
+msgstr "연장 방법"
+
+msgid "Log in at"
+msgstr "로그인:"
+
+msgid "[MyPage] → [Renew Subscription]"
+msgstr "[마이페이지] → [구독연장] 클릭"
+
+msgid "Select plan/period → Pay"
+msgstr "원하는 상품/기간 선택 → 결제"
+
+msgid "Full refund within 7 days of payment if unused"
+msgstr "결제 후 7일 이내, 미사용 시 전액 환불 가능"
+
+msgid "Pro-rated refund if service was used"
+msgstr "사용 이력이 있는 경우 일할 계산 후 환불"
+
+msgid "Request via support or"
+msgstr "환불 요청: 상담사 연결 또는"
+
+msgid "Payment Not Reflected?"
+msgstr "결제 후 반영이 안 될 때"
+
+msgid "Card/Transfer: Usually reflected within 5 minutes"
+msgstr "카드/계좌이체: 보통 즉시~5분 내 반영"
+
+msgid "Alipay/WeChat: Up to 10 minutes"
+msgstr "알리페이/위챗: 최대 10분 소요"
+
+msgid "If not reflected after 10 minutes, please send a payment screenshot with your email to support"
+msgstr "10분 이상 미반영 시 결제 캡처 화면과 함께 아이디(이메일)를 알려주시면 확인해드립니다"
+
+msgid "App Error / Connection Issues"
+msgstr "앱 오류 / 접속 안됨"
+
+msgid "App Not Launching"
+msgstr "앱이 실행되지 않을 때"
+
+msgid "Force close and relaunch the app"
+msgstr "앱 완전 종료 후 재실행"
+
+msgid "Reboot your device and try again"
+msgstr "스마트폰 재부팅 후 다시 시도"
+
+msgid "Uninstall → Reinstall (your data is stored on the server)"
+msgstr "앱 삭제 → 재설치 (데이터는 서버에 저장되므로 안전)"
+
+msgid "VPN Not Connecting"
+msgstr "VPN 연결이 안 될 때"
+
+msgid "Try switching to a different server"
+msgstr "다른 서버로 변경해서 시도"
+
+msgid "Switch between WiFi ↔ LTE/5G"
+msgstr "WiFi ↔ LTE/5G 전환 후 시도"
+
+msgid "Disconnect → Close app → Relaunch → Connect"
+msgstr "현재 연결 해제 → 앱 종료 → 재실행 → 연결"
+
+msgid "Cannot Connect from China"
+msgstr "중국에서 접속이 안 될 때"
+
+msgid "Refresh the server list in the app"
+msgstr "서버 목록을 새로 불러오기 (앱 내 새로고침)"
+
+msgid "China Mobile: Try KT servers"
+msgstr "차이나모바일: KT 서버 위주로 시도"
+
+msgid "China Unicom: Try SK servers"
+msgstr "차이나유니콤: SK 서버 위주로 시도"
+
+msgid "China Telecom: Try both KT and SK"
+msgstr "차이나텔레콤: KT 또는 SK 모두 시도"
+
+msgid "Speed may decrease during peak hours (8PM-12AM)"
+msgstr "특정 시간대(저녁 8시~12시)에 느려질 수 있음"
+
+msgid "If still not working"
+msgstr "그래도 안 되시면"
+
+msgid "Please provide the following for faster support:"
+msgstr "아래 정보를 함께 남겨주시면 빠른 확인이 가능합니다:"
+
+msgid "Device type (Android/iPhone/PC)"
+msgstr "사용 기기 (안드로이드/아이폰/PC)"
+
+msgid "Country/Carrier (e.g., China Mobile)"
+msgstr "국가/통신사 (예: 중국 차이나모바일)"
+
+msgid "Server name you tried"
+msgstr "연결 시도한 서버명"
+
+msgid "Error message or screenshot"
+msgstr "오류 메시지 또는 화면 캡처"
+
+msgid "Slow Speed / Disconnections"
+msgstr "속도 느림 / 끊김"
+
+msgid "Basic Troubleshooting"
+msgstr "기본 점검 사항"
+
+msgid "Check internet speed without VPN first"
+msgstr "VPN 끄고 일반 인터넷 속도 확인"
+
+msgid "Close and relaunch the app"
+msgstr "앱 완전 종료 → 재실행 → 재연결"
+
+msgid "Recommended Servers by China Carrier"
+msgstr "중국 통신사별 추천 서버"
+
+msgid "China Mobile"
+msgstr "차이나모바일(移动)"
+
+msgid "servers recommended"
+msgstr "서버 추천"
+
+msgid "China Unicom"
+msgstr "차이나유니콤(联通)"
+
+msgid "China Telecom"
+msgstr "차이나텔레콤(电信)"
+
+msgid "Try both KT and SK"
+msgstr "KT/SK 모두 시도"
+
+msgid "Peak Hours"
+msgstr "시간대별 참고"
+
+msgid "8PM-Midnight: Internet congestion across China. Speed may be slower during these hours. Morning/afternoon is optimal."
+msgstr "저녁 8시~자정: 중국 전체 인터넷 혼잡 시간으로 속도 저하가 있을 수 있습니다. 오전/낮 시간에 가장 쾌적합니다."
+
+msgid "PC Users"
+msgstr "PC 사용자"
+
+msgid "OpenVPN may be more stable than IKEv2 in some cases"
+msgstr "OpenVPN이 IKEv2보다 안정적인 경우가 있음"
+
+msgid "Antivirus/firewall may block VPN traffic — try disabling temporarily"
+msgstr "백신/방화벽이 VPN 트래픽을 차단할 수 있음 → 임시로 백신 끄고 테스트"
+
+msgid "Remove Other VPN Apps"
+msgstr "기타 VPN 앱 제거"
+
+msgid "Other VPN apps may cause conflicts and slow down your connection. Please uninstall any unused VPN apps."
+msgstr "다른 VPN 앱이 설치되어 있으면 충돌로 속도 저하 발생 → 사용하지 않는 VPN 앱은 모두 삭제해주세요."
+
+msgid "Restart WiFi Modem"
+msgstr "WiFi 모뎀 재시작"
+
+msgid "If using WiFi, turning off the modem/router for 2-3 minutes and restarting often improves speed."
+msgstr "WiFi 사용 시 통신사 제공 모뎀(공유기)을 껐다가 2~3분 후 다시 켜면 속도가 개선되는 경우가 많습니다."
+
+msgid "Windows VPN Errors"
+msgstr "윈도우 VPN 연결 오류"
+
+msgid "Error Code 809"
+msgstr "오류코드 809"
+
+msgid "Cause: Firewall or NAT blocking VPN ports"
+msgstr "원인: 방화벽 또는 NAT 설정이 VPN 포트를 차단"
+
+msgid "Windows Firewall → Advanced → Inbound Rules → Allow UDP 500, 4500"
+msgstr "Windows 방화벽 → 고급 설정 → 인바운드 규칙 → UDP 500, 4500 포트 허용 추가"
+
+msgid "If using a router, enable IPsec Passthrough"
+msgstr "공유기 사용 시 공유기 관리자 페이지에서 IPsec Passthrough 기능 활성화"
+
+msgid "Try using OpenVPN client instead of IKEv2"
+msgstr "IKEv2 대신 OpenVPN 클라이언트 사용 시도"
+
+msgid "Error Code 812"
+msgstr "오류코드 812"
+
+msgid "Cause: Authentication failed (wrong ID/password or expired)"
+msgstr "원인: 인증 실패 (아이디/비번 불일치 또는 만료)"
+
+msgid "Verify your email and password"
+msgstr "아이디(이메일)와 비밀번호 재확인"
+
+msgid "Reset password at"
+msgstr "비밀번호 재설정:"
+
+msgid "Check if subscription has expired (MyPage)"
+msgstr "이용기간 만료 여부 확인 (마이페이지)"
+
+msgid "Error Code 691"
+msgstr "오류코드 691"
+
+msgid "Cause: Account authentication failed — same solutions as Error 812"
+msgstr "원인: 접속 계정 인증 실패 — 812와 동일한 방법 시도"
+
+msgid "RAS / Adapter Error"
+msgstr "RAS 오류 / 어댑터 오류"
+
+msgid "Reset network adapter: Settings → Network → Status → Network Reset"
+msgstr "네트워크 어댑터 재설정 → 설정 → 네트워크 → 상태 → 네트워크 초기화"
+
+msgid "Reboot PC and reconnect"
+msgstr "PC 재부팅 후 다시 연결"
+
+msgid "Delete IKEv2 VPN connection and re-create it"
+msgstr "IKEv2 VPN 연결을 삭제 후 새로 등록"
+
+msgid "IKEv2 Setup Guide"
+msgstr "IKEv2 연결 설정 방법"
+
+msgid "Settings → Network → VPN → Add VPN Connection"
+msgstr "설정 → 네트워크 → VPN → VPN 연결 추가"
+
+msgid "VPN Provider: Windows (built-in)"
+msgstr "VPN 공급자: Windows(기본 제공)"
+
+msgid "Server: Enter provided server address"
+msgstr "서버명: 제공받은 서버 주소 입력"
+
+msgid "VPN Type: IKEv2"
+msgstr "VPN 유형: IKEv2"
+
+msgid "Login: Enter email/password"
+msgstr "로그인 정보: 이메일/비밀번호 입력"
+
+msgid "Simultaneous Connections / Sessions"
+msgstr "동시접속 / 세션"
+
+msgid "What is Simultaneous Access?"
+msgstr "동시접속이란?"
+
+msgid "The number of devices that can connect to VPN at the same time with one account."
+msgstr "하나의 계정으로 동시에 VPN을 연결할 수 있는 기기 수를 말합니다."
+
+msgid "Connections by Plan"
+msgstr "상품별 동시접속 수"
+
+msgid "1 device"
+msgstr "1대 동시 접속"
+
+msgid "2 devices"
+msgstr "2대 동시 접속"
+
+msgid "6 devices"
+msgstr "6대 동시 접속"
+
+msgid "any device type"
+msgstr "스마트폰, PC, 태블릿 등 기기 종류 무관"
+
+msgid "When Exceeded"
+msgstr "동시접속 초과 시"
+
+msgid "If all allowed connections are in use, additional connections will be blocked. Disconnect another device first."
+msgstr "이미 허용된 수만큼 연결 중이면 추가 연결이 안 됩니다. 다른 기기에서 VPN 연결 해제 후 시도해주세요."
+
+msgid "Stale Sessions"
+msgstr "세션이 남아있을 때"
+
+msgid "If a device disconnected abnormally, the session may remain active for 5-10 minutes before auto-cleanup. Contact support for immediate session reset."
+msgstr "비정상 종료 시 서버에 세션이 남아있을 수 있습니다. 보통 5~10분 후 자동 정리됩니다. 급하시면 상담사 연결로 세션 초기화 요청해주세요."
+
+msgid "Upgrade"
+msgstr "업그레이드"
+
+msgid "You can increase your simultaneous connections by upgrading your plan on"
+msgstr "마이페이지에서 상위 상품으로 업그레이드하시면 동시접속 수를 늘릴 수 있습니다."
+
+msgid "the pricing page"
+msgstr "가격표 페이지"
+
+msgid "Login / Password"
+msgstr "로그인 / 비밀번호"
+
+msgid "Forgot Password"
+msgstr "비밀번호를 잊으셨을 때"
+
+msgid "Click [Forgot Password]"
+msgstr "[비밀번호 찾기] 클릭"
+
+msgid "Enter your email → Reset email will be sent"
+msgstr "가입 이메일 입력 → 재설정 메일 발송"
+
+msgid "Click the reset link in the email"
+msgstr "메일에서 비밀번호 재설정 링크 클릭"
+
+msgid "If you do not receive the email, check your spam/junk folder."
+msgstr "메일이 안 오면 스팸/정크 메일함도 확인해주세요."
+
+msgid "Forgot Email (ID)"
+msgstr "아이디(이메일)를 잊으셨을 때"
+
+msgid "Your registration email is your ID. Check the email used for payment, or contact support."
+msgstr "가입 시 사용한 이메일이 아이디입니다. 기억나지 않으시면 결제 시 사용한 이메일을 확인하거나 상담사 연결로 문의해주세요."
+
+msgid "Logged In But VPN Not Connecting"
+msgstr "로그인은 되지만 VPN 연결이 안 될 때"
+
+msgid "Check if simultaneous connections are exceeded"
+msgstr "동시접속 수 초과 여부 확인"
+
+msgid "Verify the password entered in the app (spaces may be included when copy-pasting)"
+msgstr "앱에서 입력한 비밀번호가 정확한지 재확인 (복사-붙여넣기 시 공백이 포함될 수 있음)"
+
+msgid "New Registration"
+msgstr "신규 회원가입"
+
+msgid "Sign up here"
+msgstr "회원가입하기"
+
+msgid "Enter email and password to register. After payment, you can use the service immediately."
+msgstr "이메일, 비밀번호 입력 후 가입 완료 → 상품 결제 후 바로 이용 가능"
+
+msgid "Check if your subscription has expired (MyPage)"
+msgstr "이용기간 만료 여부 확인 (마이페이지)"
+
+msgid "ChannelTalk consultation:"
+msgstr "채널톡 상담:"
+
+msgid "Account to extend"
+msgstr "연장할 아이디"
+
+msgid "Add Existing Account"
+msgstr "기존계정 추가"
+
+msgid "Add New Sub-Account"
+msgstr "새 하위계정 추가"
+
+msgid "Amount"
+msgstr "금액"
+
+msgid "Change Password"
+msgstr "비밀번호 변경"
+
+msgid "Checking your payment. Please wait a moment."
+msgstr "결제 확인 중입니다. 잠시만 기다려주세요."
+
+msgid "Costomer Service on (KST)10:00 AM to 20:00 PM"
+msgstr "상담시간 오전 10:00 ~ 오후 8:00"
+
+msgid "Credit Card (Korea)"
+msgstr "신용카드(국내)"
+
+msgid "Device"
+msgstr "기기"
+
+msgid "Expired"
+msgstr "만료"
+
+msgid "FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE"
+msgstr "빠른 속도, 고품질 안전, 편리함, 최고의 서비스"
+
+msgid "Loading..."
+msgstr "불러오는 중..."
+
+msgid "Manual Transfer"
+msgstr "수동이체"
+
+msgid "No items selected."
+msgstr "선택된 항목이 없습니다."
+
+msgid "No."
+msgstr "번호"
+
+msgid "Payment Method"
+msgstr "결제방식"
+
+msgid "Payment Type"
+msgstr "결제종류"
+
+msgid "Payment in progress..."
+msgstr "결제 진행중..."
+
+msgid "Period"
+msgstr "기간"
+
+msgid "Proceed to Payment"
+msgstr "결제 진행"
+
+msgid "Product"
+msgstr "상품"
+
+msgid "Receipt"
+msgstr "영수증"
+
+msgid "Refund is possible only within 7 days before first usage"
+msgstr "최초 사용 전 7일 이내에만 환불 가능합니다"
+
+msgid "Request Time"
+msgstr "요청시간"
+
+msgid "SSG Pay"
+msgstr "SSG페이"
+
+msgid "Select Account"
+msgstr "계정 선택"
+
+msgid "Select the account to extend from the dropdown, or use Add Account at the bottom to register another account."
+msgstr "하단의 드롭다운에서 연장할 아이디를 선택하거나, 하단의 계정추가를 이용해 다른 아이디를 등록하세요."
+
+msgid "Select the target account and then choose a period, concurrent access, and payment method."
+msgstr "아래에서 대상 아이디를 선택한 후, 사용기간, 동시접속, 결제방식을 선택하세요."
+
+msgid "Session"
+msgstr "세션"
+
+msgid "Status"
+msgstr "상태"
+
+msgid "Summary"
+msgstr "선택 요약"
+
+msgid "Usage Period"
+msgstr "사용기간"
+
+msgid "Virtual Account (Bank Transfer)"
+msgstr "가상계좌(무통장)"
+
+msgid "You can merge existing accounts or create new sub-accounts based on"
+msgstr "아래에서 기존 계정을 합치거나 새 하위계정을 만들 수 있습니다."
+
+msgid "Support In Chinese MacOS"
+msgstr "중국MacOS에 설치가능"

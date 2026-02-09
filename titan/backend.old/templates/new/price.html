@@ -473,7 +473,7 @@
     <input hidden type="text" id="payerid" name="payerid"><br>
     <input hidden type="text" id="payeremail" name="payeremail"><br>
     <input hidden type="text" id="servicename" name="servicename"><br>
-    <input hidden type="text" id="returnurl" name="returnurl"><br>
+    <input hidden type="text" id="pl_returnurl" name="returnurl"><br>
     <input hidden type="text" id="backurl" name="backurl"><br>
     <input hidden type="text" id="custom" name="custom"><br>
     <input hidden type="text" id="pginfo" name="pginfo"><br>
@@ -821,10 +821,54 @@ function payment() {
         return false;
     }
     if (pgcode == 'WECHAT_IV') {
-        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); // WeChat Pay (W)
+        // WeChat 결제 활성화 여부 확인
+        $.ajax({
+            url: '/api_get_payment_methods',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) {
+                if(data && !data.wechat_enabled) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '알림',
+                        text: '현재 해당 결제가 불가능한 상태입니다. 다른 결제도구를 사용해주세요.',
+                        confirmButtonColor: swalColor('error'),
+                    });
+                    pgcode = ''; // 진행 중지
+                    return false;
+                }
+            }
+        });
+        
+        if(pgcode) {
+            checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); // WeChat Pay (W)
+        }
         return false;
     } else if (pgcode == 'ALIPAY_IV') {
-        checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); // Alipay (A)
+        // Alipay 결제 활성화 여부 확인
+        $.ajax({
+            url: '/api_get_payment_methods',
+            type: 'GET',
+            async: false,
+            dataType: 'json',
+            success: function(data) {
+                if(data && !data.alipay_enabled) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '알림',
+                        text: '현재 해당 결제가 불가능한 상태입니다. 다른 결제도구를 사용해주세요.',
+                        confirmButtonColor: swalColor('error'),
+                    });
+                    pgcode = ''; // 진행 중지
+                    return false;
+                }
+            }
+        });
+        
+        if(pgcode) {
+            checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); // Alipay (A)
+        }
         return false;
     }else if (pgcode == 'sendmoney') { // 수동
         titan_bank(pgcode, month_type, session);
@@ -866,7 +910,7 @@ function payletter_global(pgcode, month_type, session) {
             $('#payerid').val(data.payerid);
             $('#payeremail').val(data.payeremail);
             $('#servicename').val(data.servicename);
-            $('#returnurl').val(data.returnurl);
+            $('#pl_returnurl').val(data.returnurl);
             $('#backurl').val(data.backurl);
             $('#custom').val(data.custom);
             $('#pginfo').val(data.pginfo);
@@ -1177,6 +1221,42 @@ function titan_alipay(pgcode, month_type, session) {
 function titan_wechat(pgcode, month_type, session) {
     createPayment('W', pgcode, session, month_type, '/static/new/img/payment_core/weixin.png', I18N.wechat);
 }
+
+// 관리자 설정에서 결제 방식 활성화 상태 불러오기
+function loadPaymentMethodStatus() {
+    $.ajax({
+        url: '/api_get_payment_methods',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if(data && data.result === 200) {
+                // WeChat 아이콘 처리
+                if(!data.wechat_enabled) {
+                    $('#WECHAT_IV').css('opacity', '0.5').css('pointer-events', 'none').css('cursor', 'not-allowed');
+                } else {
+                    $('#WECHAT_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+                }
+                
+                // Alipay 아이콘 처리
+                if(!data.alipay_enabled) {
+                    $('#ALIPAY_IV').css('opacity', '0.5').css('pointer-events', 'none').css('cursor', 'not-allowed');
+                } else {
+                    $('#ALIPAY_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+                }
+            }
+        },
+        error: function() {
+            // 기본값: 활성화
+            $('#WECHAT_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+            $('#ALIPAY_IV').css('opacity', '1').css('pointer-events', 'auto').css('cursor', 'pointer');
+        }
+    });
+}
+
+// 페이지 로드 시 결제 방식 상태 확인
+$(document).ready(function() {
+    loadPaymentMethodStatus();
+});
 
 </script>
 </%block>

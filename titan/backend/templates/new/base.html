@@ -5,6 +5,16 @@
         <%include file="base_css.html"/>
         <title>TITAN VPN</title>
         <%block name="css"></%block>
+            <link rel="stylesheet" href="/static/new/css/bootstrap.min.css">
+            <link rel="stylesheet" href="/static/new/css/font-awesome.min.css">
+            <link rel="stylesheet" href="/static/new/css/style.css">
+            <style>
+            .hero-bottom-tags { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; gap:14px; padding:4px 10px; }
+            .hero-bottom-tags .tag { background:rgba(0,0,0,.55); color:#fff; padding:5px 11px; font-size:11px; line-height:1.2; border-radius:16px; font-weight:700; letter-spacing:.3px; opacity:0; transform:translateY(6px); animation:heroTagFade .6s ease forwards; animation-delay:calc(.05s * var(--i)); }
+            .hero-bottom-tags .tag:hover { background:rgba(90,0,200,.75); }
+            @keyframes heroTagFade { to { opacity:1; transform:translateY(0);} }
+            @media (max-width:760px){ .hero-bottom-tags { bottom:12px; gap:8px; } .hero-bottom-tags .tag { font-size:10px; padding:5px 10px; } }
+            </style>
     </head>
     <body>
         <%include file="base_header.html"/>

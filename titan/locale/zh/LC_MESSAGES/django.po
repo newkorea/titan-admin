@@ -561,3 +561,568 @@ msgstr "操作"
 
 msgid "Request Extension"
 msgstr "续费申请"
+
+# ===== FAQ Page Translations =====
+msgid "Frequently Asked Questions"
+msgstr "常见问题"
+
+msgid "Download / Install"
+msgstr "下载 / 安装"
+
+msgid "Titan VPN is not available on the Google Play Store."
+msgstr "Titan VPN 无法在 Google Play 商店中搜索到。"
+
+msgid "Please install the APK directly using the method below."
+msgstr "请按照以下方法直接安装APK。"
+
+msgid "Open the following URL in your phone browser"
+msgstr "在手机浏览器中打开以下网址"
+
+msgid "Click [Download] → Download the APK file"
+msgstr "点击[下载]按钮 → 下载APK文件"
+
+msgid "Enable \"Unknown Sources\" and install"
+msgstr "启用'未知来源'后安装"
+
+msgid "Settings → Security → Unknown Sources"
+msgstr "设置 → 安全 → 未知来源"
+
+msgid "Launch the app → Enter ID/Password → Select server → Connect"
+msgstr "启动应用 → 输入账号/密码 → 选择服务器 → 连接"
+
+msgid "iPhone/iPad"
+msgstr "iPhone/iPad"
+
+msgid "Search for \"Titan VPN\" on the App Store"
+msgstr "在App Store搜索'Titan VPN'"
+
+msgid "Install and launch the app"
+msgstr "安装并启动应用"
+
+msgid "Enter ID/Password → Select server → Connect"
+msgstr "输入账号/密码 → 选择服务器 → 连接"
+
+msgid "Titan VPN is not searchable with a China region Apple ID."
+msgstr "使用中国地区Apple ID无法搜索到Titan VPN。"
+
+msgid "Temporarily change your Apple ID region to Korea, or"
+msgstr "临时将Apple ID地区更改为韩国后下载，或"
+
+msgid "Use a shared Apple ID provided by Titan. (Contact support for shared ID)"
+msgstr "使用Titan提供的共享Apple ID（需要共享ID请联系客服）"
+
+msgid "Windows PC"
+msgstr "Windows电脑"
+
+msgid "Visit"
+msgstr "访问"
+
+msgid "in your PC browser"
+msgstr "在电脑浏览器中"
+
+msgid "Click [Windows Download] → Run the installer"
+msgstr "点击[Windows下载] → 运行安装程序"
+
+msgid "After installation, enter ID/Password → Select server → Connect"
+msgstr "安装完成后输入账号/密码 → 选择服务器 → 连接"
+
+msgid "MacBook"
+msgstr "MacBook"
+
+msgid "Click [macOS Download] from the site above"
+msgstr "在上述网站点击[macOS下载]"
+
+msgid "Run the DMG file → Drag to Applications"
+msgstr "运行DMG文件 → 拖到Applications"
+
+msgid "Launch the app → Enter ID/Password → Connect"
+msgstr "启动应用 → 输入账号/密码 → 连接"
+
+msgid "If installation is blocked due to security:"
+msgstr "如因安全设置无法安装："
+
+msgid "Mac Settings → Privacy & Security → Click \"Open Anyway\" at the bottom"
+msgstr "Mac设置 → 隐私与安全 → 点击底部的'仍要打开'"
+
+msgid "If you cannot access the site from China, use the backup address"
+msgstr "如果在中国无法访问网站，请使用备用地址"
+
+msgid "Payment / Renewal / Pricing"
+msgstr "付款 / 续费 / 价格"
+
+msgid "Products & Pricing"
+msgstr "产品及价格"
+
+msgid "View pricing page"
+msgstr "查看价格表"
+
+msgid "Korean Auto-Payment"
+msgstr "韩国自动支付系统"
+
+msgid "Line"
+msgstr "线路"
+
+msgid "1 simultaneous connection"
+msgstr "1台同时连接"
+
+msgid "2 simultaneous connections"
+msgstr "2台同时连接"
+
+msgid "6 simultaneous connections"
+msgstr "6台同时连接"
+
+msgid "from"
+msgstr ""
+
+msgid "month"
+msgstr "月"
+
+msgid "China Alipay / WeChat Pay"
+msgstr "中国 支付宝 / 微信支付"
+
+msgid "Discounts available for 3/6/12-month plans"
+msgstr "3个月/6个月/12个月长期支付可享折扣"
+
+msgid "Payment Methods"
+msgstr "支付方式"
+
+msgid "Credit Card (Korean / International)"
+msgstr "信用卡（韩国/国际卡）"
+
+msgid "How to Renew"
+msgstr "续费方法"
+
+msgid "Log in at"
+msgstr "登录："
+
+msgid "[MyPage] → [Renew Subscription]"
+msgstr "[个人中心] → [续费订阅]"
+
+msgid "Select plan/period → Pay"
+msgstr "选择产品/期限 → 支付"
+
+msgid "Full refund within 7 days of payment if unused"
+msgstr "付款后7天内未使用可全额退款"
+
+msgid "Pro-rated refund if service was used"
+msgstr "如已使用，按日计算后退款"
+
+msgid "Request via support or"
+msgstr "退款请求：联系客服或"
+
+msgid "Payment Not Reflected?"
+msgstr "付款后未到账？"
+
+msgid "Card/Transfer: Usually reflected within 5 minutes"
+msgstr "信用卡/转账：通常即时~5分钟内到账"
+
+msgid "Alipay/WeChat: Up to 10 minutes"
+msgstr "支付宝/微信：最多10分钟"
+
+msgid "If not reflected after 10 minutes, please send a payment screenshot with your email to support"
+msgstr "超过10分钟未到账，请将支付截图连同邮箱发送给客服"
+
+msgid "App Error / Connection Issues"
+msgstr "应用错误 / 连接问题"
+
+msgid "App Not Launching"
+msgstr "应用无法启动"
+
+msgid "Force close and relaunch the app"
+msgstr "完全关闭应用后重新启动"
+
+msgid "Reboot your device and try again"
+msgstr "重启设备后再试"
+
+msgid "Uninstall → Reinstall (your data is stored on the server)"
+msgstr "卸载 → 重新安装（数据保存在服务器上，请放心）"
+
+msgid "VPN Not Connecting"
+msgstr "VPN无法连接"
+
+msgid "Try switching to a different server"
+msgstr "尝试切换到其他服务器"
+
+msgid "Switch between WiFi ↔ LTE/5G"
+msgstr "WiFi ↔ LTE/5G 切换后重试"
+
+msgid "Disconnect → Close app → Relaunch → Connect"
+msgstr "断开连接 → 关闭应用 → 重新启动 → 连接"
+
+msgid "Cannot Connect from China"
+msgstr "在中国无法连接"
+
+msgid "Refresh the server list in the app"
+msgstr "在应用中刷新服务器列表"
+
+msgid "China Mobile: Try KT servers"
+msgstr "中国移动：优先尝试KT服务器"
+
+msgid "China Unicom: Try SK servers"
+msgstr "中国联通：优先尝试SK服务器"
+
+msgid "China Telecom: Try both KT and SK"
+msgstr "中国电信：KT和SK都试试"
+
+msgid "Speed may decrease during peak hours (8PM-12AM)"
+msgstr "高峰时段（晚8点~12点）速度可能变慢"
+
+msgid "If still not working"
+msgstr "如果还是不行"
+
+msgid "Please provide the following for faster support:"
+msgstr "请提供以下信息以便快速处理："
+
+msgid "Device type (Android/iPhone/PC)"
+msgstr "设备类型（安卓/iPhone/电脑）"
+
+msgid "Country/Carrier (e.g., China Mobile)"
+msgstr "国家/运营商（例：中国移动）"
+
+msgid "Server name you tried"
+msgstr "尝试连接的服务器名称"
+
+msgid "Error message or screenshot"
+msgstr "错误信息或截图"
+
+msgid "Slow Speed / Disconnections"
+msgstr "速度慢 / 断线"
+
+msgid "Basic Troubleshooting"
+msgstr "基本检查事项"
+
+msgid "Check internet speed without VPN first"
+msgstr "先关闭VPN检查普通网速"
+
+msgid "Close and relaunch the app"
+msgstr "完全关闭应用 → 重启 → 重连"
+
+msgid "Recommended Servers by China Carrier"
+msgstr "中国运营商推荐服务器"
+
+msgid "China Mobile"
+msgstr "中国移动"
+
+msgid "servers recommended"
+msgstr "服务器推荐"
+
+msgid "China Unicom"
+msgstr "中国联通"
+
+msgid "China Telecom"
+msgstr "中国电信"
+
+msgid "Try both KT and SK"
+msgstr "KT和SK都试试"
+
+msgid "Peak Hours"
+msgstr "时段参考"
+
+msgid "8PM-Midnight: Internet congestion across China. Speed may be slower during these hours. Morning/afternoon is optimal."
+msgstr "晚8点~午夜：中国全国网络拥堵时段，速度可能变慢。上午/下午最流畅。"
+
+msgid "PC Users"
+msgstr "电脑用户"
+
+msgid "OpenVPN may be more stable than IKEv2 in some cases"
+msgstr "某些情况下OpenVPN比IKEv2更稳定"
+
+msgid "Antivirus/firewall may block VPN traffic — try disabling temporarily"
+msgstr "杀毒软件/防火墙可能阻止VPN流量 — 可临时关闭测试"
+
+msgid "Remove Other VPN Apps"
+msgstr "卸载其他VPN应用"
+
+msgid "Other VPN apps may cause conflicts and slow down your connection. Please uninstall any unused VPN apps."
+msgstr "其他VPN应用可能造成冲突导致速度变慢。请卸载所有不使用的VPN应用。"
+
+msgid "Restart WiFi Modem"
+msgstr "重启WiFi调制解调器"
+
+msgid "If using WiFi, turning off the modem/router for 2-3 minutes and restarting often improves speed."
+msgstr "使用WiFi时，将调制解调器（路由器）关闭2~3分钟后重新开启，通常能改善速度。"
+
+msgid "Windows VPN Errors"
+msgstr "Windows VPN连接错误"
+
+msgid "Error Code 809"
+msgstr "错误代码 809"
+
+msgid "Cause: Firewall or NAT blocking VPN ports"
+msgstr "原因：防火墙或NAT阻止了VPN端口"
+
+msgid "Windows Firewall → Advanced → Inbound Rules → Allow UDP 500, 4500"
+msgstr "Windows防火墙 → 高级设置 → 入站规则 → 允许UDP 500、4500端口"
+
+msgid "If using a router, enable IPsec Passthrough"
+msgstr "使用路由器时，在管理页面启用IPsec Passthrough"
+
+msgid "Try using OpenVPN client instead of IKEv2"
+msgstr "尝试使用OpenVPN客户端代替IKEv2"
+
+msgid "Error Code 812"
+msgstr "错误代码 812"
+
+msgid "Cause: Authentication failed (wrong ID/password or expired)"
+msgstr "原因：认证失败（账号/密码不匹配或已过期）"
+
+msgid "Verify your email and password"
+msgstr "确认邮箱和密码"
+
+msgid "Reset password at"
+msgstr "重置密码："
+
+msgid "Check if subscription has expired (MyPage)"
+msgstr "检查订阅是否已过期（个人中心）"
+
+msgid "Error Code 691"
+msgstr "错误代码 691"
+
+msgid "Cause: Account authentication failed — same solutions as Error 812"
+msgstr "原因：账号认证失败 — 与错误812相同的解决方法"
+
+msgid "RAS / Adapter Error"
+msgstr "RAS / 适配器错误"
+
+msgid "Reset network adapter: Settings → Network → Status → Network Reset"
+msgstr "重置网络适配器：设置 → 网络 → 状态 → 网络重置"
+
+msgid "Reboot PC and reconnect"
+msgstr "重启电脑后重新连接"
+
+msgid "Delete IKEv2 VPN connection and re-create it"
+msgstr "删除IKEv2 VPN连接后重新创建"
+
+msgid "IKEv2 Setup Guide"
+msgstr "IKEv2连接设置方法"
+
+msgid "Settings → Network → VPN → Add VPN Connection"
+msgstr "设置 → 网络 → VPN → 添加VPN连接"
+
+msgid "VPN Provider: Windows (built-in)"
+msgstr "VPN提供商：Windows（内置）"
+
+msgid "Server: Enter provided server address"
+msgstr "服务器：输入提供的服务器地址"
+
+msgid "VPN Type: IKEv2"
+msgstr "VPN类型：IKEv2"
+
+msgid "Login: Enter email/password"
+msgstr "登录信息：输入邮箱/密码"
+
+msgid "Simultaneous Connections / Sessions"
+msgstr "同时连接 / 会话"
+
+msgid "What is Simultaneous Access?"
+msgstr "什么是同时连接？"
+
+msgid "The number of devices that can connect to VPN at the same time with one account."
+msgstr "指一个账号可以同时连接VPN的设备数量。"
+
+msgid "Connections by Plan"
+msgstr "各产品同时连接数"
+
+msgid "1 device"
+msgstr "1台设备"
+
+msgid "2 devices"
+msgstr "2台设备"
+
+msgid "6 devices"
+msgstr "6台设备"
+
+msgid "any device type"
+msgstr "手机、电脑、平板等设备类型不限"
+
+msgid "When Exceeded"
+msgstr "超出限制时"
+
+msgid "If all allowed connections are in use, additional connections will be blocked. Disconnect another device first."
+msgstr "如果允许的连接数已满，则无法追加连接。请先断开其他设备的VPN连接。"
+
+msgid "Stale Sessions"
+msgstr "残留会话"
+
+msgid "If a device disconnected abnormally, the session may remain active for 5-10 minutes before auto-cleanup. Contact support for immediate session reset."
+msgstr "如果设备异常断开，会话可能在5~10分钟内残留。急需时请联系客服进行会话重置。"
+
+msgid "Upgrade"
+msgstr "升级"
+
+msgid "You can increase your simultaneous connections by upgrading your plan on"
+msgstr "在个人中心升级到更高级产品即可增加同时连接数。"
+
+msgid "the pricing page"
+msgstr "价格表页面"
+
+msgid "Login / Password"
+msgstr "登录 / 密码"
+
+msgid "Forgot Password"
+msgstr "忘记密码"
+
+msgid "Click [Forgot Password]"
+msgstr "点击[找回密码]"
+
+msgid "Enter your email → Reset email will be sent"
+msgstr "输入注册邮箱 → 发送重置邮件"
+
+msgid "Click the reset link in the email"
+msgstr "点击邮件中的密码重置链接"
+
+msgid "If you do not receive the email, check your spam/junk folder."
+msgstr "如未收到邮件，请检查垃圾邮件文件夹。"
+
+msgid "Forgot Email (ID)"
+msgstr "忘记邮箱（账号）"
+
+msgid "Your registration email is your ID. Check the email used for payment, or contact support."
+msgstr "注册时使用的邮箱即为账号。如不记得请确认付款时使用的邮箱，或联系客服。"
+
+msgid "Logged In But VPN Not Connecting"
+msgstr "已登录但VPN无法连接"
+
+msgid "Check if simultaneous connections are exceeded"
+msgstr "检查是否超出同时连接数"
+
+msgid "Verify the password entered in the app (spaces may be included when copy-pasting)"
+msgstr "确认在应用中输入的密码是否正确（复制粘贴时可能包含空格）"
+
+msgid "New Registration"
+msgstr "新会员注册"
+
+msgid "Sign up here"
+msgstr "点此注册"
+
+msgid "Enter email and password to register. After payment, you can use the service immediately."
+msgstr "输入邮箱和密码完成注册。付款后即可立即使用服务。"
+
+msgid "Check if your subscription has expired (MyPage)"
+msgstr "检查订阅是否已过期（个人中心）"
+
+msgid "ChannelTalk consultation:"
+msgstr "在线客服咨询："
+
+msgid "Account to extend"
+msgstr "要延长的账号"
+
+msgid "Add Existing Account"
+msgstr "添加已有账号"
+
+msgid "Add New Sub-Account"
+msgstr "添加新子账号"
+
+msgid "Amount"
+msgstr "金额"
+
+msgid "Change Password"
+msgstr "更改密码"
+
+msgid "Checking your payment. Please wait a moment."
+msgstr "正在确认付款，请稍候。"
+
+msgid "Costomer Service on (KST)10:00 AM to 20:00 PM"
+msgstr "咨询时间 上午10:00 ~ 下午8:00"
+
+msgid "Credit Card (Korea)"
+msgstr "韩国信用卡"
+
+msgid "Device"
+msgstr "设备"
+
+msgid "Expired"
+msgstr "已过期"
+
+msgid "FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE"
+msgstr "高速、高品质安全、便利、最佳服务"
+
+msgid "Loading..."
+msgstr "加载中..."
+
+msgid "Manual Transfer"
+msgstr "手动转账"
+
+msgid "No items selected."
+msgstr "未选择任何项目。"
+
+msgid "No."
+msgstr "序号"
+
+msgid "Payment Method"
+msgstr "支付方式"
+
+msgid "Payment Type"
+msgstr "支付类型"
+
+msgid "Payment in progress..."
+msgstr "正在付款..."
+
+msgid "Period"
+msgstr "期间"
+
+msgid "Proceed to Payment"
+msgstr "去支付"
+
+msgid "Product"
+msgstr "产品"
+
+msgid "Receipt"
+msgstr "收据"
+
+msgid "Refund is possible only within 7 days before first usage"
+msgstr "首次使用前7日内可以退款"
+
+msgid "Request Time"
+msgstr "请求时间"
+
+msgid "SSG Pay"
+msgstr "SSG Pay"
+
+msgid "Select Account"
+msgstr "选择账号"
+
+msgid "Select the account to extend from the dropdown, or use Add Account at the bottom to register another account."
+msgstr "请从下拉菜单中选择要延长的账号，或使用底部的添加账号注册其他账号。"
+
+msgid "Select the target account and then choose a period, concurrent access, and payment method."
+msgstr "选择目标账号后，选择使用期限、同时在线数和支付方式。"
+
+msgid "Session"
+msgstr "会话"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Summary"
+msgstr "摘要"
+
+msgid "Usage Period"
+msgstr "使用期限"
+
+msgid "Virtual Account (Bank Transfer)"
+msgstr "虚拟账户（银行转账）"
+
+msgid "You can merge existing accounts or create new sub-accounts based on"
+msgstr "您可以合并现有账号或基于以下创建新子账号"
+
+msgid "Auto Select fastest Server"
+msgstr "自动选择最快服务器"
+
+msgid "Private App Store Links"
+msgstr "内置私有应用商店功能"
+
+msgid "Select apps that will not use VPN"
+msgstr "选择不使用VPN的应用"
+
+msgid "Support In Chinese Iphones"
+msgstr "支持中国iPhone安装"
+
+msgid "Support In Chinese MacOS"
+msgstr "支持中国MacOS安装"
+
+msgid "Support In Chinese Windows"
+msgstr "支持中国Windows安装"
+
+msgid "Two Versions of MacOS"
+msgstr "两个MacOS安装版本"

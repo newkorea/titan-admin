@@ -16,6 +16,9 @@ try {
 } catch (e) {
     // no-op: 구형 브라우저 등 예외는 무시
 }
+// 검색필터 날짜 초기화
+// $('#filter_regist_start').val(getNow());
+// $('#filter_regist_end').val(getTomorrow());
 
 var csrf_token = $('#csrf_token').html();
 var datatable = $('#price-inform').DataTable({
@@ -196,7 +199,28 @@ var datatable = $('#price-inform').DataTable({
         }
     },
 });
-
+// 전역: 인증메일 전송 처리 (등록 확인 팝업 footer 버튼용)
+window.__sendVerifyEmail = function () {
+    try {
+        var csrf_token = $('#csrf_token').html();
+        var email = window.__pendingVerifyEmail || '';
+        if (!email) {
+            Swal.fire('알림','이메일 정보가 없습니다','error');
+            return false;
+        }
+        $.post('/api/v1/send/verify_email', {
+            csrfmiddlewaretoken: csrf_token,
+            email: email
+        }).done(function (m) {
+            if (m.result == 200) {
+                Swal.fire({title: m.title, text: m.text, type: 'success', confirmButtonColor: swalColor('success')});
+            } else {
+                Swal.fire({title: m.title, text: m.text, type: 'error', confirmButtonColor: swalColor('error')});
+            }
+        }).fail(function(){ Swal.fire('알림','메일 전송 중 오류가 발생했습니다','error'); });
+    } catch (e) { /* ignore */ }
+    return false;
+};
 // 이메일 클릭시 해당 이메일로 필터 적용 후 재조회
 $('#price-inform').on('click', 'a.js-email-filter', function (e) {
     e.preventDefault();
@@ -286,38 +310,183 @@ function enroll_ready(){
         confirmButtonColor: swalColor('base'),
         showCancelButton: true
     }).then(function (result){
-        if (result.value) {
-            var note_email = $('#note_email').val();
-            var note_session = $('#note_session').val();
-            var note_month = $('#note_month').val();
-            var note_type = $('#note_type').val();
-            $.post("/api/v1/create/bank", {
+        if (!result.value) return;
+
+        var note_email = $('#note_email').val();
+        var note_session = $('#note_session').val();
+        var note_month = $('#note_month').val();
+        var note_type = $('#note_type').val();
+
+        // 1) 세션 변경 여부 확인 후 등록 확인 팝업
+        // 현재 팝업 이메일을 전역 변수에 저장하여 footer 버튼에서 참조
+        window.__pendingVerifyEmail = note_email;
+
+        $.post('/api/v1/check/session', {
+            csrfmiddlewaretoken: csrf_token,
+            email: note_email,
+            session: note_session
+        }).done(function (chk) {
+            var html = '' +
+                '<div style="font-size:12px;margin-top:10px;">이메일</div>' +
+                '<div style="font-weight:bold;color:red;">' + note_email + '</div>' +
+                '<div style="font-size:12px;margin-top:10px;">세션</div>' +
+                '<div style="font-weight:bold;color:red;">' + note_session + ' session</div>' +
+                '<div style="font-size:12px;margin-top:10px;">개월</div>' +
+                '<div style="font-weight:bold;color:red;">' + note_month + ' 개월</div>' +
+                '<div style="font-size:12px;margin-top:10px;">결제방식</div>' +
+                '<div style="font-weight:bold;color:red;">' + note_type + '</div>' +
+                '<div style="margin-top:10px;">결제요청을 등록하시겠습니까?</div>';
+            if (chk.result == 200) {
+                html += '<div style="margin-top:10px;color:blue;font-weight:bold;font-size:14px;">' +
+                        '원래 ' + chk.old_session + ' session 인데 ' + note_session + ' session 으로 변경됩니다. 주의해주세요!</div>';
+            }
+            if (chk.inactive) {
+                html += '<div style="margin-top:10px;color:red;font-weight:bold;font-size:13px;">※ 이 이메일은 아직 본인인증이 완료되지 않았습니다. 주의해서 처리해주세요.</div>';
+            }
+
+            var footerHtml = '';
+            if (chk.inactive) {
+                footerHtml = '<button type="button" id="swal-send-verify" class="swal2-styled" style="margin:0 5px; background-color:#3b8ddb;" onclick="return __sendVerifyEmail();">인증메일전송</button>';
+            }
+
+            Swal.fire({
+                title: '결제요청 등록 확인',
+                html: html,
+                showCancelButton: true,
+                // 일부 구버전 Swal은 deny 버튼을 지원하지 않으므로 footer 로 대체 버튼 노출
+                showDenyButton: false,
+                confirmButtonText: '등록',
+                cancelButtonText: '취소',
+                confirmButtonColor: swalColor('base'),
+                footer: footerHtml
+            }).then(function (res2) {
+                var confirmed = (res2 && (res2.isConfirmed === true || res2.value === true));
+                // 인증메일전송은 footer 버튼으로 처리
+                if (!confirmed) return;
+                // 2) 실제 생성 (NOT_ACTIVE 시 3버튼 제공)
+                $.post('/api/v1/create/bank', {
+                    csrfmiddlewaretoken: csrf_token,
+                    note_email: note_email,
+                    note_session: note_session,
+                    note_month: note_month,
+                    note_type: note_type
+                }).done(function (data) {
+                    if (data.result == 200) {
+                        Swal.fire({title: data.title, text: data.text, type: 'success', confirmButtonColor: swalColor('success')});
+                        reload_data();
+                    } else if ((data.result == 409 && data.can_force) || (data.text && data.text.indexOf('본인인증되지 않은 이메일입니다') >= 0)) {
+                        // 비활성(미인증) 추가 경고 문구를 html에 합침
+                        var warn = '';
+                        if (data.inactive) {
+                            warn = '<div style="margin-top:10px;color:red;font-weight:bold;font-size:13px;">※ 이 이메일은 아직 본인인증이 완료되지 않았습니다. 주의해서 처리해주세요.</div>';
+                        }
+                        Swal.fire({
+                            title: '본인인증 필요',
+                            html: (data.text || '본인인증되지 않은 이메일입니다') + warn + '<br><br>다음 중 하나를 선택하세요.',
+                            showCancelButton: true,
+                            cancelButtonText: '취소',
+                            showDenyButton: true,
+                            denyButtonText: '인증메일전송',
+                            confirmButtonText: '계속연장',
+                            confirmButtonColor: swalColor('base'),
+                            denyButtonColor: swalColor('info')
+                        }).then(function (sel) {
+                            var confirmed = (sel && (sel.isConfirmed === true || sel.value === true));
+                            var denied = (sel && (sel.isDenied === true || sel.dismiss === 'deny'));
+                            if (confirmed) {
+                                $.post('/api/v1/create/bank', {
+                                    csrfmiddlewaretoken: csrf_token,
+                                    note_email: note_email,
+                                    note_session: note_session,
+                                    note_month: note_month,
+                                    note_type: note_type,
+                                    force: 'Y'
+                                }).done(function (forceData) {
+                                    if (forceData.result == 200) {
+                                        Swal.fire({title: forceData.title, text: forceData.text, type: 'success', confirmButtonColor: swalColor('success')});
+                                        reload_data();
+                                    } else {
+                                        Swal.fire({title: forceData.title, text: forceData.text, type: 'error', confirmButtonColor: swalColor('error')});
+                                    }
+                                }).fail(function(){ Swal.fire('알림','서버 통신 오류가 발생했습니다','error'); });
+                            } else if (denied) {
+                                $.post('/api/v1/send/verify_email', {
+                                    csrfmiddlewaretoken: csrf_token,
+                                    email: note_email
+                                }).done(function (m) {
+                                    if (m.result == 200) {
+                                        Swal.fire({title: m.title, text: m.text, type: 'success', confirmButtonColor: swalColor('success')});
+                                    } else {
+                                        Swal.fire({title: m.title, text: m.text, type: 'error', confirmButtonColor: swalColor('error')});
+                                    }
+                                }).fail(function () { Swal.fire('알림','메일 전송 중 오류가 발생했습니다','error'); });
+                            }
+                        });
+                    } else {
+                        Swal.fire({title: data.title, text: data.text, type: 'error', confirmButtonColor: swalColor('error')});
+                    }
+                }).fail(function () { Swal.fire('알림','서버 통신 오류가 발생했습니다','error'); });
+            });
+        }).fail(function () {
+            // 세션 체크 실패 시에도 생성 시도 + 3버튼 대응
+            $.post('/api/v1/create/bank', {
                 csrfmiddlewaretoken: csrf_token,
                 note_email: note_email,
                 note_session: note_session,
                 note_month: note_month,
                 note_type: note_type
-            })
-            .done(function (data) {
+            }).done(function (data) {
                 if (data.result == 200) {
-                    Swal.fire({
-                      title: data.title,
-                      text: data.text,
-                      type: 'success',
-                      confirmButtonColor: swalColor('success')
-                    })
+                    Swal.fire({title: data.title, text: data.text, type: 'success', confirmButtonColor: swalColor('success')});
                     reload_data();
-                }
-                else {
+                } else if ((data.result == 409 && data.can_force) || (data.text && data.text.indexOf('본인인증되지 않은 이메일입니다') >= 0)) {
                     Swal.fire({
-                      title: data.title,
-                      text: data.text,
-                      type: 'error',
-                      confirmButtonColor: swalColor('error')
-                    })
+                        title: '본인인증 필요',
+                        html: (data.text || '본인인증되지 않은 이메일입니다') + '<br><br>다음 중 하나를 선택하세요.',
+                        showCancelButton: true,
+                        cancelButtonText: '취소',
+                        showDenyButton: true,
+                        denyButtonText: '인증메일전송',
+                        confirmButtonText: '계속연장',
+                        confirmButtonColor: swalColor('base'),
+                        denyButtonColor: swalColor('info')
+                    }).then(function (sel) {
+                        var confirmed = (sel && (sel.isConfirmed === true || sel.value === true));
+                        var denied = (sel && (sel.isDenied === true || sel.dismiss === 'deny'));
+                        if (confirmed) {
+                            $.post('/api/v1/create/bank', {
+                                csrfmiddlewaretoken: csrf_token,
+                                note_email: note_email,
+                                note_session: note_session,
+                                note_month: note_month,
+                                note_type: note_type,
+                                force: 'Y'
+                            }).done(function (forceData) {
+                                if (forceData.result == 200) {
+                                    Swal.fire({title: forceData.title, text: forceData.text, type: 'success', confirmButtonColor: swalColor('success')});
+                                    reload_data();
+                                } else {
+                                    Swal.fire({title: forceData.title, text: forceData.text, type: 'error', confirmButtonColor: swalColor('error')});
+                                }
+                            }).fail(function () { Swal.fire('알림','서버 통신 오류가 발생했습니다','error'); });
+                        } else if (denied) {
+                            $.post('/api/v1/send/verify_email', {
+                                csrfmiddlewaretoken: csrf_token,
+                                email: note_email
+                            }).done(function (m) {
+                                if (m.result == 200) {
+                                    Swal.fire({title: m.title, text: m.text, type: 'success', confirmButtonColor: swalColor('success')});
+                                } else {
+                                    Swal.fire({title: m.title, text: m.text, type: 'error', confirmButtonColor: swalColor('error')});
+                                }
+                            }).fail(function () { Swal.fire('알림','메일 전송 중 오류가 발생했습니다','error'); });
+                        }
+                    });
+                } else {
+                    Swal.fire({title: data.title, text: data.text, type: 'error', confirmButtonColor: swalColor('error')});
                 }
-            })
-        }
+            }).fail(function(){ Swal.fire('알림','서버 통신 오류가 발생했습니다','error'); });
+        });
     })
 }
 

@@ -8,6 +8,24 @@
 
 <%block name="content">
 <div>
+  <!-- 결제 방식 활성화 관리 -->
+  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <h4 style="margin-bottom: 15px; color: #333;">국제 결제 방식 활성화</h4>
+    <div style="margin-bottom: 15px; display: flex; align-items: center;">
+      <input type="checkbox" id="wechat_payment_enabled" checked style="width: 20px; height: 20px; cursor: pointer; margin-right: 10px;">
+      <label for="wechat_payment_enabled" style="margin: 0; cursor: pointer; font-size: 16px; font-weight: bold;">
+        위챗 페이 (WeChat Pay)
+      </label>
+    </div>
+    <div style="margin-bottom: 20px; display: flex; align-items: center;">
+      <input type="checkbox" id="alipay_payment_enabled" checked style="width: 20px; height: 20px; cursor: pointer; margin-right: 10px;">
+      <label for="alipay_payment_enabled" style="margin: 0; cursor: pointer; font-size: 16px; font-weight: bold;">
+        알리페이 (Alipay)
+      </label>
+    </div>
+    <button class="btn btn-fw primary" onclick='update_payment_methods()'>설정 저장</button>
+  </div>
+
   <!-- 검색필터 -->
   <div class="row">
     <div class="form-group col-sm-2">
@@ -128,4 +146,57 @@
 
 <%block name="js">
 <script src="/static/admin/js/bank.js"></script>
+<script>
+// 결제 방식 활성화 상태 불러오기
+function read_payment_methods(){
+  var csrf_token = $('#csrf_token').html();
+  $.post( "/api/v1/read/payment_methods", {
+      csrfmiddlewaretoken: csrf_token
+  })
+  .done(function( data ) {
+      if(data.result == 200){
+          $('#wechat_payment_enabled').prop('checked', data.wechat_enabled);
+          $('#alipay_payment_enabled').prop('checked', data.alipay_enabled);
+      } else {
+          $('#wechat_payment_enabled').prop('checked', true);
+          $('#alipay_payment_enabled').prop('checked', true);
+      }
+  });
+}
+
+// 결제 방식 활성화 상태 저장
+function update_payment_methods(){
+    var csrf_token = $('#csrf_token').html();
+    var wechat_enabled = $('#wechat_payment_enabled').is(':checked');
+    var alipay_enabled = $('#alipay_payment_enabled').is(':checked');
+    $.post( "/api/v1/update/payment_methods", {
+        csrfmiddlewaretoken: csrf_token,
+        wechat_enabled: wechat_enabled,
+        alipay_enabled: alipay_enabled
+    })
+    .done(function( data ) {
+        if (data.result == 200) {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'success',
+                confirmButtonColor: swalColor('success')
+            }).then(function (result) {
+                read_payment_methods();
+            })
+        }
+        else {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            })
+        }
+    });
+}
+
+// 페이지 로드시 결제 방식 상태 불러오기
+read_payment_methods();
+</script>
 </%block>

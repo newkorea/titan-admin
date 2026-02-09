@@ -16,11 +16,12 @@ APPEND_SLASH = False
 #TIME_ZONE = 'Asia/Seoul'  # 서울 시간대 (한국 표준시)
 
 
-SMTP_HOST = 'smtp.naver.com'                            # SMTP 도메인
-SMTP_PORT = 465                                         # SMTP 포트
-SMTP_EMAIL = 'kakaovpn@naver.com'                     # SMTP 이메일
-SMTP_ID = 'kakaovpn'                        # SMTP 아이디
-SMTP_PW = 'myboss1357'                         # SMTP 비밀번호
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.naver.com')             # SMTP 도메인
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))                   # SMTP 포트
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'kakaovpn@naver.com')       # SMTP 이메일
+SMTP_ID = os.environ.get('SMTP_ID', 'kakaovpn')                       # SMTP 아이디
+# 네이버 애플리케이션 비밀번호 (환경변수 우선)
+SMTP_PW = os.environ.get('SMTP_PW', '41XKPLFFXBN7')                   # SMTP 비밀번호
 #SMTP_HOST = 'smtp-relay.gmail.com'                      # SMTP 도메인
 #SMTP_PORT = 25                                          # SMTP 포트
 #SMTP_EMAIL = 'master@titanvpn.io'                       # SMTP 이메일

@@ -28,7 +28,8 @@ SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.naver.com')             # SMTP 도
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))                   # SMTP 포트
 SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'kakaovpn@naver.com')       # SMTP 이메일
 SMTP_ID = os.environ.get('SMTP_ID', 'kakaovpn')                       # SMTP 아이디
-SMTP_PW = os.environ.get('SMTP_PW', 'myboss1357')                     # SMTP 비밀번호
+# 네이버 애플리케이션 비밀번호 (2025-11-19 갱신)
+SMTP_PW = os.environ.get('SMTP_PW', '41XKPLFFXBN7')                   # SMTP 비밀번호
 #SMTP_HOST = 'smtp-relay.gmail.com'                      # SMTP 도메인
 #SMTP_PORT = 25                                          # SMTP 포트
 #SMTP_EMAIL = 'master@titanvpn.io'                       # SMTP 이메일
@@ -37,6 +38,15 @@ SMTP_PW = os.environ.get('SMTP_PW', 'myboss1357')                     # SMTP 비
 
 # API Key 설정 (강력한 키로 변경하세요!)
 API_SECRET_KEY = os.environ.get('API_SECRET_KEY', 'MyJohnFCandy670312!@bemyslave')  # 원격연장승인API용 비밀번호
+
+# 이메일 인증 링크 생성에 필요한 공용 설정 (회원 서비스와 동일해야 함)
+# 운영 환경에서는 환경변수로 주입됩니다.
+ACTIVE_AES_KEY = os.environ.get('ACTIVE_AES_KEY', 'hellotitan')
+# Public site domains for user-facing links (activation, password reset)
+# Requested domains: titan.jobjapan.com, titanvpn.kr, tl.jobjapan.net
+FULL_URL  = os.environ.get('FULL_URL',  'titan.jobjapan.com')
+FULL_URL2 = os.environ.get('FULL_URL2', 'titanvpn.kr')
+FULL_URL3 = os.environ.get('FULL_URL3', 'tl.jobjapan.net')
 
 LOGIN_FAIL_ATTEMPT = 10                                 # 로그인 시도 가능 회수
 
@@ -128,7 +138,7 @@ DATABASES = {
         'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
         'OPTIONS': {
             'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '5')),
-            'charset': 'utf8'
+            'charset': 'utf8mb4',
         }
     },
     'radius': {

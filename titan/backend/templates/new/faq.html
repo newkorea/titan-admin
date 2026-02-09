@@ -1,0 +1,100 @@
+<%inherit file="base.html"/>
+<%! from django.utils.translation import ugettext as _ %>
+
+<%block name="css">
+<style>
+.faq-section { padding-top: 40px; padding-bottom: 80px; }
+.faq-card { border: none; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); overflow: hidden; }
+.faq-card .card-header { cursor: pointer; padding: 18px 24px; border: none; transition: background 0.2s; }
+.faq-card .card-header:hover { filter: brightness(0.95); }
+.faq-card .card-header h5 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+.faq-card .card-header h5 .icon { font-size: 1rem; margin-right: 10px; }
+.faq-card .card-header h5 .arrow { transition: transform 0.3s; }
+.faq-card .card-header.collapsed .arrow { transform: rotate(-90deg); }
+.faq-card .card-body { padding: 24px; background: #fff; line-height: 1.85; color: #333; font-size: 0.95rem; }
+.faq-card .card-body h6 { font-weight: 700; color: #333; margin-top: 16px; margin-bottom: 8px; font-size: 1rem; }
+.faq-card .card-body h6:first-child { margin-top: 0; }
+.faq-card .card-body ul { padding-left: 20px; margin-bottom: 10px; }
+.faq-card .card-body li { margin-bottom: 4px; }
+.faq-card .card-body .notice { background: #fff8e1; border-left: 4px solid #ffc107; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 0.9rem; }
+.faq-card .card-body a { color: #5e35b1; text-decoration: underline; }
+.faq-card .card-body a:hover { color: #4527a0; }
+</style>
+</%block>
+
+<%block name="content">
+<!--body content wrap start-->
+<div class="main">
+
+    <!--hero section start-->
+    <section class="hero-section ptb-100 background-img"
+             style="background: url('/static/new/img/hero-bg-1.jpg') no-repeat center center / cover; padding-bottom: 30px !important;">
+        <div class="container">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="page-header-content text-white text-center pt-sm-5 pt-md-5 pt-lg-0">
+                        <h1 class="text-white mb-0">FAQ</h1>
+                        <p class="lead text-white mt-2">${_('Frequently Asked Questions')}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--hero section end-->
+
+    <section class="faq-section gray-light-bg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+
+                    % for cat in categories:
+                    <div class="card faq-card">
+                        <div class="card-header" data-toggle="collapse" data-target="#faq_${ cat['id'] }" aria-expanded="false"
+                             style="background: ${ cat['gradient'] };">
+                            <h5><span><span class="icon">${ cat['icon'] }</span> ${ cat['title_' + lang_key] }</span> <span class="arrow">▼</span></h5>
+                        </div>
+                        <div id="faq_${ cat['id'] }" class="collapse">
+                            <div class="card-body">
+                                % for item in items_by_cat.get(cat['id'], []):
+                                ${ item['content_' + lang_key] | n }
+                                % endfor
+                            </div>
+                        </div>
+                    </div>
+                    % endfor
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+<!--body content wrap end-->
+</%block>
+
+<%block name="js">
+<script>
+$(document).ready(function(){
+    // Toggle arrow direction on collapse
+    $('.faq-card .card-header').on('click', function(){
+        var $this = $(this);
+        setTimeout(function(){
+            if($this.attr('aria-expanded') === 'true'){
+                $this.removeClass('collapsed');
+            } else {
+                $this.addClass('collapsed');
+            }
+        }, 10);
+    });
+    // Initially all collapsed
+    $('.faq-card .card-header').addClass('collapsed');
+
+    // Open specific FAQ from URL hash
+    var hash = window.location.hash;
+    if(hash){
+        $(hash).collapse('show');
+        $(hash).prev('.card-header').removeClass('collapsed');
+    }
+});
+</script>
+</%block>

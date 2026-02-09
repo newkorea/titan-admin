@@ -25,51 +25,51 @@
   </div>
 
   <div class="mobile-card" id="sec-account">
-    <div style="margin-bottom:6px; font-weight:600;">계정 선택</div>
+    <div style="margin-bottom:6px; font-weight:600;">${_('Select Account')}</div>
     <select id="ext_account_select_m" class="form-control form-control-sm">
-      <option value="">불러오는 중...</option>
+      <option value="">${_('Loading...')}</option>
     </select>
     <div id="ext_account_status_m" style="margin-top:6px;font-weight:600;color:#0d6efd;"></div>
   </div>
 
   <div class="mobile-card" id="sec-period">
-    <div style="margin-bottom:8px; font-weight:600;">사용기간</div>
+    <div style="margin-bottom:8px; font-weight:600;">${_('Usage Period')}</div>
     <div class="opt-grid" id="period_opts">
-      <div class="opt-item"><button class="opt-btn" data-month="1">1개월</button></div>
-      <div class="opt-item"><button class="opt-btn" data-month="2">2개월</button></div>
-      <div class="opt-item"><button class="opt-btn" data-month="3">3개월</button></div>
-      <div class="opt-item"><button class="opt-btn" data-month="6">6개월</button></div>
-      <div class="opt-item"><button class="opt-btn" data-month="12">12개월</button></div>
+      <div class="opt-item"><button class="opt-btn" data-month="1">1 ${_('Month')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-month="2">2 ${_('Month')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-month="3">3 ${_('Month')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-month="6">6 ${_('Month')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-month="12">12 ${_('Month')}</button></div>
     </div>
   </div>
 
   <div class="mobile-card" id="sec-session">
-    <div style="margin-bottom:8px; font-weight:600;">동시접속</div>
+    <div style="margin-bottom:8px; font-weight:600;">${_('Concurrent devices')}</div>
     <div class="opt-grid" id="session_opts">
-      <div class="opt-item"><button class="opt-btn" data-session="1">1기기</button></div>
-      <div class="opt-item"><button class="opt-btn" data-session="2">2기기</button></div>
-      <div class="opt-item"><button class="opt-btn" data-session="3">3기기</button></div>
-      <div class="opt-item"><button class="opt-btn" data-session="6">6기기</button></div>
+      <div class="opt-item"><button class="opt-btn" data-session="1">1 ${_('Device')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-session="2">2 ${_('Device')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-session="3">3 ${_('Device')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-session="6">6 ${_('Device')}</button></div>
     </div>
   </div>
 
   <div class="mobile-card" id="sec-paymethod">
-    <div style="margin-bottom:8px; font-weight:600;">결제방식</div>
+    <div style="margin-bottom:8px; font-weight:600;">${_('Payment Method')}</div>
     <div class="opt-grid" id="pgcode_opts">
       <div class="opt-item"><button class="opt-btn" data-pgcode="WECHAT_IV">WeChat</button></div>
       <div class="opt-item"><button class="opt-btn" data-pgcode="ALIPAY_IV">Alipay</button></div>
-      <div class="opt-item"><button class="opt-btn" data-pgcode="creditcard">카드(국내)</button></div>
-      <div class="opt-item"><button class="opt-btn" data-pgcode="sendmoney">수동</button></div>
+      <div class="opt-item"><button class="opt-btn" data-pgcode="creditcard">${_('Credit Card (Korea)')}</button></div>
+      <div class="opt-item"><button class="opt-btn" data-pgcode="sendmoney">${_('Manual Transfer')}</button></div>
     </div>
   </div>
 
   <div class="mobile-card" id="sec-summary">
-    <div style="margin-bottom:8px; font-weight:600;">선택 요약</div>
-    <div id="summary_text" style="font-size:14px;color:#444;">선택된 항목이 없습니다.</div>
+    <div style="margin-bottom:8px; font-weight:600;">${_('Summary')}</div>
+    <div id="summary_text" style="font-size:14px;color:#444;">${_('No items selected.')}</div>
   </div>
 
   <div class="mobile-actions">
-    <button class="btn btn-primary price-btn" onclick="mobilePayment()">결제 진행</button>
+    <button class="btn btn-primary price-btn" onclick="mobilePayment()">${_('Proceed to Payment')}</button>
   </div>
 
   <!-- Hidden states to reuse server API 동일 로직 -->
@@ -121,38 +121,40 @@ function refreshSummary(){
   var m = document.getElementById('state_month_type_m').value;
   var s = document.getElementById('state_session_m').value;
   var p = document.getElementById('state_pgcode_m').value;
+  var _rl = '${LANGUAGE_CODE}';
   var parts = [];
-  if(m) parts.push(m+'개월');
-  if(s) parts.push(s+'기기');
-  if(p) parts.push('방식:'+p);
-  document.getElementById('summary_text').innerText = parts.length ? parts.join(', ') : '선택된 항목이 없습니다.';
+  if(m) parts.push(m+(_rl==='en'?' months':(_rl==='zh'?'个月':'개월')));
+  if(s) parts.push(s+(_rl==='en'?' devices':(_rl==='zh'?'台':'기기')));
+  if(p) parts.push((_rl==='en'?'Method: ':(_rl==='zh'?'方式：':'방식:'))+p);
+  document.getElementById('summary_text').innerText = parts.length ? parts.join(', ') : (_rl==='en'?'No items selected.':(_rl==='zh'?'未选择任何项目。':'선택된 항목이 없습니다.'));
 }
 
 function mobilePayment(){
   var pgcode = document.getElementById('state_pgcode_m').value;
   var month_type = document.getElementById('state_month_type_m').value;
   var session = document.getElementById('state_session_m').value;
+  var _ml = '${LANGUAGE_CODE}';
   // 결제방식 먼저
   if(!pgcode){
-    Swal.fire({icon:'warning', title:'알림', text:'결제방식을 선택해주세요.'});
+    Swal.fire({icon:'warning', title:_ml==='en'?'Notice':(_ml==='zh'?'提示':'알림'), text:_ml==='en'?'Please select a payment method.':(_ml==='zh'?'请选择支付方式。':'결제방식을 선택해주세요.')});
     return false;
   }
   if(!month_type){
-    Swal.fire({icon:'warning', title:'알림', text:'사용기간을 선택해주세요.'});
+    Swal.fire({icon:'warning', title:_ml==='en'?'Notice':(_ml==='zh'?'提示':'알림'), text:_ml==='en'?'Please select a usage period.':(_ml==='zh'?'请选择使用期限。':'사용기간을 선택해주세요.')});
     return false;
   }
   if(!session){
-    Swal.fire({icon:'warning', title:'알림', text:'동시접속수를 선택해주세요.'});
+    Swal.fire({icon:'warning', title:_ml==='en'?'Notice':(_ml==='zh'?'提示':'알림'), text:_ml==='en'?'Please select the number of concurrent connections.':(_ml==='zh'?'请选择同时连接数。':'동시접속수를 선택해주세요.')});
     return false;
   }
-  // 기존 데스크톱 payment() 로직과 유사한 분기 (간단화)
+  // 기존 데스크톱 payment() 로직과 동일하게 세션 변경 안내 + 결제 진행
   if(pgcode === 'WECHAT_IV'){ checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_wechat, 'W'); return; }
   if(pgcode === 'ALIPAY_IV'){ checkRecentPaymentsAndProceed(pgcode, month_type, session, titan_alipay, 'A'); return; }
   if(pgcode === 'sendmoney'){ titan_bank(pgcode, month_type, session); return; }
   if(['creditcard','banktransfer','toss','kakaopay','payco','virtualaccount','mobile','ssgpay'].indexOf(pgcode) !== -1){ payletter_korea(pgcode, month_type, session); return; }
   // 해외(예시) 처리
   if(['PLCreditCard','PLUnionPay','PLCreditCardMpi','PaypalExpressCheckout'].indexOf(pgcode) !== -1){ payletter_global(pgcode, month_type, session); return; }
-  Swal.fire({icon:'error', title:'알림', text:'지원하지 않는 결제방식입니다.'});
+  Swal.fire({icon:'error', title:_ml==='en'?'Notice':(_ml==='zh'?'提示':'알림'), text:_ml==='en'?'Unsupported payment method.':(_ml==='zh'?'不支持的支付方式。':'지원하지 않는 결제방식입니다.')});
 }
 </script>
 </%block>

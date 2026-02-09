@@ -137,3 +137,378 @@ msgstr "Login Time"
 
 msgid "No active sessions."
 msgstr "No active sessions."
+
+msgid "Account to extend"
+msgstr "Account to extend"
+
+msgid "Add Existing Account"
+msgstr "Add Existing Account"
+
+msgid "Add New Sub-Account"
+msgstr "Add New Sub-Account"
+
+msgid "Amount"
+msgstr "Amount"
+
+msgid "Change Password"
+msgstr "Change Password"
+
+msgid "Checking your payment. Please wait a moment."
+msgstr "Checking your payment. Please wait a moment."
+
+msgid "Costomer Service on (KST)10:00 AM to 20:00 PM"
+msgstr "Costomer Service on (KST)10:00 AM to 20:00 PM"
+
+msgid "Credit Card (Korea)"
+msgstr "Credit Card (Korea)"
+
+msgid "Device"
+msgstr "Device"
+
+msgid "Expired"
+msgstr "Expired"
+
+msgid "FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE"
+msgstr "FAST SPEED, HIGH QUALITY SAFE, CONVENIENCE, BEST SERVICE"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Manual Transfer"
+msgstr "Manual Transfer"
+
+msgid "No items selected."
+msgstr "No items selected."
+
+msgid "No."
+msgstr "No."
+
+msgid "Payment Method"
+msgstr "Payment Method"
+
+msgid "Payment Type"
+msgstr "Payment Type"
+
+msgid "Payment in progress..."
+msgstr "Payment in progress..."
+
+msgid "Period"
+msgstr "Period"
+
+msgid "Proceed to Payment"
+msgstr "Proceed to Payment"
+
+msgid "Product"
+msgstr "Product"
+
+msgid "Receipt"
+msgstr "Receipt"
+
+msgid "Refund is possible only within 7 days before first usage"
+msgstr "Refund is possible only within 7 days before first usage"
+
+msgid "Request Time"
+msgstr "Request Time"
+
+msgid "SSG Pay"
+msgstr "SSG Pay"
+
+msgid "Select Account"
+msgstr "Select Account"
+
+msgid "Select the account to extend from the dropdown, or use Add Account at the bottom to register another account."
+msgstr "Select the account to extend from the dropdown, or use Add Account at the bottom to register another account."
+
+msgid "Select the target account and then choose a period, concurrent access, and payment method."
+msgstr "Select the target account and then choose a period, concurrent access, and payment method."
+
+msgid "Session"
+msgstr "Session"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Summary"
+msgstr "Summary"
+
+msgid "Usage Period"
+msgstr "Usage Period"
+
+msgid "Virtual Account (Bank Transfer)"
+msgstr "Virtual Account (Bank Transfer)"
+
+msgid "You can merge existing accounts or create new sub-accounts based on"
+msgstr "You can merge existing accounts or create new sub-accounts based on"
+
+msgid "Auto Select fastest Server"
+msgstr "Auto Select fastest Server"
+
+msgid "Private App Store Links"
+msgstr "Private App Store Links"
+
+msgid "Select apps that will not use VPN"
+msgstr "Select apps that will not use VPN"
+
+msgid "Support In Chinese Iphones"
+msgstr "Support In Chinese Iphones"
+
+msgid "Support In Chinese MacOS"
+msgstr "Support In Chinese MacOS"
+
+msgid "Support In Chinese Windows"
+msgstr "Support In Chinese Windows"
+
+msgid "Two Versions of MacOS"
+msgstr "Two Versions of MacOS"
+
+msgid "2 users concurrent access"
+msgstr "2 users concurrent access"
+
+msgid "3 users concurrent access"
+msgstr "3 users concurrent access"
+
+msgid "4 users concurrent access"
+msgstr "4 users concurrent access"
+
+msgid "5 users concurrent access"
+msgstr "5 users concurrent access"
+
+msgid "6 users concurrent access"
+msgstr "6 users concurrent access"
+
+msgid "Alipay"
+msgstr "Alipay"
+
+msgid "Android"
+msgstr "Android"
+
+msgid "Any problems or inquiries arising from using the service are handled below"
+msgstr "Any problems or inquiries arising from using the service are handled below"
+
+msgid "Bank Transfer"
+msgstr "Bank Transfer"
+
+msgid "CNY"
+msgstr "CNY"
+
+msgid "Change password"
+msgstr "Change password"
+
+msgid "Concurrent Access means the number of devices available to log in at the same time"
+msgstr "Concurrent Access means the number of devices available to log in at the same time"
+
+msgid "Confirm password"
+msgstr "Confirm password"
+
+msgid "Costomer Service"
+msgstr "Costomer Service"
+
+msgid "CreditCard"
+msgstr "CreditCard"
+
+msgid "Delete account"
+msgstr "Delete account"
+
+msgid "Do you have already an account?"
+msgstr "Do you have already an account?"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Enter the password"
+msgstr "Enter the password"
+
+msgid "Enter your name"
+msgstr "Enter your name"
+
+msgid "Expiry date"
+msgstr "Expiry date"
+
+msgid "Five devices concurrent access"
+msgstr "Five devices concurrent access"
+
+msgid "Four devices concurrent access"
+msgstr "Four devices concurrent access"
+
+msgid "Free refund before 7 days"
+msgstr "Free refund before 7 days"
+
+msgid "Frequently Asked Questions"
+msgstr "Frequently Asked Questions"
+
+msgid "General"
+msgstr "General"
+
+msgid "Go back"
+msgstr "Go back"
+
+msgid "IOS"
+msgstr "IOS"
+
+msgid "If you want to direct contact, Please click on the bottom right icon"
+msgstr "If you want to direct contact, Please click on the bottom right icon"
+
+msgid "KakaoPay"
+msgstr "KakaoPay"
+
+msgid "Korea"
+msgstr "Korea"
+
+msgid "MacOS"
+msgstr "MacOS"
+
+msgid "Month"
+msgstr "Month"
+
+msgid "Move to payment page"
+msgstr "Move to payment page"
+
+msgid "MyPage"
+msgstr "MyPage"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "One device concurrent access"
+msgstr "One device concurrent access"
+
+msgid "One user concurrent access"
+msgstr "One user concurrent access"
+
+msgid "Online Banking"
+msgstr "Online Banking"
+
+msgid "PAYCO"
+msgstr "PAYCO"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Payment"
+msgstr "Payment"
+
+msgid "Payment module"
+msgstr "Payment module"
+
+msgid "Payment request"
+msgstr "Payment request"
+
+msgid "Personal Referrer Promotion link"
+msgstr "Personal Referrer Promotion link"
+
+msgid "Please download the software that corresponds to the platform you are using"
+msgstr "Please download the software that corresponds to the platform you are using"
+
+msgid "Price"
+msgstr "Price"
+
+msgid "Purchase"
+msgstr "Purchase"
+
+msgid "Re-enter password"
+msgstr "Re-enter password"
+
+msgid "Referrer Code"
+msgstr "Referrer Code"
+
+msgid "Registered date"
+msgstr "Registered date"
+
+msgid "Select a Period"
+msgstr "Select a Period"
+
+msgid "Select a session"
+msgstr "Select a session"
+
+msgid "Select payment method"
+msgstr "Select payment method"
+
+msgid "Sending Email..."
+msgstr "Sending Email..."
+
+msgid "Service period"
+msgstr "Service period"
+
+msgid "Sign in"
+msgstr "Sign in"
+
+msgid "Sign up"
+msgstr "Sign up"
+
+msgid "Six devices concurrent access"
+msgstr "Six devices concurrent access"
+
+msgid "Software Download"
+msgstr "Software Download"
+
+msgid "Supported Countries and ISPs"
+msgstr "Supported Countries and ISPs"
+
+msgid "TITAN VPN provides service at the following price"
+msgstr "TITAN VPN provides service at the following price"
+
+msgid "The price at a glance"
+msgstr "The price at a glance"
+
+msgid "The service expiration date is applied as of the payment date and time"
+msgstr "The service expiration date is applied as of the payment date and time"
+
+msgid "Three devices concurrent access"
+msgstr "Three devices concurrent access"
+
+msgid "Toss"
+msgstr "Toss"
+
+msgid "Transaction history"
+msgstr "Transaction history"
+
+msgid "Two devices concurrent access"
+msgstr "Two devices concurrent access"
+
+msgid "USD"
+msgstr "USD"
+
+msgid "UnionPay"
+msgstr "UnionPay"
+
+msgid "Use"
+msgstr "Use"
+
+msgid "VPN ID"
+msgstr "VPN ID"
+
+msgid "VPN Password"
+msgstr "VPN Password"
+
+msgid "VPN Server address"
+msgstr "VPN Server address"
+
+msgid "WON"
+msgstr "WON"
+
+msgid "We provide servers for three Korean ISPs (KT, SK, LG) as well as servers in Los Angeles, USA, India, and Japan."
+msgstr "We provide servers for three Korean ISPs (KT, SK, LG) as well as servers in Los Angeles, USA, India, and Japan."
+
+msgid "WechatPay"
+msgstr "WechatPay"
+
+msgid "Windows"
+msgstr "Windows"
+
+msgid "You can only get a refund before the first 7 days"
+msgstr "You can only get a refund before the first 7 days"
+
+msgid "You can scan the top QR code in Wechat for contact"
+msgstr "You can scan the top QR code in Wechat for contact"
+
+msgid "You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module"
+msgstr "You cannot pay for a VISA/MASTER card issued in Korea. Please use the Korea payment module"
+
+msgid "You will be free to use TITAN VPN after you sign up"
+msgstr "You will be free to use TITAN VPN after you sign up"
+
+msgid "concurrent access"
+msgstr "concurrent access"
+
+msgid "personnel"
+msgstr "personnel"

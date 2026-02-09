@@ -78,11 +78,25 @@ def _escape_sql_literal(value):
 DETECT_TELECOM_CACHE = {}
 DETECT_TELECOM_CACHE_TTL = 300  # seconds
 
+def _match_cn_telecom_hint(org_str):
+    """ISP/org 문자열에서 중국 3대 통신사 힌트를 반환한다."""
+    if not org_str:
+        return None
+    s = org_str.lower()
+    if 'china telecom' in s:
+        return 'ct'
+    if 'china mobile' in s or 'cmcc' in s:
+        return 'cm'
+    if 'china unicom' in s or 'cucc' in s or 'china united network communications' in s:
+        return 'cu'
+    return None
+
+
 def detect_cn_telecom(login_ip):
-    """중국 통신사 힌트 탐지 (ip-api 기반, 캐시 적용).
-    우선 안전 래퍼(safe_ip_api_lookup)로 isp를 확인하여 매핑하고,
-    실패 시 org/isp/as 확장 조회를 시도한다. 결과는 TTL 캐시한다.
-    매핑: China Telecom -> ct, China Mobile|CMCC -> cm, China Unicom|CUCC|China United Network Communications -> cu
+    """중국 통신사 힌트 탐지.
+    1순위: GeoIP2 ASN 로컬 DB (네트워크 호출 없음, <1ms)
+    2순위: ip-api.com HTTP (캐시 적용, timeout 0.8초)
+    매핑: China Telecom -> ct, China Mobile|CMCC -> cm, China Unicom|CUCC -> cu
     """
     organization_raw = ''
     try:
@@ -101,46 +115,48 @@ def detect_cn_telecom(login_ip):
     except Exception:
         pass
 
-    # Fast path: use safe_ip_api_lookup (cached) to map by ISP
+    # ---- 1순위: GeoIP2 ASN 로컬 DB (즉시 응답) ----
+    reader = _get_geoip2_asn_reader()
+    if reader:
+        try:
+            asn_resp = reader.asn(login_ip)
+            organization_raw = asn_resp.autonomous_system_organization or ''
+            hint = _match_cn_telecom_hint(organization_raw)
+            try:
+                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, hint, organization_raw)
+            except Exception:
+                pass
+            return hint, organization_raw
+        except Exception:
+            pass  # GeoIP2 lookup 실패 시 fallback
+
+    # ---- 2순위: ip-api.com HTTP (캐시 적용) ----
     try:
         resp = safe_ip_api_lookup(login_ip, timeout=0.8)
-        isp = (resp.get('isp') or '').lower()
+        isp = (resp.get('isp') or '')
         if isp:
-            organization_raw = resp.get('isp') or ''
-            if 'china telecom' in isp:
-                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'ct', organization_raw)
-                return 'ct', organization_raw
-            if 'china mobile' in isp or 'cmcc' in isp:
-                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'cm', organization_raw)
-                return 'cm', organization_raw
-            if ('china unicom' in isp or 'cucc' in isp or 'china united network communications' in isp):
-                DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, 'cu', organization_raw)
-                return 'cu', organization_raw
+            organization_raw = isp
+            hint = _match_cn_telecom_hint(isp)
+            if hint:
+                try:
+                    DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, hint, organization_raw)
+                except Exception:
+                    pass
+                return hint, organization_raw
     except Exception:
         pass
 
-    # Fallback: extended org lookup
+    # ---- 3순위: ip-api.com 확장 조회 (org/as) ----
     try:
         resp = requests.get(
             f"http://ip-api.com/json/{login_ip}?fields=status,message,org,isp,as",
-            timeout=1.2,
+            timeout=1.0,
         )
         data = resp.json()
         if data.get('status') != 'success':
             return None, organization_raw
         organization_raw = data.get('org') or data.get('isp') or data.get('as') or ''
-        organization = (organization_raw or '').lower()
-        if not organization:
-            return None, organization_raw
-        # Telecom mappings
-        if 'china telecom' in organization:
-            hint = 'ct'
-        elif 'china mobile' in organization or 'cmcc' in organization:
-            hint = 'cm'
-        elif ('china unicom' in organization or 'cucc' in organization or 'china united network communications' in organization):
-            hint = 'cu'
-        else:
-            hint = None
+        hint = _match_cn_telecom_hint(organization_raw)
         try:
             DETECT_TELECOM_CACHE[login_ip] = (time.time() + DETECT_TELECOM_CACHE_TTL, hint, organization_raw)
         except Exception:
@@ -1510,14 +1526,8 @@ def app_new_check_server(request):
                     _cur2.execute(_sql_isp)
                     _rows_isp = dictfetchall(_cur2)
                     if _rows_isp:
-                        _isp = (_rows_isp[0]['device_isp'] or '').lower()
-                        if 'china telecom' in _isp:
-                            telecom_hint = 'ct'
-                        elif 'china mobile' in _isp or 'cmcc' in _isp:
-                            telecom_hint = 'cm'
-                        elif ('china unicom' in _isp or 'cucc' in _isp
-                              or 'china united network communications' in _isp):
-                            telecom_hint = 'cu'
+                        _isp = _rows_isp[0]['device_isp'] or ''
+                        telecom_hint = _match_cn_telecom_hint(_isp)
                         if telecom_hint:
                             print('INFO -> ISP fallback telecom hint : ', telecom_hint)
             except Exception as _isp_err:
@@ -1697,129 +1707,164 @@ def app_new_check_server(request):
                     if _forced_done:
                         _log_elapsed('t3_disconnect_done')
                 
-                # VPN Agent 매칭
-                telecom_column_map = {
-                    'ct': 'is_auto_ct',
-                    'cm': 'is_auto_cm',
-                    'cu': 'is_auto_cu'
-                }
-                auto_columns = []
-                if telecom_hint in telecom_column_map:
-                    auto_columns.append(telecom_column_map[telecom_hint])
-                auto_columns.append('is_auto')
+                # ── VPN Agent 매칭 (실측 ping 기반) ──
+                # telecom_hint: ct/cm/cu/None (중국 통신사 감지 결과)
+                # failed_server: 이전 연결 실패 서버명 (앱에서 전달)
+                MAX_CONN_PER_SERVER = 50  # 서버당 최대 접속자 수 제한
 
-                def fetch_auto_rows(auto_column_name, auto_value):
-                    if server_protocol == '':
-                        # When protocol not specified by client, allow common protocols (IKEV2/OPENVPN/V2RAY)
-                        # Use OR (not AND) so servers supporting any of these can be chosen.
-                        protocol_clause = "(t1.protocol LIKE '%IKEV2%' OR t1.protocol LIKE '%OPENVPN%' OR t1.protocol LIKE '%V2RAY%')"
-                        name_clause = ''
+                if server_protocol == '':
+                    _protocol_clause = "(t1.protocol LIKE '%IKEV2%' OR t1.protocol LIKE '%OPENVPN%' OR t1.protocol LIKE '%V2RAY%')"
+                    _failed_clause = ''
+                else:
+                    _esc_proto = _escape_sql_literal(server_protocol or '')
+                    _protocol_clause = f"t1.protocol LIKE '%{_esc_proto}%'"
+                    _esc_failed = _escape_sql_literal(failed_server or '')
+                    _failed_clause = f" AND t1.name != '{_esc_failed}'" if failed_server else ''
+
+                def _fetch_ping_ranked(extra_where=''):
+                    """실측 ping + 접속자수 가중치로 서버 순위 조회.
+                    ping_score = ping_avg * 0.7 + conn_count * 0.3
+                    telecom_hint가 있으면 해당 통신사 ping, 없으면 3통신사 평균."""
+                    if telecom_hint and telecom_hint in ('ct', 'cm', 'cu'):
+                        _tc_inner = f"AND cn_telecom = '{telecom_hint}'"
+                        _tc_outer = f"AND p.cn_telecom = '{telecom_hint}'"
                     else:
-                        escaped_protocol = _escape_sql_literal(server_protocol or '')
-                        protocol_clause = f"t1.protocol LIKE '%{escaped_protocol}%'"
-                        escaped_failed = _escape_sql_literal(failed_server or '')
-                        name_clause = f" AND t1.name != '{escaped_failed}'"
+                        _tc_inner = ""
+                        _tc_outer = ""
 
-                    sql_query = f'''
+                    sql = f"""
                         SELECT
-                            t1.id,
-                            t2.count,
-                            t1.hostdomain,
-                            t1.hostip,
-                            t1.name,
-                            t1.country,
-                            t1.config,
-                            t1.v2_config,
-                            t1.v2_port
-                        FROM titan.tbl_agent3 t1,
-                            (SELECT t1.hostip,
-                                    Count(t2.nasipaddress) AS count
-                                FROM titan.tbl_agent3 t1
-                                    LEFT JOIN (SELECT *
-                                               FROM   radius.radacct
-                                               WHERE  acctstoptime IS NULL
-                                              ) t2
-                                           ON t1.hostip = t2.nasipaddress
-                                WHERE  is_active OR is_active = 1 AND is_status = 1
-                                GROUP  BY t1.hostip)t2
-                        WHERE  t1.hostip = t2.hostip AND t1.{auto_column_name} = {auto_value} AND t1.is_active = 1 AND {protocol_clause}{name_clause}
-                        ORDER  BY t1.telecom, t2.count
-                    '''
+                            t1.id, t1.hostdomain, t1.hostip, t1.name,
+                            t1.country, t1.config, t1.v2_config, t1.v2_port,
+                            t1.telecom AS kr_telecom,
+                            COALESCE(conn.count, 0) AS conn_count,
+                            COALESCE(ping.ping_avg, 999) AS ping_avg,
+                            (COALESCE(ping.ping_avg, 999) * 0.7 + COALESCE(conn.count, 0) * 0.3) AS score
+                        FROM titan.tbl_agent3 t1
+                        /* 최신 ping 측정값 (서버별 통신사별 최신 1건) */
+                        LEFT JOIN (
+                            SELECT p.server_ip, p.ping_avg
+                            FROM titan.tbl_server_telecom_ping p
+                            INNER JOIN (
+                                SELECT server_ip, {f"cn_telecom," if telecom_hint in ('ct','cm','cu') else ""} MAX(check_time) AS max_ct
+                                FROM titan.tbl_server_telecom_ping
+                                WHERE check_time > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                                {_tc_inner}
+                                GROUP BY server_ip {f", cn_telecom" if telecom_hint in ('ct','cm','cu') else ""}
+                            ) latest ON p.server_ip = latest.server_ip AND p.check_time = latest.max_ct
+                            {_tc_outer}
+                        ) ping ON t1.hostip = ping.server_ip
+                        /* 현재 접속자 수 */
+                        LEFT JOIN (
+                            SELECT nasipaddress, COUNT(*) AS count
+                            FROM radius.radacct
+                            WHERE acctstoptime IS NULL
+                            GROUP BY nasipaddress
+                        ) conn ON t1.hostip = conn.nasipaddress
+                        WHERE t1.is_active = 1 AND t1.is_status = 1 AND t1.is_auto = 1
+                          AND {_protocol_clause}
+                          {_failed_clause}
+                          {extra_where}
+                        HAVING conn_count < {MAX_CONN_PER_SERVER}
+                        ORDER BY score ASC, RAND()
+                    """
                     try:
-                        cur.execute(sql_query)
-                    except Exception as err:
-                        print('ERROR -> Auto column query fail : ', err)
+                        cur.execute(sql)
+                        return dictfetchall(cur)
+                    except Exception as _e:
+                        print('ERROR -> ping-ranked query fail:', _e)
                         return []
-                    return dictfetchall(cur)
 
                 selected_rows = None
-                selected_auto_column = None
-                selected_auto_value = None
+                selected_method = None
 
-                for candidate_column in auto_columns:
-                    rows = fetch_auto_rows(candidate_column, 1)
-                    if rows:
-                        selected_rows = rows
-                        selected_auto_column = candidate_column
-                        selected_auto_value = 1
-                        break
+                # 1차: 실측 ping 기반 전체 서버 순위
+                rows = _fetch_ping_ranked()
+                if rows:
+                    selected_rows = rows
+                    selected_method = f'ping_ranked(telecom={telecom_hint or "all"})'
 
-                    rows = fetch_auto_rows(candidate_column, 2)
-                    if rows:
-                        selected_rows = rows
-                        selected_auto_column = candidate_column
-                        selected_auto_value = 2
-                        break
-
-                _log_elapsed('t4_auto_select')
-                if not selected_rows:
-                    # Final fallback: pick any active/status server matching protocol clause ignoring auto flags
+                # 2차: 실패 서버가 있을 때 → 다른 한국 ISP 서버 우선 배정
+                if failed_server and selected_rows:
+                    # 실패 서버의 한국 ISP 확인
+                    _failed_kr_telecom = None
                     try:
-                        if server_protocol == '':
-                            any_protocol_clause = "(t1.protocol LIKE '%IKEV2%' OR t1.protocol LIKE '%OPENVPN%' OR t1.protocol LIKE '%V2RAY%')"
-                        else:
-                            escaped_protocol2 = _escape_sql_literal(server_protocol or '')
-                            any_protocol_clause = f"t1.protocol LIKE '%{escaped_protocol2}%'"
-                        any_sql = f"""
-                            SELECT
-                                t1.id,
-                                t2.count,
-                                t1.hostdomain,
-                                t1.hostip,
-                                t1.name,
-                                t1.country,
-                                t1.config,
-                                t1.v2_config,
-                                t1.v2_port
-                            FROM titan.tbl_agent3 t1,
-                                 (SELECT t1.hostip, Count(t2.nasipaddress) AS count
-                                  FROM titan.tbl_agent3 t1
-                                  LEFT JOIN (SELECT * FROM radius.radacct WHERE acctstoptime IS NULL) t2
-                                    ON t1.hostip = t2.nasipaddress
-                                  WHERE (t1.is_active = 1 AND t1.is_status = 1)
-                                  GROUP BY t1.hostip) t2
-                            WHERE t1.hostip = t2.hostip AND {any_protocol_clause}
-                            ORDER BY t2.count
-                            LIMIT 1;
+                        cur.execute(f"SELECT telecom FROM titan.tbl_agent3 WHERE name = '{_escape_sql_literal(failed_server)}' LIMIT 1")
+                        _ftc = dictfetchall(cur)
+                        if _ftc:
+                            _failed_kr_telecom = _ftc[0]['telecom']
+                    except Exception:
+                        pass
+
+                    if _failed_kr_telecom:
+                        # 다른 한국 ISP 서버 중 가장 빠른 서버 재조회
+                        _diff_isp = _fetch_ping_ranked(
+                            extra_where=f" AND t1.telecom != '{_escape_sql_literal(_failed_kr_telecom)}'"
+                        )
+                        if _diff_isp:
+                            selected_rows = _diff_isp
+                            selected_method = f'failover_diff_isp(failed={failed_server},exclude={_failed_kr_telecom})'
+                            print(f'INFO -> Failover: exclude ISP {_failed_kr_telecom}, selected {_diff_isp[0]["name"]}')
+
+                # 3차: ping 데이터 없을 때 → is_auto=1 서버 중 접속자 적은 순
+                if not selected_rows:
+                    _legacy_sql = f'''
+                        SELECT t1.id, COALESCE(conn.count,0) AS count,
+                               t1.hostdomain, t1.hostip, t1.name,
+                               t1.country, t1.config, t1.v2_config, t1.v2_port, t1.telecom AS kr_telecom
+                        FROM titan.tbl_agent3 t1
+                        LEFT JOIN (SELECT nasipaddress, COUNT(*) AS count
+                                   FROM radius.radacct WHERE acctstoptime IS NULL
+                                   GROUP BY nasipaddress) conn ON t1.hostip = conn.nasipaddress
+                        WHERE t1.is_active = 1 AND t1.is_status = 1 AND t1.is_auto = 1
+                          AND {_protocol_clause}{_failed_clause}
+                        HAVING count < {MAX_CONN_PER_SERVER}
+                        ORDER BY count ASC, RAND()
+                    '''
+                    try:
+                        cur.execute(_legacy_sql)
+                        _legacy_rows = dictfetchall(cur)
+                        if _legacy_rows:
+                            selected_rows = _legacy_rows
+                            selected_method = 'legacy_auto(is_auto=1)'
+                    except Exception:
+                        pass
+
+                # 4차: 최종 fallback — 아무 활성 서버
+                if not selected_rows:
+                    try:
+                        _any_sql = f"""
+                            SELECT t1.id, COALESCE(conn.count,0) AS count,
+                                   t1.hostdomain, t1.hostip, t1.name, t1.country,
+                                   t1.config, t1.v2_config, t1.v2_port, t1.telecom AS kr_telecom
+                            FROM titan.tbl_agent3 t1
+                            LEFT JOIN (SELECT nasipaddress, COUNT(*) AS count
+                                       FROM radius.radacct WHERE acctstoptime IS NULL
+                                       GROUP BY nasipaddress) conn ON t1.hostip = conn.nasipaddress
+                            WHERE t1.is_active = 1 AND t1.is_status = 1 AND t1.is_auto = 1
+                              AND {_protocol_clause}
+                            HAVING count < {MAX_CONN_PER_SERVER}
+                            ORDER BY count ASC, RAND()
+                            LIMIT 1
                         """
-                        cur.execute(any_sql)
-                        any_rows = dictfetchall(cur)
-                        if any_rows:
-                            selected_rows = any_rows
-                            selected_auto_column = 'any_active'
-                            selected_auto_value = 0
-                            print('INFO -> Fallback any-active server selected for user', id)
+                        cur.execute(_any_sql)
+                        _any_rows = dictfetchall(cur)
+                        if _any_rows:
+                            selected_rows = _any_rows
+                            selected_method = 'any_active_fallback'
+                            print('INFO -> Final fallback any-active server for', id)
                         else:
-                            print('INFO -> Agent does not exist with auto filters ' + str(auto_columns) + ' ' + id)
+                            print('INFO -> No server available for', id)
                             _log_elapsed('no_agent')
                             return JsonResponse({'result': 700})
                     except Exception as _any_err:
                         print('ERROR -> any-active fallback fail:', _any_err)
-                        print('INFO -> Agent does not exist with auto filters ' + str(auto_columns) + ' ' + id)
                         _log_elapsed('no_agent')
                         return JsonResponse({'result': 700})
 
-                print('INFO -> Selected auto column : ' + selected_auto_column + ' value : ' + str(selected_auto_value))
+                _log_elapsed('t4_auto_select')
+                print(f'INFO -> Server selected: method={selected_method}, server={selected_rows[0].get("name","?")}, '
+                      f'ping={selected_rows[0].get("ping_avg","?")}, conn={selected_rows[0].get("conn_count", selected_rows[0].get("count","?"))}')
                 rows = selected_rows
                 host_name = rows[0]['hostdomain']
                 host_ip = rows[0]['hostip']
@@ -1891,6 +1936,22 @@ def app_new_check_server(request):
                 
                 is_active = rows[0]['is_active']
                 is_status = rows[0]['is_status']
+
+                # 중국 통신사 사용자: 항상 ping 최적 서버로 배정 (기존 서버 무시)
+                if telecom_hint and telecom_hint in ('ct', 'cm', 'cu') and selected_method and selected_method.startswith('ping_ranked'):
+                    _log_elapsed('active_cn_override')
+                    print(f'INFO -> CN telecom override: old={rows[0]["name"]}, new={vpn_server_name}, telecom={telecom_hint}')
+                    return JsonResponse({'result' : 200 ,
+                                        'vpn_smart_match_id' : vpn_server_id,
+                                        'vpn_smart_match_hostname' : host_name,
+                                        'vpn_smart_match_ip' : host_ip,
+                                        'vpn_smart_match_name' : vpn_server_name,
+                                        'vpn_smart_match_country' : vpn_server_country,
+                                        'vpn_smart_match_config' : vpn_server_config,
+                                        'vpn_smart_match_v2config' : vpn_server_v2config,
+                                        'vpn_smart_match_v2port' : vpn_server_v2port,
+                                        'vpn_username' : username,
+                                        'vpn_password' : password})
 
                 if is_active == 1 and is_status == 1 :
                     _log_elapsed('active')

@@ -24,7 +24,8 @@ def dictfetchall(cursor):
 
 # 거래 내역 페이지
 def transaction(request):
-    return render(request, 'new/transaction.html', {"data": ""})
+    LANGUAGE_CODE = getattr(request, 'LANGUAGE_CODE', 'ko') or 'ko'
+    return render(request, 'new/transaction.html', {"data": "", "LANGUAGE_CODE": LANGUAGE_CODE})
 
 # 거래 내역 조회
 from django.http import JsonResponse, HttpResponse

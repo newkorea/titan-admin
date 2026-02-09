@@ -16,6 +16,9 @@ from .djangoapps.chart import views as ChartViews
 from .djangoapps.saler import views as SalerViews
 from .djangoapps.event import views as EventViews
 from .djangoapps.reward import views as RewardViews
+from .djangoapps.chatbot import views as ChatbotViews
+from .djangoapps.faq import views as FaqViews
+from .djangoapps.nasmonitor import views as NasMonitorViews
 #from .djangoapps.admin import views as AdminViews
 from .djangoapps.saler import views as SalerViews
 from django.urls import path
@@ -185,6 +188,9 @@ urlpatterns = [
     # [api v1] 사용자 활성화 상태를 변경합니다
     path('api/v1/update/user_active', UserViews.api_update_user_active, name='api_update_user_active'),
 
+    # [api v1] 본인인증 메일 재전송 (관리자용)
+    path('api/v1/send/verify_email', UserViews.api_send_verify_email, name='api_send_verify_email'),
+
     # [api v1] 2023-05-25 Added by Zhao
     path('api/v1/update/notification', NotificationViews.api_update_notification, name='api_update_notification'),
 
@@ -211,6 +217,12 @@ urlpatterns = [
 
     # [api v1] 계좌관리 입금주, 은행이름, 은행계좌번호를 수정합니다
     path('api/v1/update/account', PriceViews.api_update_account, name='api_update_account'),
+
+    # [api v1] 국제 결제 방식 활성화 여부를 반환합니다
+    path('api/v1/read/payment_methods', PriceViews.api_read_payment_methods, name='api_read_payment_methods'),
+
+    # [api v1] 국제 결제 방식 활성화 여부를 수정합니다
+    path('api/v1/update/payment_methods', PriceViews.api_update_payment_methods, name='api_update_payment_methods'),
 
     # [api v1] 무통장 결제 요청 건수를 반홥합니다
     path('api/v1/read/ready_count', PriceViews.api_read_ready_count, name='api_read_ready_count'),
@@ -348,6 +360,48 @@ urlpatterns = [
     path('api/v1/read/session_list', UserViews.api_read_session_list, name='api_read_session_list'),
     path('api/v1/delete/session', UserViews.api_delete_session, name='api_delete_session'),
     path('api/v1/delete/all_sessions', UserViews.api_delete_all_sessions, name='api_delete_all_sessions'),
+
+    # [render] 챗봇 Q&A 관리
+    path('chatbot_qa', ChatbotViews.chatbot_qa, name='chatbot_qa'),
+
+    # [api v1] 챗봇 Q&A CRUD API
+    path('api/v1/read/chatbot_qa', ChatbotViews.api_read_chatbot_qa, name='api_read_chatbot_qa'),
+    path('api/v1/read/chatbot_qa_detail', ChatbotViews.api_read_chatbot_qa_detail, name='api_read_chatbot_qa_detail'),
+    path('api/v1/read/chatbot_qa_stats', ChatbotViews.api_read_chatbot_qa_stats, name='api_read_chatbot_qa_stats'),
+    path('api/v1/create/chatbot_qa', ChatbotViews.api_create_chatbot_qa, name='api_create_chatbot_qa'),
+    path('api/v1/update/chatbot_qa', ChatbotViews.api_update_chatbot_qa, name='api_update_chatbot_qa'),
+    path('api/v1/update/chatbot_qa_toggle', ChatbotViews.api_toggle_chatbot_qa, name='api_toggle_chatbot_qa'),
+    path('api/v1/delete/chatbot_qa', ChatbotViews.api_delete_chatbot_qa, name='api_delete_chatbot_qa'),
+
+    # [render] FAQ 관리
+    path('faq_manage', FaqViews.faq_manage, name='faq_manage'),
+
+    # [api v1] FAQ CRUD API
+    path('api/v1/read/faq_categories', FaqViews.api_read_faq_categories, name='api_read_faq_categories'),
+    path('api/v1/create/faq_category', FaqViews.api_create_faq_category, name='api_create_faq_category'),
+    path('api/v1/update/faq_category', FaqViews.api_update_faq_category, name='api_update_faq_category'),
+    path('api/v1/read/faq_items', FaqViews.api_read_faq_items, name='api_read_faq_items'),
+    path('api/v1/read/faq_item_detail', FaqViews.api_read_faq_item_detail, name='api_read_faq_item_detail'),
+    path('api/v1/create/faq_item', FaqViews.api_create_faq_item, name='api_create_faq_item'),
+    path('api/v1/update/faq_item', FaqViews.api_update_faq_item, name='api_update_faq_item'),
+    path('api/v1/delete/faq_item', FaqViews.api_delete_faq_item, name='api_delete_faq_item'),
+    path('api/v1/toggle/faq_item', FaqViews.api_toggle_faq_item, name='api_toggle_faq_item'),
+
+    # [render] NAS 서버 현황
+    path('nas_status', NasMonitorViews.nas_status, name='nas_status'),
+
+    # [render] 서버 배정 현황
+    path('nas_assignment', NasMonitorViews.nas_assignment, name='nas_assignment'),
+
+    # [api v1] NAS 모니터링 API
+    path('api/v1/read/nas_status', NasMonitorViews.api_read_nas_status, name='api_read_nas_status'),
+    path('api/v1/read/nas_history', NasMonitorViews.api_read_nas_history, name='api_read_nas_history'),
+    path('api/v1/read/nas_assignment', NasMonitorViews.api_read_nas_assignment, name='api_read_nas_assignment'),
+    path('api/v1/update/toggle_is_auto', NasMonitorViews.api_toggle_is_auto, name='api_toggle_is_auto'),
+    path('api/v1/update/cert_renew', NasMonitorViews.api_cert_renew, name='api_cert_renew'),
+    path('api/v1/read/cert_renew_status', NasMonitorViews.api_cert_renew_status, name='api_cert_renew_status'),
+    path('api/v1/update/nas_manual_check', NasMonitorViews.api_nas_manual_check, name='api_nas_manual_check'),
+    path('api/v1/read/nas_manual_check_status', NasMonitorViews.api_nas_manual_check_status, name='api_nas_manual_check_status'),
 
 ]
 

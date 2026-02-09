@@ -45,7 +45,7 @@ def get_swal(type):
         text = '로그인 시도 초과하여 계정이 잠겼습니다'
         return title, text
     elif type == 'SUCCESS_SIGNUP':
-        title = '회원가입 완료'
+        title = '인증메일전송완료'
         text = '입력하신 이메일에 본인인증메일을 발송하였습니다'
         return title, text
     elif type == 'SUCCESS_RESET':

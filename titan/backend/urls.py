@@ -15,6 +15,7 @@ from .djangoapps.price.views import api_check_recent_payments
 from .djangoapps.price.views import api_preview_session_change
 from .djangoapps.restapi import views as RestAPIViews
 from .djangoapps.price_table import views as PriceTableViews  # 이름을 변경해 충돌 방지
+from .djangoapps.faq import views as FaqViews
 
 
 urlpatterns = [
@@ -56,12 +57,17 @@ urlpatterns = [
     # [render] 이용가격
     path('price_table', PriceTableViews.price_table, name='price_table'),
 
+    # [render] FAQ
+    path('faq', FaqViews.faq, name='faq'),
+
     # [render] 마이페이지
     path('mypage', MypageViews.mypage, name='mypage'),
     path('mypage/password', MypageViews.password_change_page, name='password_change_page'),
     path('mypage/change_password_action', MypageViews.change_password_action, name='change_password_action'),
     path('delete_session', MypageViews.delete_session, name='delete_session'),
     path('delete_all_sessions', MypageViews.delete_all_sessions, name='delete_all_sessions'),
+    path('api_change_sub_password_direct', MypageViews.api_change_sub_password_direct_v2, name='api_change_sub_password_direct'),
+    path('api_send_password_reset_for_sub', MypageViews.api_send_password_reset_for_sub, name='api_send_password_reset_for_sub'),
 
     # [render] 거래이력
     path('transaction', TransactionViews.transaction, name='transaction'),
@@ -98,6 +104,9 @@ urlpatterns = [
 
     # [api] 실제 비밀번호 변경
     path('api_reset_password', LoginViews.api_reset_password, name='api_reset_password'),
+
+    # [api] 사용자 메일 인증 재전송
+    path('api_send_verify_email', LoginViews.api_send_verify_email, name='api_send_verify_email'),
 
     # [api] 결제 요청
     path('api_plz_payment', PriceViews.api_plz_payment, name='api_plz_payment'),
@@ -182,5 +191,6 @@ urlpatterns = [
     path('api_check_payment_status', PriceViews.api_check_payment_status, name='api_check_payment_status'), #새롭게 결제승인상태값을 보내줌
     path("api_check_recent_payments",  PriceViews.api_check_recent_payments, name="api_check_recent_payments"),
     path('api_preview_session_change', api_preview_session_change, name='api_preview_session_change'),
+    path('api_get_payment_methods', PriceViews.api_get_payment_methods, name='api_get_payment_methods'),
     path('v1/app_health', RestAPIViews.app_health, name='app_health'),
 ]
