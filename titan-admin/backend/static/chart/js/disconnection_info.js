@@ -39,6 +39,8 @@ var datatable = $('#disconnection-inform').DataTable({
         {data: "user_session"},
         {data: "connected_count"},
         {data: "protocol"},
+        {data: "server_name"},
+        {data: "telecom"},
         {data: "disconnected_time"},
         {data: "old_ip"},
         {data: "new_ip"},
@@ -83,6 +85,20 @@ var datatable = $('#disconnection-inform').DataTable({
             targets: 5,
             visible: true,
             render: function (data) {
+                return data || '-';
+            }
+        },
+        {
+            targets: 6,
+            visible: true,
+            render: function (data) {
+                return data || '-';
+            }
+        },
+        {
+            targets: 7,
+            visible: true,
+            render: function (data) {
                 if(data == "None")
                     return "";
                 else
@@ -90,14 +106,14 @@ var datatable = $('#disconnection-inform').DataTable({
             }
         },
         {
-            targets: 6,
+            targets: 8,
             visible: true,
             render: function (data) {
                 return data;
             }
         },
         {
-            targets: 7,
+            targets: 9,
             visible: true,
             render: function (data) {
                 return data;

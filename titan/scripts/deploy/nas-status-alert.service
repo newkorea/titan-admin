@@ -1,0 +1,12 @@
+[Unit]
+Description=TitanVPN NAS Status Alert (Email/Push)
+After=network.target
+
+[Service]
+Type=oneshot
+User=newkorea
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/home/newkorea/project/titan/.venv310/bin/python3 scripts/nas_status_alert.py --force
+TimeoutStartSec=120
+StandardOutput=journal
+StandardError=journal

@@ -1,0 +1,487 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+/* ===== 글로벌 ===== */
+.ufa-page { padding: 20px; max-width: 1600px; margin: 0 auto; }
+.ufa-page h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.ufa-page .subtitle { color: #888; font-size: 13px; margin-bottom: 16px; }
+
+/* ===== 탭 ===== */
+.ufa-tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid #e5e7eb; }
+.ufa-tab { padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; color: #6b7280; transition: all .2s; }
+.ufa-tab:hover { color: #3b82f6; }
+.ufa-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.ufa-tab .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: 6px; background: #ef4444; color: #fff; }
+
+/* ===== 시간 버튼 ===== */
+.ufa-time-bar { display: flex; gap: 6px; align-items: center; margin: 16px 0; }
+.ufa-time-btn { padding: 5px 14px; border-radius: 16px; border: 1px solid #d1d5db; font-size: 13px; cursor: pointer; background: #fff; transition: all .2s; font-weight: 600; }
+.ufa-time-btn:hover { border-color: #3b82f6; }
+.ufa-time-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.ufa-time-label { font-size: 12px; color: #6b7280; margin-right: 6px; }
+
+/* ===== 로딩 ===== */
+.ufa-loading { text-align: center; padding: 80px 0; }
+.ufa-loading .spinner { display: inline-block; width: 48px; height: 48px; border: 4px solid #e0e0e0; border-top-color: #ef4444; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== 요약 카드 ===== */
+.ufa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.ufa-card { border-radius: 12px; padding: 16px; color: #fff; box-shadow: 0 3px 12px rgba(0,0,0,.12); }
+.ufa-card .val { font-size: 26px; font-weight: 800; }
+.ufa-card .lbl { font-size: 11px; opacity: .85; margin-top: 3px; }
+.bg-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.bg-blue { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
+.bg-gray { background: linear-gradient(135deg, #6b7280, #4b5563); }
+.bg-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+/* ===== 분포 ===== */
+.ufa-dist-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.ufa-dist-box { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.ufa-dist-box h4 { font-size: 14px; font-weight: 700; margin: 0 0 12px 0; color: #374151; }
+.ufa-dist-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+.ufa-dist-item .bar-wrap { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.ufa-dist-item .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #ef4444, #f59e0b); }
+.ufa-dist-item .label { min-width: 100px; font-weight: 600; }
+.ufa-dist-item .count { min-width: 40px; text-align: right; font-weight: 700; color: #6b7280; }
+
+/* ===== 필터/검색 ===== */
+.ufa-toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.ufa-filter { padding: 5px 12px; border-radius: 18px; border: 1px solid #d1d5db; font-size: 12px; cursor: pointer; background: #fff; transition: all .2s; }
+.ufa-filter.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.ufa-filter:hover { border-color: #3b82f6; }
+.ufa-search { padding: 5px 12px; border-radius: 18px; border: 1px solid #d1d5db; font-size: 12px; width: 200px; outline: none; }
+.ufa-search:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+.ufa-sort { padding: 5px 10px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 12px; cursor: pointer; background: #fff; outline: none; }
+
+/* ===== 토글 ===== */
+.ufa-toggle { display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; padding: 5px 12px; border-radius: 18px; border: 1px solid #d1d5db; background: #fff; user-select: none; transition: all .2s; }
+.ufa-toggle:hover { border-color: #8b5cf6; }
+.ufa-toggle.active { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+.ufa-toggle input { display: none; }
+
+/* ===== 유저 리스트 ===== */
+.ufa-user-list { display: flex; flex-direction: column; gap: 10px; }
+.ufa-user-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.08); overflow: hidden; transition: all .2s; border-left: 4px solid #10b981; }
+.ufa-user-card.severity-critical { border-left-color: #ef4444; }
+.ufa-user-card.severity-warning { border-left-color: #f59e0b; }
+.ufa-user-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; user-select: none; }
+.ufa-user-header:hover { background: #f8fafc; }
+.ufa-rank { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; background: #6b7280; flex-shrink: 0; }
+.ufa-rank.top3 { background: #ef4444; }
+.ufa-rank.top10 { background: #f59e0b; }
+.ufa-user-info { flex: 1; min-width: 0; }
+.ufa-user-email { font-weight: 700; font-size: 14px; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ufa-user-meta { font-size: 11px; color: #6b7280; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.ufa-user-meta .tag { background: #f3f4f6; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+.ufa-user-stats { display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+.ufa-stat-item { text-align: center; }
+.ufa-stat-item .num { font-size: 17px; font-weight: 800; }
+.ufa-stat-item .lbl { font-size: 10px; color: #6b7280; }
+.ufa-stat-item.fail .num { color: #ef4444; }
+.ufa-stat-item.success .num { color: #10b981; }
+.ufa-stat-item.rotation .num { color: #9ca3af; }
+.ufa-rate-badge { padding: 4px 12px; border-radius: 8px; font-size: 14px; font-weight: 800; color: #fff; min-width: 58px; text-align: center; }
+.ufa-rate-badge.rate-critical { background: #ef4444; }
+.ufa-rate-badge.rate-warning { background: #f59e0b; color: #000; }
+.ufa-rate-badge.rate-normal { background: #10b981; }
+.ufa-expand-icon { font-size: 14px; color: #9ca3af; transition: transform .2s; flex-shrink: 0; }
+.ufa-user-card.expanded .ufa-expand-icon { transform: rotate(180deg); }
+.ufa-user-detail { display: none; padding: 0 16px 14px; border-top: 1px solid #f3f4f6; }
+.ufa-user-card.expanded .ufa-user-detail { display: block; }
+.ufa-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+@media (max-width: 768px) { .ufa-detail-grid { grid-template-columns: 1fr; } }
+.ufa-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ufa-detail-table th { background: #f8fafc; padding: 5px 8px; text-align: left; font-weight: 700; color: #374151; border-bottom: 2px solid #e5e7eb; }
+.ufa-detail-table td { padding: 4px 8px; border-bottom: 1px solid #f3f4f6; }
+.ufa-detail-table tr:hover td { background: #f0f7ff; }
+.ufa-mini-bar { display: inline-flex; align-items: center; gap: 4px; }
+.ufa-mini-bar .bar { width: 60px; height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.ufa-mini-bar .fill { height: 100%; border-radius: 3px; }
+.fill-good { background: #10b981; }
+.fill-warn { background: #f59e0b; }
+.fill-bad { background: #ef4444; }
+
+/* ===== 심층분석 버튼 ===== */
+.ufa-deep-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid #8b5cf6; background: #fff; color: #8b5cf6; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.ufa-deep-btn:hover { background: #8b5cf6; color: #fff; }
+
+/* ===== 탭 패널 ===== */
+.ufa-panel { display: none; }
+.ufa-panel.active { display: block; }
+
+/* ===== 강제종료 테이블 ===== */
+.dcl-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.dcl-table th { background: #f8fafc; padding: 8px 10px; text-align: left; font-weight: 700; color: #374151; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; }
+.dcl-table td { padding: 6px 10px; border-bottom: 1px solid #f3f4f6; }
+.dcl-table tr:hover td { background: #f0f7ff; }
+.dcl-table .proto { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.dcl-table .proto-ikev2 { background: #dbeafe; color: #1d4ed8; }
+.dcl-table .proto-openvpn { background: #dcfce7; color: #15803d; }
+.dcl-table .proto-sstp { background: #fef3c7; color: #92400e; }
+.dcl-table .proto-v2ray { background: #ede9fe; color: #6d28d9; }
+
+/* ===== 심층분석 모달 ===== */
+.da-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; background: rgba(0,0,0,.5); }
+.da-overlay.active { display: flex; align-items: center; justify-content: center; }
+.da-modal { background: #fff; border-radius: 16px; width: 95vw; max-width: 1100px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.da-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; background: #fff; border-radius: 16px 16px 0 0; z-index: 1; }
+.da-header h3 { font-size: 18px; font-weight: 700; margin: 0; }
+.da-close { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f3f4f6; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.da-close:hover { background: #e5e7eb; }
+.da-body { padding: 20px 24px; }
+.da-loading { text-align: center; padding: 60px 0; color: #6b7280; }
+.da-profile { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+.da-profile-item .lbl { font-size: 11px; color: #6b7280; }
+.da-profile-item .val { font-size: 14px; font-weight: 700; }
+.da-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.da-summary-card { border-radius: 10px; padding: 12px; color: #fff; text-align: center; }
+.da-summary-card .val { font-size: 22px; font-weight: 800; }
+.da-summary-card .lbl { font-size: 11px; opacity: .8; }
+.da-diagnosis { margin-bottom: 16px; }
+.da-diag-item { padding: 8px 14px; border-radius: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
+.da-diag-info { background: #dbeafe; color: #1e40af; }
+.da-diag-warning { background: #fef3c7; color: #92400e; }
+.da-diag-critical { background: #fee2e2; color: #991b1b; }
+.da-section { margin-bottom: 16px; }
+.da-section h4 { font-size: 13px; font-weight: 700; margin: 0 0 8px; color: #374151; }
+.da-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 768px) { .da-grid { grid-template-columns: 1fr; } }
+.da-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.da-table th { background: #f8fafc; padding: 5px 8px; text-align: left; font-weight: 700; border-bottom: 2px solid #e5e7eb; }
+.da-table td { padding: 4px 8px; border-bottom: 1px solid #f3f4f6; }
+.da-table tr:hover td { background: #f0f7ff; }
+.da-hour-bar { display: flex; align-items: flex-end; gap: 2px; height: 80px; padding: 0 4px; }
+.da-hour-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; justify-content: flex-end; height: 100%; }
+.da-hour-seg { width: 100%; border-radius: 2px; }
+.da-hour-lbl { font-size: 9px; color: #6b7280; margin-top: 2px; }
+.da-session-list { max-height: 300px; overflow-y: auto; }
+
+@media (max-width: 768px) {
+    .ufa-cards { grid-template-columns: repeat(2, 1fr); }
+    .ufa-user-header { flex-wrap: wrap; }
+    .ufa-user-stats { flex-wrap: wrap; gap: 8px; }
+    .ufa-tabs { overflow-x: auto; }
+    .da-modal { width: 98vw; }
+}
+</style>
+</%block>
+
+<%block name="content">
+<div class="ufa-page">
+    <h2><i class="fa fa-user-times"></i> 유저 접속 분석</h2>
+    <p class="subtitle">중국 사용자 VPN 접속 실패·강제종료·심층분석 통합 대시보드</p>
+
+    <div class="ufa-tabs">
+        <div class="ufa-tab active" data-tab="fail"><i class="fa fa-exclamation-triangle"></i> 실패 분석 <span class="badge" id="tab-fail-badge">0</span></div>
+        <div class="ufa-tab" data-tab="disconnect"><i class="fa fa-plug"></i> 강제종료 로그 <span class="badge" id="tab-dc-badge" style="background:#f59e0b">0</span></div>
+    </div>
+
+    <div class="ufa-time-bar">
+        <span class="ufa-time-label"><i class="fa fa-clock-o"></i> 기간:</span>
+        <span class="ufa-time-btn" data-hours="1">1시간</span>
+        <span class="ufa-time-btn" data-hours="3">3시간</span>
+        <span class="ufa-time-btn" data-hours="6">6시간</span>
+        <span class="ufa-time-btn" data-hours="12">12시간</span>
+        <span class="ufa-time-btn active" data-hours="24">24시간</span>
+    </div>
+
+    <!-- 패널1: 실패 분석 -->
+    <div class="ufa-panel active" id="panel-fail">
+        <div id="ufa-loading" class="ufa-loading"><div class="spinner"></div><p style="margin-top:16px;color:#888;">분석 중...</p></div>
+        <div id="ufa-content" style="display:none;">
+            <div class="ufa-cards" id="ufa-cards"></div>
+            <div class="ufa-dist-row" id="ufa-dist-row"></div>
+            <div class="ufa-toolbar">
+                <span class="ufa-filter active" data-severity="all">전체</span>
+                <span class="ufa-filter" data-severity="critical">CRITICAL (&lt;30%)</span>
+                <span class="ufa-filter" data-severity="warning">WARNING (30~60%)</span>
+                <span class="ufa-filter" data-severity="normal">정상 (≥60%)</span>
+                <label class="ufa-toggle active" id="ufa-rotation-toggle" title="앱 서버 로테이션을 실패에서 제외"><input type="checkbox" checked> <i class="fa fa-filter"></i> 로테이션 제외</label>
+                <input class="ufa-search" id="ufa-search" placeholder="이메일 / 이름 / 도시..." type="search" autocomplete="one-time-code">
+                <select class="ufa-sort" id="ufa-sort">
+                    <option value="fail-desc">실패 많은 순</option>
+                    <option value="rate-asc">성공률 낮은 순</option>
+                    <option value="total-desc">세션 많은 순</option>
+                    <option value="rate-desc">성공률 높은 순</option>
+                </select>
+            </div>
+            <div class="ufa-user-list" id="ufa-user-list"></div>
+        </div>
+    </div>
+
+    <!-- 패널2: 강제종료 로그 -->
+    <div class="ufa-panel" id="panel-disconnect">
+        <div id="dc-loading" class="ufa-loading"><div class="spinner"></div><p style="margin-top:16px;color:#888;">강제종료 로그 로딩...</p></div>
+        <div id="dc-content" style="display:none;">
+            <div class="ufa-cards" id="dc-cards"></div>
+            <div class="ufa-dist-row" id="dc-dist-row"></div>
+            <div class="ufa-toolbar">
+                <input class="ufa-search" id="dc-search" placeholder="이메일 / 서버 검색..." type="search" autocomplete="one-time-code">
+            </div>
+            <div style="max-height:600px;overflow-y:auto;">
+                <table class="dcl-table" id="dc-table">
+                    <thead><tr><th>#</th><th>이메일</th><th>이름</th><th>서버</th><th>프로토콜</th><th>접속수</th><th>허용</th><th>강제종료 시간</th><th>IP</th><th>분석</th></tr></thead>
+                    <tbody id="dc-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 심층분석 모달 -->
+<div class="da-overlay" id="da-overlay">
+    <div class="da-modal">
+        <div class="da-header"><h3><i class="fa fa-search-plus"></i> 유저 심층분석</h3><button class="da-close" id="da-close">&times;</button></div>
+        <div class="da-body" id="da-body"><div class="da-loading"><div class="spinner" style="width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#8b5cf6;border-radius:50%;display:inline-block;animation:spin .8s linear infinite"></div><p>분석 중...</p></div></div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+function getCookie(name) {
+    var value = '; ' + document.cookie;
+    var parts = value.split('; ' + name + '=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+}
+
+(function() {
+    var allUsers = [];
+    var currentFilter = 'all';
+    var excludeRotation = true;
+    var currentHours = 24;
+    var summaryData = null;
+    var activeTab = 'fail';
+    var dcLoaded = false;
+
+    function getFailCount(u) { return excludeRotation ? u.fail : u.fail_raw; }
+    function getRate(u) { return excludeRotation ? u.real_rate : u.rate; }
+    function getSeverity(u) { return excludeRotation ? u.real_severity : u.severity; }
+    function rateBadgeClass(r) { return r < 30 ? 'rate-critical' : r < 60 ? 'rate-warning' : 'rate-normal'; }
+    function miniBar(rate) { var c = rate >= 70 ? 'fill-good' : rate >= 40 ? 'fill-warn' : 'fill-bad'; return '<span class="ufa-mini-bar"><span class="bar"><span class="fill ' + c + '" style="width:' + rate + '%"></span></span> ' + rate + '%</span>'; }
+    function protoBadge(p) { var c = 'proto-ikev2'; if (/openvpn/i.test(p)) c = 'proto-openvpn'; else if (p === 'SSTP') c = 'proto-sstp'; else if (p === 'V2RAY') c = 'proto-v2ray'; return '<span class="proto ' + c + '">' + p + '</span>'; }
+
+    function renderDistBox(title, data, lk, ck) {
+        if (!data || !data.length) return '';
+        var mx = data[0][ck];
+        var h = '<div class="ufa-dist-box"><h4>' + title + '</h4>';
+        data.forEach(function(d) { h += '<div class="ufa-dist-item"><span class="label">' + d[lk] + '</span><div class="bar-wrap"><div class="bar-fill" style="width:' + (mx > 0 ? d[ck]/mx*100 : 0) + '%"></div></div><span class="count">' + d[ck] + '명</span></div>'; });
+        return h + '</div>';
+    }
+
+    // ===== 실패 분석 =====
+    function renderUserCard(u, idx) {
+        var rk = idx < 3 ? 'top3' : idx < 10 ? 'top10' : '';
+        var sev = getSeverity(u), fc = getFailCount(u), rt = getRate(u);
+        var h = '<div class="ufa-user-card severity-' + sev + '" data-idx="' + idx + '">';
+        h += '<div class="ufa-user-header"><div class="ufa-rank ' + rk + '">' + (idx+1) + '</div>';
+        h += '<div class="ufa-user-info"><div class="ufa-user-email">' + u.email + '</div><div class="ufa-user-meta">';
+        if (u.username) h += '<span class="tag">' + u.username + '</span>';
+        h += '<span class="tag">' + u.isp + '</span><span class="tag">' + u.os + '</span><span class="tag">' + u.city + '</span><span><i class="fa fa-server"></i> ' + u.servers_tried + '대</span></div></div>';
+        h += '<div class="ufa-user-stats"><div class="ufa-stat-item fail"><div class="num">' + fc + '</div><div class="lbl">실패</div></div>';
+        if (excludeRotation && u.rotation > 0) h += '<div class="ufa-stat-item rotation"><div class="num">' + u.rotation + '</div><div class="lbl">로테이션</div></div>';
+        h += '<div class="ufa-stat-item success"><div class="num">' + u.success + '</div><div class="lbl">성공</div></div>';
+        h += '<div class="ufa-stat-item"><div class="num">' + u.total + '</div><div class="lbl">전체</div></div></div>';
+        h += '<div class="ufa-rate-badge ' + rateBadgeClass(rt) + '">' + rt + '%</div>';
+        h += '<button class="ufa-deep-btn" onclick="event.stopPropagation();openDeepAnalysis(\'' + u.email + '\')" title="심층분석"><i class="fa fa-search-plus"></i></button>';
+        h += '<i class="fa fa-chevron-down ufa-expand-icon"></i></div>';
+
+        h += '<div class="ufa-user-detail"><div class="ufa-detail-grid"><div>';
+        h += '<table class="ufa-detail-table"><thead><tr><th>서버</th><th>성공</th><th>실패</th>';
+        if (excludeRotation) h += '<th>로테이션</th>';
+        h += '<th>성공률</th></tr></thead><tbody>';
+        u.servers.forEach(function(s) { var sr = excludeRotation ? s.real_rate : s.rate, sf = excludeRotation ? s.fail : (s.fail+s.rotation); h += '<tr><td><b>' + s.name + '</b></td><td style="color:#10b981">' + s.success + '</td><td style="color:#ef4444">' + sf + '</td>'; if (excludeRotation) h += '<td style="color:#9ca3af">' + s.rotation + '</td>'; h += '<td>' + miniBar(sr) + '</td></tr>'; });
+        h += '</tbody></table></div><div>';
+        h += '<table class="ufa-detail-table"><thead><tr><th>프로토콜</th><th>성공</th><th>실패</th>';
+        if (excludeRotation) h += '<th>로테이션</th>';
+        h += '<th>성공률</th></tr></thead><tbody>';
+        u.protos.forEach(function(p) { var pr = excludeRotation ? p.real_rate : p.rate, pf = excludeRotation ? p.fail : (p.fail+p.rotation); h += '<tr><td><b>' + p.name + '</b></td><td style="color:#10b981">' + p.success + '</td><td style="color:#ef4444">' + pf + '</td>'; if (excludeRotation) h += '<td style="color:#9ca3af">' + p.rotation + '</td>'; h += '<td>' + miniBar(pr) + '</td></tr>'; });
+        h += '</tbody></table>';
+        h += '<div style="margin-top:10px;font-size:12px;color:#6b7280;"><div><b>ISP:</b> ' + u.isp_raw + '</div><div><b>디바이스:</b> ' + u.device_raw + '</div><div><b>최초:</b> ' + u.first_seen + ' / <b>최종:</b> ' + u.last_seen + '</div></div>';
+        h += '</div></div></div></div>';
+        return h;
+    }
+
+    function renderUsers(users) {
+        var c = document.getElementById('ufa-user-list');
+        if (!users.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;"><i class="fa fa-check-circle" style="font-size:40px;color:#10b981"></i><p>조건에 맞는 유저가 없습니다</p></div>'; return; }
+        c.innerHTML = users.map(function(u,i) { return renderUserCard(u,i); }).join('');
+        c.querySelectorAll('.ufa-user-header').forEach(function(h) { h.addEventListener('click', function(e) { if (e.target.closest('.ufa-deep-btn')) return; h.parentElement.classList.toggle('expanded'); }); });
+    }
+
+    function updateSummaryCards() {
+        if (!summaryData) return;
+        var s = summaryData, cr = excludeRotation ? s.real_critical : s.critical_users, wr = excludeRotation ? s.real_warning : s.warning_users;
+        var tag = excludeRotation ? ' <span style="font-size:10px;opacity:.7">(로테이션 ' + s.total_rotation + '건 제외)</span>' : '';
+        document.getElementById('ufa-cards').innerHTML = '<div class="ufa-card bg-red"><div class="val">' + cr + '</div><div class="lbl">CRITICAL (&lt;30%)</div></div><div class="ufa-card bg-orange"><div class="val">' + wr + '</div><div class="lbl">WARNING (30~60%)</div></div><div class="ufa-card bg-gray"><div class="val">' + s.zero_success + '</div><div class="lbl">성공 0건</div></div><div class="ufa-card bg-blue"><div class="val">' + s.total_users + '</div><div class="lbl">분석 유저' + tag + '</div></div><div class="ufa-card bg-green"><div class="val">' + s.total_china_users + '</div><div class="lbl">전체 중국 유저</div></div>';
+        document.getElementById('tab-fail-badge').textContent = cr;
+    }
+
+    function filterAndRender() {
+        var q = document.getElementById('ufa-search').value.toLowerCase(), so = document.getElementById('ufa-sort').value;
+        var f = allUsers.filter(function(u) { if (currentFilter !== 'all' && getSeverity(u) !== currentFilter) return false; if (q && (u.email+' '+u.username+' '+u.city+' '+u.isp+' '+u.isp_raw).toLowerCase().indexOf(q) === -1) return false; return true; });
+        f.sort(function(a,b) { if (so==='fail-desc') return getFailCount(b)-getFailCount(a)||getRate(a)-getRate(b); if (so==='rate-asc') return getRate(a)-getRate(b)||getFailCount(b)-getFailCount(a); if (so==='total-desc') return b.total-a.total; if (so==='rate-desc') return getRate(b)-getRate(a); return 0; });
+        renderUsers(f); updateSummaryCards();
+    }
+
+    function loadFailData() {
+        document.getElementById('ufa-loading').style.display = 'block';
+        document.getElementById('ufa-content').style.display = 'none';
+        fetch('/api/v1/read/user_fail_analysis?hours=' + currentHours, { headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result !== 200) { alert('로드 실패'); return; }
+            document.getElementById('ufa-loading').style.display = 'none';
+            document.getElementById('ufa-content').style.display = 'block';
+            allUsers = data.users; summaryData = data.summary;
+            var dh = '';
+            dh += renderDistBox('<i class="fa fa-wifi"></i> ISP별 실패 유저 (성공률 &lt;60%)', data.isp_fail_summary, 'isp', 'count');
+            dh += renderDistBox('<i class="fa fa-desktop"></i> OS별 실패 유저', data.os_fail_summary, 'os', 'count');
+            dh += renderDistBox('<i class="fa fa-map-marker"></i> 도시별 실패 유저 (상위 15)', data.city_fail_summary, 'city', 'count');
+            document.getElementById('ufa-dist-row').innerHTML = dh;
+            filterAndRender();
+        }).catch(function(e) { document.getElementById('ufa-loading').innerHTML = '<p style="color:red"><i class="fa fa-exclamation-triangle"></i> 로드 실패: ' + e.message + '</p>'; });
+    }
+
+    // ===== 강제종료 로그 =====
+    function loadDCData(force) {
+        if (dcLoaded && !force) return;
+        document.getElementById('dc-loading').style.display = 'block';
+        document.getElementById('dc-content').style.display = 'none';
+        fetch('/api/v1/read/disconnect_logs?hours=' + currentHours, { headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result !== 200) return;
+            dcLoaded = true;
+            document.getElementById('dc-loading').style.display = 'none';
+            document.getElementById('dc-content').style.display = 'block';
+            document.getElementById('tab-dc-badge').textContent = data.total;
+            document.getElementById('dc-cards').innerHTML = '<div class="ufa-card bg-purple"><div class="val">' + data.total + '</div><div class="lbl">총 강제종료</div></div><div class="ufa-card bg-red"><div class="val">' + data.top_users.length + '</div><div class="lbl">영향 유저</div></div><div class="ufa-card bg-orange"><div class="val">' + data.top_servers.length + '</div><div class="lbl">서버 수</div></div>';
+            var dh = '';
+            dh += renderDistBox('<i class="fa fa-user"></i> 유저별 강제종료 (상위 20)', data.top_users, 'email', 'count');
+            dh += renderDistBox('<i class="fa fa-server"></i> 서버별 강제종료', data.top_servers, 'server', 'count');
+            dh += renderDistBox('<i class="fa fa-shield"></i> 프로토콜별', data.top_protos, 'proto', 'count');
+            document.getElementById('dc-dist-row').innerHTML = dh;
+            
+            var allLogs = data.logs;
+            function renderDCT(q) {
+                var fl = allLogs;
+                if (q) fl = allLogs.filter(function(l) { return (l.username+' '+l.server_name+' '+l.display_name).toLowerCase().indexOf(q) !== -1; });
+                document.getElementById('dc-tbody').innerHTML = fl.map(function(l,i) {
+                    return '<tr><td>' + (i+1) + '</td><td style="font-weight:600">' + l.username + '</td><td>' + l.display_name + '</td><td>' + l.server_name + '</td><td>' + protoBadge(l.protocol) + '</td><td style="color:#ef4444;font-weight:700">' + l.connected_count + '</td><td>' + l.session + '</td><td>' + l.disconnected_time + '</td><td style="font-size:11px">' + l.old_ip + '</td><td><button class="ufa-deep-btn" onclick="openDeepAnalysis(\'' + l.username + '\')"><i class="fa fa-search-plus"></i></button></td></tr>';
+                }).join('');
+            }
+            renderDCT('');
+            document.getElementById('dc-search').oninput = function() { renderDCT(this.value.toLowerCase()); };
+        }).catch(function(e) { document.getElementById('dc-loading').innerHTML = '<p style="color:red">로드 실패: ' + e.message + '</p>'; });
+    }
+
+    // ===== 심층분석 모달 =====
+    window.openDeepAnalysis = function(email) {
+        var ov = document.getElementById('da-overlay'), bd = document.getElementById('da-body');
+        ov.classList.add('active');
+        bd.innerHTML = '<div class="da-loading"><div class="spinner" style="width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#8b5cf6;border-radius:50%;display:inline-block;animation:spin .8s linear infinite"></div><p>' + email + ' 분석 중...</p></div>';
+        fetch('/api/v1/read/user_deep_analysis?email=' + encodeURIComponent(email) + '&hours=48', { headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { if (data.result !== 200) { bd.innerHTML = '<p style="color:red">분석 실패: ' + (data.msg || 'error') + '</p>'; return; } renderDA(bd, data); })
+        .catch(function(e) { bd.innerHTML = '<p style="color:red">오류: ' + e.message + '</p>'; });
+    };
+
+    function renderDA(ct, data) {
+        var u = data.user, s = data.summary, h = '';
+        // Profile
+        h += '<div class="da-profile">';
+        h += '<div class="da-profile-item"><div class="lbl">이메일</div><div class="val">' + u.email + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">이름</div><div class="val">' + u.username + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">ISP</div><div class="val">' + u.isp + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">도시</div><div class="val">' + u.city + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">기기</div><div class="val">' + u.device_type + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">가입일</div><div class="val">' + u.regist_date + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">만료일</div><div class="val">' + (u.expiration || 'N/A') + '</div></div>';
+        h += '<div class="da-profile-item"><div class="lbl">동시접속</div><div class="val">' + (u.simultaneous_use || 'N/A') + '</div></div></div>';
+        // Summary
+        h += '<div class="da-summary-cards">';
+        h += '<div class="da-summary-card bg-green"><div class="val">' + s.success + '</div><div class="lbl">성공</div></div>';
+        h += '<div class="da-summary-card bg-red"><div class="val">' + s.fail + '</div><div class="lbl">실패</div></div>';
+        h += '<div class="da-summary-card bg-gray"><div class="val">' + s.rotation + '</div><div class="lbl">로테이션</div></div>';
+        h += '<div class="da-summary-card bg-blue"><div class="val">' + s.total + '</div><div class="lbl">전체</div></div>';
+        h += '<div class="da-summary-card ' + (s.real_rate>=70?'bg-green':s.real_rate>=40?'bg-orange':'bg-red') + '"><div class="val">' + s.real_rate + '%</div><div class="lbl">실질 성공률</div></div>';
+        h += '<div class="da-summary-card ' + (s.raw_rate>=70?'bg-green':s.raw_rate>=40?'bg-orange':'bg-red') + '"><div class="val">' + s.raw_rate + '%</div><div class="lbl">전체 성공률</div></div></div>';
+        // Diagnosis
+        if (data.diagnosis && data.diagnosis.length) { h += '<div class="da-diagnosis">'; data.diagnosis.forEach(function(d) { h += '<div class="da-diag-item da-diag-' + d.type + '"><i class="fa fa-' + (d.type==='critical'?'exclamation-circle':d.type==='warning'?'warning':'info-circle') + '"></i> ' + d.msg + '</div>'; }); h += '</div>'; }
+        // Hour dist
+        if (data.hour_dist && data.hour_dist.length) {
+            h += '<div class="da-section"><h4><i class="fa fa-clock-o"></i> 시간대별 분포 (48h)</h4>';
+            var mx = 1; data.hour_dist.forEach(function(hd) { var t = hd.s+hd.f+hd.r; if (t>mx) mx=t; });
+            h += '<div class="da-hour-bar">';
+            data.hour_dist.forEach(function(hd) { var sH=hd.s/mx*60, fH=hd.f/mx*60, rH=hd.r/mx*60; h += '<div class="da-hour-col">'; if (rH>0) h+='<div class="da-hour-seg" style="height:'+rH+'px;background:#d1d5db"></div>'; if (fH>0) h+='<div class="da-hour-seg" style="height:'+fH+'px;background:#ef4444"></div>'; if (sH>0) h+='<div class="da-hour-seg" style="height:'+sH+'px;background:#10b981"></div>'; h+='<div class="da-hour-lbl">'+hd.hour+'</div></div>'; });
+            h += '</div></div>';
+        }
+        // Grid
+        h += '<div class="da-grid"><div class="da-section"><h4><i class="fa fa-server"></i> 서버별 성과</h4>';
+        h += '<table class="da-table"><thead><tr><th>서버</th><th>성공</th><th>실패</th><th>로테이션</th><th>성공률</th><th>최대세션</th></tr></thead><tbody>';
+        data.servers.forEach(function(sv) { h += '<tr><td><b>'+sv.name+'</b></td><td style="color:#10b981">'+sv.success+'</td><td style="color:#ef4444">'+sv.fail+'</td><td style="color:#9ca3af">'+sv.rotation+'</td><td>'+miniBar(sv.rate)+'</td><td>'+sv.max_dur+'</td></tr>'; });
+        h += '</tbody></table></div><div class="da-section"><h4><i class="fa fa-shield"></i> 프로토콜별</h4>';
+        h += '<table class="da-table"><thead><tr><th>프로토콜</th><th>성공</th><th>실패</th><th>로테이션</th><th>성공률</th></tr></thead><tbody>';
+        data.protos.forEach(function(p) { h += '<tr><td><b>'+p.name+'</b></td><td style="color:#10b981">'+p.success+'</td><td style="color:#ef4444">'+p.fail+'</td><td style="color:#9ca3af">'+p.rotation+'</td><td>'+miniBar(p.rate)+'</td></tr>'; });
+        h += '</tbody></table>';
+        // Fail causes
+        if (data.fail_causes && data.fail_causes.length) { h += '<h4 style="margin-top:14px"><i class="fa fa-times-circle"></i> 실패 원인</h4><table class="da-table"><thead><tr><th>원인</th><th>건수</th></tr></thead><tbody>'; data.fail_causes.forEach(function(fc) { h += '<tr><td>'+fc.cause+'</td><td style="font-weight:700;color:#ef4444">'+fc.count+'</td></tr>'; }); h += '</tbody></table>'; }
+        // Duration
+        if (data.dur_buckets) { h += '<h4 style="margin-top:14px"><i class="fa fa-hourglass"></i> 세션 시간 분포</h4><table class="da-table"><thead><tr><th>구간</th><th>건수</th></tr></thead><tbody>'; var db = data.dur_buckets; ['0-10s','11-60s','1-5min','5-30min','30m-2h','2h+'].forEach(function(k) { if (db[k]) h += '<tr><td>'+k+'</td><td style="font-weight:700">'+db[k]+'</td></tr>'; }); h += '</tbody></table>'; }
+        h += '</div></div>';
+        // Long sessions
+        if (data.long_sessions && data.long_sessions.length) { h += '<div class="da-section"><h4><i class="fa fa-link"></i> 장시간 세션 (5분+)</h4><table class="da-table"><thead><tr><th>서버</th><th>프로토콜</th><th>시간</th><th>유지시간</th></tr></thead><tbody>'; data.long_sessions.forEach(function(ls) { var ds = ls.duration>=3600 ? Math.floor(ls.duration/3600)+'h'+Math.floor((ls.duration%3600)/60)+'m' : Math.floor(ls.duration/60)+'m'; h += '<tr><td><b>'+ls.server+'</b></td><td>'+protoBadge(ls.proto)+'</td><td>'+ls.start+'</td><td style="font-weight:700;color:#10b981">'+ds+'</td></tr>'; }); h += '</tbody></table></div>'; }
+        // Disconnects
+        if (data.disconnects && data.disconnects.length) { h += '<div class="da-section"><h4 style="color:#ef4444"><i class="fa fa-plug"></i> 강제종료 이력 ('+data.disconnects.length+'건)</h4><table class="da-table"><thead><tr><th>서버</th><th>프로토콜</th><th>시간</th><th>접속수</th></tr></thead><tbody>'; data.disconnects.forEach(function(dc) { h += '<tr><td><b>'+dc.server+'</b></td><td>'+protoBadge(dc.proto)+'</td><td>'+dc.time+'</td><td style="color:#ef4444;font-weight:700">'+dc.count+'</td></tr>'; }); h += '</tbody></table></div>'; }
+        // Sessions
+        if (data.sessions && data.sessions.length) { h += '<div class="da-section"><h4><i class="fa fa-list"></i> 최근 세션 ('+data.sessions.length+'건)</h4><div class="da-session-list"><table class="da-table"><thead><tr><th>시간</th><th>서버</th><th>프로토콜</th><th>유지</th><th>상태</th><th>원인</th></tr></thead><tbody>'; data.sessions.forEach(function(ss) { var ds=ss.duration>=3600?Math.floor(ss.duration/3600)+'h'+Math.floor((ss.duration%3600)/60)+'m':ss.duration>=60?Math.floor(ss.duration/60)+'m'+(ss.duration%60)+'s':ss.duration+'s'; var st=ss.success?'<span style="color:#10b981;font-weight:700">OK</span>':ss.rotation?'<span style="color:#9ca3af">로테이션</span>':'<span style="color:#ef4444;font-weight:700">FAIL</span>'; h += '<tr><td>'+ss.start+'</td><td><b>'+ss.server+'</b></td><td>'+protoBadge(ss.proto)+'</td><td>'+ds+'</td><td>'+st+'</td><td style="font-size:11px;color:#6b7280">'+ss.cause+'</td></tr>'; }); h += '</tbody></table></div></div>'; }
+        ct.innerHTML = h;
+    }
+
+    document.getElementById('da-close').onclick = function() { document.getElementById('da-overlay').classList.remove('active'); };
+    document.getElementById('da-overlay').onclick = function(e) { if (e.target === this) this.classList.remove('active'); };
+
+    // ===== Events =====
+    document.querySelectorAll('.ufa-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.ufa-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active'); activeTab = tab.dataset.tab;
+            document.querySelectorAll('.ufa-panel').forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('panel-' + activeTab).classList.add('active');
+            if (activeTab === 'disconnect') loadDCData(true);
+        });
+    });
+
+    document.querySelectorAll('.ufa-time-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.ufa-time-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active'); currentHours = parseInt(btn.dataset.hours); dcLoaded = false;
+            loadFailData();
+            if (activeTab === 'disconnect') loadDCData(true);
+        });
+    });
+
+    document.querySelector('#panel-fail .ufa-toolbar').addEventListener('click', function(e) {
+        var btn = e.target.closest('.ufa-filter'); if (!btn) return;
+        document.querySelectorAll('#panel-fail .ufa-filter').forEach(function(f) { f.classList.remove('active'); });
+        btn.classList.add('active'); currentFilter = btn.dataset.severity; filterAndRender();
+    });
+
+    document.getElementById('ufa-rotation-toggle').addEventListener('click', function() {
+        excludeRotation = !excludeRotation; this.classList.toggle('active', excludeRotation);
+        this.querySelector('input').checked = excludeRotation; filterAndRender();
+    });
+
+    document.getElementById('ufa-search').addEventListener('input', filterAndRender);
+    document.getElementById('ufa-sort').addEventListener('change', filterAndRender);
+
+    loadFailData();
+})();
+</script>
+</%block>

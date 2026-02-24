@@ -46,6 +46,8 @@ var datatable = $('#price-inform').DataTable({
         {data: "regist_date"},
         {data: "refund_date"},
         {data: "refund"},
+        {data: "receipt"},
+        {data: "receipt_send"},
     ],
     columnDefs: [
         {
@@ -139,6 +141,32 @@ var datatable = $('#price-inform').DataTable({
                     return '<button onclick="click_refund('+id+')" type="button" class="btn btn-dark">환불</button>';
                 }
             }
+        },
+        {
+            targets: 12,
+            visible: true,
+            orderable: false,
+            render: function (data) {
+                var tid = data;
+                if (!tid || tid.toString().trim() === '') {
+                    return '-';
+                }
+                return '<button onclick="click_receipt(\'' + tid + '\')" type="button" class="btn btn-info btn-sm">보기</button>';
+            }
+        },
+        {
+            targets: 13,
+            visible: true,
+            orderable: false,
+            render: function (data) {
+                var parts = data.split('+');
+                var tid = parts[0];
+                var email = parts[1];
+                if (!tid || tid.toString().trim() === '') {
+                    return '-';
+                }
+                return '<button onclick="click_send_receipt(\'' + tid + '\', \'' + email + '\')" type="button" class="btn btn-success btn-sm">발송</button>';
+            }
         }
     ],
     language: {
@@ -180,6 +208,62 @@ function click_refund(id){
                 type: 'error',
                 confirmButtonColor: swalColor('error')
             })
+        }
+    });
+}
+
+// 영수증 보기 (페이레터 API)
+function click_receipt(tid) {
+    if (!tid || tid.trim() === '') {
+        Swal.fire({ title: '오류', text: '트랜잭션 ID가 없습니다.', type: 'warning', confirmButtonColor: swalColor('warning') });
+        return;
+    }
+    var csrf_token = $('#csrf_token').html();
+    $.post('/api/v1/read/receipt', {
+        csrfmiddlewaretoken: csrf_token,
+        tid: tid
+    }).done(function(data) {
+        if (data.result == 200 && data.receipt_url) {
+            window.open(data.receipt_url, '영수증', 'width=800,height=600');
+        } else {
+            Swal.fire({ title: '오류', text: data.text || '영수증을 가져올 수 없습니다.', type: 'error', confirmButtonColor: swalColor('error') });
+        }
+    }).fail(function() {
+        Swal.fire({ title: '오류', text: 'API 요청 실패', type: 'error', confirmButtonColor: swalColor('error') });
+    });
+}
+
+// 영수증 이메일 발송
+function click_send_receipt(tid, email) {
+    if (!tid || tid.trim() === '') {
+        Swal.fire({ title: '오류', text: '트랜잭션 ID가 없습니다.', type: 'warning', confirmButtonColor: swalColor('warning') });
+        return;
+    }
+    Swal.fire({
+        title: '영수증 발송',
+        text: email + ' 로 영수증을 발송하시겠습니까?',
+        type: 'question',
+        showCancelButton: true,
+        confirmButtonColor: swalColor('success'),
+        cancelButtonColor: swalColor('error'),
+        confirmButtonText: '발송',
+        cancelButtonText: '취소'
+    }).then(function(result) {
+        if (result.value) {
+            var csrf_token = $('#csrf_token').html();
+            $.post('/api/v1/send/receipt_email', {
+                csrfmiddlewaretoken: csrf_token,
+                tid: tid,
+                email: email
+            }).done(function(data) {
+                if (data.result == 200) {
+                    Swal.fire({ title: data.title, text: data.text, type: 'success', confirmButtonColor: swalColor('success') });
+                } else {
+                    Swal.fire({ title: data.title, text: data.text, type: 'error', confirmButtonColor: swalColor('error') });
+                }
+            }).fail(function() {
+                Swal.fire({ title: '오류', text: '이메일 발송 요청 실패', type: 'error', confirmButtonColor: swalColor('error') });
+            });
         }
     });
 }

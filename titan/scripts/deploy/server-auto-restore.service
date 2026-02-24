@@ -1,0 +1,12 @@
+[Unit]
+Description=TitanVPN Server Auto Restore (Restore healthy auto-disabled servers)
+After=network.target
+
+[Service]
+Type=oneshot
+User=newkorea
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/home/newkorea/project/titan/.venv310/bin/python3 scripts/server_auto_restore.py
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal

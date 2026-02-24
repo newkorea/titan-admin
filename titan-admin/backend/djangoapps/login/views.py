@@ -1,3 +1,4 @@
+# 로그인/인증 — 관리자 로그인, 세션 관리 (24시간 타임아웃)
 import json
 import datetime
 import smtplib

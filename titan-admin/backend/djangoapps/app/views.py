@@ -1,3 +1,4 @@
+# 앱 관리 — 모바일 앱 버전·배포 관리
 import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse

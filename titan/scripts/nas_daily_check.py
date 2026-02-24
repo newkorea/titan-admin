@@ -92,6 +92,19 @@ def run_service_check():
         return None
 
 
+def run_alert_check():
+    """WARNING/CRITICAL 이슈가 있으면 이메일 알림 발송 (중복 방지: 2시간 쿨다운)"""
+    print(f'[{datetime.now()}] === 이슈 알림 체크 ===')
+    result = subprocess.run(
+        [PYTHON, 'scripts/nas_status_alert.py'],
+        capture_output=True, text=True, encoding='utf-8', timeout=60
+    )
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.returncode != 0 and result.stderr:
+        print(f'  알림 오류: {result.stderr[:200]}')
+
+
 def main():
     print(f'[{datetime.now()}] NAS 일일 점검 시작')
     print('=' * 60)
@@ -99,6 +112,10 @@ def main():
     health = run_health_check()
     print()
     service = run_service_check()
+
+    # 점검 후 이슈 알림 발송
+    print()
+    run_alert_check()
 
     print()
     print('=' * 60)

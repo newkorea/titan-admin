@@ -1,6 +1,48 @@
 <%inherit file="admin_frame.html"/>
 
 <%block name="css">
+<style>
+    /* 로그 모달 */
+    .log-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.45); z-index: 9999; align-items: center; justify-content: center;
+    }
+    .log-modal-overlay.show { display: flex; }
+    .log-modal {
+        background: #fff; border-radius: 10px; width: 95%; max-width: 1100px;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .log-modal-header {
+        padding: 14px 20px; border-bottom: 1px solid #eee;
+        font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .log-modal-header .close-btn {
+        background: none; border: none; font-size: 22px; cursor: pointer; color: #888; padding: 0 6px;
+    }
+    .log-modal-header .close-btn:hover { color: #333; }
+    .log-modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .log-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .log-tbl th { background: #f8f9fa; padding: 8px 6px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 700; white-space: nowrap; }
+    .log-tbl td { padding: 6px; border-bottom: 1px solid #eee; white-space: nowrap; }
+    .log-tbl tr:hover { background: #f5f7fa; }
+    .log-tbl td.wrap { white-space: normal; word-break: break-all; max-width: 200px; }
+    /* 만료 사용자 흐릿하게 */
+    tr.row-expired td {
+      background-color: #f5f5f5 !important;
+      color: #bbb !important;
+    }
+    tr.row-expired td button {
+      opacity: 0.4;
+    }
+    tr.row-expired:hover td {
+      color: #888 !important;
+      background-color: #efefef !important;
+    }
+    tr.row-expired:hover td button {
+      opacity: 0.7;
+    }
+</style>
 </%block>
 
 <%block name="title">
@@ -91,10 +133,11 @@
           <th>가입아이피</th>
           <th>가입일시</th>
           <th>추가정보</th>
-          <th>서비스</th>
-          <th>세션</th>
-          <th>비번</th>
-          <th>활성</th>
+          <th>관리</th>
+          <th>로그인</th>
+          <th>접속실패</th>
+          <th>강제종료</th>
+          <th>접속로그</th>
           <th>탈퇴</th>
           <th>앱퇴출</th>          
         </tr>
@@ -104,8 +147,25 @@
     </table>
   </div>
 </div>
+
+<!-- 로그 모달 -->
+<div id="log-modal-overlay" class="log-modal-overlay" onclick="if(event.target===this)closeLogModal()">
+    <div class="log-modal">
+        <div class="log-modal-header">
+            <span id="log-modal-title">로그</span>
+            <button class="close-btn" onclick="closeLogModal()">&times;</button>
+        </div>
+        <div class="log-modal-body" id="log-modal-body">
+            <div style="text-align:center;padding:40px;color:#888;"><i class="fa fa-spinner fa-spin"></i> 로딩 중...</div>
+        </div>
+    </div>
+</div>
 </%block>
 
 <%block name="js">
-<script src="/static/admin/js/user.js"></script>
+<script>
+// DataTables 저장된 정렬상태 제거 (이전 stateSave:true 잔여 데이터 클리어)
+try { for (var k in localStorage) { if (k.indexOf('DataTables_user-inform') !== -1) localStorage.removeItem(k); } } catch(e){}
+</script>
+<script src="/static/admin/js/user.js?v=20260211fix5"></script>
 </%block>

@@ -46,6 +46,66 @@ table > tbody > tr {
     margin-left: 5px;
     color: #ffffff !important;
 }
+.approved-count {
+    background: #28a745;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 3px;
+    color: #ffffff !important;
+}
+.cron-issue-badge {
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 11px;
+    margin-left: 5px;
+    color: #ffffff !important;
+}
+.cron-badge-warning {
+    background: #ffc107;
+}
+.cron-badge-critical {
+    background: #dc3545;
+    animation: blink-badge 1s ease-in-out infinite;
+}
+.user-registered-badge {
+    background: #17a2b8;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 5px;
+    color: #ffffff !important;
+}
+.user-active-badge {
+    background: #28a745;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 3px;
+    color: #ffffff !important;
+}
+.payment-today-badge {
+    background: #fd7e14;
+    border-radius: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    font-size: 12px;
+    margin-left: 5px;
+    color: #ffffff !important;
+}
+@keyframes blink-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
 .chart-txt {
     margin-top: 20px;
 }

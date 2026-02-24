@@ -42,7 +42,7 @@
         });
     }
 
-    // 무통장 결제 대기 건수
+    // 무통장 결제 대기 건수 + 오늘 승인수
     function ready_count(){
         var csrf_token = $('#csrf_token').html();
         $.post( "/api/v1/read/ready_count", {
@@ -52,6 +52,12 @@
             if(data.result == 200){
                 var ready_count = data.ready_count;
                 $('#ready_count').html(ready_count);
+                var approved = data.today_approved || 0;
+                if(approved > 0){
+                    $('#today_approved').html(approved).show();
+                } else {
+                    $('#today_approved').hide();
+                }
             }
         });
     }
@@ -107,8 +113,338 @@
         }
     }
 
+    // NAS Cron 이슈 건수 (메뉴 뱃지)
+    function cron_issue_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post("/api/v1/read/cron_issue_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function(data){
+            if(data.result == 200){
+                update_issue_badge('#cron_issue_count', data);
+            }
+        });
+    }
+
+    // NAS 서버현황 이슈 건수 (메뉴 뱃지)
+    function nas_issue_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post("/api/v1/read/nas_issue_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function(data){
+            if(data.result == 200){
+                update_issue_badge('#nas_issue_count', data);
+            }
+        });
+    }
+
+    // 오늘 신규가입수 + 활성화수 (회원관리 뱃지)
+    function user_today_stats(){
+        var csrf_token = $('#csrf_token').html();
+        $.post("/api/v1/read/user_today_stats", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function(data){
+            if(data.result == 200){
+                var reg = data.today_registered || 0;
+                var act = data.today_active || 0;
+                if(reg > 0){
+                    $('#today_registered').html(reg).show();
+                } else {
+                    $('#today_registered').hide();
+                }
+                if(act > 0){
+                    $('#today_active').html(act).show();
+                } else {
+                    $('#today_active').hide();
+                }
+            }
+        });
+    }
+
+    // 오늘 결제건수 (결제모듈 뱃지)
+    function today_payment_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post("/api/v1/read/today_payment_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function(data){
+            if(data.result == 200){
+                var cnt = data.today_payment || 0;
+                if(cnt > 0){
+                    $('#today_payment').html(cnt).show();
+                } else {
+                    $('#today_payment').hide();
+                }
+            }
+        });
+    }
+
+    // 뱃지 업데이트 공통 함수
+    function update_issue_badge(selector, data){
+        var total = data.total_issues;
+        var $badge = $(selector);
+        if(total > 0){
+            $badge.html(total).show();
+            if(data.critical > 0){
+                $badge.removeClass('cron-badge-warning').addClass('cron-badge-critical');
+            } else {
+                $badge.removeClass('cron-badge-critical').addClass('cron-badge-warning');
+            }
+        } else {
+            $badge.hide();
+        }
+    }
+
+    // ===== 문제 서버 모달 =====
+    function showProblemServers(e){
+        e.stopPropagation();
+        e.preventDefault();
+        // CSS 주입
+        if(!document.getElementById('pm-css')){
+            var s=document.createElement('style');s.id='pm-css';
+            s.textContent=[
+                '.pm-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;display:flex;justify-content:center;align-items:flex-start;padding:30px 20px;overflow-y:auto}',
+                '.pm-modal{background:#f8fafc;border-radius:16px;max-width:1100px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}',
+                '.pm-header{background:linear-gradient(135deg,#1e293b,#334155);color:#fff;padding:24px 28px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1}',
+                '.pm-header h2{margin:0;font-size:20px;font-weight:800}',
+                '.pm-header-sub{font-size:13px;opacity:.8;margin-top:4px}',
+                '.pm-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;transition:all .2s}',
+                '.pm-close:hover{background:rgba(255,255,255,.3)}',
+                '.pm-body{padding:20px 28px;max-height:calc(90vh - 80px);overflow-y:auto}',
+                '.pm-summary{display:flex;gap:14px;margin-bottom:20px}',
+                '.pm-sum-card{flex:1;padding:14px;border-radius:10px;color:#fff;text-align:center}',
+                '.pm-sum-card .val{font-size:28px;font-weight:800}',
+                '.pm-sum-card .lbl{font-size:12px;opacity:.85}',
+                '.pm-server{background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow:hidden;border-left:5px solid #10b981}',
+                '.pm-server.pm-critical{border-left-color:#ef4444}',
+                '.pm-server.pm-warning{border-left-color:#f59e0b}',
+                '.pm-srv-header{padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;user-select:none;flex-wrap:wrap}',
+                '.pm-srv-header:hover{background:#f0f7ff}',
+                '.pm-srv-name{font-size:16px;font-weight:700;flex:1;min-width:120px}',
+                '.pm-srv-badge{padding:4px 12px;border-radius:8px;font-size:14px;font-weight:800;color:#fff}',
+                '.pm-srv-badge.badge-critical{background:#ef4444}',
+                '.pm-srv-badge.badge-warning{background:#f59e0b;color:#000}',
+                '.pm-srv-meta{font-size:12px;color:#6b7280;display:flex;gap:12px;flex-wrap:wrap}',
+                '.pm-srv-detail{display:none;padding:0 20px 20px;border-top:1px solid #f3f4f6}',
+                '.pm-server.expanded .pm-srv-detail{display:block}',
+                '.pm-srv-expand{color:#9ca3af;transition:transform .2s}',
+                '.pm-server.expanded .pm-srv-expand{transform:rotate(180deg)}',
+                '.pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}',
+                '@media(max-width:768px){.pm-grid{grid-template-columns:1fr}}',
+                '.pm-section{margin-bottom:16px}',
+                '.pm-section h4{font-size:13px;font-weight:700;color:#374151;margin:0 0 8px;padding-left:8px;border-left:3px solid #3b82f6}',
+                '.pm-tbl{width:100%;border-collapse:collapse;font-size:12px}',
+                '.pm-tbl th{background:#f8fafc;padding:5px 8px;text-align:left;font-weight:600;border-bottom:2px solid #e5e7eb}',
+                '.pm-tbl td{padding:4px 8px;border-bottom:1px solid #f3f4f6}',
+                '.pm-bar{display:inline-flex;align-items:center;gap:4px}',
+                '.pm-bar .bar{width:60px;height:5px;background:#e5e7eb;border-radius:3px;overflow:hidden}',
+                '.pm-bar .fill{height:100%;border-radius:3px}',
+                '.pm-fg{background:#10b981}.pm-fw{background:#f59e0b}.pm-fb{background:#ef4444}',
+                '.pm-recs{margin-top:16px}',
+                '.pm-rec{display:flex;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px}',
+                '.pm-rec.rc{background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fecaca}',
+                '.pm-rec.rw{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a}',
+                '.pm-rec-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}',
+                '.rc .pm-rec-icon{background:#fee2e2;color:#dc2626}',
+                '.rw .pm-rec-icon{background:#fef3c7;color:#d97706}',
+                '.pm-rec-body{flex:1}',
+                '.pm-rec-title{font-weight:700;font-size:13px;margin-bottom:2px}',
+                '.rc .pm-rec-title{color:#991b1b}',
+                '.rw .pm-rec-title{color:#92400e}',
+                '.pm-rec-text{font-size:12px;color:#6b7280;margin-bottom:4px}',
+                '.pm-rec-action{font-size:12px;font-weight:600;padding:3px 8px;border-radius:4px;display:inline-block}',
+                '.rc .pm-rec-action{background:#fee2e2;color:#991b1b}',
+                '.rw .pm-rec-action{background:#fef3c7;color:#92400e}',
+                '.pm-loading{text-align:center;padding:60px}',
+                '.pm-spinner{display:inline-block;width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:#ef4444;border-radius:50%;animation:spin .8s linear infinite}'
+            ].join('\n');
+            document.head.appendChild(s);
+        }
+        // overlay 생성
+        var ov=document.createElement('div');ov.className='pm-overlay';ov.id='pm-overlay';
+        ov.innerHTML='<div class="pm-modal"><div class="pm-header"><div><h2><i class="fa fa-exclamation-triangle"></i> 문제 서버 상세 분석</h2><div class="pm-header-sub">최근 24시간 · 성공률 70% 미만 서버 · 정상화 제안 포함</div></div><button class="pm-close" onclick="closeProblemModal()">&times;</button></div><div class="pm-body"><div class="pm-loading"><div class="pm-spinner"></div><p style="margin-top:12px;color:#6b7280;">문제 서버 데이터 분석 중...</p></div></div></div>';
+        document.body.appendChild(ov);
+        document.body.style.overflow='hidden';
+        ov.addEventListener('click',function(ev){if(ev.target===ov)closeProblemModal();});
+        var escH=function(ev){if(ev.key==='Escape'){closeProblemModal();document.removeEventListener('keydown',escH);}};
+        document.addEventListener('keydown',escH);
+        // Fetch
+        var csrf_token=$('#csrf_token').html();
+        $.post('/api/v1/read/problem_servers',{csrfmiddlewaretoken:csrf_token})
+        .done(function(data){
+            if(data.result!==200)return;
+            var body=ov.querySelector('.pm-body');
+            body.innerHTML=_pmRender(data);
+            body.querySelectorAll('.pm-srv-header').forEach(function(h){h.addEventListener('click',function(){h.parentElement.classList.toggle('expanded');});});
+        })
+        .fail(function(){ov.querySelector('.pm-body').innerHTML='<p style="text-align:center;color:red;padding:40px;">데이터 로드 실패</p>';});
+    }
+
+    function closeProblemModal(){
+        var el=document.getElementById('pm-overlay');if(el)el.remove();
+        document.body.style.overflow='';
+    }
+
+    function _pmBar(rate){
+        var c=rate>=70?'pm-fg':rate>=40?'pm-fw':'pm-fb';
+        return '<span class="pm-bar"><span class="bar"><span class="fill '+c+'" style="width:'+rate+'%"></span></span> '+rate+'%</span>';
+    }
+
+    function _pmRender(data){
+        var h='';
+        // Summary
+        h+='<div class="pm-summary">';
+        h+='<div class="pm-sum-card" style="background:linear-gradient(135deg,#ef4444,#dc2626)"><div class="val">'+data.critical_count+'</div><div class="lbl">CRITICAL (&lt;50%)</div></div>';
+        h+='<div class="pm-sum-card" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><div class="val">'+data.warning_count+'</div><div class="lbl">WARNING (50~70%)</div></div>';
+        h+='<div class="pm-sum-card" style="background:linear-gradient(135deg,#6b7280,#4b5563)"><div class="val">'+data.servers.length+'</div><div class="lbl">총 문제 서버</div></div>';
+        h+='</div>';
+
+        if(data.servers.length===0){
+            h+='<div style="text-align:center;padding:40px;"><i class="fa fa-check-circle" style="font-size:48px;color:#10b981;"></i><p style="margin-top:12px;font-size:16px;font-weight:600;color:#059669;">모든 서버 정상! 문제 서버가 없습니다.</p></div>';
+            return h;
+        }
+
+        data.servers.forEach(function(srv,idx){
+            var cls=srv.severity==='critical'?'pm-critical':'pm-warning';
+            var bc=srv.severity==='critical'?'badge-critical':'badge-warning';
+            var exp=idx===0?' expanded':'';
+            h+='<div class="pm-server '+cls+exp+'">';
+            // Header
+            h+='<div class="pm-srv-header">';
+            h+='<div class="pm-srv-name">'+srv.name+'</div>';
+            h+='<div class="pm-srv-meta">';
+            h+='<span><i class="fa fa-users"></i> '+srv.total+'명</span>';
+            h+='<span style="color:#10b981"><i class="fa fa-check"></i> '+srv.success+'</span>';
+            h+='<span style="color:#ef4444"><i class="fa fa-times"></i> '+srv.fail+'</span>';
+            h+='<span>세션 '+srv.total_sessions+'건 (세션성공률 '+srv.sess_rate+'%)</span>';
+            h+='</div>';
+            h+='<div class="pm-srv-badge '+bc+'">'+srv.rate+'%</div>';
+            h+='<i class="fa fa-chevron-down pm-srv-expand"></i>';
+            h+='</div>';
+            // Detail
+            h+='<div class="pm-srv-detail">';
+
+            // Grid: ISP + Protocol
+            h+='<div class="pm-grid">';
+            h+='<div class="pm-section"><h4><i class="fa fa-wifi"></i> ISP별 분석 (유저 단위)</h4>';
+            h+='<table class="pm-tbl"><thead><tr><th>ISP</th><th>성공</th><th>실패</th><th>성공률</th></tr></thead><tbody>';
+            srv.isp_breakdown.forEach(function(x){
+                h+='<tr><td><b>'+x.isp+'</b></td><td style="color:#10b981">'+x.success+'</td><td style="color:#ef4444">'+x.fail+'</td><td>'+_pmBar(x.rate)+'</td></tr>';
+            });
+            h+='</tbody></table></div>';
+
+            h+='<div class="pm-section"><h4><i class="fa fa-lock"></i> 프로토콜별 분석 (세션 단위)</h4>';
+            h+='<table class="pm-tbl"><thead><tr><th>프로토콜</th><th>성공</th><th>실패</th><th>성공률</th></tr></thead><tbody>';
+            srv.proto_breakdown.forEach(function(x){
+                h+='<tr><td><b>'+x.protocol+'</b></td><td style="color:#10b981">'+x.success+'</td><td style="color:#ef4444">'+x.fail+'</td><td>'+_pmBar(x.rate)+'</td></tr>';
+            });
+            h+='</tbody></table></div>';
+            h+='</div>';
+
+            // Grid: OS + City
+            h+='<div class="pm-grid">';
+            h+='<div class="pm-section"><h4><i class="fa fa-desktop"></i> OS별 분석 (유저 단위)</h4>';
+            h+='<table class="pm-tbl"><thead><tr><th>OS</th><th>성공</th><th>실패</th><th>성공률</th></tr></thead><tbody>';
+            srv.os_breakdown.forEach(function(x){
+                h+='<tr><td><b>'+x.os+'</b></td><td style="color:#10b981">'+x.success+'</td><td style="color:#ef4444">'+x.fail+'</td><td>'+_pmBar(x.rate)+'</td></tr>';
+            });
+            h+='</tbody></table></div>';
+
+            if(srv.city_breakdown.length>0){
+                h+='<div class="pm-section"><h4><i class="fa fa-map-marker"></i> 도시별 분석 (유저 단위)</h4>';
+                h+='<table class="pm-tbl"><thead><tr><th>도시</th><th>유저</th><th>성공률</th></tr></thead><tbody>';
+                srv.city_breakdown.forEach(function(x){
+                    h+='<tr><td><b>'+x.city+'</b></td><td>'+x.total+'명</td><td>'+_pmBar(x.rate)+'</td></tr>';
+                });
+                h+='</tbody></table></div>';
+            }
+            h+='</div>';
+
+            // ===== 실패 사용자 목록 =====
+            if(srv.fail_users && srv.fail_users.length>0){
+                h+='<div class="pm-section" style="margin-top:16px">';
+                h+='<h4 style="border-left-color:#ef4444;color:#991b1b;"><i class="fa fa-times-circle"></i> 실패 사용자 ('+srv.fail_users.length+'명) — 성공 세션 0건</h4>';
+                h+='<table class="pm-tbl"><thead><tr><th>#</th><th>이메일</th><th>OS</th><th>도시</th><th>ISP</th><th>프로토콜</th><th>실패</th></tr></thead><tbody>';
+                srv.fail_users.forEach(function(u,i){
+                    h+='<tr style="background:'+(i%2===0?'#fff5f5':'#fff')+'">';
+                    h+='<td>'+(i+1)+'</td>';
+                    h+='<td style="font-weight:600;color:#991b1b">'+u.email+'</td>';
+                    h+='<td>'+u.os+'</td>';
+                    h+='<td>'+u.city+'</td>';
+                    h+='<td>'+u.isp+'</td>';
+                    h+='<td>'+u.protos.join(', ')+'</td>';
+                    h+='<td style="color:#ef4444;font-weight:700">'+u.fail+'건</td>';
+                    h+='</tr>';
+                });
+                h+='</tbody></table></div>';
+            }
+
+            // ===== 성공 사용자 목록 =====
+            if(srv.success_users && srv.success_users.length>0){
+                h+='<div class="pm-section" style="margin-top:16px">';
+                h+='<h4 style="border-left-color:#10b981;color:#065f46;"><i class="fa fa-check-circle"></i> 성공 사용자 ('+srv.success_users.length+'명)</h4>';
+                h+='<table class="pm-tbl"><thead><tr><th>#</th><th>이메일</th><th>OS</th><th>도시</th><th>ISP</th><th>프로토콜</th><th>성공</th><th>실패</th><th>성공률</th></tr></thead><tbody>';
+                srv.success_users.forEach(function(u,i){
+                    h+='<tr style="background:'+(i%2===0?'#f0fdf4':'#fff')+'">';
+                    h+='<td>'+(i+1)+'</td>';
+                    h+='<td style="font-weight:600;color:#065f46">'+u.email+'</td>';
+                    h+='<td>'+u.os+'</td>';
+                    h+='<td>'+u.city+'</td>';
+                    h+='<td>'+u.isp+'</td>';
+                    h+='<td>'+u.protos.join(', ')+'</td>';
+                    h+='<td style="color:#10b981;font-weight:700">'+u.success+'건</td>';
+                    h+='<td style="color:'+(u.fail>0?'#ef4444':'#9ca3af')+'">'+u.fail+'건</td>';
+                    h+='<td>'+_pmBar(u.rate)+'</td>';
+                    h+='</tr>';
+                });
+                h+='</tbody></table></div>';
+            }
+
+            // Recommendations
+            if(srv.recommendations.length>0){
+                h+='<div class="pm-recs">';
+                h+='<h4 style="font-size:14px;font-weight:700;margin:16px 0 10px;border-left:3px solid #ef4444;padding-left:8px;color:#991b1b;"><i class="fa fa-lightbulb-o"></i> 정상화 제안</h4>';
+                srv.recommendations.forEach(function(r){
+                    var rc=r.severity==='critical'?'rc':'rw';
+                    h+='<div class="pm-rec '+rc+'">';
+                    h+='<div class="pm-rec-icon"><i class="fa '+r.icon+'"></i></div>';
+                    h+='<div class="pm-rec-body">';
+                    h+='<div class="pm-rec-title">'+r.title+'</div>';
+                    h+='<div class="pm-rec-text">'+r.text+'</div>';
+                    h+='<div class="pm-rec-action"><i class="fa fa-arrow-right"></i> '+r.action+'</div>';
+                    h+='</div></div>';
+                });
+                h+='</div>';
+            }
+
+            h+='</div>'; // detail
+            h+='</div>'; // server
+        });
+        return h;
+    }
+
+    // 서버 분석 알림 카운트 (메뉴 뱃지)
+    function server_alert_count(){
+        var csrf_token = $('#csrf_token').html();
+        $.post("/api/v1/read/server_alert_count", {
+            csrfmiddlewaretoken: csrf_token
+        })
+        .done(function(data){
+            if(data.result == 200){
+                update_issue_badge('#server_alert_count', data);
+            }
+        });
+    }
+
     // 초기화 실행
     ready_count();
     use_count();
+    cron_issue_count();
+    nas_issue_count();
+    user_today_stats();
+    today_payment_count();
+    server_alert_count();
     $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
 </script>

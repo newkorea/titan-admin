@@ -1,7 +1,8 @@
-#원격승인 500,600 설치바로전코드
+# 결제/가격 관리 — 요금제 CRUD, 원격승인(500/600), 결제 리다이렉트, 결제내역 조회
 import json
 import datetime
 import smtplib
+import requests
 from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -414,7 +415,9 @@ def api_read_payment(request):
             		x.regist_date,
             		x.refund_date,
             		x.auto_end_date,
-                    concat(x.id, '+', x.refund_yn, '+', x.pgcode) as refund
+                    concat(x.id, '+', x.refund_yn, '+', x.pgcode) as refund,
+                    COALESCE(x.tid, '') as receipt,
+                    concat(COALESCE(x.tid, ''), '+', y.email) as receipt_send
             from tbl_price_history x
             join tbl_user y
             on x.user_id = y.id
@@ -578,12 +581,24 @@ def api_read_account(request):
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
 
+# 오늘 결제건수 (메뉴 뱃지용)
+@allow_admin
+def api_read_today_payment_count(request):
+    from datetime import date
+    today = date.today()
+    today_payment = TblPriceHistory.objects.filter(regist_date__date=today).count()
+    return JsonResponse({'result': 200, 'today_payment': today_payment})
+
+
 # (2020-03-18)
 @allow_admin
 def api_read_ready_count(request):
+    from datetime import date
     history = TblSendHistory.objects.filter(status='R')
     ready_count = len(history)
-    return JsonResponse({'result': 200, 'ready_count': ready_count})
+    today = date.today()
+    today_approved = TblSendHistory.objects.filter(status__in=['A', 'S'], accept_date__date=today).count()
+    return JsonResponse({'result': 200, 'ready_count': ready_count, 'today_approved': today_approved})
 
 
 # (2020-03-18) 2025-08-25 D를 안보이게 처리
@@ -651,7 +666,9 @@ def api_read_bank(request):
         'x.accept_date',
         'x.status',
         'x.refund_date',
-        'x.type'
+        'x.type',
+        'x.id',
+        'x.id'
     ]
 
     # 데이터테이블즈 - 카운팅 쿼리
@@ -685,10 +702,14 @@ def api_read_bank(request):
                     DATE_FORMAT(x.accept_date, "%Y-%m-%d %H:%i:%S") as accept_date,
                     concat(x.status, '@', x.id, '@', y.username, '@', x.product_name, '@', x.krw) as refund,
                     DATE_FORMAT(x.refund_date, "%Y-%m-%d %H:%i:%S") as refund_date,
-                    UPPER(TRIM(x.type)) as type
+                    UPPER(TRIM(x.type)) as type,
+                    concat(x.id, '|', x.status, '|', COALESCE(inv.id, ''), '|', x.user_id, '|', COALESCE(x.product_name,''), '|', COALESCE(x.session,''), '|', COALESCE(x.month_type,''), '|', COALESCE(x.krw,''), '|', COALESCE(UPPER(TRIM(x.type)),'M'), '|', DATE_FORMAT(x.regist_date, '%%Y-%%m-%%dT%%H:%%i:%%S')) as invoice,
+                    concat(x.id, '|', COALESCE(inv.id, ''), '|', y.email) as invoice_send
             from tbl_send_history x
             join tbl_user y
             on x.user_id = y.id
+            left join tbl_invoice inv
+            on inv.source_table = 'send_history' and inv.source_id = x.id
             {wc}
             order by {orderby_col} {orderby_opt}
             limit {start}, {length}
@@ -1024,16 +1045,19 @@ def api_check_session(request):
 @allow_admin
 def api_read_payment_methods(request):
     try:
-        # 공유 설정 파일에서 읽기
-        config_file = '/home/newkorea/project/payment_methods_config.json'
         wechat_enabled = True
         alipay_enabled = True
         
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                config = json.load(f)
-                wechat_enabled = config.get('wechat_enabled', True)
-                alipay_enabled = config.get('alipay_enabled', True)
+        with connections['default'].cursor() as cur:
+            cur.execute("SELECT config_value FROM tbl_global_config WHERE config_key = 'wechat_enabled'")
+            row = cur.fetchone()
+            if row:
+                wechat_enabled = (row[0] == 'true')
+            
+            cur.execute("SELECT config_value FROM tbl_global_config WHERE config_key = 'alipay_enabled'")
+            row = cur.fetchone()
+            if row:
+                alipay_enabled = (row[0] == 'true')
         
         return JsonResponse({
             'result': 200,
@@ -1053,23 +1077,20 @@ def api_read_payment_methods(request):
 @allow_admin
 def api_update_payment_methods(request):
     try:
-        wechat_enabled = request.POST.get('wechat_enabled') == 'true'
-        alipay_enabled = request.POST.get('alipay_enabled') == 'true'
+        wechat_enabled = 'true' if request.POST.get('wechat_enabled') == 'true' else 'false'
+        alipay_enabled = 'true' if request.POST.get('alipay_enabled') == 'true' else 'false'
         
-        # 공유 설정 파일에 저장
-        config_file = '/home/newkorea/project/payment_methods_config.json'
-        config = {
-            'wechat_enabled': wechat_enabled,
-            'alipay_enabled': alipay_enabled
-        }
-        
-        with open(config_file, 'w') as f:
-            json.dump(config, f)
+        with connections['default'].cursor() as cur:
+            # Wechat 업데이트
+            cur.execute("INSERT INTO tbl_global_config (config_key, config_value, description) VALUES ('wechat_enabled', %s, 'Enable WeChat Pay') ON DUPLICATE KEY UPDATE config_value=%s", [wechat_enabled, wechat_enabled])
+            
+            # Alipay 업데이트
+            cur.execute("INSERT INTO tbl_global_config (config_key, config_value, description) VALUES ('alipay_enabled', %s, 'Enable AliPay') ON DUPLICATE KEY UPDATE config_value=%s", [alipay_enabled, alipay_enabled])
         
         return JsonResponse({
             'result': 200,
             'title': '저장 성공',
-            'text': '결제 방식 설정이 저장되었습니다.'
+            'text': '결제 방식 설정이 저장되었습니다 (전체 서버 적용).'
         })
     except Exception as e:
         return JsonResponse({
@@ -1077,3 +1098,376 @@ def api_update_payment_methods(request):
             'title': '저장 실패',
             'text': str(e)
         })  
+
+
+# 영수증 URL 조회 (페이레터 API)
+@allow_admin
+def api_read_receipt(request):
+    """페이레터 API를 통해 영수증(거래명세서) URL을 조회"""
+    tid = request.POST.get('tid', '').strip()
+    if not tid:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': '트랜잭션 ID가 없습니다.'})
+
+    try:
+        api_url = f"{settings.PAYLETTER_KOR_LIVE_ENDPOINT}v1.0/receipt/info/{tid}/?client_id={settings.PAYLETTER_KOR_LIVE_SHOPID}"
+        headers = {"Authorization": f"PLKEY {settings.PAYLETTER_KOR_LIVE_APIKEY_SEARCH}"}
+        response = requests.get(api_url, headers=headers, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            receipt_url = data.get('receipt_url')
+            if receipt_url:
+                return JsonResponse({'result': 200, 'receipt_url': receipt_url})
+
+        return JsonResponse({'result': 500, 'title': '오류', 'text': '영수증 URL을 가져올 수 없습니다.'})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'title': '오류', 'text': f'API 요청 실패: {str(e)}'})
+
+
+# 영수증 이메일 발송
+@allow_admin
+def api_send_receipt_email(request):
+    """페이레터 영수증 URL을 조회하여 고객 이메일로 발송"""
+    tid = request.POST.get('tid', '').strip()
+    email = request.POST.get('email', '').strip()
+
+    if not tid:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': '트랜잭션 ID가 없습니다.'})
+    if not email:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': '이메일 주소가 없습니다.'})
+
+    # 1. 페이레터 API에서 영수증 URL 조회
+    try:
+        api_url = f"{settings.PAYLETTER_KOR_LIVE_ENDPOINT}v1.0/receipt/info/{tid}/?client_id={settings.PAYLETTER_KOR_LIVE_SHOPID}"
+        headers = {"Authorization": f"PLKEY {settings.PAYLETTER_KOR_LIVE_APIKEY_SEARCH}"}
+        response = requests.get(api_url, headers=headers, timeout=10)
+
+        receipt_url = None
+        if response.status_code == 200:
+            data = response.json()
+            receipt_url = data.get('receipt_url')
+
+        if not receipt_url:
+            return JsonResponse({'result': 500, 'title': '오류', 'text': '영수증 URL을 가져올 수 없습니다.'})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'title': '오류', 'text': f'영수증 API 오류: {str(e)}'})
+
+    # 2. 이메일 발송
+    try:
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        subject = f'[TITAN VPN] 결제 영수증 안내'
+        html_body = f'''
+        <html>
+        <body style="font-family:Arial,sans-serif;font-size:14px;color:#333;">
+            <div style="max-width:600px;margin:0 auto;padding:20px;">
+                <h2 style="color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;">
+                    TITAN VPN 결제 영수증
+                </h2>
+                <p>안녕하세요, TITAN VPN을 이용해 주셔서 감사합니다.</p>
+                <p>고객님의 결제 영수증을 아래 링크에서 확인하실 수 있습니다.</p>
+                <div style="text-align:center;margin:30px 0;">
+                    <a href="{receipt_url}" target="_blank"
+                       style="display:inline-block;padding:14px 40px;background-color:#3498db;color:#ffffff;
+                              text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;">
+                        영수증 확인하기
+                    </a>
+                </div>
+                <p style="font-size:12px;color:#888;">
+                    트랜잭션 ID: {tid}<br>
+                    발송 시간: {now_str}
+                </p>
+                <hr style="border:none;border-top:1px solid #eee;margin-top:30px;">
+                <p style="font-size:11px;color:#aaa;">
+                    본 메일은 TITAN VPN에서 자동 발송된 메일입니다.<br>
+                    문의사항이 있으시면 고객센터로 연락해 주세요.
+                </p>
+            </div>
+        </body>
+        </html>
+        '''
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = settings.SMTP_EMAIL
+        msg['To'] = email
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as smtp:
+            smtp.login(settings.SMTP_ID, settings.SMTP_PW)
+            smtp.sendmail(settings.SMTP_EMAIL, [email], msg.as_string())
+
+        return JsonResponse({'result': 200, 'title': '발송 완료', 'text': f'{email}로 영수증을 발송했습니다.'})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'title': '발송 실패', 'text': f'이메일 발송 오류: {str(e)}'})
+
+
+# ──────────────────────────────────────────────────────────────
+# 무통장(send_history) 인보이스 발급 / 조회 / 이메일 발송
+# ──────────────────────────────────────────────────────────────
+
+def _invoice_amount(krw, payment_type):
+    """무통장/알리/위챗 금액 포맷"""
+    sym = '₩'; code = 'KRW'
+    raw = str(krw or '0').replace(',', '')
+    try:
+        formatted = f"{float(raw):,.2f}"
+    except (ValueError, TypeError):
+        formatted = raw or '0.00'
+    return formatted, sym, code
+
+
+def _invoice_payment_label(ptype):
+    labels = {
+        'M': 'Bank Transfer', 'A': 'AliPay', 'W': 'WeChat Pay', 'V': 'Virtual Currency',
+    }
+    return labels.get((ptype or 'M').upper(), 'Bank Transfer')
+
+
+def _render_invoice_html(data):
+    """Invoice HTML 문자열 생성"""
+    return f'''<!doctype html>
+<html><head><meta charset="utf-8"><title>Invoice - TITAN VPN</title>
+<style>
+@media print {{ .no-print {{ display:none!important; }} body {{ margin:0; }} }}
+*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{font-family:'Segoe UI',Arial,sans-serif;background:#f0f0f0;color:#333;}}
+.invoice-wrap{{max-width:800px;margin:20px auto;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.15);}}
+.invoice-inner{{padding:40px 50px;}}
+.inv-header{{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #4285f4;padding-bottom:20px;margin-bottom:25px;}}
+.inv-logo-text{{font-size:22px;font-weight:700;color:#4285f4;margin-top:4px;}}
+.inv-logo-sub{{font-size:11px;color:#888;}}
+.inv-title{{text-align:right;}}
+.inv-title h1{{font-size:32px;color:#333;letter-spacing:2px;}}
+.inv-title p{{font-size:12px;color:#666;margin-top:4px;}}
+.inv-info{{display:flex;justify-content:space-between;margin-bottom:30px;}}
+.inv-info-block h4{{font-size:11px;text-transform:uppercase;color:#999;margin-bottom:4px;letter-spacing:1px;}}
+.inv-info-block p{{font-size:14px;color:#333;}}
+.inv-table{{width:100%;border-collapse:collapse;margin-bottom:30px;}}
+.inv-table thead{{background:#4285f4;color:#fff;}}
+.inv-table th{{padding:10px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}}
+.inv-table td{{padding:12px 14px;font-size:13px;border-bottom:1px solid #eee;}}
+.inv-table .text-right{{text-align:right;}}
+.inv-stamp{{text-align:center;margin:20px 0;}}
+.inv-stamp span{{display:inline-block;border:3px solid #e74c3c;color:#e74c3c;font-size:22px;font-weight:900;padding:8px 18px;border-radius:6px;transform:rotate(-5deg);letter-spacing:2px;}}
+.inv-totals{{display:flex;justify-content:flex-end;margin-bottom:30px;}}
+.inv-totals table{{width:280px;border-collapse:collapse;}}
+.inv-totals td{{padding:6px 14px;font-size:13px;}}
+.inv-totals .total-row td{{border-top:2px solid #4285f4;font-weight:700;font-size:15px;padding-top:10px;}}
+.inv-totals .label{{text-align:right;color:#666;}}
+.inv-totals .value{{text-align:right;}}
+.inv-footer{{border-top:1px solid #ddd;padding-top:20px;text-align:center;}}
+.inv-footer p{{font-size:11px;color:#888;margin-bottom:3px;}}
+.btn-bar{{text-align:center;padding:15px;background:#f8f8f8;}}
+.btn-bar button{{padding:10px 30px;font-size:14px;border:none;border-radius:4px;cursor:pointer;margin:0 5px;}}
+.btn-print{{background:#4285f4;color:#fff;}}
+.btn-close{{background:#888;color:#fff;}}
+</style></head><body>
+<div class="no-print btn-bar">
+  <button class="btn-print" onclick="window.print();">&#128424; Download / Print</button>
+  <button class="btn-close" onclick="window.close();">Close</button>
+</div>
+<div class="invoice-wrap"><div class="invoice-inner">
+  <div class="inv-header">
+    <div><div class="inv-logo-text">TITAN VPN</div><div class="inv-logo-sub">TITANVPN Co.,LTD</div></div>
+    <div class="inv-title"><h1>INVOICE</h1><p>Date: {data['date_display']}</p><p>Invoice #: {data['inv_no']}</p></div>
+  </div>
+  <div class="inv-info">
+    <div class="inv-info-block"><h4>Bill To</h4><p style="font-size:16px;font-weight:600;">{data['company_name']}</p></div>
+    <div class="inv-info-block" style="text-align:right;"><h4>Payment Method</h4><p>{data['payment_label']}</p></div>
+  </div>
+  <table class="inv-table"><thead><tr>
+    <th>Qty</th><th>Description</th><th class="text-right">Unit Price</th><th class="text-right">Discount</th><th class="text-right">Line Total</th>
+  </tr></thead><tbody><tr>
+    <td>1</td><td>{data['product_name']}</td>
+    <td class="text-right">{data['inv_currency']}{data['inv_amount']}</td>
+    <td class="text-right">{data['inv_currency']}0.00</td>
+    <td class="text-right">{data['inv_currency']}{data['inv_amount']}</td>
+  </tr></tbody></table>
+  <div class="inv-stamp"><span>TITAN VPN</span></div>
+  <div class="inv-totals"><table>
+    <tr><td class="label">Subtotal</td><td class="value">{data['inv_currency']}{data['inv_amount']}</td></tr>
+    <tr><td class="label">Sales Tax</td><td class="value">0%</td></tr>
+    <tr class="total-row"><td class="label">Total</td><td class="value">{data['inv_currency']}{data['inv_amount']}</td></tr>
+  </table></div>
+  <div class="inv-footer">
+    <p><strong>Thank you for your business!</strong></p>
+    <p>DaeHwaLo160, DaeDukKu, DaejunCity, Korea &nbsp; TEL: 070-8016-3303 &nbsp; Mail: admin@titanvpn.kr</p>
+  </div>
+</div></div></body></html>'''
+
+
+@allow_admin
+def api_generate_bank_invoice(request):
+    """무통장(send_history) 인보이스 발급 — DB 저장"""
+    send_id = request.POST.get('send_id', '').strip()
+    company_name = request.POST.get('company_name', '').strip() or 'N/A'
+
+    if not send_id:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': 'ID가 없습니다.'})
+
+    # 이미 발급 여부 확인
+    with connections['default'].cursor() as cur:
+        cur.execute("SELECT id FROM tbl_invoice WHERE source_table='send_history' AND source_id=%s", [send_id])
+        existing = cur.fetchone()
+        if existing:
+            return JsonResponse({'result': 409, 'title': '알림', 'text': '이미 발급된 인보이스가 있습니다. 보기 버튼을 이용하세요.'})
+
+    # send_history + user 정보 조회
+    with connections['default'].cursor() as cur:
+        cur.execute("""
+            SELECT x.user_id, x.product_name, x.session, x.month_type, x.krw,
+                   UPPER(TRIM(x.type)) as ptype, x.regist_date
+            FROM tbl_send_history x
+            WHERE x.id = %s
+        """, [send_id])
+        row = cur.fetchone()
+
+    if not row:
+        return JsonResponse({'result': 404, 'title': '오류', 'text': '해당 결제 건을 찾을 수 없습니다.'})
+
+    user_id, product_name, session_cnt, month_type, krw, ptype, regist_date = row
+
+    inv_amount, inv_currency, inv_currency_code = _invoice_amount(krw, ptype)
+    payment_label = _invoice_payment_label(ptype)
+
+    try:
+        date_display = regist_date.strftime('%B %d, %Y')
+        inv_no = regist_date.strftime('%Y%m%d') + str(send_id).zfill(3)
+    except Exception:
+        date_display = str(regist_date)
+        inv_no = datetime.datetime.now().strftime('%Y%m%d') + str(send_id).zfill(3)
+
+    # DB 저장
+    with connections['default'].cursor() as cur:
+        cur.execute("""
+            INSERT INTO tbl_invoice
+                (user_id, source_table, source_id, company_name, product_name,
+                 payment_type, inv_amount, inv_currency, inv_currency_code,
+                 inv_no, date_display, payment_label, session_cnt, month_type)
+            VALUES (%s, 'send_history', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, [user_id, send_id, company_name, product_name or '',
+              ptype or 'M', inv_amount, inv_currency, inv_currency_code,
+              inv_no, date_display, payment_label,
+              str(session_cnt or ''), str(month_type or '')])
+
+    return JsonResponse({'result': 200, 'title': '발급 완료', 'text': '인보이스가 발급되었습니다.'})
+
+
+@allow_admin
+def api_view_bank_invoice(request):
+    """인보이스 HTML 렌더링 (발급된 인보이스 보기)"""
+    invoice_id = request.GET.get('invoice_id', '').strip() or request.POST.get('invoice_id', '').strip()
+    send_id = request.GET.get('send_id', '').strip() or request.POST.get('send_id', '').strip()
+
+    row = None
+    with connections['default'].cursor() as cur:
+        if invoice_id:
+            cur.execute("""
+                SELECT company_name, product_name, payment_label, inv_amount, inv_currency,
+                       inv_currency_code, inv_no, date_display, session_cnt, month_type
+                FROM tbl_invoice WHERE id=%s
+            """, [invoice_id])
+            row = cur.fetchone()
+        elif send_id:
+            cur.execute("""
+                SELECT company_name, product_name, payment_label, inv_amount, inv_currency,
+                       inv_currency_code, inv_no, date_display, session_cnt, month_type
+                FROM tbl_invoice WHERE source_table='send_history' AND source_id=%s
+            """, [send_id])
+            row = cur.fetchone()
+
+    if not row:
+        return HttpResponse('<h2>Invoice not found</h2>', status=404)
+
+    data = {
+        'company_name': row[0], 'product_name': row[1], 'payment_label': row[2],
+        'inv_amount': row[3], 'inv_currency': row[4], 'inv_currency_code': row[5],
+        'inv_no': row[6], 'date_display': row[7], 'session_cnt': row[8], 'month_type': row[9],
+    }
+    return HttpResponse(_render_invoice_html(data), content_type='text/html; charset=utf-8')
+
+
+@allow_admin
+def api_send_bank_invoice_email(request):
+    """발급된 인보이스를 이메일로 발송"""
+    send_id = request.POST.get('send_id', '').strip()
+    email = request.POST.get('email', '').strip()
+
+    if not send_id:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': 'ID가 없습니다.'})
+    if not email:
+        return JsonResponse({'result': 400, 'title': '오류', 'text': '이메일이 없습니다.'})
+
+    # 인보이스 조회
+    with connections['default'].cursor() as cur:
+        cur.execute("""
+            SELECT company_name, product_name, payment_label, inv_amount, inv_currency,
+                   inv_currency_code, inv_no, date_display
+            FROM tbl_invoice WHERE source_table='send_history' AND source_id=%s
+        """, [send_id])
+        row = cur.fetchone()
+
+    if not row:
+        return JsonResponse({'result': 404, 'title': '오류', 'text': '인보이스가 아직 발급되지 않았습니다. 먼저 발급해주세요.'})
+
+    data = {
+        'company_name': row[0], 'product_name': row[1], 'payment_label': row[2],
+        'inv_amount': row[3], 'inv_currency': row[4], 'inv_currency_code': row[5],
+        'inv_no': row[6], 'date_display': row[7],
+    }
+    invoice_html = _render_invoice_html(data)
+
+    try:
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        subject = f'[TITAN VPN] Invoice #{data["inv_no"]}'
+        html_body = f'''
+        <html><body style="font-family:Arial,sans-serif;font-size:14px;color:#333;">
+        <div style="max-width:600px;margin:0 auto;padding:20px;">
+            <h2 style="color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:10px;">
+                TITAN VPN Invoice
+            </h2>
+            <p>안녕하세요, TITAN VPN을 이용해 주셔서 감사합니다.</p>
+            <p>고객님의 인보이스를 아래와 같이 안내드립니다.</p>
+            <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;width:140px;">Invoice #</td>
+                    <td style="padding:8px;border:1px solid #ddd;">{data["inv_no"]}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Date</td>
+                    <td style="padding:8px;border:1px solid #ddd;">{data["date_display"]}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Product</td>
+                    <td style="padding:8px;border:1px solid #ddd;">{data["product_name"]}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Amount</td>
+                    <td style="padding:8px;border:1px solid #ddd;">{data["inv_currency"]}{data["inv_amount"]}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;">Payment</td>
+                    <td style="padding:8px;border:1px solid #ddd;">{data["payment_label"]}</td></tr>
+            </table>
+            <p style="font-size:12px;color:#888;">발송 시간: {now_str}</p>
+            <hr style="border:none;border-top:1px solid #eee;margin-top:30px;">
+            <p style="font-size:11px;color:#aaa;">
+                본 메일은 TITAN VPN에서 자동 발송된 메일입니다.<br>
+                문의사항이 있으시면 고객센터로 연락해 주세요.
+            </p>
+        </div></body></html>
+        '''
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = settings.SMTP_EMAIL
+        msg['To'] = email
+
+        from email.mime.base import MIMEBase
+        from email import encoders
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+        attachment = MIMEBase('text', 'html')
+        attachment.set_payload(invoice_html.encode('utf-8'))
+        encoders.encode_base64(attachment)
+        attachment.add_header('Content-Disposition', 'attachment', filename=f'TITAN_Invoice_{data["inv_no"]}.html')
+        msg.attach(attachment)
+
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as smtp:
+            smtp.login(settings.SMTP_ID, settings.SMTP_PW)
+            smtp.sendmail(settings.SMTP_EMAIL, [email], msg.as_string())
+
+        return JsonResponse({'result': 200, 'title': '발송 완료', 'text': f'{email}로 인보이스를 발송했습니다.'})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'title': '발송 실패', 'text': f'이메일 발송 오류: {str(e)}'})

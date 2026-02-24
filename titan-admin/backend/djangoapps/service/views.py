@@ -1,3 +1,4 @@
+# 서비스 관리 — 서비스 상태 조회/제어 (radius DB 사용)
 import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse

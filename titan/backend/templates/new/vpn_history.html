@@ -1,0 +1,340 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<style>
+/* ── 공통 카드 ── */
+.vh-section { padding: 40px 0 60px; }
+.vh-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    padding: 28px 24px;
+    margin-bottom: 30px;
+}
+.vh-card h4 {
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-size: 1.15rem;
+}
+.vh-card h4 i { margin-right: 8px; color: #8a4cf7; }
+.vh-badge { font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; }
+
+/* ── 현재 접속 카드 ── */
+.active-conn-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.active-conn-card::after {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.active-conn-card .conn-info { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.active-conn-card .conn-label { font-size: 0.78rem; opacity: 0.8; }
+.active-conn-card .conn-value { font-size: 0.95rem; font-weight: 600; }
+.active-conn-card .btn-disconnect {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.active-conn-card .btn-disconnect:hover { background: rgba(255,59,48,0.8); border-color: transparent; }
+.no-active { color: #999; text-align: center; padding: 30px; font-size: 1rem; }
+
+/* ── 로그 아코디언 ── */
+.log-panel { border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+.log-panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+.log-panel-header:hover { background: #eef1f6; }
+.log-panel-header h5 { margin: 0; font-weight: 600; font-size: 0.95rem; }
+.log-panel-arrow { transition: transform 0.3s; color: #888; }
+.log-panel-arrow.open { transform: rotate(180deg); }
+.log-panel-body { padding: 16px; }
+.log-panel-body .table { font-size: 0.82rem; margin-bottom: 0; }
+.log-panel-body .table thead th { background: #f4f6fa; font-weight: 600; white-space: nowrap; }
+.log-panel-body .table td { vertical-align: middle; }
+
+/* 기기 태그 */
+.vpn-device-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 0.72rem; font-weight: 600;
+}
+.vpn-device-tag.android { background: rgba(76,175,80,0.2); color: #2e7d32; }
+.vpn-device-tag.ios { background: rgba(156,39,176,0.2); color: #6a1b9a; }
+.vpn-device-tag.windows { background: rgba(33,150,243,0.2); color: #1565c0; }
+.vpn-device-tag.other { background: rgba(158,158,158,0.2); color: #616161; }
+
+/* ── 반응형 ── */
+@media (max-width: 768px) {
+    .active-conn-card .conn-info { gap: 10px; }
+    .vh-card { padding: 18px 14px; }
+    .log-panel-body .table { font-size: 0.75rem; }
+}
+</style>
+</%block>
+
+<%block name="content">
+<div class="main">
+    <section class="vh-section" style="padding-top: 100px;">
+        <div class="container">
+
+            <!-- 페이지 헤더 -->
+            <div class="text-center mb-5">
+                <h2 style="font-weight:700;"><i class="fas fa-history" style="color:#8a4cf7;"></i> ${_('VPN Usage History')}</h2>
+                <p class="text-muted">${_('View your VPN connection history and manage active connections')}</p>
+            </div>
+
+            <!-- ① 현재 접속 중 -->
+            <div class="vh-card">
+                <h4><i class="fas fa-wifi"></i> ${_('Active Connections')}</h4>
+                <div id="active_connections_area">
+                    <div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i> ${_('Loading...')}</div>
+                </div>
+            </div>
+
+            <!-- ② 접속 로그 -->
+            <div class="log-panel mb-4">
+                <div class="log-panel-header" onclick="togglePanel('connection')">
+                    <h5><i class="fas fa-network-wired mr-2" style="color:#8a4cf7;"></i>${_('Connection Log')}
+                        <span id="connection_count" class="badge badge-secondary ml-2" style="display:none;"></span>
+                    </h5>
+                    <i class="fas fa-chevron-down log-panel-arrow" id="connection_arrow"></i>
+                </div>
+                <div class="log-panel-body" id="connection_body" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="connection_table">
+                            <thead><tr>
+                                <th>${_('Server')}</th><th>${_('Protocol')}</th>
+                                <th>${_('Start')}</th><th>${_('End')}</th>
+                                <th>${_('Download')}</th><th>${_('Upload')}</th>
+                                <th>${_('Client IP')}</th><th>ISP</th><th>${_('Location')}</th>
+                            </tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ③ 앱 로그인 기록 -->
+            <div class="log-panel mb-4">
+                <div class="log-panel-header" onclick="togglePanel('app_login')">
+                    <h5><i class="fas fa-mobile-alt mr-2" style="color:#8a4cf7;"></i>${_('App Login History')}
+                        <span id="app_login_count" class="badge badge-secondary ml-2" style="display:none;"></span>
+                    </h5>
+                    <i class="fas fa-chevron-down log-panel-arrow" id="app_login_arrow"></i>
+                </div>
+                <div class="log-panel-body" id="app_login_body" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="app_login_table">
+                            <thead><tr>
+                                <th>${_('Device')}</th><th>${_('Version')}</th>
+                                <th>IP</th><th>ISP</th>
+                                <th>${_('Country')}</th><th>${_('City')}</th><th>${_('Time')}</th>
+                            </tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ④ 접속 실패 로그 -->
+            <div class="log-panel mb-4">
+                <div class="log-panel-header" onclick="togglePanel('fail')">
+                    <h5><i class="fas fa-exclamation-triangle mr-2" style="color:#e74c3c;"></i>${_('Connection Failure Log')}
+                        <span id="fail_count" class="badge badge-secondary ml-2" style="display:none;"></span>
+                    </h5>
+                    <i class="fas fa-chevron-down log-panel-arrow" id="fail_arrow"></i>
+                </div>
+                <div class="log-panel-body" id="fail_body" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="fail_table">
+                            <thead><tr>
+                                <th>${_('Platform')}</th><th>${_('Version')}</th>
+                                <th>${_('Server')}</th><th>${_('Protocol')}</th>
+                                <th>IP</th><th>${_('Location')}</th><th>${_('Time')}</th>
+                            </tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⑤ 강제 종료 로그 -->
+            <div class="log-panel mb-4">
+                <div class="log-panel-header" onclick="togglePanel('disconnect')">
+                    <h5><i class="fas fa-plug mr-2" style="color:#e67e22;"></i>${_('Force Disconnect Log')}
+                        <span id="disconnect_count" class="badge badge-secondary ml-2" style="display:none;"></span>
+                    </h5>
+                    <i class="fas fa-chevron-down log-panel-arrow" id="disconnect_arrow"></i>
+                </div>
+                <div class="log-panel-body" id="disconnect_body" style="display:none;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="disconnect_table">
+                            <thead><tr>
+                                <th>${_('Connections')}</th><th>${_('Protocol')}</th>
+                                <th>${_('Server')}</th><th>${_('Telecom')}</th>
+                                <th>${_('Time')}</th><th>${_('Old IP')}</th><th>${_('New IP')}</th>
+                                <th>ISP</th><th>${_('Location')}</th>
+                            </tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+const csrfToken = '${csrf_token}';
+var _cl = '${LANGUAGE_CODE}';
+var _t = function(ko, zh, en) { return _cl === 'en' ? en : (_cl === 'zh' ? zh : ko); };
+var _v = function(val) { return (val !== undefined && val !== null && val !== '') ? val : '-'; };
+function formatBytes(b) {
+    if (!b || b === 0) return '0 B';
+    var k = 1024, s = ['B','KB','MB','GB'];
+    var i = Math.floor(Math.log(b) / Math.log(k));
+    return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+}
+
+// ── 현재 접속 로드 ──
+function loadActiveConnections() {
+    $.post('/api/mypage/active_connections', {csrfmiddlewaretoken: csrfToken}, function(res) {
+        var area = $('#active_connections_area');
+        if (res.result !== 200) { area.html('<div class="no-active">' + _t('오류가 발생했습니다.','发生错误。','An error occurred.') + '</div>'); return; }
+        if (!res.logs || res.logs.length === 0) {
+            area.html('<div class="no-active"><i class="fas fa-check-circle mr-2" style="color:#27ae60;"></i>' + _t('현재 접속 중인 VPN이 없습니다.','当前没有活跃的VPN连接。','No active VPN connections.') + '</div>');
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < res.logs.length; i++) {
+            var c = res.logs[i];
+            var loc = [c.country, c.city].filter(function(v){return v;}).join(', ') || '-';
+            var ispText = c.isp || '';
+            // 기기 태그
+            var deviceTag = '';
+            if (c.device_type) {
+                var dt = c.device_type.toLowerCase();
+                var tagCls = dt === 'android' ? 'android' : (dt === 'ios' ? 'ios' : (dt === 'windows' ? 'windows' : 'other'));
+                var tagIcon = dt === 'android' ? 'fab fa-android' : (dt === 'ios' ? 'fab fa-apple' : (dt === 'windows' ? 'fab fa-windows' : 'fas fa-mobile-alt'));
+                var detail = c.device_detail || c.device_type;
+                var appVer = c.app_version ? ' (v' + c.app_version + ')' : '';
+                deviceTag = '<span class="vpn-device-tag ' + tagCls + '"><i class="' + tagIcon + '"></i> ' + detail + appVer + '</span>';
+            }
+            html += '<div class="active-conn-card">' +
+                '<div class="conn-info">' +
+                '<div><div class="conn-label">' + _t('서버','服务器','Server') + '</div><div class="conn-value">' + _v(c.nas_name) + '</div></div>' +
+                '<div><div class="conn-label">' + _t('프로토콜','协议','Protocol') + '</div><div class="conn-value">' + _v(c.protocol) + '</div></div>' +
+                '<div><div class="conn-label">' + _t('시작시간','开始时间','Start') + '</div><div class="conn-value">' + _v(c.start_time) + '</div></div>' +
+                '<div><div class="conn-label">IP</div><div class="conn-value">' + _v(c.client_ip) + '</div></div>' +
+                '<div><div class="conn-label">' + _t('위치','位置','Location') + '</div><div class="conn-value">' + loc + '</div></div>' +
+                (ispText ? '<div><div class="conn-label">' + _t('통신사','运营商','Carrier') + '</div><div class="conn-value" style="font-size:0.82rem;">' + ispText + '</div></div>' : '') +
+                '<div><div class="conn-label">↓ ' + formatBytes(c.input_bytes) + ' / ↑ ' + formatBytes(c.output_bytes) + '</div></div>' +
+                '</div>' +
+                (deviceTag ? '<div style="margin-top:8px;">' + deviceTag + '</div>' : '') +
+                '<div style="margin-top:8px;"><button class="btn-disconnect" onclick="forceDisconnect(' + c.radacctid + ')"><i class="fas fa-power-off mr-1"></i>' + _t('강제종료','强制断开','Disconnect') + '</button></div>' +
+                '</div>';
+        }
+        area.html(html);
+    });
+}
+
+function forceDisconnect(radacctid) {
+    Swal.fire({
+        title: _t('VPN 강제종료','强制断开VPN','Force Disconnect VPN'),
+        html: '<p>' + _t('이 연결을 끊으려면 비밀번호를 입력하세요.','请输入密码以断开此连接。','Enter your password to disconnect.') + '</p>' +
+              '<input id="dc_password" type="password" class="form-control" placeholder="' + _t('비밀번호','密码','Password') + '">',
+        showCancelButton: true,
+        confirmButtonText: _t('종료','断开','Disconnect'),
+        cancelButtonText: _t('취소','取消','Cancel'),
+        confirmButtonColor: '#e74c3c',
+        preConfirm: () => {
+            var pw = $('#dc_password').val();
+            if (!pw) { Swal.showValidationMessage(_t('비밀번호를 입력하세요.','请输入密码。','Please enter password.')); return false; }
+            return pw;
+        }
+    }).then((result) => {
+        if (result.value) {
+            $.post('/api/mypage/force_disconnect', {
+                csrfmiddlewaretoken: csrfToken,
+                password: result.value,
+                radacctid: radacctid
+            }).done(function(res) {
+                if (res.result === 200) {
+                    Swal.fire({icon:'success', title: _t('종료됨','已断开','Disconnected'), text: res.text, timer: 2000});
+                    loadActiveConnections();
+                } else {
+                    Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text});
+                }
+            });
+        }
+    });
+}
+
+// ── 로그 패널 ──
+var logLoaded = {};
+function togglePanel(type) {
+    var body = $('#' + type + '_body'), arrow = $('#' + type + '_arrow');
+    if (body.is(':visible')) { body.slideUp(200); arrow.removeClass('open'); }
+    else { body.slideDown(200); arrow.addClass('open'); if (!logLoaded[type]) loadLogData(type); }
+}
+
+function loadLogData(type) {
+    var urlMap = {'app_login':'/api/mypage/app_login_logs','connection':'/api/mypage/connection_logs','fail':'/api/mypage/fail_logs','disconnect':'/api/mypage/disconnect_logs'};
+    var tbody = $('#' + type + '_table tbody');
+    var cols = $('#' + type + '_table thead th').length;
+    tbody.html('<tr><td colspan="'+cols+'" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-2"></i>' + _t('로딩 중...','加载中...','Loading...') + '</td></tr>');
+    $.post(urlMap[type], {csrfmiddlewaretoken: csrfToken}, function(res) {
+        if (res.result !== 200) { tbody.html('<tr><td colspan="'+cols+'" class="text-center text-danger">Error</td></tr>'); return; }
+        logLoaded[type] = true;
+        $('#' + type + '_count').text(res.logs.length + _t('건','条','')).show();
+        if (!res.logs.length) { tbody.html('<tr><td colspan="'+cols+'" class="text-center text-muted py-3">' + _t('로그가 없습니다.','没有日志。','No logs.') + '</td></tr>'); return; }
+        var html = '';
+        for (var i = 0; i < res.logs.length; i++) {
+            var l = res.logs[i];
+            if (type === 'app_login') {
+                var ipD = l.nas_name ? '<span class="badge badge-primary">'+l.nas_name+'</span>' : _v(l.device_ip);
+                html += '<tr><td>'+_v(l.device_type)+'</td><td>'+_v(l.app_version)+'</td><td>'+ipD+'</td><td>'+_v(l.isp)+'</td><td>'+_v(l.country)+'</td><td>'+_v(l.city)+'</td><td>'+_v(l.login_time)+'</td></tr>';
+            } else if (type === 'connection') {
+                var sv = l.nas_name ? '<span class="badge badge-primary">'+l.nas_name+'</span>' : _v(l.nas_ip);
+                var st = l.stop_time || '<span class="badge badge-success">'+_t('접속중','连接中','Connected')+'</span>';
+                var loc = [l.country,l.city].filter(function(v){return v;}).join(' ') || '-';
+                html += '<tr><td>'+sv+'</td><td>'+_v(l.protocol)+'</td><td>'+_v(l.start_time)+'</td><td>'+st+'</td><td>'+formatBytes(l.input_bytes)+'</td><td>'+formatBytes(l.output_bytes)+'</td><td>'+_v(l.client_ip)+'</td><td>'+_v(l.isp)+'</td><td>'+loc+'</td></tr>';
+            } else if (type === 'fail') {
+                html += '<tr><td>'+_v(l.platform)+'</td><td>'+_v(l.app_version)+'</td><td>'+_v(l.server_name)+'</td><td>'+_v(l.protocol)+'</td><td>'+_v(l.ip)+'</td><td>'+_v(l.location)+'</td><td>'+_v(l.failed_time)+'</td></tr>';
+            } else if (type === 'disconnect') {
+                var loc = [l.country,l.city].filter(function(v){return v;}).join(' ') || '-';
+                html += '<tr><td>'+_v(l.connected_count)+'</td><td>'+_v(l.protocol)+'</td><td>'+_v(l.server_name)+'</td><td>'+_v(l.telecom)+'</td><td>'+_v(l.disconnected_time)+'</td><td>'+_v(l.old_ip)+'</td><td>'+_v(l.new_ip)+'</td><td>'+_v(l.isp)+'</td><td>'+loc+'</td></tr>';
+            }
+        }
+        tbody.html(html);
+    });
+}
+
+// 페이지 로드 시 현재 접속 자동 로드
+$(function() { loadActiveConnections(); });
+</script>
+</%block>

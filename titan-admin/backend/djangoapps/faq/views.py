@@ -1,3 +1,4 @@
+# FAQ 관리 — 자주 묻는 질문 CRUD
 import json
 from django.shortcuts import render
 from django.http import JsonResponse

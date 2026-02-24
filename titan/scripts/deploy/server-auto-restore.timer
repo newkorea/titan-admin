@@ -1,0 +1,11 @@
+[Unit]
+Description=TitanVPN Server Auto Restore Timer (Every 30 min)
+Requires=server-auto-restore.service
+
+[Timer]
+OnCalendar=*-*-* *:20,50:00
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

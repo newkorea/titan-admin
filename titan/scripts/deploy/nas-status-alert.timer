@@ -1,0 +1,11 @@
+[Unit]
+Description=TitanVPN NAS Status Alert Timer
+Requires=nas-status-alert.service
+
+[Timer]
+OnCalendar=*-*-* *:00,30:00
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

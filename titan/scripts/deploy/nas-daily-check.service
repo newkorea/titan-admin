@@ -1,0 +1,12 @@
+[Unit]
+Description=TitanVPN NAS Daily Health & Service Check
+After=network.target
+
+[Service]
+Type=oneshot
+User=newkorea
+WorkingDirectory=/home/newkorea/project/titan
+ExecStart=/home/newkorea/project/titan/.venv310/bin/python3 scripts/nas_daily_check.py
+TimeoutStartSec=600
+StandardOutput=journal
+StandardError=journal

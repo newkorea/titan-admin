@@ -1126,3 +1126,114 @@ msgstr "支持中国Windows安装"
 
 msgid "Two Versions of MacOS"
 msgstr "两个MacOS安装版本"
+
+msgid "Connection Log"
+msgstr "连接日志"
+
+msgid "Connection Failure Log"
+msgstr "连接失败日志"
+
+msgid "Force Disconnect Log"
+msgstr "强制断开日志"
+
+msgid "Server"
+msgstr "服务器"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "Start Time"
+msgstr "开始时间"
+
+msgid "End Time"
+msgstr "结束时间"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Client IP"
+msgstr "客户端IP"
+
+msgid "Location"
+msgstr "位置"
+
+msgid "Platform"
+msgstr "平台"
+
+msgid "Connections"
+msgstr "连接数"
+
+msgid "Telecom"
+msgstr "运营商"
+
+msgid "Time"
+msgstr "时间"
+
+msgid "Old IP"
+msgstr "旧IP"
+
+msgid "New IP"
+msgstr "新IP"
+
+msgid "中国时间"
+msgstr "中国时间"
+
+msgid "Email Verification"
+msgstr "邮件验证"
+
+msgid "No sub-accounts registered."
+msgstr "没有注册的子账户。"
+
+msgid "None"
+msgstr "无"
+
+msgid "VPN History"
+msgstr "VPN连接记录"
+
+msgid "Control Center"
+msgstr "控制中心"
+
+msgid "Manage your app sessions and device access"
+msgstr "管理您的应用会话和设备访问"
+
+msgid "App Sessions"
+msgstr "应用会话"
+
+msgid "Your app login sessions with VPN connection status."
+msgstr "应用登录会话及VPN连接状态。"
+
+msgid "Ban List"
+msgstr "封禁列表"
+
+msgid "VPN Usage History"
+msgstr "VPN使用记录"
+
+msgid "View your VPN connection history and manage active connections"
+msgstr "查看VPN连接记录并管理活跃连接"
+
+msgid "Active Connections"
+msgstr "活跃连接"
+
+msgid "Confirm New Password"
+msgstr "确认新密码"
+
+msgid "Current Password"
+msgstr "当前密码"
+
+msgid "New Password"
+msgstr "新密码"
+
+msgid "Start"
+msgstr "开始"
+
+msgid "End"
+msgstr "结束"
+
+msgid "Error!"
+msgstr "错误！"
+
+msgid "Success!"
+msgstr "成功！"
+
+msgid "Version"
+msgstr "版本"

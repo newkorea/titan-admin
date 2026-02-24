@@ -1132,3 +1132,114 @@ msgstr "아래에서 기존 계정을 합치거나 새 하위계정을 만들 �
 
 msgid "Support In Chinese MacOS"
 msgstr "중국MacOS에 설치가능"
+
+msgid "Connection Log"
+msgstr "접속로그"
+
+msgid "Connection Failure Log"
+msgstr "접속실패로그"
+
+msgid "Force Disconnect Log"
+msgstr "강제종료로그"
+
+msgid "Server"
+msgstr "서버"
+
+msgid "Protocol"
+msgstr "프로토콜"
+
+msgid "Start Time"
+msgstr "시작시간"
+
+msgid "End Time"
+msgstr "종료시간"
+
+msgid "Upload"
+msgstr "업로드"
+
+msgid "Client IP"
+msgstr "클라이언트IP"
+
+msgid "Location"
+msgstr "지역"
+
+msgid "Platform"
+msgstr "플랫폼"
+
+msgid "Connections"
+msgstr "접속수"
+
+msgid "Telecom"
+msgstr "통신사"
+
+msgid "Time"
+msgstr "시간"
+
+msgid "Old IP"
+msgstr "이전IP"
+
+msgid "New IP"
+msgstr "변경IP"
+
+msgid "中国时间"
+msgstr "중국시간"
+
+msgid "Email Verification"
+msgstr "메일인증"
+
+msgid "No sub-accounts registered."
+msgstr "등록된 하위계정이 없습니다."
+
+msgid "None"
+msgstr "없음"
+
+msgid "VPN History"
+msgstr "VPN 접속기록"
+
+msgid "Control Center"
+msgstr "제어센터"
+
+msgid "Manage your app sessions and device access"
+msgstr "앱 세션 및 기기 접근을 관리하세요"
+
+msgid "App Sessions"
+msgstr "앱 세션"
+
+msgid "Your app login sessions with VPN connection status."
+msgstr "앱 로그인 세션과 VPN 연결 상태입니다."
+
+msgid "Ban List"
+msgstr "차단 목록"
+
+msgid "VPN Usage History"
+msgstr "VPN 사용기록"
+
+msgid "View your VPN connection history and manage active connections"
+msgstr "VPN 접속기록을 확인하고 활성 연결을 관리하세요"
+
+msgid "Active Connections"
+msgstr "활성 연결"
+
+msgid "Confirm New Password"
+msgstr "새 비밀번호 확인"
+
+msgid "Current Password"
+msgstr "현재 비밀번호"
+
+msgid "New Password"
+msgstr "새 비밀번호"
+
+msgid "Start"
+msgstr "시작"
+
+msgid "End"
+msgstr "종료"
+
+msgid "Error!"
+msgstr "오류!"
+
+msgid "Success!"
+msgstr "성공!"
+
+msgid "Version"
+msgstr "버전"

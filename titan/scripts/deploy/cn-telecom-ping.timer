@@ -1,0 +1,11 @@
+[Unit]
+Description=TitanVPN CN Telecom Ping Timer (Every 2 hours)
+Requires=cn-telecom-ping.service
+
+[Timer]
+OnCalendar=*-*-* 00/2:30:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

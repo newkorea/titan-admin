@@ -1,0 +1,445 @@
+#!/usr/bin/env python3
+"""
+V2RAY Per-User UUID Sync Script (Daily 8AM)
+=============================================
+Runs once daily at 8 AM KST via cron.
+
+What it does:
+1. Generates v2ray_uuid for users who don't have one
+2. Regenerates shared UUID (tbl_agent3.v2_config) for all servers
+   -> Old shared UUID becomes invalid, preventing unauthorized reuse
+3. Deploys per-user UUIDs + new shared UUID to all xray servers
+4. Marks deployed users (v2ray_deployed=1), resets undeployed (v2ray_deployed=0)
+
+Between syncs:
+- New users (v2ray_deployed=0) use the shared UUID via API
+- Synced users (v2ray_deployed=1) use their personal UUID via API
+- Expired users get blocked by API (result=300, no config download)
+
+Usage:
+    python3 sync_v2ray_users.py              # Normal sync
+    python3 sync_v2ray_users.py --force      # Force restart all servers
+    python3 sync_v2ray_users.py --dry-run    # Preview without changes
+    python3 sync_v2ray_users.py --server IP  # Sync specific server only
+
+Cron (8 AM KST daily):
+    0 8 * * * cd /home/newkorea/project/titan && .venv310/bin/python3 /home/newkorea/project/scripts/sync_v2ray_users.py >> /home/newkorea/project/scripts/v2ray_sync.log 2>&1
+"""
+
+import os
+import sys
+import json
+import hashlib
+import subprocess
+import argparse
+import time
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Django setup
+sys.path.insert(0, '/home/newkorea/project/titan')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings')
+import django
+django.setup()
+from django.db import connections
+
+LOG_FILE = '/home/newkorea/project/scripts/v2ray_sync.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
+)
+log = logging.getLogger(__name__)
+
+SSH_OPTS = '-o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes'
+SSH_TIMEOUT = 15  # seconds per SSH command
+MAX_WORKERS = 10  # parallel SSH connections
+
+# Safety limits to prevent OOM on VPN servers
+MAX_USERS_LIMIT = 3000       # Abort if user count exceeds this (unexpected behavior)
+MIN_USERS_LIMIT = 100        # Abort if user count below this (likely DB query error)
+MAX_CONFIG_SIZE_KB = 1024    # Max config.json size in KB (1MB). 1609 users ~ 240KB
+
+
+def get_active_users():
+    """Get users with valid (non-expired) subscriptions and v2ray_uuid.
+    
+    Filters by radcheck Expiration date > NOW(), so only paid subscribers
+    with active subscriptions are deployed to xray servers.
+    Auto-generates UUID for qualifying users without one.
+    """
+    import uuid as uuid_mod
+    cursor = connections['default'].cursor()
+    
+    # Auto-generate UUID for active users without one (before filtering)
+    cursor.execute('SELECT id FROM tbl_user WHERE v2ray_uuid IS NULL AND is_active = 1 AND delete_yn = %s', ['N'])
+    missing = cursor.fetchall()
+    if missing:
+        for (uid,) in missing:
+            cursor.execute('UPDATE tbl_user SET v2ray_uuid = %s WHERE id = %s', [str(uuid_mod.uuid4()), uid])
+        log.info(f'Generated v2ray_uuid for {len(missing)} new users')
+    
+    # Only include users with valid (non-expired) subscriptions
+    cursor.execute('''
+        SELECT u.email, u.v2ray_uuid 
+        FROM tbl_user u
+        INNER JOIN radius.radcheck rc ON rc.username = u.email
+        WHERE u.is_active = 1 
+        AND u.delete_yn = 'N'
+        AND u.v2ray_uuid IS NOT NULL
+        AND rc.attribute = 'Expiration'
+        AND rc.username NOT LIKE %s
+        AND STR_TO_DATE(REPLACE(rc.value, ' KST', ''), %s) > NOW()
+        ORDER BY u.id
+    ''', ['Noactive__%', '%d %b %Y %H:%i:%s'])
+    users = cursor.fetchall()
+    return [(email, uuid) for email, uuid in users]
+
+
+def rotate_shared_uuids(dry_run=False):
+    """Regenerate shared UUID (v2_config) for ALL active V2RAY servers.
+    
+    Returns dict of {hostip: new_uuid}.
+    This makes old shared UUIDs invalid, preventing unauthorized reuse.
+    """
+    import uuid as uuid_mod
+    cursor = connections['default'].cursor()
+    
+    cursor.execute('''
+        SELECT hostip, name, v2_config
+        FROM tbl_agent3 
+        WHERE is_active = 1 AND v2_port = 9999 AND protocol LIKE '%%V2RAY%%'
+        ORDER BY name
+    ''')
+    servers = cursor.fetchall()
+    
+    new_uuids = {}
+    for hostip, name, old_uuid in servers:
+        new_uuid = str(uuid_mod.uuid4())
+        new_uuids[hostip] = new_uuid
+        if not dry_run:
+            cursor.execute('UPDATE tbl_agent3 SET v2_config = %s WHERE hostip = %s', [new_uuid, hostip])
+        log.info(f'  Shared UUID rotated: {name} ({hostip}): {(old_uuid or "")[:8]}... -> {new_uuid[:8]}...')
+    
+    log.info(f'Rotated shared UUIDs for {len(new_uuids)} servers')
+    return new_uuids
+
+
+def mark_deployed_users(deployed_emails, dry_run=False):
+    """Mark users as deployed/undeployed based on sync results.
+    
+    - deployed_emails: list of emails that were deployed to servers
+    - Sets v2ray_deployed=1 for deployed users
+    - Sets v2ray_deployed=0 for users NOT in the deployed list
+    """
+    if dry_run:
+        log.info(f'DRY-RUN: Would mark {len(deployed_emails)} users as deployed')
+        return
+    
+    cursor = connections['default'].cursor()
+    
+    # Reset ALL to 0 first
+    cursor.execute('UPDATE tbl_user SET v2ray_deployed = 0 WHERE v2ray_deployed = 1')
+    reset_count = cursor.rowcount
+    
+    # Then mark deployed users as 1
+    if deployed_emails:
+        # Batch update in chunks of 500
+        for i in range(0, len(deployed_emails), 500):
+            chunk = deployed_emails[i:i+500]
+            placeholders = ','.join(['%s'] * len(chunk))
+            cursor.execute(f'UPDATE tbl_user SET v2ray_deployed = 1 WHERE email IN ({placeholders})', chunk)
+    
+    log.info(f'Deployed flags: reset {reset_count}, set deployed={len(deployed_emails)}')
+
+
+def get_active_servers(specific_ip=None):
+    """Get all active V2RAY servers from DB, including shared UUID."""
+    cursor = connections['default'].cursor()
+    if specific_ip:
+        cursor.execute('''
+            SELECT hostip, hostdomain, v2_port, name, v2_config
+            FROM tbl_agent3 
+            WHERE is_active = 1 AND hostip = %s
+        ''', [specific_ip])
+    else:
+        cursor.execute('''
+            SELECT hostip, hostdomain, v2_port, name, v2_config
+            FROM tbl_agent3 
+            WHERE is_active = 1 
+            AND v2_port = 9999
+            AND protocol LIKE '%%V2RAY%%'
+            ORDER BY name
+        ''')
+    servers = cursor.fetchall()
+    return [{'ip': r[0], 'domain': r[1], 'port': r[2], 'name': r[3], 'legacy_uuid': r[4]} for r in servers]
+
+
+def build_xray_config(server, users):
+    """Build complete xray config.json for a server with all user UUIDs.
+    Includes server's shared UUID for new users not yet synced.
+    """
+    clients = []
+    
+    # Add shared UUID (for new users between daily syncs)
+    shared_uuid = (server.get('legacy_uuid') or '').strip()
+    if shared_uuid and len(shared_uuid) == 36 and '-' in shared_uuid:
+        clients.append({
+            "id": shared_uuid,
+            "alterId": 7,
+            "email": "_shared@titanvpn"
+        })
+    
+    for email, uuid in users:
+        clients.append({
+            "id": uuid,
+            "alterId": 7,
+            "email": email
+        })
+    
+    config = {
+        "log": {
+            "loglevel": "warning",
+            "access": "/var/log/xray/access.log",
+            "error": "/var/log/xray/error.log"
+        },
+        "api": {
+            "tag": "api",
+            "services": ["HandlerService", "StatsService"]
+        },
+        "stats": {},
+        "policy": {
+            "levels": {
+                "0": {
+                    "statsUserUplink": True,
+                    "statsUserDownlink": True
+                }
+            },
+            "system": {
+                "statsInboundUplink": True,
+                "statsInboundDownlink": True
+            }
+        },
+        "inbounds": [
+            {
+                "tag": "api",
+                "listen": "127.0.0.1",
+                "port": 62789,
+                "protocol": "dokodemo-door",
+                "settings": {
+                    "address": "127.0.0.1"
+                }
+            },
+            {
+                "tag": "vmess-ws-tls",
+                "listen": "0.0.0.0",
+                "port": server['port'],
+                "protocol": "vmess",
+                "settings": {
+                    "clients": clients
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "security": "tls",
+                    "tlsSettings": {
+                        "serverName": server['domain'],
+                        "certificates": [
+                            {
+                                "certificateFile": f"/etc/letsencrypt/live/{server['domain']}/fullchain.pem",
+                                "keyFile": f"/etc/letsencrypt/live/{server['domain']}/privkey.pem"
+                            }
+                        ]
+                    },
+                    "wsSettings": {
+                        "path": "/"
+                    }
+                },
+                "sniffing": {
+                    "enabled": True,
+                    "destOverride": ["http", "tls"]
+                }
+            }
+        ],
+        "outbounds": [
+            {"protocol": "freedom", "tag": "direct"},
+            {"protocol": "blackhole", "tag": "blocked"}
+        ],
+        "routing": {
+            "rules": [
+                {
+                    "type": "field",
+                    "inboundTag": ["api"],
+                    "outboundTag": "api"
+                },
+                {
+                    "type": "field",
+                    "outboundTag": "blocked",
+                    "protocol": ["bittorrent"]
+                }
+            ]
+        }
+    }
+    return config
+
+
+def get_remote_config_hash(server_ip):
+    """Get MD5 hash of remote config.json."""
+    try:
+        cmd = f"ssh {SSH_OPTS} root@{server_ip} 'md5sum /usr/local/xray/config.json 2>/dev/null || echo NONE'"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=SSH_TIMEOUT)
+        output = result.stdout.strip()
+        if output and output != 'NONE' and not output.startswith('NONE'):
+            return output.split()[0]
+    except Exception:
+        pass
+    return None
+
+
+def sync_server(server, config_json, config_hash, force=False, dry_run=False):
+    """Sync config to a single server. Returns (server_name, success, message)."""
+    server_ip = server['ip']
+    server_name = server['name']
+    
+    try:
+        # Check if remote config matches
+        if not force:
+            remote_hash = get_remote_config_hash(server_ip)
+            if remote_hash == config_hash:
+                return (server_name, True, 'SKIP (unchanged)')
+        
+        if dry_run:
+            return (server_name, True, f'DRY-RUN (would update, hash={config_hash[:8]})')
+        
+        # Write config to temp file
+        tmp_file = f'/tmp/xray_config_{server_ip}.json'
+        with open(tmp_file, 'w') as f:
+            f.write(config_json)
+        
+        # SCP config to server
+        cmd = f"scp {SSH_OPTS} {tmp_file} root@{server_ip}:/usr/local/xray/config.json"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            return (server_name, False, f'SCP FAIL: {result.stderr.strip()}')
+        
+        # Restart xray
+        cmd = f"ssh {SSH_OPTS} root@{server_ip} 'systemctl restart xray && sleep 1 && systemctl is-active xray'"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=SSH_TIMEOUT)
+        if 'active' in result.stdout:
+            return (server_name, True, f'UPDATED ({config_hash[:8]})')
+        else:
+            return (server_name, False, f'RESTART FAIL: {result.stdout.strip()} {result.stderr.strip()}')
+        
+    except subprocess.TimeoutExpired:
+        return (server_name, False, 'TIMEOUT')
+    except Exception as e:
+        return (server_name, False, f'ERROR: {str(e)}')
+    finally:
+        # Cleanup temp file
+        tmp_file = f'/tmp/xray_config_{server_ip}.json'
+        try:
+            os.unlink(tmp_file)
+        except:
+            pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Sync V2RAY per-user UUIDs to all servers (daily 8AM)')
+    parser.add_argument('--force', action='store_true', help='Force restart all servers')
+    parser.add_argument('--dry-run', action='store_true', help='Preview without changes')
+    parser.add_argument('--server', type=str, help='Sync specific server IP only')
+    args = parser.parse_args()
+    
+    start_time = time.time()
+    log.info('='*60)
+    log.info('V2RAY Daily Sync Started')
+    
+    # 1. Get active users (also auto-generates UUIDs for users without one)
+    users = get_active_users()
+    log.info(f'Active users with UUID: {len(users)}')
+    
+    if not users:
+        log.error('No users found! Aborting.')
+        sys.exit(1)
+    
+    # Safety check: user count must be within expected range
+    if len(users) > MAX_USERS_LIMIT:
+        log.error(f'SAFETY ABORT: User count {len(users)} exceeds limit {MAX_USERS_LIMIT}. '
+                   'This likely means expired user filtering is broken. Fix the query before deploying.')
+        sys.exit(2)
+    
+    if len(users) < MIN_USERS_LIMIT:
+        log.error(f'SAFETY ABORT: User count {len(users)} below minimum {MIN_USERS_LIMIT}. '
+                   'This likely means DB query is wrong. Check radcheck expiration filtering.')
+        sys.exit(2)
+    
+    # 2. Rotate shared UUIDs for all servers (prevents unauthorized reuse)
+    log.info('Rotating shared UUIDs...')
+    rotate_shared_uuids(dry_run=args.dry_run)
+    
+    # 3. Get active servers (with newly rotated shared UUIDs)
+    servers = get_active_servers(args.server)
+    log.info(f'Active V2RAY servers (port 9999): {len(servers)}')
+    
+    if not servers:
+        log.error('No servers found! Aborting.')
+        sys.exit(1)
+    
+    # 4. Build configs and validate size
+    results = {'success': 0, 'skip': 0, 'fail': 0}
+    
+    # Pre-check: build one config to validate size
+    sample_config = build_xray_config(servers[0], users)
+    sample_json = json.dumps(sample_config, indent=2, ensure_ascii=False)
+    config_size_kb = len(sample_json.encode()) / 1024
+    log.info(f'Config size: {config_size_kb:.0f}KB ({len(users)} users + shared UUID)')
+    
+    if config_size_kb > MAX_CONFIG_SIZE_KB:
+        log.error(f'SAFETY ABORT: Config size {config_size_kb:.0f}KB exceeds limit {MAX_CONFIG_SIZE_KB}KB. '
+                   'Too many users would cause xray OOM on low-memory servers.')
+        sys.exit(2)
+    
+    # 5. Deploy to all servers (shared UUID changed -> force all updates)
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {}
+        
+        for server in servers:
+            config = build_xray_config(server, users)
+            config_json = json.dumps(config, indent=2, ensure_ascii=False)
+            config_hash = hashlib.md5(config_json.encode()).hexdigest()
+            
+            future = executor.submit(
+                sync_server, server, config_json, config_hash,
+                force=args.force, dry_run=args.dry_run
+            )
+            futures[future] = server
+        
+        for future in as_completed(futures):
+            server_name, success, message = future.result()
+            if success:
+                if 'SKIP' in message:
+                    results['skip'] += 1
+                    log.debug(f'  {server_name:15s} -> {message}')
+                else:
+                    results['success'] += 1
+                    log.info(f'  {server_name:15s} -> {message}')
+            else:
+                results['fail'] += 1
+                log.error(f'  {server_name:15s} -> {message}')
+    
+    # 6. Mark deployed users in DB
+    deployed_emails = [email for email, uuid in users]
+    mark_deployed_users(deployed_emails, dry_run=args.dry_run)
+    
+    elapsed = time.time() - start_time
+    log.info(f'Sync complete in {elapsed:.1f}s: {results["success"]} updated, {results["skip"]} unchanged, {results["fail"]} failed')
+    log.info('='*60)
+    
+    if results['fail'] > 0:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

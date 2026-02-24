@@ -1,3 +1,4 @@
+# 공통 유틸리티 — allow_admin 데코레이터, dictfetchall, AES 암복호화, 파일 저장 헬퍼
 import os
 import json
 import uuid

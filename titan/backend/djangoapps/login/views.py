@@ -120,6 +120,18 @@ def api_login_signin(request):
         title, text = get_swal(LANGUAGE_CODE, 'NOT_ACTIVE')
         return JsonResponse({'result': 500, 'title': title, 'text': text})
 
+    # ===== 접속금지(차단) 체크 (2026-02-11) =====
+    try:
+        from backend.models import TblBannedDevice
+        from django.db.models import Q
+        ban_q = Q(email=login_email)
+        if login_ip:
+            ban_q |= Q(device_ip=login_ip)
+        if TblBannedDevice.objects.filter(ban_q, is_active=1).exclude(device_ip='', email='').exists():
+            return JsonResponse({'result': 500, 'title': '접속 차단', 'text': '이 계정은 접속이 금지되었습니다.'})
+    except Exception as ban_err:
+        print('WARN -> web login ban check error:', ban_err)
+
     # 로그인 테이블 체크
     try:
         u2 = TblUserLogin.objects.get(user_id=user_id)
@@ -395,6 +407,7 @@ def api_login_signup(request):
                 delete_yn='N',
                 black_yn='N',
                 parent_user_id=parent_user_id,
+                v2ray_uuid=str(uuid.uuid4()),
             )
             u1.save()
 

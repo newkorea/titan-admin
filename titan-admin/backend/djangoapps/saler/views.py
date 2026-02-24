@@ -1,3 +1,4 @@
+# 대리점 관리 — 대리점(판매자) CRUD, 실적 조회
 import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse

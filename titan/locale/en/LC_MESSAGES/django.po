@@ -512,3 +512,63 @@ msgstr "concurrent access"
 
 msgid "personnel"
 msgstr "personnel"
+
+msgid "Email Verification"
+msgstr "Email Verification"
+
+msgid "No sub-accounts registered."
+msgstr "No sub-accounts registered."
+
+msgid "None"
+msgstr "None"
+
+msgid "VPN History"
+msgstr "VPN History"
+
+msgid "Control Center"
+msgstr "Control Center"
+
+msgid "Manage your app sessions and device access"
+msgstr "Manage your app sessions and device access"
+
+msgid "App Sessions"
+msgstr "App Sessions"
+
+msgid "Your app login sessions with VPN connection status."
+msgstr "Your app login sessions with VPN connection status."
+
+msgid "Ban List"
+msgstr "Ban List"
+
+msgid "VPN Usage History"
+msgstr "VPN Usage History"
+
+msgid "View your VPN connection history and manage active connections"
+msgstr "View your VPN connection history and manage active connections"
+
+msgid "Active Connections"
+msgstr "Active Connections"
+
+msgid "Confirm New Password"
+msgstr "Confirm New Password"
+
+msgid "Current Password"
+msgstr "Current Password"
+
+msgid "New Password"
+msgstr "New Password"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "End"
+
+msgid "Error!"
+msgstr "Error!"
+
+msgid "Success!"
+msgstr "Success!"
+
+msgid "Version"
+msgstr "Version"

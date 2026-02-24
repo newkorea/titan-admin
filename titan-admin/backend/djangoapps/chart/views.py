@@ -1,3 +1,4 @@
+# 차트/통계 — 매출·사용자 통계 차트, SSH 원격 명령, 이메일 발송, 로그 관리
 import json
 import datetime
 import smtplib
@@ -640,10 +641,14 @@ def api_delete_device_session(request):
             cur.execute('DELETE FROM django_session WHERE session_key=%s', [session_key])
             affected = cur.rowcount
 
+        # tbl_device_info에서 session_key도 정리 (퇴출된 세션의 기기 참조 제거)
+        with connections['default'].cursor() as cur:
+            cur.execute('UPDATE tbl_device_info SET session_key=NULL WHERE id=%s', [did])
+
         if affected > 0:
             return JsonResponse({'result': 200, 'title': '퇴출 완료', 'text': '로그인 세션이 종료되었습니다'})
         else:
-            return JsonResponse({'result': 200, 'title': '완료', 'text': '활성 세션이 없었습니다'})
+            return JsonResponse({'result': 200, 'title': '완료', 'text': '활성 세션이 없었습니다 (기기 정보 정리 완료)'})
     except Exception:
         logger.exception('api_delete_device_session failed')
         return JsonResponse({'result': 500, 'title': '오류', 'text': '퇴출 처리 중 오류가 발생했습니다'})
@@ -790,40 +795,42 @@ def api_read_disconnection(request):
     # where 절 필터링 생성
     wc = ' where 1=1 '
     if number != '':
-        wc += " and id = '{number}' ".format(number=number)
+        wc += " and d.id = '{number}' ".format(number=number)
     if username != '':
-        wc += " and username like '%{username}%' ".format(username=username)
+        wc += " and d.username like '%{username}%' ".format(username=username)
     if user_session != '':
-        wc += " and user_session = '{user_session}' ".format(user_session=user_session)
+        wc += " and d.user_session = '{user_session}' ".format(user_session=user_session)
     if connected_count != '':
-        wc += " and connected_count = '{connected_count}' ".format(connected_count=connected_count)
+        wc += " and d.connected_count = '{connected_count}' ".format(connected_count=connected_count)
     if protocol != '':
-        wc += " and protocol = '{protocol}' ".format(protocol=protocol)
+        wc += " and d.protocol = '{protocol}' ".format(protocol=protocol)
     if start_time != '':
         wc += '''
-            and disconnected_time >= '{start_time}'
+            and d.disconnected_time >= '{start_time}'
         '''.format(start_time=start_time)
     if end_time != '':
         wc += '''
-            and disconnected_time < '{end_time}'
+            and d.disconnected_time < '{end_time}'
         '''.format(end_time=end_time)
     
     print(wc)
     # order by 리스트
     column_name = [
-        'id',
-        'username',
-        'user_session',
-        'connected_count',
-        'protocol',
-        'disconnected_time'
+        'd.id',
+        'd.username',
+        'd.user_session',
+        'd.connected_count',
+        'd.protocol',
+        'd.server_name',
+        'a.telecom',
+        'd.disconnected_time'
     ]
 
     # 데이터테이블즈 - 카운팅 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-            SELECT count(id)
-            FROM   tbl_disconnection
+            SELECT count(d.id)
+            FROM   tbl_disconnection d
             {wc}
         '''.format(
             wc=wc
@@ -831,20 +838,22 @@ def api_read_disconnection(request):
         cur.execute(query)
         rows = cur.fetchall()
         total = rows[0][0]
-        # print('DEBUG -> total : ', total)
 
     # 데이터테이블즈 - 메인 쿼리
     with connections['default'].cursor() as cur:
         query = '''
-            select  id,
-                    username,
-                    user_session,
-                    connected_count,
-                    protocol,
-                    disconnected_time,
-                    old_ip,
-                    new_ip
-            from tbl_disconnection
+            select  d.id,
+                    d.username,
+                    d.user_session,
+                    d.connected_count,
+                    d.protocol,
+                    IFNULL(d.server_name, '') as server_name,
+                    IFNULL(a.telecom, '') as telecom,
+                    d.disconnected_time,
+                    d.old_ip,
+                    d.new_ip
+            from tbl_disconnection d
+            left join tbl_agent3 a on a.name = d.server_name
             {wc}
             order by {orderby_col} {orderby_opt}
             limit {start}, 10
@@ -2098,14 +2107,18 @@ def api_user_disconnect(request):
                 ssh.exec_command(command)
                 ssh.exec_command(command)
             sql = '''
-                UPDATE radius.radacct set acctstoptime = '{date}' where acctuniqueid = '{acctuniqueid}';
+                UPDATE radius.radacct set acctstoptime = '{date}',
+                acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, '{date}')
+                where acctuniqueid = '{acctuniqueid}';
                 COMMIT;
             '''.format(date = datetime.datetime.now() , acctuniqueid = acctuniqueid)
             cur.execute(sql)
         except socket.timeout:
             #timeout 걸렸을때 radius 강제 업데이트
             sql = '''
-                UPDATE radius.radacct set acctstoptime = '{date}' where acctuniqueid = '{acctuniqueid}';
+                UPDATE radius.radacct set acctstoptime = '{date}',
+                acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, '{date}')
+                where acctuniqueid = '{acctuniqueid}';
                 COMMIT;
             '''.format(date = datetime.datetime.now() , acctuniqueid = acctuniqueid)
             cur.execute(sql)

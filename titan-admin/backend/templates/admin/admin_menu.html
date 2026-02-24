@@ -39,7 +39,7 @@
 											<span class="nav-icon">
 												<i class="fa fa-group"></i>
 											</span>
-											<span class="nav-text">회원 관리</span>
+											<span class="nav-text">회원 관리 <b class="user-registered-badge" id="today_registered" style="display:none;">0</b> <b class="user-active-badge" id="today_active" style="display:none;">0</b></span>
 										</a>
 									</li>
 
@@ -57,7 +57,7 @@
 											<span class="nav-icon">
 												<i class="fa fa-money"></i>
 											</span>
-											<span class="nav-text">결제모듈</span>
+											<span class="nav-text">결제모듈 <b class="payment-today-badge" id="today_payment" style="display:none;">0</b></span>
 										</a>
 									</li>
 
@@ -67,7 +67,7 @@
 												<i class="fa fa-money"></i>
 											</span>
 											<span class="nav-text">
-												무통장 <b class="ready-count" id="ready_count">-</b>
+												무통장 <b class="ready-count" id="ready_count">-</b> <b class="approved-count" id="today_approved" style="display:none;">0</b>
 											</span>
 										</a>
 									</li>
@@ -322,14 +322,14 @@
 											<span class="nav-text">통지관리</span>
 										</a>
 									</li>
-
 									<li>
-										<a href="#" onclick="location.href='/chatbot_qa'">
+										<a href="#" onclick="location.href='/notification_manage'">
 											<span class="nav-icon">
-												<i class="fa fa-comments"></i>
+												<i class="fa fa-exclamation-triangle"></i>
 											</span>
-											<span class="nav-text">챗봇 Q&A</span>
+											<span class="nav-text">이슈 자동통지</span>
 										</a>
+									</li>
 									</li>
 
 								<li>
@@ -346,7 +346,7 @@
 										<span class="nav-icon">
 											<i class="fa fa-server"></i>
 										</span>
-										<span class="nav-text">NAS 서버현황</span>
+										<span class="nav-text">NAS 서버현황 <b class="cron-issue-badge" id="nas_issue_count" style="display:none;">0</b></span>
 									</a>
 								</li>
 
@@ -358,7 +358,38 @@
 										<span class="nav-text">서버배정현황</span>
 									</a>
 								</li>
-									</li>
+								<li>
+									<a href="#" onclick="location.href='/nas_cron'">
+										<span class="nav-icon">
+											<i class="fa fa-clock-o"></i>
+										</span>
+										<span class="nav-text">NAS Cron관리 <b class="cron-issue-badge" id="cron_issue_count" style="display:none;">0</b></span>
+									</a>
+								</li>
+								<li>
+									<a href="#" onclick="location.href='/server_analysis'">
+										<span class="nav-icon">
+											<i class="fa fa-bar-chart"></i>
+										</span>
+										<span class="nav-text">서버 분석 <b class="cron-issue-badge" id="server_alert_count" style="display:none;cursor:pointer;" onclick="showProblemServers(event)">0</b></span>
+									</a>
+								</li>
+								<li>
+									<a href="#" onclick="location.href='/user_fail_analysis'">
+										<span class="nav-icon">
+											<i class="fa fa-user-times"></i>
+										</span>
+										<span class="nav-text">유저 실패 분석</span>
+									</a>
+								</li>
+								<li>
+									<a href="#" onclick="location.href='/infra_hosts'">
+										<span class="nav-icon">
+											<i class="fa fa-cloud"></i>
+										</span>
+										<span class="nav-text">인프라 관리</span>
+									</a>
+								</li>
 		          </ul>
 		        </div>
 			 </div>

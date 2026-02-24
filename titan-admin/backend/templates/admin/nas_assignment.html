@@ -227,7 +227,7 @@ function renderAll(data) {
 function renderTable(servers, maxConn, tc) {
     var html = '<table class="server-table" id="table-' + tc + '">'
         + '<thead><tr>'
-        + '<th>순위</th><th>서버명</th><th>IP</th><th>한국ISP</th>'
+        + '<th>순위</th><th>서버명</th><th>IP</th><th>가능프로토콜</th><th>한국ISP</th>'
         + '<th>Ping Avg</th><th>Ping Min</th><th>Ping Max</th>'
         + '<th>접속자</th><th>Score</th><th>is_auto</th><th>상태</th>'
         + '</tr></thead><tbody>';
@@ -250,6 +250,10 @@ function renderTable(servers, maxConn, tc) {
         // 서버명
         html += '<td><strong>' + s.name + '</strong></td>';
         html += '<td style="font-size:12px;color:#666;">' + s.ip + '</td>';
+
+        // 가능프로토콜
+        var proto = s.protocol || '-';
+        html += '<td style="font-size:11px;color:#555;">' + proto + '</td>';
 
         // 한국ISP
         html += '<td><span class="isp-badge isp-' + s.kr_isp + '">' + s.kr_isp + '</span></td>';

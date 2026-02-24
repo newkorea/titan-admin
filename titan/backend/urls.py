@@ -68,11 +68,34 @@ urlpatterns = [
     path('delete_all_sessions', MypageViews.delete_all_sessions, name='delete_all_sessions'),
     path('api_change_sub_password_direct', MypageViews.api_change_sub_password_direct_v2, name='api_change_sub_password_direct'),
     path('api_send_password_reset_for_sub', MypageViews.api_send_password_reset_for_sub, name='api_send_password_reset_for_sub'),
+    path('api/mypage/app_login_logs', MypageViews.api_my_app_login_logs, name='api_my_app_login_logs'),
+    path('api/mypage/connection_logs', MypageViews.api_my_connection_logs, name='api_my_connection_logs'),
+    path('api/mypage/fail_logs', MypageViews.api_my_fail_logs, name='api_my_fail_logs'),
+    path('api/mypage/disconnect_logs', MypageViews.api_my_disconnect_logs, name='api_my_disconnect_logs'),
+
+    # [render] VPN 사용기록
+    path('vpn_history', MypageViews.vpn_history, name='vpn_history'),
+    path('api/mypage/active_connections', MypageViews.api_active_connections, name='api_active_connections'),
+    path('api/mypage/force_disconnect', MypageViews.api_force_disconnect, name='api_force_disconnect'),
+
+    # [render] 제어센터
+    path('control_center', MypageViews.control_center, name='control_center'),
+    path('api/mypage/app_sessions', MypageViews.api_my_app_sessions, name='api_my_app_sessions'),
+    path('api/mypage/ban_ip', MypageViews.api_ban_my_ip, name='api_ban_my_ip'),
+    path('api/mypage/ban_device', MypageViews.api_ban_my_device, name='api_ban_my_device'),
+    path('api/mypage/unban', MypageViews.api_unban_my_device, name='api_unban_my_device'),
+    path('api/mypage/my_bans', MypageViews.api_my_bans, name='api_my_bans'),
+    path('api/mypage/delete_device', MypageViews.api_delete_device_session, name='api_delete_device_session'),
+
+    # [api] 계정 일시차단
+    path('api/mypage/suspend_account', MypageViews.api_suspend_account, name='api_suspend_account'),
 
     # [render] 거래이력
     path('transaction', TransactionViews.transaction, name='transaction'),
     path("get_transaction/", TransactionViews.get_transaction, name="get_transaction"),  # 거래 내역 JSON 조회
     path("get_receipt/", TransactionViews.get_receipt, name="get_receipt"),  # 거래명세서 조회 API
+    path("generate_invoice/", TransactionViews.generate_invoice, name="generate_invoice"),  # Invoice 생성
+    path("download_invoice/", TransactionViews.download_invoice, name="download_invoice"),  # Invoice 다운로드
 
     # [render] 거랙이력
     path('get_transaction', TransactionViews.get_transaction, name='get_transaction'),
@@ -193,4 +216,7 @@ urlpatterns = [
     path('api_preview_session_change', api_preview_session_change, name='api_preview_session_change'),
     path('api_get_payment_methods', PriceViews.api_get_payment_methods, name='api_get_payment_methods'),
     path('v1/app_health', RestAPIViews.app_health, name='app_health'),
+    path('v1/app_get_notifications', RestAPIViews.app_get_notifications, name='app_get_notifications'),     #[api] 유저 이슈 통지 조회
+    path('v1/app_read_notification', RestAPIViews.app_read_notification, name='app_read_notification'),     #[api] 통지 읽음 처리
+    path('v1/app_unread_notification_count', RestAPIViews.app_unread_notification_count, name='app_unread_notification_count'),  #[api] 미읽은 통지 수
 ]

@@ -1,3 +1,4 @@
+# 이벤트 관리 — 이벤트 CRUD, 트랜잭션 처리
 import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse

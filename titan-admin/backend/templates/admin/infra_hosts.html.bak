@@ -1,0 +1,754 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    /* ===== 요약 카드 ===== */
+    .summary-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .summary-card {
+        flex: 1; min-width: 160px; border-radius: 10px; padding: 20px; color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12); position: relative; overflow: hidden;
+    }
+    .summary-card .card-icon { position: absolute; right: 16px; top: 16px; font-size: 36px; opacity: 0.3; }
+    .summary-card .card-value { font-size: 32px; font-weight: 800; }
+    .summary-card .card-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+    .bg-total { background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%); }
+    .bg-ok { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .bg-off { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+    .bg-crit { background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); }
+    .bg-vm { background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%); }
+
+    /* ===== 호스트 카드 그리드 ===== */
+    .host-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .host-card {
+        background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+        padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        transition: box-shadow 0.2s, transform 0.1s; cursor: pointer; position: relative;
+    }
+    .host-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
+    .host-card.offline { border-left: 4px solid #dc3545; }
+    .host-card.online { border-left: 4px solid #28a745; }
+    .host-card.unknown { border-left: 4px solid #ffc107; }
+    .host-card.maintenance { border-left: 4px solid #17a2b8; }
+    .host-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .host-name { font-size: 16px; font-weight: 700; }
+    .host-type-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .type-esxi { background: #e3f2fd; color: #1565c0; }
+    .type-kvm { background: #fce4ec; color: #c62828; }
+    .host-status {
+        display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+        margin-left: auto;
+    }
+    .st-online { background: #d4edda; color: #155724; }
+    .st-offline { background: #f8d7da; color: #721c24; }
+    .st-unknown { background: #fff3cd; color: #856404; }
+    .st-maintenance { background: #d1ecf1; color: #0c5460; }
+    .host-info { font-size: 12px; color: #666; line-height: 1.8; }
+    .host-info .label { color: #999; min-width: 70px; display: inline-block; }
+    .host-info .val { font-weight: 600; color: #333; }
+    .host-vm-bar { margin-top: 10px; }
+    .vm-counts { font-size: 11px; color: #666; margin-bottom: 4px; }
+    .vm-bar-bg { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .vm-bar-on { height: 100%; background: #28a745; border-radius: 3px; float: left; }
+    .vm-bar-off { height: 100%; background: #dc3545; border-radius: 3px; float: left; }
+
+    /* ===== 액션 바 ===== */
+    .action-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .btn-sync {
+        padding: 8px 20px; border-radius: 6px; border: none; background: #007bff; color: #fff;
+        font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.2s;
+    }
+    .btn-sync:hover { background: #0056b3; }
+    .btn-sync:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-add {
+        padding: 8px 20px; border-radius: 6px; border: 1px solid #28a745; background: #fff; color: #28a745;
+        font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s;
+    }
+    .btn-add:hover { background: #28a745; color: #fff; }
+    .sync-progress { font-size: 12px; color: #666; margin-left: 10px; }
+
+    /* ===== 모달 ===== */
+    .modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: #fff; border-radius: 12px; padding: 24px; width: 90%; max-width: 700px;
+        max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+    .modal-close {
+        float: right; background: none; border: none; font-size: 24px; cursor: pointer; color: #999;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+    }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+    .btn-save {
+        padding: 10px 24px; border-radius: 6px; border: none; background: #007bff; color: #fff;
+        font-weight: 600; cursor: pointer; font-size: 14px; margin-top: 8px;
+    }
+    .btn-save:hover { background: #0056b3; }
+    .btn-danger {
+        padding: 10px 24px; border-radius: 6px; border: none; background: #dc3545; color: #fff;
+        font-weight: 600; cursor: pointer; font-size: 14px; margin-top: 8px; margin-left: 8px;
+    }
+    .btn-test {
+        padding: 6px 14px; border-radius: 6px; border: 1px solid #17a2b8; background: #fff; color: #17a2b8;
+        font-weight: 600; cursor: pointer; font-size: 12px;
+    }
+    .btn-test:hover { background: #17a2b8; color: #fff; }
+
+    /* ===== 상세 모달 VM 테이블 ===== */
+    .vm-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    .vm-table th { background: #f8f9fa; padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 700; }
+    .vm-table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+    .vm-table tr:hover { background: #f5f7fa; }
+    .power-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .pw-on { background: #d4edda; color: #155724; }
+    .pw-off { background: #f8d7da; color: #721c24; }
+    .pw-suspended { background: #fff3cd; color: #856404; }
+    .pw-unknown { background: #e9ecef; color: #495057; }
+    .btn-vm-action {
+        padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;
+        border: 1px solid; margin: 1px; background: #fff;
+    }
+    .btn-vm-on { border-color: #28a745; color: #28a745; }
+    .btn-vm-on:hover { background: #28a745; color: #fff; }
+    .btn-vm-off { border-color: #dc3545; color: #dc3545; }
+    .btn-vm-off:hover { background: #dc3545; color: #fff; }
+    .btn-vm-reboot { border-color: #fd7e14; color: #fd7e14; }
+    .btn-vm-reboot:hover { background: #fd7e14; color: #fff; }
+
+    /* ===== 로그 ===== */
+    .log-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .log-table th { background: #f8f9fa; padding: 6px; text-align: left; border-bottom: 2px solid #dee2e6; }
+    .log-table td { padding: 4px 6px; border-bottom: 1px solid #eee; }
+    .log-success { color: #28a745; }
+    .log-fail { color: #dc3545; }
+
+    /* ===== 리소스 사용량 프로그레스 바 ===== */
+    .res-section { margin-top: 14px; }
+    .res-section h5 { font-size: 13px; font-weight: 700; color: #444; margin: 12px 0 6px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .res-bar-wrap { margin-bottom: 8px; }
+    .res-bar-label { font-size: 11px; color: #555; display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .res-bar-bg { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+    .res-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
+    .res-bar-green { background: linear-gradient(90deg, #28a745, #20c997); }
+    .res-bar-yellow { background: linear-gradient(90deg, #ffc107, #fd7e14); }
+    .res-bar-red { background: linear-gradient(90deg, #dc3545, #e83e8c); }
+    .res-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 12px; margin: 6px 0; }
+    .res-info-grid .ri-label { color: #888; }
+    .res-info-grid .ri-val { font-weight: 600; color: #333; }
+    .ds-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+    .ds-table th { background: #f0f4f8; padding: 5px 8px; text-align: left; font-weight: 600; color: #555; }
+    .ds-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+    .nic-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+    .nic-table th { background: #f0f4f8; padding: 5px 8px; text-align: left; font-weight: 600; color: #555; }
+    .nic-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+
+    /* ===== 호스트카드 미니 리소스 바 ===== */
+    .mini-res { margin-top: 6px; }
+    .mini-bar-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .mini-bar-label { font-size: 10px; color: #888; width: 22px; text-align: right; }
+    .mini-bar-bg { flex: 1; height: 5px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .mini-bar-fill { height: 100%; border-radius: 3px; }
+    .mini-bar-pct { font-size: 10px; color: #666; width: 32px; }
+</style>
+</%block>
+
+<%block name="title">인프라 관리</%block>
+<%block name="subtitle">하이퍼바이저(ESXi/KVM) 호스트 & VM 관리</%block>
+
+<%block name="content">
+
+<!-- 요약 카드 -->
+<div class="summary-cards" id="summaryCards">
+    <div class="summary-card bg-total">
+        <div class="card-icon"><i class="fa fa-server"></i></div>
+        <div class="card-value" id="totalHosts">-</div>
+        <div class="card-label">전체 호스트</div>
+    </div>
+    <div class="summary-card bg-ok">
+        <div class="card-icon"><i class="fa fa-check-circle"></i></div>
+        <div class="card-value" id="onlineHosts">-</div>
+        <div class="card-label">온라인</div>
+    </div>
+    <div class="summary-card bg-crit">
+        <div class="card-icon"><i class="fa fa-exclamation-circle"></i></div>
+        <div class="card-value" id="offlineHosts">-</div>
+        <div class="card-label">오프라인</div>
+    </div>
+    <div class="summary-card bg-vm">
+        <div class="card-icon"><i class="fa fa-cubes"></i></div>
+        <div class="card-value" id="totalVMs">-</div>
+        <div class="card-label">전체 VM</div>
+    </div>
+    <div class="summary-card bg-off">
+        <div class="card-icon"><i class="fa fa-clock-o"></i></div>
+        <div class="card-value" id="lastSync" style="font-size:14px;">-</div>
+        <div class="card-label">마지막 동기화</div>
+    </div>
+</div>
+
+<!-- 액션 바 -->
+<div class="action-bar">
+    <button class="btn-sync" id="btnSync" onclick="startSync()"><i class="fa fa-refresh"></i> 전체 동기화</button>
+    <button class="btn-add" onclick="showAddModal()"><i class="fa fa-plus"></i> 호스트 추가</button>
+    <span class="sync-progress" id="syncProgress"></span>
+</div>
+
+<!-- 호스트 카드 그리드 -->
+<div class="host-grid" id="hostGrid">
+    <div style="text-align:center; padding:40px; color:#999;">로딩 중...</div>
+</div>
+
+<!-- 호스트 추가/수정 모달 -->
+<div class="modal-overlay" id="hostModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('hostModal')">&times;</button>
+        <div class="modal-title" id="hostModalTitle">호스트 추가</div>
+        <input type="hidden" id="editHostId">
+        <div class="form-row">
+            <div class="form-group">
+                <label>이름</label>
+                <input type="text" id="fName" placeholder="exsikt122">
+            </div>
+            <div class="form-group">
+                <label>유형</label>
+                <select id="fType">
+                    <option value="esxi">ESXi</option>
+                    <option value="kvm">KVM</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>IP 주소</label>
+                <input type="text" id="fIP" placeholder="218.158.57.122">
+            </div>
+            <div class="form-group">
+                <label>SSH 포트</label>
+                <input type="number" id="fPort" value="22">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>SSH 계정</label>
+                <input type="text" id="fUser" placeholder="china">
+            </div>
+            <div class="form-group">
+                <label>SSH 비밀번호</label>
+                <input type="password" id="fPass" placeholder="password">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>통신사</label>
+                <select id="fISP">
+                    <option value="">-</option>
+                    <option value="KT">KT</option>
+                    <option value="SK">SK</option>
+                    <option value="LG">LG</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>위치/IDC</label>
+                <input type="text" id="fLocation" placeholder="서울 IDC">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>메모</label>
+            <textarea id="fMemo" rows="2" placeholder="메모"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-save" onclick="saveHost()">저장</button>
+            <button class="btn-test" onclick="testHost()"><i class="fa fa-plug"></i> 연결 테스트</button>
+            <button class="btn-danger" id="btnDeleteHost" style="display:none;" onclick="deleteHost()">삭제</button>
+            <span id="testResult" style="font-size:12px;margin-left:10px;"></span>
+        </div>
+    </div>
+</div>
+
+<!-- 호스트 상세 모달 (VM 목록) -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="max-width:900px;">
+        <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+        <div class="modal-title" id="detailTitle">호스트 상세</div>
+        <div id="detailInfo"></div>
+        <h4 style="margin-top:16px;margin-bottom:8px;">VM 목록</h4>
+        <div id="detailVMs"></div>
+        <h4 style="margin-top:16px;margin-bottom:8px;">최근 로그</h4>
+        <div id="detailLogs"></div>
+    </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+let hosts = [];
+
+function loadHosts() {
+    fetch('/api/v1/read/infra_hosts')
+    .then(r => r.json())
+    .then(data => {
+        if (data.result !== 200) return;
+        hosts = data.hosts;
+        renderHosts();
+    });
+}
+
+function renderHosts() {
+    const grid = document.getElementById('hostGrid');
+    if (!hosts.length) {
+        grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">등록된 호스트가 없습니다.</div>';
+        return;
+    }
+
+    let totalOn = 0, totalOff = 0, totalUnknown = 0, totalVMs = 0;
+    let lastSync = '';
+
+    let html = '';
+    hosts.forEach(h => {
+        if (h.status === 'online') totalOn++;
+        else if (h.status === 'offline') totalOff++;
+        else totalUnknown++;
+        totalVMs += (h.vms_on || 0) + (h.vms_off || 0);
+        if (h.last_check && h.last_check > lastSync) lastSync = h.last_check;
+
+        const vmTotal = (h.vms_on || 0) + (h.vms_off || 0);
+        const vmOnPct = vmTotal ? Math.round(h.vms_on / vmTotal * 100) : 0;
+
+        html += '<div class="host-card ' + h.status + '" onclick="showDetail(' + h.id + ')">';
+        html += '<div class="host-header">';
+        html += '<span class="host-name">' + h.name + '</span>';
+        html += '<span class="host-type-badge type-' + h.host_type + '">' + h.host_type.toUpperCase() + '</span>';
+        html += '<span class="host-status st-' + h.status + '">' + h.status.toUpperCase() + '</span>';
+        html += '</div>';
+        html += '<div class="host-info">';
+        html += '<div><span class="label">IP:</span> <span class="val">' + h.ip_address + '</span>';
+        html += ' <span style="color:#aaa;font-size:11px;">(' + (h.isp || '-') + ')</span></div>';
+        if (h.esxi_version) html += '<div><span class="label">버전:</span> <span class="val">' + h.esxi_version + '</span></div>';
+        if (h.cpu_cores) html += '<div><span class="label">CPU:</span> <span class="val">' + h.cpu_cores + ' cores</span>';
+        if (h.cpu_model) html += ' <span style="color:#aaa;font-size:11px;">' + h.cpu_model.substring(0,40) + '</span>';
+        html += '</div>';
+        if (h.memory_gb) html += '<div><span class="label">메모리:</span> <span class="val">' + h.memory_gb + ' GB</span></div>';
+        if (h.storage_gb) html += '<div><span class="label">스토리지:</span> <span class="val">' + h.storage_gb + ' GB</span></div>';
+        html += '</div>';
+
+        // 미니 리소스 사용량 바 (last_check_json에서 파싱)
+        let rj = null;
+        try { if (h.last_check_json) rj = (typeof h.last_check_json === 'string') ? JSON.parse(h.last_check_json) : h.last_check_json; } catch(e) {}
+        if (rj && h.status === 'online') {
+            html += '<div class="mini-res">';
+            // 메모리 사용량
+            if (rj.memory_used_pct !== undefined) {
+                const mPct = rj.memory_used_pct;
+                const mColor = mPct > 85 ? '#dc3545' : mPct > 60 ? '#ffc107' : '#28a745';
+                html += '<div class="mini-bar-wrap"><span class="mini-bar-label">MEM</span>';
+                html += '<div class="mini-bar-bg"><div class="mini-bar-fill" style="width:' + mPct + '%;background:' + mColor + '"></div></div>';
+                html += '<span class="mini-bar-pct">' + mPct + '%</span></div>';
+            }
+            // 스토리지 사용량
+            if (rj.datastores && rj.datastores.length) {
+                let dsTotalSize = 0, dsTotalUsed = 0;
+                rj.datastores.forEach(d => { dsTotalSize += d.size_gb; dsTotalUsed += d.used_gb; });
+                const dsPct = dsTotalSize > 0 ? Math.round(dsTotalUsed / dsTotalSize * 100) : 0;
+                const dColor = dsPct > 85 ? '#dc3545' : dsPct > 60 ? '#ffc107' : '#28a745';
+                html += '<div class="mini-bar-wrap"><span class="mini-bar-label">DISK</span>';
+                html += '<div class="mini-bar-bg"><div class="mini-bar-fill" style="width:' + dsPct + '%;background:' + dColor + '"></div></div>';
+                html += '<span class="mini-bar-pct">' + dsPct + '%</span></div>';
+            }
+            // Load Average
+            if (rj.load_avg && rj.load_avg.length) {
+                html += '<div style="font-size:10px;color:#888;margin-top:2px;">Load: ' + rj.load_avg.map(v=>v.toFixed(2)).join(' / ') + '</div>';
+            }
+            // Uptime
+            if (rj.uptime) {
+                html += '<div style="font-size:10px;color:#aaa;">Uptime: ' + rj.uptime + '</div>';
+            }
+            html += '</div>';
+        }
+
+        html += '<div class="host-vm-bar">';
+        html += '<div class="vm-counts">VM: <b style="color:#28a745">' + (h.vms_on||0) + ' ON</b> / <b style="color:#dc3545">' + (h.vms_off||0) + ' OFF</b> (총 ' + vmTotal + ')</div>';
+        if (vmTotal) {
+            html += '<div class="vm-bar-bg"><div class="vm-bar-on" style="width:' + vmOnPct + '%"></div><div class="vm-bar-off" style="width:' + (100-vmOnPct) + '%"></div></div>';
+        }
+        html += '</div>';
+
+        if (h.last_check) html += '<div style="font-size:10px;color:#aaa;margin-top:6px;">마지막 체크: ' + h.last_check + '</div>';
+        html += '</div>';
+    });
+
+    grid.innerHTML = html;
+
+    document.getElementById('totalHosts').textContent = hosts.length;
+    document.getElementById('onlineHosts').textContent = totalOn;
+    document.getElementById('offlineHosts').textContent = totalOff + totalUnknown;
+    document.getElementById('totalVMs').textContent = totalVMs;
+    document.getElementById('lastSync').textContent = lastSync || '-';
+}
+
+function startSync() {
+    const btn = document.getElementById('btnSync');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 동기화 중...';
+
+    fetch('/api/v1/update/sync_hosts')
+    .then(r => r.json())
+    .then(data => {
+        if (data.result === 409) {
+            alert('이미 동기화가 진행 중입니다.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-refresh"></i> 전체 동기화';
+            return;
+        }
+        pollSync();
+    });
+}
+
+function pollSync() {
+    fetch('/api/v1/read/sync_status')
+    .then(r => r.json())
+    .then(data => {
+        const prog = document.getElementById('syncProgress');
+        prog.textContent = data.current ? (data.progress + '/' + data.total + ' - ' + data.current + ' 처리 중...') : '';
+
+        if (data.done || !data.running) {
+            const btn = document.getElementById('btnSync');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-refresh"></i> 전체 동기화';
+            prog.textContent = '동기화 완료!';
+            setTimeout(() => { prog.textContent = ''; }, 3000);
+            loadHosts();
+        } else {
+            setTimeout(pollSync, 2000);
+        }
+    });
+}
+
+function showAddModal() {
+    document.getElementById('hostModalTitle').textContent = '호스트 추가';
+    document.getElementById('editHostId').value = '';
+    document.getElementById('fName').value = '';
+    document.getElementById('fType').value = 'esxi';
+    document.getElementById('fIP').value = '';
+    document.getElementById('fPort').value = '22';
+    document.getElementById('fUser').value = 'china';
+    document.getElementById('fPass').value = '';
+    document.getElementById('fISP').value = '';
+    document.getElementById('fLocation').value = '';
+    document.getElementById('fMemo').value = '';
+    document.getElementById('btnDeleteHost').style.display = 'none';
+    document.getElementById('testResult').textContent = '';
+    document.getElementById('hostModal').classList.add('active');
+}
+
+function showEditModal(hostId) {
+    event.stopPropagation();
+    const h = hosts.find(x => x.id === hostId);
+    if (!h) return;
+    document.getElementById('hostModalTitle').textContent = '호스트 수정 - ' + h.name;
+    document.getElementById('editHostId').value = h.id;
+    document.getElementById('fName').value = h.name;
+    document.getElementById('fType').value = h.host_type;
+    document.getElementById('fIP').value = h.ip_address;
+    document.getElementById('fPort').value = h.ssh_port;
+    document.getElementById('fUser').value = h.ssh_user;
+    document.getElementById('fPass').value = '';
+    document.getElementById('fISP').value = h.isp || '';
+    document.getElementById('fLocation').value = h.location || '';
+    document.getElementById('fMemo').value = h.memo || '';
+    document.getElementById('btnDeleteHost').style.display = 'inline-block';
+    document.getElementById('testResult').textContent = '';
+    document.getElementById('hostModal').classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function saveHost() {
+    const id = document.getElementById('editHostId').value;
+    const data = {
+        name: document.getElementById('fName').value,
+        host_type: document.getElementById('fType').value,
+        ip_address: document.getElementById('fIP').value,
+        ssh_port: parseInt(document.getElementById('fPort').value) || 22,
+        ssh_user: document.getElementById('fUser').value,
+        ssh_password: document.getElementById('fPass').value,
+        isp: document.getElementById('fISP').value,
+        location: document.getElementById('fLocation').value,
+        memo: document.getElementById('fMemo').value,
+    };
+
+    if (!data.name || !data.ip_address || !data.ssh_user) {
+        alert('이름, IP, SSH 계정은 필수입니다.');
+        return;
+    }
+
+    const url = id ? '/api/v1/update/infra_host' : '/api/v1/create/infra_host';
+    if (id) data.id = parseInt(id);
+    // 비밀번호 빈칸이면 수정 시 생략
+    if (id && !data.ssh_password) delete data.ssh_password;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify(data),
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.result === 200) {
+            closeModal('hostModal');
+            loadHosts();
+        } else {
+            alert(res.msg || '오류 발생');
+        }
+    });
+}
+
+function deleteHost() {
+    const id = document.getElementById('editHostId').value;
+    if (!id) return;
+    if (!confirm('정말 이 호스트를 삭제하시겠습니까? 관련 VM 정보도 모두 삭제됩니다.')) return;
+
+    fetch('/api/v1/delete/infra_host', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({id: parseInt(id)}),
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.result === 200) {
+            closeModal('hostModal');
+            loadHosts();
+        } else {
+            alert(res.msg || '오류 발생');
+        }
+    });
+}
+
+function testHost() {
+    const id = document.getElementById('editHostId').value;
+    if (!id) {
+        alert('호스트를 먼저 저장한 후 테스트하세요.');
+        return;
+    }
+    const span = document.getElementById('testResult');
+    span.textContent = '테스트 중...';
+    span.style.color = '#666';
+
+    fetch('/api/v1/read/test_host?id=' + id)
+    .then(r => r.json())
+    .then(res => {
+        if (res.result === 200) {
+            span.textContent = '✅ 연결 성공: ' + res.output.substring(0, 80);
+            span.style.color = '#28a745';
+        } else {
+            span.textContent = '❌ 연결 실패: ' + (res.error || 'unknown');
+            span.style.color = '#dc3545';
+        }
+    });
+}
+
+function showDetail(hostId) {
+    fetch('/api/v1/read/infra_host_detail?id=' + hostId)
+    .then(r => r.json())
+    .then(data => {
+        if (data.result !== 200) return;
+        const h = data.host;
+        const vms = data.vms;
+
+        document.getElementById('detailTitle').innerHTML = h.name +
+            ' <span class="host-type-badge type-' + h.host_type + '">' + h.host_type.toUpperCase() + '</span>' +
+            ' <span class="host-status st-' + h.status + '">' + h.status.toUpperCase() + '</span>' +
+            ' <button class="btn-test" style="margin-left:10px;" onclick="showEditModal(' + h.id + ')"><i class="fa fa-pencil"></i> 수정</button>';
+
+        let info = '<div class="host-info" style="font-size:13px;">';
+        info += '<div><span class="label">IP:</span> <span class="val">' + h.ip_address + '</span> (' + (h.isp||'-') + ')</div>';
+        if (h.esxi_version) info += '<div><span class="label">버전:</span> <span class="val">' + h.esxi_version + '</span></div>';
+        if (h.cpu_model) info += '<div><span class="label">CPU:</span> <span class="val">' + h.cpu_model + '</span> (' + h.cpu_cores + ' cores)</div>';
+        if (h.memory_gb) info += '<div><span class="label">메모리:</span> <span class="val">' + h.memory_gb + ' GB</span></div>';
+        if (h.storage_gb) info += '<div><span class="label">스토리지:</span> <span class="val">' + h.storage_gb + ' GB</span></div>';
+        if (h.last_check) info += '<div><span class="label">마지막 체크:</span> <span class="val">' + h.last_check + '</span></div>';
+        info += '</div>';
+
+        // 리소스 사용량 (last_check_json에서)
+        let rj = null;
+        try { if (h.last_check_json) rj = (typeof h.last_check_json === 'string') ? JSON.parse(h.last_check_json) : h.last_check_json; } catch(e) {}
+
+        if (rj && h.status === 'online') {
+            info += '<div class="res-section">';
+
+            // Uptime & Load
+            if (rj.uptime || (rj.load_avg && rj.load_avg.length)) {
+                info += '<h5><i class="fa fa-clock-o"></i> 가동 시간 &amp; 부하</h5>';
+                info += '<div class="res-info-grid">';
+                if (rj.uptime) info += '<div><span class="ri-label">Uptime:</span> <span class="ri-val">' + rj.uptime + '</span></div>';
+                if (rj.load_avg && rj.load_avg.length) info += '<div><span class="ri-label">Load Avg:</span> <span class="ri-val">' + rj.load_avg.map(v=>v.toFixed(2)).join(' / ') + '</span></div>';
+                info += '</div>';
+            }
+
+            // 메모리 사용량
+            if (rj.memory_used_pct !== undefined) {
+                info += '<h5><i class="fa fa-microchip"></i> 메모리 사용량</h5>';
+                const mPct = rj.memory_used_pct;
+                const mBarClass = mPct > 85 ? 'res-bar-red' : mPct > 60 ? 'res-bar-yellow' : 'res-bar-green';
+                info += '<div class="res-bar-wrap">';
+                info += '<div class="res-bar-label"><span>사용: ' + rj.memory_used_gb + ' GB</span><span>여유: ' + rj.memory_free_gb + ' GB (' + mPct + '%)</span></div>';
+                info += '<div class="res-bar-bg"><div class="res-bar-fill ' + mBarClass + '" style="width:' + mPct + '%"></div></div>';
+                info += '</div>';
+            }
+
+            // 데이터스토어 / 디스크 사용량
+            if (rj.datastores && rj.datastores.length) {
+                info += '<h5><i class="fa fa-hdd-o"></i> 디스크 / 데이터스토어</h5>';
+                info += '<table class="ds-table"><thead><tr><th>이름</th><th>전체</th><th>사용</th><th>여유</th><th>사용률</th><th></th></tr></thead><tbody>';
+                rj.datastores.forEach(d => {
+                    const dPct = d.used_pct || 0;
+                    const dBarClass = dPct > 85 ? 'res-bar-red' : dPct > 60 ? 'res-bar-yellow' : 'res-bar-green';
+                    const dLabel = d.name || d.mount || d.device || '-';
+                    info += '<tr>';
+                    info += '<td><b>' + dLabel + '</b></td>';
+                    info += '<td>' + d.size_gb + ' GB</td>';
+                    info += '<td>' + d.used_gb + ' GB</td>';
+                    info += '<td>' + d.free_gb + ' GB</td>';
+                    info += '<td>' + dPct + '%</td>';
+                    info += '<td style="width:100px"><div class="res-bar-bg"><div class="res-bar-fill ' + dBarClass + '" style="width:' + dPct + '%"></div></div></td>';
+                    info += '</tr>';
+                });
+                info += '</tbody></table>';
+            }
+
+            // 네트워크
+            if (rj.nics && rj.nics.length) {
+                info += '<h5><i class="fa fa-exchange"></i> 네트워크 인터페이스</h5>';
+                info += '<table class="nic-table"><thead><tr><th>NIC</th><th>Speed</th><th>Link</th><th>RX (받은)</th><th>TX (보낸)</th></tr></thead><tbody>';
+                rj.nics.forEach(n => {
+                    info += '<tr>';
+                    info += '<td><b>' + n.name + '</b></td>';
+                    info += '<td>' + (n.speed ? n.speed + ' Mbps' : '-') + '</td>';
+                    info += '<td>' + (n.link || '-') + '</td>';
+                    info += '<td>' + formatBytes(n.bytes_rx) + ' <span style="color:#aaa">(' + formatNum(n.pkts_rx) + ' pkts)</span></td>';
+                    info += '<td>' + formatBytes(n.bytes_tx) + ' <span style="color:#aaa">(' + formatNum(n.pkts_tx) + ' pkts)</span></td>';
+                    info += '</tr>';
+                });
+                info += '</tbody></table>';
+            }
+
+            info += '</div>';  // res-section
+        }
+
+        document.getElementById('detailInfo').innerHTML = info;
+
+        // VM 테이블
+        if (vms.length) {
+            let vhtml = '<table class="vm-table"><thead><tr>';
+            vhtml += '<th>VM 이름</th><th>상태</th><th>OS</th><th>CPU</th><th>메모리</th><th>IP</th><th>액션</th>';
+            vhtml += '</tr></thead><tbody>';
+            vms.forEach(v => {
+                const pwClass = 'pw-' + v.power_state;
+                vhtml += '<tr>';
+                vhtml += '<td><b>' + v.vm_name + '</b></td>';
+                vhtml += '<td><span class="power-badge ' + pwClass + '">' + v.power_state.toUpperCase() + '</span></td>';
+                vhtml += '<td>' + (v.guest_os || '-') + '</td>';
+                vhtml += '<td>' + (v.cpu_count || '-') + '</td>';
+                vhtml += '<td>' + (v.memory_mb ? v.memory_mb + ' MB' : '-') + '</td>';
+                vhtml += '<td>' + (v.ip_address || '-') + '</td>';
+                vhtml += '<td>';
+                if (v.power_state === 'off') {
+                    vhtml += '<button class="btn-vm-action btn-vm-on" onclick="vmPower(' + v.id + ',\'poweron\')">켜기</button>';
+                } else if (v.power_state === 'on') {
+                    vhtml += '<button class="btn-vm-action btn-vm-off" onclick="vmPower(' + v.id + ',\'poweroff\')">끄기</button>';
+                    vhtml += '<button class="btn-vm-action btn-vm-reboot" onclick="vmPower(' + v.id + ',\'reboot\')">재부팅</button>';
+                }
+                vhtml += '</td></tr>';
+            });
+            vhtml += '</tbody></table>';
+            document.getElementById('detailVMs').innerHTML = vhtml;
+        } else {
+            document.getElementById('detailVMs').innerHTML = '<div style="color:#999;font-size:13px;">VM이 없거나 동기화가 아직 안 되었습니다.</div>';
+        }
+
+        // 로그
+        fetch('/api/v1/read/infra_logs?host_id=' + hostId + '&limit=20')
+        .then(r => r.json())
+        .then(logData => {
+            if (logData.logs && logData.logs.length) {
+                let lhtml = '<table class="log-table"><thead><tr><th>시간</th><th>동작</th><th>결과</th><th>상세</th></tr></thead><tbody>';
+                logData.logs.forEach(l => {
+                    lhtml += '<tr>';
+                    lhtml += '<td>' + l.created_at + '</td>';
+                    lhtml += '<td>' + l.action + '</td>';
+                    lhtml += '<td class="log-' + l.result + '">' + l.result + '</td>';
+                    lhtml += '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (l.detail || '') + '</td>';
+                    lhtml += '</tr>';
+                });
+                lhtml += '</tbody></table>';
+                document.getElementById('detailLogs').innerHTML = lhtml;
+            } else {
+                document.getElementById('detailLogs').innerHTML = '<div style="color:#999;font-size:13px;">로그 없음</div>';
+            }
+        });
+
+        document.getElementById('detailModal').classList.add('active');
+    });
+}
+
+function vmPower(vmId, action) {
+    const actionLabels = {poweron: '켜기', poweroff: '끄기', reboot: '재부팅', suspend: '일시정지', reset: '리셋'};
+    if (!confirm('VM을 ' + actionLabels[action] + ' 하시겠습니까?')) return;
+
+    fetch('/api/v1/update/vm_power', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({vm_id: vmId, action: action}),
+    })
+    .then(r => r.json())
+    .then(res => {
+        alert(res.result === 200 ? '성공: ' + res.msg : '실패: ' + (res.msg || 'error'));
+        // 상세 모달 새로고침
+        const hostId = document.querySelector('#detailTitle button')?.getAttribute('onclick')?.match(/\d+/)?.[0];
+        if (hostId) showDetail(parseInt(hostId));
+    });
+}
+
+function getCookie(name) {
+    let v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+}
+
+// 모달 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// 바이트 → 읽기 좋은 형식
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
+}
+
+function formatNum(n) {
+    if (!n) return '0';
+    if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toString();
+}
+
+loadHosts();
+</script>
+</%block>

@@ -1,3 +1,4 @@
+# 챗봇 Q&A — 챗봇 질문/답변 관리
 import json
 import datetime
 from django.shortcuts import render, redirect

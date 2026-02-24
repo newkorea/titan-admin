@@ -106,7 +106,11 @@ class ServerHealth:
     strongswan_running: bool = False
     strongswan_uptime: str = ""
     strongswan_conns: int = 0
+    openvpn_running: bool = False
     openvpn_procs: int = 0
+    xray_running: bool = False
+    softether_running: bool = False
+    protocol: str = ""
     # 로그
     log_size_mb: int = 0
     # 프로세스 중복
@@ -115,6 +119,9 @@ class ServerHealth:
     cert_status: str = ""       # OK, EXPIRING, EXPIRED, NO_CERT, UNKNOWN
     cert_expiry: str = ""       # 만료일 (YYYY-MM-DD)
     cert_days_left: int = -999  # 남은 일수
+    # 서버 uptime
+    uptime_seconds: int = 0
+    uptime_text: str = ""
     # 경고/위험
     warnings: List[str] = field(default_factory=list)
     criticals: List[str] = field(default_factory=list)
@@ -189,10 +196,16 @@ echo "===SWAN_CONNS==="
 strongswan statusall 2>/dev/null | grep -c 'ESTABLISHED' || echo 0
 echo "===OPENVPN==="
 ps aux | grep -c '[o]penvpn' || echo 0
+echo "===XRAY==="
+ps aux | grep -c '[x]ray' || echo 0
+echo "===VPNSERVER==="
+ps aux | grep -c '[v]pnserver' || echo 0
 echo "===LOGSIZE==="
 du -sm /var/log/ 2>/dev/null | cut -f1 || echo 0
 echo "===DUP_PROCS==="
 ps -eo cmd | grep -E 'sync_qos_all|vpncmd.*SessionList' | grep -v grep | wc -l
+echo "===UPTIME==="
+cat /proc/uptime | awk '{print $1}'
 echo "===CERT==="
 cert=$(readlink -f /etc/strongswan/ipsec.d/certs/certificate.pem 2>/dev/null); if [ -n "$cert" ] && [ -f "$cert" ]; then openssl x509 -enddate -noout -in $cert; else cert=$(find /etc/letsencrypt/live/ -name fullchain.pem -not -path "*/README" 2>/dev/null | head -1); if [ -n "$cert" ]; then openssl x509 -enddate -noout -in $cert; else echo NO_CERT; fi; fi
 echo "===END==="
@@ -212,30 +225,41 @@ def ping_host(ip):
 
 
 def collect_metrics(health: ServerHealth, ssh_user: str, ssh_pass: str) -> ServerHealth:
-    """SSH로 서버 메트릭 수집"""
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        # 키 인증 우선, 실패시 패스워드
+    """SSH로 서버 메트릭 수집 (실패 시 1회 재시도)"""
+    for attempt in range(2):
         try:
-            ssh.connect(health.ip, username=ssh_user, key_filename=SSH_KEY, timeout=SSH_TIMEOUT)
-        except:
-            ssh.connect(health.ip, username=ssh_user, password=ssh_pass, timeout=SSH_TIMEOUT)
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        health.ssh_ok = True
+            timeout = SSH_TIMEOUT if attempt == 0 else SSH_TIMEOUT + 5
 
-        _, stdout, _ = ssh.exec_command(METRIC_SCRIPT)
-        output = stdout.read().decode('utf-8', errors='replace')
-        ssh.close()
+            # 키 인증 우선, 실패시 패스워드
+            try:
+                ssh.connect(health.ip, username=ssh_user, key_filename=SSH_KEY, timeout=timeout,
+                            banner_timeout=timeout + 5)
+            except:
+                ssh.connect(health.ip, username=ssh_user, password=ssh_pass, timeout=timeout,
+                            banner_timeout=timeout + 5)
 
-        parse_metrics(health, output)
-        evaluate_health(health)
+            health.ssh_ok = True
 
-    except Exception as e:
-        health.ssh_ok = False
-        health.ssh_error = str(e)[:100]
-        health.criticals.append(f"SSH 접속 실패: {health.ssh_error}")
+            _, stdout, _ = ssh.exec_command(METRIC_SCRIPT)
+            output = stdout.read().decode('utf-8', errors='replace')
+            ssh.close()
+
+            parse_metrics(health, output)
+            evaluate_health(health)
+            return health  # 성공 시 바로 반환
+
+        except Exception as e:
+            if attempt == 0:
+                # 1차 실패 → 2초 대기 후 재시도
+                log.debug(f"  {health.name} ({health.ip}) SSH 1차 실패, 재시도: {e}")
+                time.sleep(2)
+            else:
+                health.ssh_ok = False
+                health.ssh_error = str(e)[:100]
+                health.criticals.append(f"SSH 접속 실패: {health.ssh_error}")
 
     return health
 
@@ -314,7 +338,23 @@ def parse_metrics(health: ServerHealth, output: str):
     # OpenVPN
     if 'OPENVPN' in sections and sections['OPENVPN']:
         try:
-            health.openvpn_procs = int(sections['OPENVPN'][0])
+            cnt = int(sections['OPENVPN'][0])
+            health.openvpn_procs = cnt
+            health.openvpn_running = cnt > 0
+        except:
+            pass
+
+    # Xray (V2Ray)
+    if 'XRAY' in sections and sections['XRAY']:
+        try:
+            health.xray_running = int(sections['XRAY'][0]) > 0
+        except:
+            pass
+
+    # SoftEther (vpnserver)
+    if 'VPNSERVER' in sections and sections['VPNSERVER']:
+        try:
+            health.softether_running = int(sections['VPNSERVER'][0]) > 0
         except:
             pass
 
@@ -329,6 +369,20 @@ def parse_metrics(health: ServerHealth, output: str):
     if 'DUP_PROCS' in sections and sections['DUP_PROCS']:
         try:
             health.dup_procs = int(sections['DUP_PROCS'][0])
+        except:
+            pass
+
+    # Uptime
+    if 'UPTIME' in sections and sections['UPTIME']:
+        try:
+            secs = int(float(sections['UPTIME'][0]))
+            health.uptime_seconds = secs
+            days = secs // 86400
+            hours = (secs % 86400) // 3600
+            if days > 0:
+                health.uptime_text = f"{days}d {hours}h"
+            else:
+                health.uptime_text = f"{hours}h {(secs % 3600) // 60}m"
         except:
             pass
 
@@ -382,6 +436,18 @@ def evaluate_health(health: ServerHealth):
     if not health.strongswan_running:
         health.criticals.append("StrongSwan 데몬 다운!")
 
+    # OpenVPN (프로토콜 포함 서버만 체크)
+    if 'OPENVPN' in (health.protocol or '').upper() and not health.openvpn_running:
+        health.criticals.append("OpenVPN 프로세스 다운!")
+
+    # Xray/V2Ray
+    if 'V2RAY' in (health.protocol or '').upper() and not health.xray_running:
+        health.criticals.append("Xray(V2Ray) 프로세스 다운!")
+
+    # SoftEther
+    if 'SOFTETHER' in (health.protocol or '').upper() and not health.softether_running:
+        health.criticals.append("SoftEther(vpnserver) 프로세스 다운!")
+
     # 로그 크기
     if health.log_size_mb >= LOG_SIZE_CRIT:
         health.criticals.append(f"/var/log {health.log_size_mb}MB")
@@ -412,9 +478,11 @@ def auto_heal(health: ServerHealth, ssh_user: str, ssh_pass: str):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            ssh.connect(health.ip, username=ssh_user, key_filename=SSH_KEY, timeout=SSH_TIMEOUT)
+            ssh.connect(health.ip, username=ssh_user, key_filename=SSH_KEY, timeout=SSH_TIMEOUT,
+                        banner_timeout=SSH_TIMEOUT + 5)
         except:
-            ssh.connect(health.ip, username=ssh_user, password=ssh_pass, timeout=SSH_TIMEOUT)
+            ssh.connect(health.ip, username=ssh_user, password=ssh_pass, timeout=SSH_TIMEOUT,
+                        banner_timeout=SSH_TIMEOUT + 5)
 
         # 1) 로그 정리 (디스크 85% 이상 또는 /var/log 500MB 이상)
         need_log_clean = health.disk_pct >= DISK_WARN or health.log_size_mb >= LOG_SIZE_WARN
@@ -525,7 +593,33 @@ def auto_heal(health: ServerHealth, ssh_user: str, ssh_pass: str):
                 ssh.exec_command("service iptables save 2>/dev/null || iptables-save > /etc/sysconfig/iptables 2>/dev/null")
                 actions.append("ICMP 허용 규칙 추가")
 
-        # 5) 디스크 85% 이상 시 postfix 메일큐 정리
+        # 5) OpenVPN 프로세스 다운 → 재시작
+        if 'OPENVPN' in (health.protocol or '').upper() and not health.openvpn_running:
+            log.info(f"[{health.ip}] OpenVPN 다운 → 재시작")
+            ssh.exec_command("systemctl restart openvpn 2>/dev/null || service openvpn restart 2>/dev/null")
+            time.sleep(3)
+            _, out, _ = ssh.exec_command("ps aux | grep -c '[o]penvpn'")
+            cnt = int(out.read().decode().strip() or "0")
+            if cnt > 0:
+                actions.append("OpenVPN 재시작 성공")
+                health.openvpn_running = True
+            else:
+                actions.append("OpenVPN 재시작 실패!")
+
+        # 6) Xray(V2Ray) 프로세스 다운 → x-ui 재시작
+        if 'V2RAY' in (health.protocol or '').upper() and not health.xray_running:
+            log.info(f"[{health.ip}] Xray 다운 → x-ui 재시작")
+            ssh.exec_command("x-ui restart 2>/dev/null || systemctl restart x-ui 2>/dev/null")
+            time.sleep(5)
+            _, out, _ = ssh.exec_command("ps aux | grep -c '[x]ray'")
+            cnt = int(out.read().decode().strip() or "0")
+            if cnt > 0:
+                actions.append("Xray(V2Ray) 재시작 성공")
+                health.xray_running = True
+            else:
+                actions.append("Xray(V2Ray) 재시작 실패!")
+
+        # 7) 디스크 85% 이상 시 postfix 메일큐 정리
         if health.disk_pct >= DISK_WARN:
             ssh.exec_command("postsuper -d ALL 2>/dev/null; find /var/spool/postfix/deferred -type f -delete 2>/dev/null; find /var/spool/postfix/bounce -type f -delete 2>/dev/null; find /var/spool/postfix/corrupt -type f -delete 2>/dev/null")
             actions.append("postfix 메일큐 정리")
@@ -539,14 +633,50 @@ def auto_heal(health: ServerHealth, ssh_user: str, ssh_pass: str):
 
 
 # ───────────── 메인 점검 ─────────────
-def check_all_servers(do_fix=False):
-    """전체 서버 점검"""
+def _do_single_check(srv, ping_results, db_sessions, do_fix=False):
+    """단일 서버 점검 (재시도 로직 포함)"""
+    sid, name, ip, ssh_user, ssh_pass, proto = srv
+    h = ServerHealth(ip=ip, name=name, server_id=sid, protocol=proto or '')
+    h.ping_ok = ping_results.get(ip, False)
+
+    if not h.ping_ok:
+        h.warnings.append("Ping 응답 없음 (ICMP 차단 가능)")
+
+    # ping 실패해도 SSH 시도 (ICMP 차단/일시적 패킷로스 대응)
+    collect_metrics(h, ssh_user, ssh_pass)
+
+    if not h.ping_ok and not h.ssh_ok:
+        h.warnings = [w for w in h.warnings if 'Ping' not in w]
+        h.criticals.append("Ping + SSH 모두 실패 (서버 다운)")
+    elif not h.ping_ok and h.ssh_ok:
+        pass
+
+    # DB 세션 vs StrongSwan 실제 연결 비교
+    db_cnt = db_sessions.get(ip, 0)
+    if db_cnt > 0 and not h.ping_ok and not h.ssh_ok:
+        h.criticals.append(f"DB에 활성세션 {db_cnt}개인데 서버 응답 없음 (좀비 세션)")
+
+    if do_fix and (h.criticals or h.warnings):
+        auto_heal(h, ssh_user, ssh_pass)
+
+    return h
+
+
+def check_all_servers(do_fix=False, target_ip=None):
+    """전체 또는 단일 서버 점검 (target_ip 지정 시 해당 서버만)"""
     log.info("=" * 60)
     log.info("NAS 서버 모니터링 시작")
     start = time.time()
 
     servers = get_active_servers()
-    log.info(f"활성 서버: {len(servers)}대")
+    if target_ip:
+        servers = [s for s in servers if s[2] == target_ip]
+        if not servers:
+            log.error(f"서버를 찾을 수 없음: {target_ip}")
+            return [], time.time() - start
+        log.info(f"단일 서버 점검: {servers[0][1]} ({target_ip})")
+    else:
+        log.info(f"활성 서버: {len(servers)}대")
 
     # DB 활성 세션
     db_sessions = get_active_sessions_by_nas()
@@ -557,40 +687,42 @@ def check_all_servers(do_fix=False):
         ping_results = dict(zip(ip_list, ex.map(ping_host, ip_list)))
 
     # 서버별 메트릭 수집 (병렬)
-    health_list = []
-    tasks = []
-
-    def do_check(srv):
-        sid, name, ip, ssh_user, ssh_pass, proto = srv
-        h = ServerHealth(ip=ip, name=name, server_id=sid)
-        h.ping_ok = ping_results.get(ip, False)
-
-        if not h.ping_ok:
-            h.warnings.append("Ping 응답 없음 (ICMP 차단 가능)")
-
-        # ping 실패해도 SSH 시도 (ICMP 차단/일시적 패킷로스 대응)
-        collect_metrics(h, ssh_user, ssh_pass)
-
-        if not h.ping_ok and not h.ssh_ok:
-            # ping도 SSH도 실패 → 진짜 다운
-            h.warnings = [w for w in h.warnings if 'Ping' not in w]
-            h.criticals.append("Ping + SSH 모두 실패 (서버 다운)")
-        elif not h.ping_ok and h.ssh_ok:
-            # ping 실패하지만 SSH는 됨 → ICMP 차단일 뿐
-            pass  # warning만 유지
-
-        # DB 세션 vs StrongSwan 실제 연결 비교
-        db_cnt = db_sessions.get(ip, 0)
-        if db_cnt > 0 and not h.ping_ok and not h.ssh_ok:
-            h.criticals.append(f"DB에 활성세션 {db_cnt}개인데 서버 응답 없음 (좀비 세션)")
-
-        if do_fix and (h.criticals or h.warnings):
-            auto_heal(h, ssh_user, ssh_pass)
-
-        return h
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        health_list = list(ex.map(do_check, servers))
+        health_list = list(ex.map(
+            lambda srv: _do_single_check(srv, ping_results, db_sessions, do_fix),
+            servers
+        ))
+
+    # ── Critical 서버 재검증 (일시적 장애 방지) ──
+    retry_targets = []
+    for i, h in enumerate(health_list):
+        if h.criticals:
+            retry_targets.append((i, servers[i]))
+
+    if retry_targets:
+        log.info(f"Critical 서버 {len(retry_targets)}대 재검증 (5초 대기 후 재시도)")
+        time.sleep(5)
+
+        # 재시도 ping
+        retry_ips = [s[1][2] for s in retry_targets]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+            retry_pings = dict(zip(retry_ips, ex.map(ping_host, retry_ips)))
+
+        def retry_check(item):
+            idx, srv = item
+            return idx, _do_single_check(srv, retry_pings, db_sessions, do_fix)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+            retry_results = list(ex.map(retry_check, retry_targets))
+
+        for idx, new_h in retry_results:
+            old_h = health_list[idx]
+            # 재시도에서 개선되었으면 새 결과로 교체
+            if len(new_h.criticals) < len(old_h.criticals) or (not new_h.criticals and old_h.criticals):
+                log.info(f"  ✓ {new_h.name} ({new_h.ip}) 재검증 결과 개선 → 업데이트")
+                health_list[idx] = new_h
+            else:
+                log.info(f"  ✗ {old_h.name} ({old_h.ip}) 재검증에도 여전히 Critical")
 
     elapsed = time.time() - start
     return health_list, elapsed
@@ -680,18 +812,20 @@ def main():
     parser.add_argument('--fix', action='store_true', help='문제 발견 시 자동 복구')
     parser.add_argument('--json', action='store_true', help='JSON 형식 출력')
     parser.add_argument('--check-only', action='store_true', default=True, help='점검만 (기본값)')
+    parser.add_argument('--server', type=str, default=None, help='특정 서버 IP만 점검')
     args = parser.parse_args()
 
     do_fix = args.fix
 
-    health_list, elapsed = check_all_servers(do_fix=do_fix)
+    health_list, elapsed = check_all_servers(do_fix=do_fix, target_ip=args.server)
 
     if args.json:
         print_json(health_list, elapsed)
     else:
         print_report(health_list, elapsed)
 
-    save_report(health_list)
+    if not args.server:
+        save_report(health_list)
 
     # 종료 코드: 위험 있으면 2, 경고 있으면 1, 정상 0
     if any(h.criticals for h in health_list):

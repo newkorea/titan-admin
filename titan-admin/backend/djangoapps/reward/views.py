@@ -1,4 +1,5 @@
-﻿import json
+﻿# 리워드 관리 — 리워드/포인트 지급·조회
+import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect

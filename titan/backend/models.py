@@ -524,6 +524,8 @@ class TblUser(models.Model):
     delete_yn = models.CharField(max_length=1, blank=True, null=True)
     black_yn = models.CharField(max_length=1, blank=True, null=True)
     parent_user_id = models.IntegerField(blank=True, null=True)
+    v2ray_uuid = models.CharField(max_length=36, blank=True, null=True)
+    v2ray_deployed = models.IntegerField(default=0)
 
     class Meta:
         managed = False
@@ -548,3 +550,25 @@ class TblWindowsVersion(models.Model):
     class Meta:
         managed = False
         db_table = 'tbl_windows_version'
+
+
+# 2026-02-11 기기/IP 접속 차단 테이블
+class TblBannedDevice(models.Model):
+    user_id = models.IntegerField(blank=True, null=True)
+    email = models.CharField(max_length=100, blank=True, null=True)
+    device_uuid = models.CharField(max_length=200, blank=True, null=True)
+    device_ip = models.CharField(max_length=200, blank=True, null=True)
+    device_type = models.CharField(max_length=50, blank=True, null=True)
+    device_os = models.CharField(max_length=200, blank=True, null=True)
+    session_key = models.CharField(max_length=200, blank=True, null=True)
+    reason = models.CharField(max_length=500, blank=True, null=True)
+    ban_type = models.CharField(max_length=20, default='session')  # session, device, ip
+    ban_group = models.CharField(max_length=50, blank=True, null=True)  # 복합차단 그룹ID
+    is_active = models.IntegerField(default=1)  # 1=활성, 0=해제
+    banned_by = models.CharField(max_length=100, blank=True, null=True)
+    regist_date = models.DateTimeField(auto_now_add=True)
+    modify_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_banned_device'

@@ -1,0 +1,11 @@
+[Unit]
+Description=TitanVPN Server Auto Check Timer (Hourly)
+Requires=server-auto-check.service
+
+[Timer]
+OnCalendar=*-*-* *:05:00
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

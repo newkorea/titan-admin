@@ -1,0 +1,711 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    /* ===== 요약 카드 ===== */
+    .summary-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .summary-card {
+        flex: 1; min-width: 200px; border-radius: 10px; padding: 20px; color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12); position: relative; overflow: hidden; cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .summary-card:hover { transform: translateY(-2px); }
+    .summary-card .card-icon { position: absolute; right: 16px; top: 16px; font-size: 36px; opacity: 0.3; }
+    .summary-card .card-value { font-size: 28px; font-weight: 800; }
+    .summary-card .card-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+    .summary-card .card-time { font-size: 11px; opacity: 0.7; margin-top: 6px; }
+    .bg-cleanup { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .bg-journal { background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%); }
+    .bg-packet { background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%); }
+    .bg-audit { background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%); }
+
+    /* ===== 액션 바 ===== */
+    .action-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .btn-action {
+        padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+        cursor: pointer; border: 1px solid #ddd; background: #fff; color: #333;
+        transition: all 0.2s;
+    }
+    .btn-action:hover { background: #f0f0f0; }
+    .btn-action.primary { background: #007bff; color: #fff; border-color: #007bff; }
+    .btn-action.primary:hover { background: #0056b3; }
+    .btn-action.warning { background: #fd7e14; color: #fff; border-color: #fd7e14; }
+    .btn-action.warning:hover { background: #e36209; }
+    .btn-action.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+    .btn-action.danger:hover { background: #bd2130; }
+    .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+    .task-status { font-size: 13px; margin-left: 8px; }
+
+    /* ===== 탭 ===== */
+    .tab-nav { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid #dee2e6; }
+    .tab-nav .tab-btn {
+        padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+        border: none; background: none; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .tab-nav .tab-btn.active { color: #007bff; border-bottom-color: #007bff; }
+    .tab-panel { display: none; padding-top: 16px; }
+    .tab-panel.active { display: block; }
+
+    /* ===== 서버 테이블 ===== */
+    .server-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .server-table th {
+        background: #f8f9fa; padding: 10px 8px; text-align: left;
+        border-bottom: 2px solid #dee2e6; font-weight: 700; white-space: nowrap;
+    }
+    .server-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .server-table tr:hover { background: #f5f7fa; }
+    .status-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 12px;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+    }
+    .status-ok, .status-success { background: #d4edda; color: #155724; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    .status-critical, .status-fail { background: #f8d7da; color: #721c24; }
+    .status-skip { background: #e2e3e5; color: #383d41; }
+
+    /* ===== 이력 테이블 ===== */
+    .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .log-table th {
+        background: #f8f9fa; padding: 10px 8px; text-align: left;
+        border-bottom: 2px solid #dee2e6; font-weight: 700;
+    }
+    .log-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .log-table tr:hover { background: #f5f7fa; cursor: pointer; }
+    .task-label {
+        display: inline-block; padding: 2px 8px; border-radius: 4px;
+        font-size: 11px; font-weight: 600;
+    }
+    .task-log_cleanup { background: #d4edda; color: #155724; }
+    .task-journal_vacuum { background: #cce5ff; color: #004085; }
+    .task-packet_log_cleanup { background: #fff3cd; color: #856404; }
+    .task-cron_audit { background: #e2d5f1; color: #4a1f8a; }
+    .task-cron_standardize { background: #f8d7da; color: #721c24; }
+
+    /* ===== crontab 코드 블록 ===== */
+    .cron-code {
+        background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px;
+        font-family: 'Consolas', 'Monaco', monospace; font-size: 12px;
+        white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto;
+    }
+    .cron-code .comment { color: #6a9955; }
+    .cron-code .removed { color: #f48771; text-decoration: line-through; }
+    .cron-code .active { color: #9cdcfe; }
+
+    /* ===== 상세 모달 ===== */
+    .modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: #fff; border-radius: 10px; width: 90%; max-width: 900px;
+        max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-header h3 { margin: 0; font-size: 18px; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+
+    /* ===== 필터 ===== */
+    .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .filter-bar input, .filter-bar select {
+        padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+    }
+    .filter-bar input { width: 200px; }
+
+    /* ===== 로딩 ===== */
+    .loading-overlay {
+        display: flex; align-items: center; justify-content: center;
+        min-height: 200px; color: #888; font-size: 15px;
+    }
+
+    /* ===== 뱃지 리스트 ===== */
+    .badge-list { display: flex; gap: 4px; flex-wrap: wrap; }
+    .badge-item {
+        display: inline-block; padding: 2px 6px; border-radius: 4px;
+        font-size: 10px; font-weight: 600;
+    }
+    .badge-ok { background: #d4edda; color: #155724; }
+    .badge-miss { background: #f8d7da; color: #721c24; }
+    .badge-remove { background: #fff3cd; color: #856404; }
+</style>
+</%block>
+
+<%block name="title">NAS Cron 관리</%block>
+<%block name="subtitle">NAS 서버 유지보수 중앙 관리 (로그정리, Journal, Packet_log, Cron 감사)</%block>
+
+<%block name="content">
+<!-- 로딩 -->
+<div id="loading" class="loading-overlay">
+    <i class="fa fa-spinner fa-spin"></i> 데이터를 불러오는 중...
+</div>
+
+<div id="main-content" style="display:none;">
+    <!-- ===== 요약 카드 ===== -->
+    <div id="summary-section" class="summary-cards"></div>
+
+    <!-- ===== 액션 바 ===== -->
+    <div class="action-bar">
+        <button class="btn-action primary" onclick="runTask('all_maintenance')">
+            <i class="fa fa-play"></i> 전체 유지보수
+        </button>
+        <button class="btn-action" onclick="runTask('log_cleanup')">
+            <i class="fa fa-trash"></i> 로그정리
+        </button>
+        <button class="btn-action" onclick="runTask('journal_vacuum')">
+            <i class="fa fa-compress"></i> Journal
+        </button>
+        <button class="btn-action" onclick="runTask('packet_log_cleanup')">
+            <i class="fa fa-file-o"></i> Packet_log
+        </button>
+        <button class="btn-action warning" onclick="runTask('cron_audit')">
+            <i class="fa fa-search"></i> Cron 감사
+        </button>
+        <button class="btn-action danger" onclick="runTask('cron_standardize')" title="각 NAS crontab을 표준화합니다. 주의!">
+            <i class="fa fa-magic"></i> Cron 표준화
+        </button>
+        <span id="task-status" class="task-status"></span>
+    </div>
+
+    <!-- ===== 탭 ===== -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('latest')">📊 최신 결과</button>
+        <button class="tab-btn" onclick="switchTab('history')">📋 실행 이력</button>
+    </div>
+
+    <!-- 최신 결과 탭 -->
+    <div id="tab-latest" class="tab-panel active">
+        <div id="latest-content"></div>
+    </div>
+
+    <!-- 실행 이력 탭 -->
+    <div id="tab-history" class="tab-panel">
+        <div class="filter-bar">
+            <select id="history-filter" onchange="loadHistory()">
+                <option value="">전체 작업</option>
+                <option value="log_cleanup">로그정리</option>
+                <option value="journal_vacuum">Journal</option>
+                <option value="packet_log_cleanup">Packet_log</option>
+                <option value="cron_audit">Cron 감사</option>
+                <option value="cron_standardize">Cron 표준화</option>
+            </select>
+            <select id="history-days" onchange="loadHistory()">
+                <option value="7">최근 7일</option>
+                <option value="30" selected>최근 30일</option>
+                <option value="90">최근 90일</option>
+            </select>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="log-table" id="history-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>실행시간</th>
+                        <th>작업</th>
+                        <th>전체</th>
+                        <th>성공</th>
+                        <th>실패</th>
+                        <th>스킵</th>
+                        <th>소요(초)</th>
+                        <th>상세</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 상세 모달 -->
+<div id="detail-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modal-title">상세 정보</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modal-body"></div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+let latestData = {};
+
+$(document).ready(function() {
+    loadLatest();
+});
+
+// ===== 최신 결과 로드 =====
+function loadLatest() {
+    $.ajax({
+        url: '/api/v1/read/cron_latest',
+        method: 'GET',
+    }).done(function(res) {
+        if (res.result === 200) {
+            latestData = res.data;
+            renderSummary();
+            renderLatest();
+        }
+        $('#loading').hide();
+        $('#main-content').show();
+    }).fail(function() {
+        $('#loading').html('<i class="fa fa-exclamation-triangle"></i> 데이터 로드 실패');
+    });
+}
+
+// ===== 요약 카드 =====
+function renderSummary() {
+    const tasks = [
+        {key: 'log_cleanup', label: '로그 정리', icon: 'fa-trash', bg: 'bg-cleanup'},
+        {key: 'journal_vacuum', label: 'Journal', icon: 'fa-compress', bg: 'bg-journal'},
+        {key: 'packet_log_cleanup', label: 'Packet Log', icon: 'fa-file-o', bg: 'bg-packet'},
+        {key: 'cron_audit', label: 'Cron 감사', icon: 'fa-search', bg: 'bg-audit'},
+    ];
+
+    let html = '';
+    tasks.forEach(function(t) {
+        const d = latestData[t.key];
+        if (d) {
+            const failBadge = d.fail > 0 ? '<span style="color:#ff6b6b;"> (' + d.fail + ' 실패)</span>' : '';
+            html += '<div class="summary-card ' + t.bg + '" onclick="showLatestDetail(\'' + t.key + '\')">';
+            html += '<div class="card-icon"><i class="fa ' + t.icon + '"></i></div>';
+            html += '<div class="card-value">' + d.success + '/' + d.total + failBadge + '</div>';
+            html += '<div class="card-label">' + t.label + '</div>';
+            html += '<div class="card-time"><i class="fa fa-clock-o"></i> ' + d.run_time + '</div>';
+            html += '</div>';
+        } else {
+            html += '<div class="summary-card ' + t.bg + '" style="opacity:0.5;">';
+            html += '<div class="card-icon"><i class="fa ' + t.icon + '"></i></div>';
+            html += '<div class="card-value">-</div>';
+            html += '<div class="card-label">' + t.label + ' (미실행)</div>';
+            html += '</div>';
+        }
+    });
+    $('#summary-section').html(html);
+}
+
+// ===== 최신 결과 렌더링 =====
+function renderLatest() {
+    let html = '';
+
+    // cron_audit 결과가 있으면 서버별 crontab 상태 표시
+    const audit = latestData['cron_audit'];
+    if (audit && audit.servers) {
+        html += '<div class="section-header" style="font-size:16px;font-weight:700;margin:16px 0 8px;border-bottom:2px solid #eee;padding-bottom:8px;">';
+        html += '🔍 최신 Cron 감사 결과 <span style="font-size:12px;color:#888;font-weight:400;margin-left:auto;float:right;">' + audit.run_time + '</span></div>';
+        html += renderAuditTable(audit.servers);
+    }
+
+    // 유지보수 결과
+    ['log_cleanup', 'journal_vacuum', 'packet_log_cleanup'].forEach(function(key) {
+        const d = latestData[key];
+        if (d && d.servers) {
+            const labels = {
+                'log_cleanup': '🗑️ 로그 정리',
+                'journal_vacuum': '📦 Journal Vacuum',
+                'packet_log_cleanup': '📄 Packet Log 정리',
+            };
+            html += '<div style="font-size:16px;font-weight:700;margin:24px 0 8px;border-bottom:2px solid #eee;padding-bottom:8px;">';
+            html += labels[key] + ' <span style="font-size:12px;color:#888;font-weight:400;float:right;">' + d.run_time + '</span></div>';
+            html += renderMaintenanceTable(key, d.servers);
+        }
+    });
+
+    if (!html) {
+        html = '<div style="text-align:center;color:#888;padding:40px;">아직 실행된 작업이 없습니다. 위 버튼으로 작업을 실행하세요.</div>';
+    }
+
+    $('#latest-content').html(html);
+}
+
+// ===== Cron 감사 테이블 =====
+function renderAuditTable(servers) {
+    let html = '<div style="overflow-x:auto;"><table class="server-table"><thead><tr>';
+    html += '<th>#</th><th>서버명</th><th>IP</th><th>상태</th>';
+    html += '<th>checkuser</th><th>sync_qos</th><th>DDNS</th>';
+    html += '<th>활성항목</th><th>이슈</th><th>제거가능</th>';
+    html += '</tr></thead><tbody>';
+
+    // 정렬: critical → warning → ok
+    const sorted = [...servers].sort(function(a, b) {
+        const order = {'critical': 0, 'warning': 1, 'fail': 0, 'ok': 2, 'success': 2};
+        return (order[a.status] || 3) - (order[b.status] || 3);
+    });
+
+    sorted.forEach(function(sv, idx) {
+        const statusCls = sv.status === 'critical' || sv.status === 'fail' ? 'critical' :
+                          sv.status === 'warning' ? 'warning' : 'ok';
+        html += '<tr>';
+        html += '<td>' + (idx + 1) + '</td>';
+        html += '<td><strong>' + (sv.name || '-') + '</strong></td>';
+        html += '<td>' + (sv.ip || '-') + '</td>';
+        html += '<td><span class="status-badge status-' + statusCls + '">' + sv.status + '</span></td>';
+        html += '<td>' + boolIcon(sv.has_checkuser) + '</td>';
+        html += '<td>' + boolIcon(sv.has_sync_qos) + '</td>';
+        html += '<td>' + (sv.has_ddns ? '<i class="fa fa-check" style="color:#28a745;"></i>' : '<span style="color:#aaa;">-</span>') + '</td>';
+        html += '<td>' + (sv.active_entries || 0) + '</td>';
+        html += '<td>' + (sv.issues && sv.issues.length > 0 ? '<span style="color:#dc3545;font-size:11px;">' + sv.issues.join(', ') + '</span>' : '-') + '</td>';
+        html += '<td>';
+        if (sv.removable && sv.removable.length > 0) {
+            html += '<div class="badge-list">';
+            sv.removable.forEach(function(r) {
+                html += '<span class="badge-item badge-remove">' + r.split(' ')[0] + '</span>';
+            });
+            html += '</div>';
+        } else {
+            html += '<span style="color:#28a745;">✓ 정상</span>';
+        }
+        html += '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+}
+
+// ===== 유지보수 결과 테이블 =====
+function renderMaintenanceTable(key, servers) {
+    let html = '<div style="overflow-x:auto;"><table class="server-table"><thead><tr>';
+    html += '<th>#</th><th>서버명</th><th>IP</th><th>상태</th>';
+
+    if (key === 'log_cleanup' || key === 'packet_log_cleanup') {
+        html += '<th>정리 전(MB)</th><th>정리 후(MB)</th>';
+    } else if (key === 'journal_vacuum') {
+        html += '<th>정리 전</th><th>정리 후</th>';
+    }
+    html += '<th>비고</th></tr></thead><tbody>';
+
+    servers.forEach(function(sv, idx) {
+        const statusCls = sv.status === 'success' ? 'success' : sv.status === 'skip' ? 'skip' : 'fail';
+        html += '<tr>';
+        html += '<td>' + (idx + 1) + '</td>';
+        html += '<td><strong>' + (sv.name || '-') + '</strong></td>';
+        html += '<td>' + (sv.ip || '-') + '</td>';
+        html += '<td><span class="status-badge status-' + statusCls + '">' + sv.status + '</span></td>';
+
+        if (key === 'log_cleanup' || key === 'packet_log_cleanup') {
+            html += '<td>' + (sv.before_mb || '-') + '</td>';
+            html += '<td>' + (sv.after_mb || '-') + '</td>';
+        } else if (key === 'journal_vacuum') {
+            html += '<td>' + (sv.before || '-') + '</td>';
+            html += '<td>' + (sv.after || '-') + '</td>';
+        }
+
+        html += '<td style="font-size:11px;color:#666;">' + (sv.reason || sv.output || '-').substring(0, 100) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+}
+
+function boolIcon(val) {
+    return val ? '<i class="fa fa-check-circle" style="color:#28a745;"></i>'
+               : '<i class="fa fa-times-circle" style="color:#dc3545;"></i>';
+}
+
+// ===== 이력 로드 =====
+function loadHistory() {
+    const taskType = $('#history-filter').val();
+    const days = $('#history-days').val();
+    const tbody = $('#history-table tbody');
+    tbody.html('<tr><td colspan="9" style="text-align:center;color:#888;"><i class="fa fa-spinner fa-spin"></i> 로딩중...</td></tr>');
+
+    $.ajax({
+        url: '/api/v1/read/cron_logs',
+        method: 'GET',
+        data: { task_type: taskType, days: days },
+    }).done(function(res) {
+        if (res.result === 200) {
+            renderHistory(res.data);
+        }
+    });
+}
+
+function renderHistory(data) {
+    const tbody = $('#history-table tbody');
+    tbody.empty();
+
+    if (data.length === 0) {
+        tbody.html('<tr><td colspan="9" style="text-align:center;color:#888;">이력이 없습니다.</td></tr>');
+        return;
+    }
+
+    data.forEach(function(r, idx) {
+        const hasIssue = r.fail > 0;
+        let html = '<tr onclick="showDetail(' + r.id + ')" style="cursor:pointer;">';
+        html += '<td>' + (idx + 1) + '</td>';
+        html += '<td>' + r.run_time + '</td>';
+        html += '<td><span class="task-label task-' + r.task_type + '">' + r.task_type + '</span></td>';
+        html += '<td>' + r.total + '</td>';
+        html += '<td style="color:#28a745;font-weight:600;">' + r.success + '</td>';
+        html += '<td style="color:' + (r.fail > 0 ? '#dc3545' : '#28a745') + ';font-weight:600;">' + r.fail + '</td>';
+        html += '<td>' + r.skip + '</td>';
+        html += '<td>' + r.elapsed + '</td>';
+        html += '<td><button class="btn-action" style="padding:2px 8px;font-size:11px;" onclick="event.stopPropagation();showDetail(' + r.id + ')"><i class="fa fa-eye"></i></button></td>';
+        html += '</tr>';
+        tbody.append(html);
+    });
+}
+
+// ===== 상세 보기 =====
+function showDetail(logId) {
+    $('#modal-title').text('로딩중...');
+    $('#modal-body').html('<div style="text-align:center;padding:40px;"><i class="fa fa-spinner fa-spin"></i></div>');
+    $('#detail-modal').addClass('show');
+
+    $.ajax({
+        url: '/api/v1/read/cron_detail',
+        method: 'GET',
+        data: { id: logId },
+    }).done(function(res) {
+        if (res.result === 200) {
+            const d = res.data;
+            $('#modal-title').html(
+                '<span class="task-label task-' + d.task_type + '">' + d.task_type + '</span> ' +
+                d.run_time + ' (' + d.elapsed + '초)'
+            );
+
+            let html = '<div style="display:flex;gap:16px;margin-bottom:16px;">';
+            html += '<div><strong>전체:</strong> ' + d.total + '</div>';
+            html += '<div style="color:#28a745;"><strong>성공:</strong> ' + d.success + '</div>';
+            html += '<div style="color:#dc3545;"><strong>실패:</strong> ' + d.fail + '</div>';
+            html += '<div><strong>스킵:</strong> ' + d.skip + '</div>';
+            html += '</div>';
+
+            const servers = d.report.servers || [];
+            if (d.task_type === 'cron_audit') {
+                html += renderAuditDetailModal(servers);
+            } else if (d.task_type === 'cron_standardize') {
+                html += renderStandardizeDetailModal(servers);
+            } else {
+                html += renderMaintenanceDetailModal(d.task_type, servers);
+            }
+
+            $('#modal-body').html(html);
+        }
+    });
+}
+
+function showLatestDetail(taskKey) {
+    const d = latestData[taskKey];
+    if (!d) return;
+
+    $('#modal-title').html(
+        '<span class="task-label task-' + taskKey + '">' + taskKey + '</span> ' + d.run_time
+    );
+
+    let html = '<div style="display:flex;gap:16px;margin-bottom:16px;">';
+    html += '<div><strong>전체:</strong> ' + d.total + '</div>';
+    html += '<div style="color:#28a745;"><strong>성공:</strong> ' + d.success + '</div>';
+    html += '<div style="color:#dc3545;"><strong>실패:</strong> ' + d.fail + '</div>';
+    html += '<div><strong>스킵:</strong> ' + d.skip + '</div>';
+    html += '</div>';
+
+    const servers = d.servers || [];
+    if (taskKey === 'cron_audit') {
+        html += renderAuditDetailModal(servers);
+    } else {
+        html += renderMaintenanceDetailModal(taskKey, servers);
+    }
+
+    $('#modal-body').html(html);
+    $('#detail-modal').addClass('show');
+}
+
+function renderAuditDetailModal(servers) {
+    let html = '';
+    servers.forEach(function(sv) {
+        const statusCls = sv.status === 'critical' || sv.status === 'fail' ? 'status-critical' :
+                          sv.status === 'warning' ? 'status-warning' : 'status-ok';
+        html += '<div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:12px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<strong>' + sv.name + '</strong> <span style="color:#888;">' + sv.ip + '</span>';
+        html += '<span class="status-badge ' + statusCls + '">' + sv.status + '</span>';
+        html += '</div>';
+
+        if (sv.issues && sv.issues.length > 0) {
+            html += '<div style="color:#dc3545;font-size:12px;margin-top:4px;">⚠️ ' + sv.issues.join(', ') + '</div>';
+        }
+        if (sv.removable && sv.removable.length > 0) {
+            html += '<div style="color:#856404;font-size:12px;margin-top:4px;">🔧 제거가능: ' + sv.removable.join(', ') + '</div>';
+        }
+
+        if (sv.crontab) {
+            html += '<div class="cron-code" style="margin-top:8px;">';
+            sv.crontab.split('\n').forEach(function(line) {
+                if (line.trim().startsWith('#')) {
+                    html += '<span class="comment">' + escapeHtml(line) + '</span>\n';
+                } else if (line.trim()) {
+                    html += '<span class="active">' + escapeHtml(line) + '</span>\n';
+                } else {
+                    html += '\n';
+                }
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+    });
+    return html;
+}
+
+function renderStandardizeDetailModal(servers) {
+    let html = '';
+    servers.forEach(function(sv) {
+        const statusCls = sv.status === 'success' ? 'status-success' : sv.status === 'skip' ? 'status-skip' : 'status-fail';
+        html += '<div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:12px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<strong>' + sv.name + '</strong> <span style="color:#888;">' + (sv.ip || '') + '</span>';
+        html += '<span class="status-badge ' + statusCls + '">' + sv.status + '</span>';
+        html += '</div>';
+
+        if (sv.status === 'success') {
+            if (sv.removed && sv.removed.length > 0) {
+                html += '<div style="margin-top:8px;font-size:12px;color:#dc3545;">제거됨:</div>';
+                html += '<div class="cron-code" style="margin-top:4px;">';
+                sv.removed.forEach(function(r) { html += '<span class="removed">' + escapeHtml(r) + '</span>\n'; });
+                html += '</div>';
+            }
+        } else if (sv.reason) {
+            html += '<div style="color:#888;font-size:12px;margin-top:4px;">' + sv.reason + '</div>';
+        }
+        html += '</div>';
+    });
+    return html;
+}
+
+function renderMaintenanceDetailModal(taskType, servers) {
+    let html = '<div style="overflow-x:auto;"><table class="server-table"><thead><tr>';
+    html += '<th>서버</th><th>IP</th><th>상태</th>';
+    if (taskType === 'journal_vacuum') {
+        html += '<th>전</th><th>후</th>';
+    } else {
+        html += '<th>전(MB)</th><th>후(MB)</th>';
+    }
+    html += '<th>비고</th></tr></thead><tbody>';
+
+    servers.forEach(function(sv) {
+        const statusCls = sv.status === 'success' ? 'success' : sv.status === 'skip' ? 'skip' : 'fail';
+        html += '<tr>';
+        html += '<td><strong>' + sv.name + '</strong></td>';
+        html += '<td>' + sv.ip + '</td>';
+        html += '<td><span class="status-badge status-' + statusCls + '">' + sv.status + '</span></td>';
+        if (taskType === 'journal_vacuum') {
+            html += '<td>' + (sv.before || '-') + '</td>';
+            html += '<td>' + (sv.after || '-') + '</td>';
+        } else {
+            html += '<td>' + (sv.before_mb || '-') + '</td>';
+            html += '<td>' + (sv.after_mb || '-') + '</td>';
+        }
+        html += '<td style="font-size:11px;">' + (sv.reason || sv.output || '-').substring(0, 200) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+}
+
+function closeModal() {
+    $('#detail-modal').removeClass('show');
+}
+
+// ===== 작업 실행 =====
+function runTask(taskName) {
+    const labels = {
+        'all_maintenance': '전체 유지보수 (로그+Journal+Packet_log)',
+        'log_cleanup': '로그 정리',
+        'journal_vacuum': 'Journal Vacuum',
+        'packet_log_cleanup': 'Packet Log 정리',
+        'cron_audit': 'Cron 감사 (수집)',
+        'cron_standardize': 'Cron 표준화 (⚠️ crontab 변경됨!)',
+    };
+    const msg = taskName === 'cron_standardize'
+        ? labels[taskName] + '\n\n각 NAS의 crontab이 표준화됩니다.\n불필요한 항목이 제거되고 필수 항목만 남습니다.\n\n정말 실행하시겠습니까?'
+        : labels[taskName] + ' 작업을 실행하시겠습니까?\n(전체 NAS 서버 대상, 약 30초~2분 소요)';
+
+    if (!confirm(msg)) return;
+
+    const statusSpan = $('#task-status');
+    $('.btn-action').prop('disabled', true);
+    statusSpan.html('<i class="fa fa-spinner fa-spin"></i> ' + labels[taskName] + ' 실행중...');
+
+    $.ajax({
+        url: '/api/v1/update/run_cron_task',
+        method: 'POST',
+        data: { task: taskName },
+        headers: { 'X-CSRFToken': getCsrfToken() },
+    }).done(function(res) {
+        if (res.result === 200) {
+            pollTask(1);
+        } else if (res.result === 409) {
+            statusSpan.html('<span style="color:#856404;">' + res.msg + '</span>');
+            pollTask(1);
+        } else {
+            statusSpan.html('<span style="color:#dc3545;">' + (res.msg || '실패') + '</span>');
+            $('.btn-action').prop('disabled', false);
+        }
+    }).fail(function() {
+        statusSpan.html('<span style="color:#dc3545;">서버 통신 오류</span>');
+        $('.btn-action').prop('disabled', false);
+    });
+}
+
+function pollTask(count) {
+    if (count > 120) {
+        $('#task-status').html('<span style="color:#dc3545;">타임아웃</span>');
+        $('.btn-action').prop('disabled', false);
+        return;
+    }
+    setTimeout(function() {
+        $.get('/api/v1/read/cron_task_status').done(function(res) {
+            if (!res.running && res.data) {
+                if (res.data.success) {
+                    $('#task-status').html(
+                        '<span style="color:#28a745;"><i class="fa fa-check"></i> 완료 (' + (res.data.elapsed || '') + '초)</span>'
+                    );
+                } else {
+                    $('#task-status').html(
+                        '<span style="color:#dc3545;"><i class="fa fa-times"></i> 실패</span>'
+                    );
+                }
+                $('.btn-action').prop('disabled', false);
+                // 데이터 새로고침
+                loadLatest();
+                if ($('#tab-history').hasClass('active')) loadHistory();
+            } else {
+                const elapsed = res.elapsed ? Math.round(res.elapsed) : (count * 5);
+                $('#task-status').html('<i class="fa fa-spinner fa-spin"></i> 실행중... (' + elapsed + '초)');
+                pollTask(count + 1);
+            }
+        }).fail(function() {
+            pollTask(count + 1);
+        });
+    }, 5000);
+}
+
+// ===== 탭 =====
+function switchTab(name) {
+    $('.tab-btn').removeClass('active');
+    $('.tab-panel').removeClass('active');
+    $('[onclick="switchTab(\'' + name + '\')"]').addClass('active');
+    $('#tab-' + name).addClass('active');
+    if (name === 'history') loadHistory();
+}
+
+// ===== 유틸 =====
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getCsrfToken() {
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+        c = c.trim();
+        if (c.startsWith('csrftoken=')) return c.substring('csrftoken='.length);
+    }
+    return '';
+}
+</script>
+</%block>

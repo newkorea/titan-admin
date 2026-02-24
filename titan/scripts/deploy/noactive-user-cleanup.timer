@@ -1,0 +1,11 @@
+[Unit]
+Description=TitanVPN Noactive User Cleanup Timer (Daily 3AM)
+Requires=noactive-user-cleanup.service
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

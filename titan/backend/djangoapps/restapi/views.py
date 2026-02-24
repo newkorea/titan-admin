@@ -553,6 +553,30 @@ def app_check_login(request):
         print('INFO -> device_uuid : ', device_uuid)
         print('INFO -> load_balancer : ', load_balancer)
         print('INFO -> api_url : ', api_url)
+
+        # ===== 기기/계정/IP 접속금지 체크 (2026-02-11) =====
+        try:
+            from django.db.models import Q
+            login_email = request.session.get('email', '')
+            ban_q = Q()
+            if device_uuid:
+                ban_q |= Q(device_uuid=device_uuid)
+            if login_ip:
+                ban_q |= Q(device_ip=login_ip)
+            if login_email:
+                ban_q |= Q(email=login_email)
+            active_ban = TblBannedDevice.objects.filter(
+                ban_q, is_active=1
+            ).exclude(
+                device_uuid='', device_ip='', email=''
+            ).first()
+            if active_ban:
+                print(f'INFO -> CHECK_LOGIN BANNED email={login_email} ban_id={active_ban.id} '
+                      f'type={active_ban.ban_type}')
+                request.session.flush()
+                return JsonResponse({'result': 710, 'msg': 'This device is banned'})
+        except Exception as ban_err:
+            print('WARN -> check_login ban check error:', ban_err)
 	
         #if app_version == None:
         #    return JsonResponse({'result': 200,'id': id})
@@ -561,21 +585,58 @@ def app_check_login(request):
         print('INFO -> device_city : ', (response.get('city') or ''))
         print('INFO -> login_time : ', datetime.datetime.now())
  
-        st = TblDeviceInfo(
-            user_id = id,
-            app_version = app_version,
-            device_type = device_type,
-            device_os = device_os.replace('\'', ''),
-            device_uuid = device_uuid,
-            device_ip = login_ip,
-            device_country = (response.get('country') or '').replace('\'', ''),
-            device_city = (response.get('city') or '').replace('\'', ''),
-            device_isp = (response.get('isp') or '').replace('\'', ''),
-            api_url = api_url,
-            load_balancer = load_balancer,
-            login_time = datetime.datetime.now())
-        st.save()
-            
+        # 같은 user_id + device_uuid: upsert (중복 있으면 최신 1개만 남기고 UPDATE)
+        current_sk = request.session.session_key or ''
+        if device_uuid:
+            dupes = list(TblDeviceInfo.objects.filter(
+                user_id=id, device_uuid=device_uuid
+            ).order_by('-login_time'))
+            if len(dupes) > 1:
+                # 최신 1개 빼고 나머지 삭제
+                keep = dupes[0]
+                del_ids = [d.id for d in dupes[1:]]
+                TblDeviceInfo.objects.filter(id__in=del_ids).delete()
+                print(f'INFO -> check_login: dedup deleted {len(del_ids)} old device_info')
+                existing = keep
+            elif len(dupes) == 1:
+                existing = dupes[0]
+            else:
+                existing = None
+        else:
+            existing = None
+
+        if existing:
+            existing.app_version = app_version
+            existing.device_type = device_type
+            existing.device_os = device_os.replace('\'', '')
+            existing.device_ip = login_ip
+            existing.device_country = (response.get('country') or '').replace('\'', '')
+            existing.device_city = (response.get('city') or '').replace('\'', '')
+            existing.device_isp = (response.get('isp') or '').replace('\'', '')
+            existing.session_key = current_sk
+            existing.api_url = api_url
+            existing.load_balancer = load_balancer
+            existing.login_time = datetime.datetime.now()
+            existing.save()
+            print(f'INFO -> check_login: UPDATED id={existing.id} sk={current_sk[:12]}')
+        else:
+            st = TblDeviceInfo(
+                user_id = id,
+                app_version = app_version,
+                device_type = device_type,
+                device_os = device_os.replace('\'', ''),
+                device_uuid = device_uuid,
+                device_ip = login_ip,
+                device_country = (response.get('country') or '').replace('\'', ''),
+                device_city = (response.get('city') or '').replace('\'', ''),
+                device_isp = (response.get('isp') or '').replace('\'', ''),
+                session_key = current_sk,
+                api_url = api_url,
+                load_balancer = load_balancer,
+                login_time = datetime.datetime.now())
+            st.save()
+            print(f'INFO -> check_login: INSERTED id={st.id} sk={current_sk[:12]}')
+
         with connections['default'].cursor() as cur:
             sql = '''
                 SELECT *
@@ -931,6 +992,29 @@ def app_session_key(request):
     if u1.is_active == 0:
         return JsonResponse({'result': 700})
 
+    # ===== 기기/계정/IP 접속금지 체크 (2026-02-11) =====
+    try:
+        from django.db.models import Q
+        # 각 차단 유형별 해당 필드만 저장되므로 OR로 매칭
+        ban_q = Q()
+        if device_uuid:
+            ban_q |= Q(device_uuid=device_uuid)
+        if login_ip:
+            ban_q |= Q(device_ip=login_ip)
+        ban_q |= Q(email=login_email)
+        # device_uuid='' 이거나 device_ip='' 인 빈값 매칭 방지
+        active_ban = TblBannedDevice.objects.filter(
+            ban_q, is_active=1
+        ).exclude(
+            device_uuid='', device_ip='', email=''
+        ).first()
+        if active_ban:
+            print(f'INFO -> BANNED login_email={login_email} matched ban_id={active_ban.id} '
+                  f'type={active_ban.ban_type} uuid={active_ban.device_uuid} ip={active_ban.device_ip} email={active_ban.email}')
+            return JsonResponse({'result': 710, 'msg': 'This device is banned'})
+    except Exception as ban_err:
+        print('WARN -> ban check error:', ban_err)
+
     # 로그인 테이블 체크
     try:
         u2 = TblUserLogin.objects.get(user_id=user_id)
@@ -980,20 +1064,56 @@ def app_session_key(request):
                 print('INFO -> load_balancer : ', load_balancer)
                 print('INFO -> login_time : ', datetime.datetime.now())
                 
-                st = TblDeviceInfo(
-                    user_id = u1.id,
-                    app_version = app_version,
-                    device_type = device_type,
-                    device_os = device_os.replace('\'', ''),
-                    device_uuid = device_uuid,
-                    device_ip = login_ip,
-                    device_country = (response.get('country') or '').replace('\'', ''),
-                    device_city = (response.get('city') or '').replace('\'', ''),
-                    device_isp = (response.get('isp') or '').replace('\'', ''),
-                    api_url = api_url,
-                    load_balancer = load_balancer,
-                    login_time = datetime.datetime.now())
-                st.save()
+                # 같은 user_id + device_uuid: upsert (중복 있으면 최신 1개만 남기고 UPDATE)
+                current_sk = request.session.session_key or ''
+                if device_uuid:
+                    dupes = list(TblDeviceInfo.objects.filter(
+                        user_id=u1.id, device_uuid=device_uuid
+                    ).order_by('-login_time'))
+                    if len(dupes) > 1:
+                        keep = dupes[0]
+                        del_ids = [d.id for d in dupes[1:]]
+                        TblDeviceInfo.objects.filter(id__in=del_ids).delete()
+                        print(f'INFO -> session_key login: dedup deleted {len(del_ids)} old device_info')
+                        existing = keep
+                    elif len(dupes) == 1:
+                        existing = dupes[0]
+                    else:
+                        existing = None
+                else:
+                    existing = None
+
+                if existing:
+                    existing.app_version = app_version
+                    existing.device_type = device_type
+                    existing.device_os = device_os.replace('\'', '')
+                    existing.device_ip = login_ip
+                    existing.device_country = (response.get('country') or '').replace('\'', '')
+                    existing.device_city = (response.get('city') or '').replace('\'', '')
+                    existing.device_isp = (response.get('isp') or '').replace('\'', '')
+                    existing.session_key = current_sk
+                    existing.api_url = api_url
+                    existing.load_balancer = load_balancer
+                    existing.login_time = datetime.datetime.now()
+                    existing.save()
+                    print(f'INFO -> session_key login: UPDATED id={existing.id} sk={current_sk[:12]}')
+                else:
+                    st = TblDeviceInfo(
+                        user_id = u1.id,
+                        app_version = app_version,
+                        device_type = device_type,
+                        device_os = device_os.replace('\'', ''),
+                        device_uuid = device_uuid,
+                        device_ip = login_ip,
+                        device_country = (response.get('country') or '').replace('\'', ''),
+                        device_city = (response.get('city') or '').replace('\'', ''),
+                        device_isp = (response.get('isp') or '').replace('\'', ''),
+                        session_key = current_sk,
+                        api_url = api_url,
+                        load_balancer = load_balancer,
+                        login_time = datetime.datetime.now())
+                    st.save()
+                    print(f'INFO -> session_key login: INSERTED id={st.id} sk={current_sk[:12]}')
                 
                 with connections['default'].cursor() as cur:
                     sql_all = '''
@@ -1043,6 +1163,35 @@ def app_start_vpn(request):
 
         client_type = request.META['HTTP_USER_AGENT'].split('/')[0]
         print('client_type -----> ',client_type)
+
+        # VPN 클라이언트 매핑 저장 (기기 종류 추적용 — 매 VPN 시작마다 기록)
+        try:
+            vpn_client_ip = get_client_ip(request)
+            ua_full = request.META.get('HTTP_USER_AGENT', '')
+            # device_type 판별
+            ua_lower = ua_full.lower()
+            if 'android' in ua_lower or 'dalvik' in ua_lower:
+                vpn_device_type = 'Android'
+            elif 'ios' in ua_lower or 'iphone' in ua_lower or 'ipad' in ua_lower or 'titanvpn' in ua_lower:
+                vpn_device_type = 'iOS'
+            elif 'windows' in ua_lower or 'restsharp' in ua_lower:
+                vpn_device_type = 'Windows'
+            elif 'mac' in ua_lower:
+                vpn_device_type = 'macOS'
+            else:
+                vpn_device_type = client_type
+            # app_version 추출
+            import re as _re
+            _av_match = _re.search(r'/([\d.]+)', ua_full)
+            vpn_app_version = _av_match.group(1) if _av_match else ''
+            with connections['default'].cursor() as map_cur:
+                map_cur.execute("""
+                    INSERT INTO tbl_vpn_client_map
+                        (email, device_type, device_os, app_version, client_ip, created_at)
+                    VALUES (%s, %s, %s, %s, %s, NOW())
+                """, [id, vpn_device_type, ua_full[:500], vpn_app_version, vpn_client_ip])
+        except Exception as e:
+            print('WARN -> vpn_client_map save failed:', e)
 
         # get regist_rec
         with connections['default'].cursor() as cur:
@@ -1243,6 +1392,22 @@ def app_new_server_list(request):
     if 'id' in request.session:
         id = request.session['email']
         with connections['default'].cursor() as cur:
+                # Check subscription expiration first
+                try:
+                    cur.execute("SELECT value FROM radius.radcheck WHERE username = %s AND attribute = 'Expiration' LIMIT 1", [id])
+                    _exp_row = cur.fetchone()
+                    if _exp_row:
+                        _exp_date = datetime.datetime.strptime(_exp_row[0], '%d %b %Y %H:%M:%S %Z')
+                        if _exp_date < datetime.datetime.now():
+                            print('INFO -> app_new_server_list: expired user blocked:', id)
+                            return JsonResponse({'result': 300})
+                    else:
+                        print('INFO -> app_new_server_list: no expiration record:', id)
+                        return JsonResponse({'result': 300})
+                except Exception as _exp_err:
+                    print('WARN -> app_new_server_list expiration check fail:', _exp_err)
+                    return JsonResponse({'result': 300})
+
                 sql = '''                    
                     SELECT
                     	t1.id, 
@@ -1277,6 +1442,20 @@ def app_new_server_list(request):
                 '''
                 cur.execute(sql)
                 rows = dictfetchall(cur)
+
+                # Per-user V2RAY UUID: use personal UUID only if deployed to servers
+                # New users (v2ray_deployed=0) use tbl_agent3.v2_config (shared UUID)
+                try:
+                    cur.execute("SELECT v2ray_uuid, v2ray_deployed FROM tbl_user WHERE email = %s AND v2ray_uuid IS NOT NULL LIMIT 1", [id])
+                    _uuid_row = cur.fetchone()
+                    if _uuid_row and _uuid_row[0] and _uuid_row[1] == 1:
+                        _user_v2uuid = _uuid_row[0]
+                        for row in rows:
+                            row['v2_config'] = _user_v2uuid
+                    # else: v2ray_deployed=0, keep tbl_agent3.v2_config (shared UUID)
+                except Exception as _uuid_err:
+                    print('WARN -> v2ray_uuid lookup fail:', _uuid_err)
+
                 return JsonResponse({'result' : 200 , 'data' : rows})
     else:
         print('INFO -> Session is invalid')
@@ -1533,6 +1712,18 @@ def app_new_check_server(request):
             except Exception as _isp_err:
                 # Non-fatal: proceed without telecom hint
                 pass
+        # Per-user V2RAY UUID: fetch once at start (only if deployed to servers)
+        _user_v2uuid = None
+        try:
+            with connections['default'].cursor() as _cur_uuid:
+                _cur_uuid.execute("SELECT v2ray_uuid, v2ray_deployed FROM tbl_user WHERE email = %s AND v2ray_uuid IS NOT NULL LIMIT 1", [id])
+                _uuid_row = _cur_uuid.fetchone()
+                if _uuid_row and _uuid_row[0] and _uuid_row[1] == 1:
+                    _user_v2uuid = _uuid_row[0]
+                # else: v2ray_deployed=0, keep shared UUID from tbl_agent3
+        except Exception as _uuid_err:
+            print('WARN -> v2ray_uuid lookup fail:', _uuid_err)
+
         with connections['default'].cursor() as cur:
             # radius 기본정보 획득
                 sql = '''
@@ -1599,10 +1790,12 @@ def app_new_check_server(request):
                     print('INFO ->' + str(len(rows)) + ' 의 강제종료스타트 ' + simultaneous_use)
                     # 서버 접속정보 가져오기
                     sql = '''
-                        SELECT username,password FROM titan.tbl_agent3 WHERE hostip='{ip}';
+                        SELECT username,password,name,telecom FROM titan.tbl_agent3 WHERE hostip='{ip}';
                     '''.format(ip=nasipaddress)
                     cur.execute(sql)
                     ssh_info_rows = dictfetchall(cur)
+                    _nas_name = ssh_info_rows[0].get('name', '') if ssh_info_rows else ''
+                    _nas_telecom = ssh_info_rows[0].get('telecom', '') if ssh_info_rows else ''
                     if not ssh_info_rows:
                         # Reverted to ERROR so monitor catches missing credentials (operationally important)
                         print('ERROR -> SSH credentials not found for hostip:', nasipaddress)
@@ -1666,9 +1859,9 @@ def app_new_check_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
                             _forced_done = True
                         except socket.timeout:
@@ -1681,9 +1874,9 @@ def app_new_check_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
 
                         except BaseException as err:
@@ -1695,9 +1888,9 @@ def app_new_check_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
                         finally:
                             try:
@@ -1875,6 +2068,10 @@ def app_new_check_server(request):
                 vpn_server_v2port = rows[0]['v2_port']
                 vpn_server_id = rows[0]['id']
 
+                # Per-user V2RAY UUID override
+                if _user_v2uuid:
+                    vpn_server_v2config = _user_v2uuid
+
                 # Build check SQL only for explicit server selection from client (legacy <2.2.0 case)
                 if name == '': # Under 2.2.0 version
                     sql = '''
@@ -1946,7 +2143,7 @@ def app_new_check_server(request):
                                         'vpn_smart_match_name' : rows[0]['name'],
                                         'vpn_smart_match_country' : rows[0]['country'],
                                         'vpn_smart_match_config' : rows[0]['config'],
-                                        'vpn_smart_match_v2config' : rows[0]['v2_config'],
+                                        'vpn_smart_match_v2config' : _user_v2uuid or rows[0]['v2_config'],
                                         'vpn_smart_match_v2port' : rows[0]['v2_port'],
                                         'vpn_username' : username,
                                         'vpn_password' : password}) # 정상
@@ -1981,6 +2178,19 @@ def app_stable_server(request):
                 pass
         print("===Called Stable Server Function===")
         email = request.session['email']
+
+        # Per-user V2RAY UUID: fetch once (only if deployed to servers)
+        _user_v2uuid = None
+        try:
+            with connections['default'].cursor() as _cur_uuid:
+                _cur_uuid.execute("SELECT v2ray_uuid, v2ray_deployed FROM tbl_user WHERE email = %s AND v2ray_uuid IS NOT NULL LIMIT 1", [email])
+                _uuid_row = _cur_uuid.fetchone()
+                if _uuid_row and _uuid_row[0] and _uuid_row[1] == 1:
+                    _user_v2uuid = _uuid_row[0]
+                # else: v2ray_deployed=0, keep shared UUID from tbl_agent3
+        except Exception:
+            pass
+
         telecom = request.POST.get('telecom')
         server_name = request.POST.get('server_name')
         server_ip = request.POST.get('server_ip')
@@ -2040,10 +2250,12 @@ def app_stable_server(request):
                     
                     # 서버 접속정보 가져오기
                     sql = '''
-                        SELECT username,password FROM titan.tbl_agent3 WHERE hostip='{ip}';
+                        SELECT username,password,name,telecom FROM titan.tbl_agent3 WHERE hostip='{ip}';
                     '''.format(ip=nasipaddress)
                     cur.execute(sql)
                     ssh_info_rows = dictfetchall(cur)
+                    _nas_name = ssh_info_rows[0].get('name', '') if ssh_info_rows else ''
+                    _nas_telecom = ssh_info_rows[0].get('telecom', '') if ssh_info_rows else ''
 
                     if not ssh_info_rows:
                         print('ERROR -> SSH credentials not found for hostip:', nasipaddress)
@@ -2100,9 +2312,9 @@ def app_stable_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
                         except socket.timeout:
                             #timeout 걸렸을때 radius 강제 업데이트
@@ -2114,9 +2326,9 @@ def app_stable_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                            INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                            VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                        '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
 
                         except BaseException as err:
@@ -2128,9 +2340,9 @@ def app_stable_server(request):
                             cur.execute(sql)
                             
                             sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, disconnected_time, new_ip, old_ip) 
-                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
+                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
+                                VALUES('{email}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                            '''.format(date = datetime.datetime.now() , email=email, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
                             cur.execute(sql)
                         finally:
                             try:
@@ -2157,41 +2369,81 @@ def app_stable_server(request):
                 failed_time = datetime.datetime.now())
             st.save()
         
+        # ── Smart Failover: 프로토콜 우선순위 기반 대체 서버 배정 ──
+        # 실패 프로토콜에 따라 다음 프로토콜로 폴백:
+        #   IKEV2 실패 → OPENVPN 서버 (ping 2순위)
+        #   OPENVPN 실패 → V2RAY 서버
+        #   V2RAY 실패 → 연결 불가
+        _failed_proto = (protocol or '').upper().strip()
+        if _failed_proto in ('IKEV2', 'SSTP', ''):
+            _fallback_protos = ['OPENVPN', 'V2RAY']
+        elif _failed_proto == 'OPENVPN':
+            _fallback_protos = ['V2RAY']
+        else:  # V2RAY or unknown
+            _fallback_protos = []
+
+        _exclude_server = _escape_sql_literal(server_name or '')
+        _exclude_clause = f"AND t1.name != '{_exclude_server}'" if server_name else ''
+
         with connections['default'].cursor() as cur:
-            sql = '''
-                SELECT
-                    t1.id,
-                    t1.name,
-                    t1.hostdomain,
-                    t1.hostip,
-                    t1.is_active,
-                    t1.is_status,
-                    t1.country,
-                    t1.pd_name,
-                    t1.telecom,
-                    t1.protocol,
-                    t1.config
-                FROM titan.tbl_agent3 t1
-                LEFT JOIN (SELECT t1.hostip, Count(t2.nasipaddress) AS connect
-                           FROM titan.tbl_agent3 t1
-                           LEFT JOIN (SELECT *
-                                      FROM radius.radacct
-                                      WHERE acctstoptime IS NULL) t2 
-                           ON t1.hostip = t2.nasipaddress
-                           GROUP  BY t1.hostip)t2
-                ON t1.hostip = t2.hostip
-                WHERE t1.telecom = '{telecom}'
-                ORDER BY t2.connect;
-                '''.format(telecom = telecom)
-            cur.execute(sql)
-            rows = dictfetchall(cur)
-            #return JsonResponse({'result' : 300 })
-            if len(rows) <= 0 :
-                _elapsed('no_rows')
-                return JsonResponse({'result' : 300 })
-            else :
-                _elapsed('success_rows')
-                return JsonResponse({'result' : 200 , 'data' : rows}) # 정상
+            for _fb_proto in _fallback_protos:
+                _proto_clause = f"t1.protocol LIKE '%{_fb_proto}%'"
+
+                _sql = f"""
+                    SELECT
+                        t1.id, t1.name, t1.hostdomain, t1.hostip,
+                        t1.is_active, t1.is_status, t1.country, t1.pd_name,
+                        t1.telecom, t1.protocol, t1.config,
+                        t1.v2_config, t1.v2_port,
+                        COALESCE(conn.cnt, 0) AS conn_count,
+                        COALESCE(ping.ping_avg, 999) AS ping_avg
+                    FROM titan.tbl_agent3 t1
+                    LEFT JOIN (
+                        SELECT p.server_ip, p.ping_avg
+                        FROM titan.tbl_server_telecom_ping p
+                        INNER JOIN (
+                            SELECT server_ip, MAX(check_time) AS max_ct
+                            FROM titan.tbl_server_telecom_ping
+                            WHERE check_time > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                            GROUP BY server_ip
+                        ) latest ON p.server_ip = latest.server_ip
+                                AND p.check_time = latest.max_ct
+                    ) ping ON t1.hostip = ping.server_ip
+                    LEFT JOIN (
+                        SELECT nasipaddress, COUNT(*) AS cnt
+                        FROM radius.radacct
+                        WHERE acctstoptime IS NULL
+                        GROUP BY nasipaddress
+                    ) conn ON t1.hostip = conn.nasipaddress
+                    WHERE t1.is_active = 1 AND t1.is_status = 1 AND t1.is_auto = 1
+                      AND {_proto_clause}
+                      {_exclude_clause}
+                    HAVING conn_count < 50
+                    ORDER BY (COALESCE(ping.ping_avg, 999) * 0.7
+                            + COALESCE(conn.cnt, 0) * 0.3) ASC
+                    LIMIT 5
+                """
+                try:
+                    cur.execute(_sql)
+                    rows = dictfetchall(cur)
+                    if rows:
+                        _elapsed(f'fallback_{_fb_proto}')
+                        print(f'INFO -> stable_server fallback: failed_proto={_failed_proto}, '
+                              f'try={_fb_proto}, server={rows[0]["name"]}, '
+                              f'ping={rows[0].get("ping_avg","?")}, '
+                              f'conn={rows[0].get("conn_count","?")}')
+                        # Per-user V2RAY UUID override
+                        if _user_v2uuid:
+                            for _r in rows:
+                                _r['v2_config'] = _user_v2uuid
+                        return JsonResponse({'result': 200, 'data': rows})
+                except Exception as _e:
+                    print(f'ERROR -> stable_server fallback query fail ({_fb_proto}):', _e)
+
+            # 모든 폴백 실패
+            _elapsed('no_fallback')
+            print(f'INFO -> stable_server: no fallback available. failed_proto={_failed_proto}, user={email}')
+            return JsonResponse({'result': 300})
     else:
         print('INFO -> Session is invalid')
         return JsonResponse({'result': 400})
@@ -2296,6 +2548,30 @@ def app_add_connection(request):
         server_ip = request.POST.get('server_ip')
         uniqueid = ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))
         with connections['default'].cursor() as cur:
+            # V2RAY device count check: count active V2RAY sessions for this user
+            cur.execute('''
+                SELECT COUNT(*) AS cnt FROM radius.radacct
+                WHERE nasporttype = 'V2RAY' AND acctstoptime IS NULL AND username = %s
+            ''', [id])
+            _v2_count = cur.fetchone()[0] or 0
+
+            # Get allowed simultaneous sessions
+            _max_sessions = 1
+            try:
+                cur.execute('''
+                    SELECT value FROM radius.radcheck
+                    WHERE username = %s AND attribute = 'Simultaneous-Use' LIMIT 1
+                ''', [id])
+                _sim_row = cur.fetchone()
+                if _sim_row:
+                    _max_sessions = int(_sim_row[0])
+            except Exception:
+                pass
+
+            if _v2_count >= _max_sessions:
+                print(f'INFO -> V2RAY device limit reached: {id} has {_v2_count}/{_max_sessions} active sessions')
+                return JsonResponse({'result': 600, 'message': 'Device limit reached'})
+
             sql = '''
                 INSERT INTO radius.radacct (acctuniqueid, username, nasporttype, acctstarttime, nasipaddress, callingstationid, calledstationid) 
                 VALUES('{uniqueid}', '{id}', 'V2RAY', '{date}', '{server_ip}', '{login_ip}', '{server_ip}');
@@ -2323,7 +2599,9 @@ def app_disconnect_v2ray(request):
             if acctuniqueid == None:
                 if len(rows) > 0 :
                     sql = '''
-                        UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
+                        UPDATE radius.radacct set acctstoptime = '{date}',
+                        acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, '{date}')
+                        where radacctid = {radacctid};
                         COMMIT;
                     '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
                     cur.execute(sql)
@@ -2332,7 +2610,9 @@ def app_disconnect_v2ray(request):
                     return JsonResponse({'result': 300})
             else :
                 sql = '''
-                    UPDATE radius.radacct set acctstoptime = '{date}' where acctuniqueid = '{acctuniqueid}';
+                    UPDATE radius.radacct set acctstoptime = '{date}',
+                    acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, '{date}')
+                    where acctuniqueid = '{acctuniqueid}';
                     COMMIT;
                 '''.format(date = datetime.datetime.now() , acctuniqueid = acctuniqueid)
                 cur.execute(sql)
@@ -2486,6 +2766,89 @@ def app_health(request):
         'geoip2_loaded': reader_ok,
         'ip_cache_size': len(SAFE_IP_CACHE),
     })
+
+
+# ===== 유저 이슈 자동 통지 API (앱용) =====
+
+@csrf_exempt
+def app_get_notifications(request):
+    """앱에서 유저에게 발송된 통지 목록 조회"""
+    if 'id' not in request.session:
+        return JsonResponse({'result': 401})
+    email = request.session.get('email', '')
+    if not email:
+        return JsonResponse({'result': 401})
+    
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute("""
+                SELECT id, noti_type, severity, title, message, recommendation,
+                       DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i') as created_at,
+                       DATE_FORMAT(sent_at, '%%Y-%%m-%%d %%H:%%i') as sent_at,
+                       CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END as is_read
+                FROM tbl_notification
+                WHERE username = %s AND status = 'sent'
+                ORDER BY sent_at DESC
+                LIMIT 20
+            """, [email])
+            columns = [col[0] for col in cur.description]
+            rows = [dict(zip(columns, row)) for row in cur.fetchall()]
+            
+            # 미읽은 수
+            cur.execute("""
+                SELECT COUNT(*) FROM tbl_notification
+                WHERE username = %s AND status = 'sent' AND read_at IS NULL
+            """, [email])
+            unread = cur.fetchone()[0]
+            
+        return JsonResponse({'result': 200, 'notifications': rows, 'unread': unread})
+    except Exception as e:
+        print('ERROR -> app_get_notifications:', e)
+        return JsonResponse({'result': 500})
+
+
+@csrf_exempt
+def app_read_notification(request):
+    """앱에서 통지 읽음 처리"""
+    if 'id' not in request.session:
+        return JsonResponse({'result': 401})
+    email = request.session.get('email', '')
+    noti_id = request.POST.get('noti_id')
+    if not email or not noti_id:
+        return JsonResponse({'result': 400})
+    
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute("""
+                UPDATE tbl_notification SET status='read', read_at=NOW()
+                WHERE id = %s AND username = %s AND status = 'sent'
+            """, [noti_id, email])
+        return JsonResponse({'result': 200})
+    except Exception as e:
+        print('ERROR -> app_read_notification:', e)
+        return JsonResponse({'result': 500})
+
+
+@csrf_exempt
+def app_unread_notification_count(request):
+    """앱에서 미읽은 통지 수 조회 (배지용)"""
+    if 'id' not in request.session:
+        return JsonResponse({'result': 401})
+    email = request.session.get('email', '')
+    if not email:
+        return JsonResponse({'result': 401})
+    
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM tbl_notification
+                WHERE username = %s AND status = 'sent' AND read_at IS NULL
+            """, [email])
+            unread = cur.fetchone()[0]
+        return JsonResponse({'result': 200, 'unread': unread})
+    except Exception as e:
+        print('ERROR -> app_unread_notification_count:', e)
+        return JsonResponse({'result': 500})
 
 
 # 상품 가격 획득 함수 (안전판) - 기존 버전 대체

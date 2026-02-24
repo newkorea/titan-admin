@@ -1,0 +1,431 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<style>
+.cc-section { padding: 40px 0 60px; }
+.cc-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    padding: 28px 24px;
+    margin-bottom: 30px;
+}
+.cc-card h4 { font-weight: 700; margin-bottom: 20px; font-size: 1.15rem; }
+.cc-card h4 i { margin-right: 8px; color: #8a4cf7; }
+
+/* ── 세션 카드 (VPN History 스타일) ── */
+.active-conn-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.active-conn-card::after {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.active-conn-card.disconnected {
+    background: linear-gradient(135deg, #a0a0a0 0%, #888 100%);
+}
+.active-conn-card .conn-info { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; flex:1; }
+.active-conn-card .conn-label { font-size: 0.78rem; opacity: 0.8; }
+.active-conn-card .conn-value { font-size: 0.95rem; font-weight: 600; }
+.active-conn-card .conn-top { display: flex; align-items: flex-start; gap: 16px; }
+.active-conn-card .conn-right { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.active-conn-card .btn-disconnect {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.active-conn-card .btn-disconnect:hover { background: rgba(255,59,48,0.8); border-color: transparent; }
+.active-conn-card .btn-action {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.active-conn-card .btn-action:hover { background: rgba(255,255,255,0.3); }
+.active-conn-card .btn-action.danger:hover { background: rgba(255,59,48,0.7); border-color: transparent; }
+
+/* 기기 태그 */
+.vpn-device-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 8px;
+    font-size: 0.75rem; font-weight: 600;
+    margin-right: 6px; margin-top: 4px;
+}
+.vpn-device-tag.android { background: rgba(76,175,80,0.3); color: #e8f5e9; }
+.vpn-device-tag.ios { background: rgba(156,39,176,0.3); color: #f3e5f5; }
+.vpn-device-tag.windows { background: rgba(33,150,243,0.3); color: #e3f2fd; }
+.vpn-device-tag.other { background: rgba(255,255,255,0.2); color: #fff; }
+
+.no-data { text-align: center; color: #999; padding: 30px; font-size: 0.95rem; }
+
+/* 차단 목록 */
+.ban-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+}
+.ban-row .ban-info { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.ban-type-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 10px;
+    font-size: 0.75rem; font-weight: 600;
+}
+.ban-type-badge.ip { background: #fff3e0; color: #e65100; }
+.ban-type-badge.uuid { background: #e3f2fd; color: #1565c0; }
+.ban-active { color: #e74c3c; font-weight: 600; }
+.ban-inactive { color: #999; text-decoration: line-through; }
+
+@media (max-width: 768px) {
+    .active-conn-card { padding: 16px; }
+    .active-conn-card .conn-info { gap: 10px; }
+    .ban-row { flex-direction: column; gap: 8px; }
+}
+</style>
+</%block>
+
+<%block name="content">
+<div class="main">
+    <section class="cc-section" style="padding-top: 100px;">
+        <div class="container">
+
+            <!-- 페이지 헤더 -->
+            <div class="text-center mb-5">
+                <h2 style="font-weight:700;"><i class="fas fa-shield-alt" style="color:#8a4cf7;"></i> ${_('Control Center')}</h2>
+                <p class="text-muted">${_('Manage your app sessions and device access')}</p>
+            </div>
+
+            <!-- ① 앱 세션 목록 (NAS 연결 상태 포함) -->
+            <div class="cc-card">
+                <h4><i class="fas fa-mobile-alt"></i> ${_('App Sessions')}</h4>
+                <p class="text-muted" style="font-size:0.85rem; margin-top:-12px; margin-bottom:16px;">
+                    ${_('Your app login sessions with VPN connection status.')}
+                </p>
+                <div id="device_list_area">
+                    <div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+                </div>
+            </div>
+
+            <!-- ② 차단 목록 -->
+            <div class="cc-card">
+                <h4><i class="fas fa-ban"></i> ${_('Ban List')}</h4>
+                <div id="ban_list_area">
+                    <div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i></div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+const csrfToken = '${csrf_token}';
+var _cl = '${LANGUAGE_CODE}';
+var _t = function(ko, zh, en) { return _cl === 'en' ? en : (_cl === 'zh' ? zh : ko); };
+
+function makeDeviceTag(dtype, detail, appVer) {
+    if (!dtype) return '';
+    var dt = dtype.toLowerCase();
+    var tagCls = dt === 'android' ? 'android' : (dt === 'ios' ? 'ios' : (dt === 'windows' ? 'windows' : 'other'));
+    var tagIcon = dt === 'android' ? 'fab fa-android' : (dt === 'ios' ? 'fab fa-apple' : (dt === 'windows' ? 'fab fa-windows' : 'fas fa-mobile-alt'));
+    var label = detail || dtype;
+    var ver = appVer ? ' (v' + appVer + ')' : '';
+    return '<span class="vpn-device-tag ' + tagCls + '"><i class="' + tagIcon + '"></i> ' + label + ver + '</span>';
+}
+
+// ── 앱 세션 로드 (NAS 연결 상태 통합) ──
+function loadAppSessions() {
+    var sessionsPromise = $.post('/api/mypage/app_sessions', {csrfmiddlewaretoken: csrfToken});
+    var connectionsPromise = $.post('/api/mypage/active_connections', {csrfmiddlewaretoken: csrfToken});
+
+    $.when(sessionsPromise, connectionsPromise).done(function(sessRes, connRes) {
+        var area = $('#device_list_area');
+        var sessions = (sessRes[0] && sessRes[0].sessions) || [];
+        var connections = (connRes[0] && connRes[0].logs) || [];
+
+        if (!sessions.length && !connections.length) {
+            area.html('<div class="no-data"><i class="fas fa-info-circle mr-2"></i>' + _t('등록된 앱 세션이 없습니다.','没有注册的应用会话。','No app sessions found.') + '</div>');
+            return;
+        }
+
+        // 세션별 NAS 연결 매칭 (device_ip + device_type)
+        var usedConnIds = {};
+        for (var i = 0; i < sessions.length; i++) {
+            sessions[i]._connections = [];
+            if (sessions[i].device_ip) {
+                var sessType = (sessions[i].device_type || '').toLowerCase();
+                for (var j = 0; j < connections.length; j++) {
+                    var connType = (connections[j].device_type || '').toLowerCase();
+                    if (!usedConnIds[connections[j].radacctid] && connections[j].client_ip === sessions[i].device_ip && connType === sessType) {
+                        sessions[i]._connections.push(connections[j]);
+                        usedConnIds[connections[j].radacctid] = true;
+                    }
+                }
+            }
+        }
+        var unmatchedConns = connections.filter(function(c) { return !usedConnIds[c.radacctid]; });
+
+        var html = '';
+        var protocolMap = {'Virtual': 'IKEv2', 'ISDN': 'PPTP', 'V2RAY': 'V2Ray', '61': 'WireGuard'};
+
+        // Connected 세션 먼저, Disconnected 나중에
+        var connected = sessions.filter(function(s) { return s._connections.length > 0; });
+        var disconnected = sessions.filter(function(s) { return s._connections.length === 0; });
+        var sorted = connected.concat(disconnected);
+
+        for (var i = 0; i < sorted.length; i++) {
+            var s = sorted[i];
+            var isConn = s._connections.length > 0;
+
+            // Connected: NAS 연결별 카드 생성 (VPN History 스타일)
+            if (isConn) {
+                for (var j = 0; j < s._connections.length; j++) {
+                    var c = s._connections[j];
+                    var proto = protocolMap[c.protocol] || c.protocol || '-';
+                    var loc = [c.country, c.city].filter(function(v){return v;}).join(', ') || '-';
+                    var ispText = c.isp || '';
+                    var deviceTag = makeDeviceTag(c.device_type, c.device_detail, c.app_version);
+
+                    html += '<div class="active-conn-card">' +
+                        '<div class="conn-top">' +
+                        '<div class="conn-info">' +
+                        '<div><div class="conn-label">' + _t('서버','服务器','Server') + '</div><div class="conn-value">' + _v(c.nas_name || c.nas_ip) + '</div></div>' +
+                        '<div><div class="conn-label">' + _t('프로토콜','协议','Protocol') + '</div><div class="conn-value">' + proto + '</div></div>' +
+                        '<div><div class="conn-label">' + _t('시작시간','开始时间','Start') + '</div><div class="conn-value">' + _v(c.start_time) + '</div></div>' +
+                        '<div><div class="conn-label">IP</div><div class="conn-value">' + _v(c.client_ip) + '</div></div>' +
+                        '<div><div class="conn-label">' + _t('위치','位置','Location') + '</div><div class="conn-value">' + loc + '</div></div>' +
+                        (ispText ? '<div><div class="conn-label">' + _t('통신사','运营商','ISP') + '</div><div class="conn-value" style="font-size:0.82rem;">' + ispText + '</div></div>' : '') +
+                        '</div>' +
+                        '<div class="conn-right">' +
+                        '<button class="btn-disconnect" onclick="forceDisconnect(\'' + c.radacctid + '\')"><i class="fas fa-power-off mr-1"></i>' + _t('강제종료','强制断开','Disconnect') + '</button>' +
+                        '</div></div>' +
+                        (deviceTag ? '<div style="margin-top:8px;">' + deviceTag + '</div>' : '') +
+                        '<div style="margin-top:8px; display:flex; gap:8px;">' +
+                        '<button class="btn-action danger" onclick="banIP(\'' + escHtml(s.device_ip) + '\')">' + _t('IP 차단','封禁IP','Ban IP') + '</button>' +
+                        '<button class="btn-action" onclick="banDevice(\'' + escHtml(s.device_uuid) + '\')">' + _t('기기 차단','封禁设备','Ban Device') + '</button>' +
+                        '<button class="btn-action danger" onclick="deleteDevice(\'' + escHtml(s.session_key) + '\')"><i class="fas fa-trash-alt mr-1"></i>' + _t('기기 삭제','删除设备','Delete Device') + '</button>' +
+                        '</div></div>';
+                }
+            } else {
+                // Disconnected: 회색 카드
+                var loc = [s.device_country, s.device_city].filter(function(v){return v;}).join(', ') || '-';
+                var deviceTag = makeDeviceTag(s.device_type, null, s.app_version);
+                html += '<div class="active-conn-card disconnected">' +
+                    '<div class="conn-info">' +
+                    '<div><div class="conn-label">' + _t('기기','设备','Device') + '</div><div class="conn-value">' + _v(s.device_type) + '</div></div>' +
+                    '<div><div class="conn-label">IP</div><div class="conn-value">' + _v(s.device_ip) + '</div></div>' +
+                    '<div><div class="conn-label">' + _t('위치','位置','Location') + '</div><div class="conn-value">' + loc + '</div></div>' +
+                    (s.device_isp ? '<div><div class="conn-label">ISP</div><div class="conn-value" style="font-size:0.82rem;">' + s.device_isp + '</div></div>' : '') +
+                    '<div><div class="conn-label">' + _t('로그인','登录','Login') + '</div><div class="conn-value">' + _v(s.login_time) + '</div></div>' +
+                    '</div>' +
+                    (deviceTag ? '<div style="margin-top:8px;">' + deviceTag + '</div>' : '') +
+                    '<div style="margin-top:8px; display:flex; gap:8px;">' +
+                    '<button class="btn-action danger" onclick="banIP(\'' + escHtml(s.device_ip) + '\')">' + _t('IP 차단','封禁IP','Ban IP') + '</button>' +
+                    '<button class="btn-action" onclick="banDevice(\'' + escHtml(s.device_uuid) + '\')">' + _t('기기 차단','封禁设备','Ban Device') + '</button>' +
+                    '<button class="btn-action danger" onclick="deleteDevice(\'' + escHtml(s.session_key) + '\')"><i class="fas fa-trash-alt mr-1"></i>' + _t('기기 삭제','删除设备','Delete Device') + '</button>' +
+                    '</div></div>';
+            }
+        }
+
+        // 세션 미매칭 NAS 연결
+        for (var k = 0; k < unmatchedConns.length; k++) {
+            var uc = unmatchedConns[k];
+            var proto = protocolMap[uc.protocol] || uc.protocol || '-';
+            var ucLoc = [uc.country, uc.city].filter(function(v){return v;}).join(', ') || '-';
+            var deviceTag = makeDeviceTag(uc.device_type, uc.device_detail, uc.app_version);
+            html += '<div class="active-conn-card">' +
+                '<div class="conn-top">' +
+                '<div class="conn-info">' +
+                '<div><div class="conn-label">' + _t('서버','服务器','Server') + '</div><div class="conn-value">' + _v(uc.nas_name || uc.nas_ip) + '</div></div>' +
+                '<div><div class="conn-label">' + _t('프로토콜','协议','Protocol') + '</div><div class="conn-value">' + proto + '</div></div>' +
+                '<div><div class="conn-label">' + _t('시작시간','开始时间','Start') + '</div><div class="conn-value">' + _v(uc.start_time) + '</div></div>' +
+                '<div><div class="conn-label">IP</div><div class="conn-value">' + _v(uc.client_ip) + '</div></div>' +
+                '<div><div class="conn-label">' + _t('위치','位置','Location') + '</div><div class="conn-value">' + ucLoc + '</div></div>' +
+                (uc.isp ? '<div><div class="conn-label">ISP</div><div class="conn-value" style="font-size:0.82rem;">' + uc.isp + '</div></div>' : '') +
+                '</div>' +
+                '<div class="conn-right">' +
+                '<button class="btn-disconnect" onclick="forceDisconnect(\'' + uc.radacctid + '\')"><i class="fas fa-power-off mr-1"></i>' + _t('강제종료','强制断开','Disconnect') + '</button>' +
+                '</div></div>' +
+                (deviceTag ? '<div style="margin-top:8px;">' + deviceTag + '</div>' : '') +
+                '<div style="margin-top:6px; font-size:0.75rem; opacity:0.7;"><i class="fas fa-info-circle mr-1"></i>' + _t('앱 세션에 매칭되지 않은 VPN 연결','未匹配应用会话的VPN连接','VPN connection not matched to an app session') + '</div>' +
+                '<div style="margin-top:8px; display:flex; gap:8px;">' +
+                '<button class="btn-action danger" onclick="banIP(\'' + escHtml(uc.client_ip) + '\')">' + _t('IP 차단','封禁IP','Ban IP') + '</button>' +
+                '</div></div>';
+        }
+
+        area.html(html);
+    }).fail(function() {
+        $('#device_list_area').html('<div class="no-data">Error loading data</div>');
+    });
+}
+
+function _v(v) { return (v !== undefined && v !== null && v !== '') ? v : '-'; }
+
+function escHtml(s) { return $('<div>').text(s || '').html(); }
+
+function askPassword(title, onConfirm) {
+    Swal.fire({
+        title: title,
+        html: '<input id="ban_pw" type="password" class="form-control" placeholder="' + _t('비밀번호','密码','Password') + '">',
+        showCancelButton: true,
+        confirmButtonText: _t('확인','确认','Confirm'),
+        cancelButtonText: _t('취소','取消','Cancel'),
+        confirmButtonColor: '#e74c3c',
+        preConfirm: () => {
+            var pw = $('#ban_pw').val();
+            if (!pw) { Swal.showValidationMessage(_t('비밀번호를 입력하세요.','请输入密码。','Enter password.')); return false; }
+            return pw;
+        }
+    }).then((result) => {
+        if (result.value) onConfirm(result.value);
+    });
+}
+
+function banIP(ip) {
+    if (!ip || ip === '-') return;
+    askPassword(_t('IP 차단 (앱 로그인만)','封禁IP（仅APP登录）','Ban IP (App Login Only)'), function(pw) {
+        $.post('/api/mypage/ban_ip', {csrfmiddlewaretoken: csrfToken, password: pw, device_ip: ip}).done(function(res) {
+            if (res.result === 200) {
+                Swal.fire({icon:'success', title: _t('차단됨','已封禁','Banned'), text: res.text, timer: 2000});
+                loadBanList();
+            } else {
+                Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text});
+            }
+        }).fail(function(xhr) {
+            Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: _t('서버 오류: ','服务器错误: ','Server error: ') + xhr.status});
+        });
+    });
+}
+
+function banDevice(uuid) {
+    if (!uuid || uuid === '-') return;
+    askPassword(_t('기기 차단','封禁设备','Ban Device'), function(pw) {
+        $.post('/api/mypage/ban_device', {csrfmiddlewaretoken: csrfToken, password: pw, device_uuid: uuid}).done(function(res) {
+            if (res.result === 200) {
+                Swal.fire({icon:'success', title: _t('차단됨','已封禁','Banned'), text: res.text, timer: 2000});
+                loadBanList(); loadAppSessions();
+            } else {
+                Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text});
+            }
+        }).fail(function(xhr) {
+            Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: _t('서버 오류: ','服务器错误: ','Server error: ') + xhr.status});
+        });
+    });
+}
+
+function deleteDevice(sessionKey) {
+    if (!sessionKey) return;
+    askPassword(_t('기기 삭제','删除设备','Delete Device'), function(pw) {
+        $.post('/api/mypage/delete_device', {csrfmiddlewaretoken: csrfToken, password: pw, session_key: sessionKey}).done(function(res) {
+            if (res.result === 200) {
+                Swal.fire({icon:'success', title: _t('삭제됨','已删除','Deleted'), text: res.text, timer: 2000});
+                loadAppSessions();
+            } else {
+                Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text});
+            }
+        }).fail(function(xhr) {
+            Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: _t('서버 오류: ','服务器错误: ','Server error: ') + xhr.status});
+        });
+    });
+}
+
+function unban(banId) {
+    $.post('/api/mypage/unban', {csrfmiddlewaretoken: csrfToken, ban_id: banId}).done(function(res) {
+        if (res.result === 200) {
+            Swal.fire({icon:'success', title: _t('해제됨','已解除','Unbanned'), text: res.text, timer: 2000});
+            loadBanList();
+        } else {
+            Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text});
+        }
+    }).fail(function(xhr) {
+        Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: _t('서버 오류: ','服务器错误: ','Server error: ') + xhr.status});
+    });
+}
+
+// ── 차단 목록 로드 ──
+function loadBanList() {
+    $.post('/api/mypage/my_bans', {csrfmiddlewaretoken: csrfToken}, function(res) {
+        var area = $('#ban_list_area');
+        if (res.result !== 200) { area.html('<div class="no-data">Error</div>'); return; }
+        if (!res.bans || !res.bans.length) {
+            area.html('<div class="no-data"><i class="fas fa-check-circle mr-2" style="color:#27ae60;"></i>' + _t('차단된 기기/IP가 없습니다.','没有被封禁的设备/IP。','No banned devices/IPs.') + '</div>');
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < res.bans.length; i++) {
+            var b = res.bans[i];
+            var typeLabel = b.ban_type === 'ip' ? 'IP' : (b.ban_type === 'uuid' ? _t('기기','设备','Device') : b.ban_type);
+            var typeCls = b.ban_type === 'ip' ? 'ip' : 'uuid';
+            var statusCls = b.is_active ? 'ban-active' : 'ban-inactive';
+            var statusText = b.is_active ? _t('차단중','封禁中','Active') : _t('해제됨','已解除','Inactive');
+            html += '<div class="ban-row">' +
+                '<div class="ban-info">' +
+                '<span class="ban-type-badge ' + typeCls + '">' + typeLabel + '</span>' +
+                '<span style="font-family:monospace; font-weight:600;">' + _v(b.ban_value) + '</span>' +
+                '<span class="' + statusCls + '">' + statusText + '</span>' +
+                '<span style="color:#999; font-size:0.8rem;">' + _v(b.banned_at) + '</span>' +
+                '</div>';
+            if (b.is_active) {
+                html += '<button class="btn btn-outline-success btn-sm" onclick="unban(' + b.id + ')"><i class="fas fa-unlock mr-1"></i>' + _t('해제','解除','Unban') + '</button>';
+            }
+            html += '</div>';
+        }
+        area.html(html);
+    });
+}
+
+// (loadVpnConnections 삭제됨 - loadAppSessions에 통합)
+
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    var k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function forceDisconnect(sessionId) {
+    askPassword(_t('VPN 강제 종료','强制断开VPN','Force Disconnect VPN'), function(pw) {
+        Swal.fire({title: _t('처리 중...','处理中...','Processing...'), allowOutsideClick: false, onOpen: function(){ Swal.showLoading(); }});
+        $.post('/api/mypage/force_disconnect', {
+            csrfmiddlewaretoken: csrfToken,
+            password: pw,
+            radacctid: sessionId
+        }).done(function(res) {
+            if (res.result === 200) {
+                Swal.fire({icon:'success', title: _t('종료됨','已断开','Disconnected'), text: res.text, timer: 2000}).then(function(){ loadAppSessions(); });
+            } else {
+                Swal.fire({icon:'error', title: _t('실패','失败','Failed'), text: res.text || res.message});
+            }
+        }).fail(function() {
+            Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: _t('서버 통신 오류','服务器通信失败','Server error')});
+        });
+    });
+}
+
+$(function() { loadAppSessions(); loadBanList(); });
+</script>
+</%block>

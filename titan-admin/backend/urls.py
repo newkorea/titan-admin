@@ -19,6 +19,7 @@ from .djangoapps.reward import views as RewardViews
 from .djangoapps.chatbot import views as ChatbotViews
 from .djangoapps.faq import views as FaqViews
 from .djangoapps.nasmonitor import views as NasMonitorViews
+from .djangoapps.infra import views as InfraViews
 #from .djangoapps.admin import views as AdminViews
 from .djangoapps.saler import views as SalerViews
 from django.urls import path
@@ -155,11 +156,23 @@ urlpatterns = [
     # [api v1] 회원정보 상세정보를 반환합니다
     path('api/v1/read/user_detail', UserViews.api_read_user_detail, name='api_read_user_detail'),
 
+    # [api v1] 회원 관리 통합 조회 (서비스시간+세션+비번+활성)
+    path('api/v1/read/user_manage_info', UserViews.api_read_user_manage_info, name='api_read_user_manage_info'),
+
+    # [api v1] 사용자별 로그 조회
+    path('api/v1/read/user_login_logs', UserViews.api_read_user_login_logs, name='api_read_user_login_logs'),
+    path('api/v1/read/user_fail_logs', UserViews.api_read_user_fail_logs, name='api_read_user_fail_logs'),
+    path('api/v1/read/user_disconnect_logs', UserViews.api_read_user_disconnect_logs, name='api_read_user_disconnect_logs'),
+    path('api/v1/read/user_connection_logs', UserViews.api_read_user_connection_logs, name='api_read_user_connection_logs'),
+
     # [api v1] 2023-05-25 Added by Zhao
     path('api/v1/read/get_notifications', NotificationViews.get_notifications, name='get_notifications'),
 
     # 2023-05-05 Added By Zhao [api v1] return user count
     path('api/v1/read/user_count', UserViews.api_read_user_count, name='api_read_user_count'),
+
+    # 오늘 신규가입수 + 활성화수 (메뉴 뱃지용)
+    path('api/v1/read/user_today_stats', UserViews.api_read_user_today_stats, name='api_read_user_today_stats'),
 
     # [api v1] 사용자 서비스 시간을 radcheck 에서 조회해서 반환합니다
     path('api/v1/read/user_service_time', UserViews.api_read_user_service_time, name='api_read_user_service_time'),
@@ -224,8 +237,22 @@ urlpatterns = [
     # [api v1] 국제 결제 방식 활성화 여부를 수정합니다
     path('api/v1/update/payment_methods', PriceViews.api_update_payment_methods, name='api_update_payment_methods'),
 
+    # [api v1] 영수증 URL 조회 (페이레터)
+    path('api/v1/read/receipt', PriceViews.api_read_receipt, name='api_read_receipt'),
+
+    # [api v1] 영수증 이메일 발송
+    path('api/v1/send/receipt_email', PriceViews.api_send_receipt_email, name='api_send_receipt_email'),
+
+    # [api v1] 무통장 인보이스 발급/조회/발송
+    path('api/v1/generate/bank_invoice', PriceViews.api_generate_bank_invoice, name='api_generate_bank_invoice'),
+    path('api/v1/view/bank_invoice', PriceViews.api_view_bank_invoice, name='api_view_bank_invoice'),
+    path('api/v1/send/bank_invoice_email', PriceViews.api_send_bank_invoice_email, name='api_send_bank_invoice_email'),
+
     # [api v1] 무통장 결제 요청 건수를 반홥합니다
     path('api/v1/read/ready_count', PriceViews.api_read_ready_count, name='api_read_ready_count'),
+
+    # 오늘 결제건수 (메뉴 뱃지용)
+    path('api/v1/read/today_payment_count', PriceViews.api_read_today_payment_count, name='api_read_today_payment_count'),
 
     #  [api v1] 무통장 데이터테이블즈 데이터를 반환합니다
     path('api/v1/read/bank', PriceViews.api_read_bank, name='api_read_bank'),
@@ -360,6 +387,13 @@ urlpatterns = [
     path('api/v1/read/session_list', UserViews.api_read_session_list, name='api_read_session_list'),
     path('api/v1/delete/session', UserViews.api_delete_session, name='api_delete_session'),
     path('api/v1/delete/all_sessions', UserViews.api_delete_all_sessions, name='api_delete_all_sessions'),
+    path('api/v1/delete/web_sessions', UserViews.api_delete_web_sessions, name='api_delete_web_sessions'),
+    path('api/v1/delete/disconnect_nas', UserViews.api_disconnect_nas, name='api_disconnect_nas'),
+
+    # 접속금지 (기기/세션/IP 차단) API (2026-02-11)
+    path('api/v1/create/ban_device', UserViews.api_ban_device, name='api_ban_device'),
+    path('api/v1/update/unban_device', UserViews.api_unban_device, name='api_unban_device'),
+    path('api/v1/read/banned_devices', UserViews.api_read_banned_devices, name='api_read_banned_devices'),
 
     # [render] 챗봇 Q&A 관리
     path('chatbot_qa', ChatbotViews.chatbot_qa, name='chatbot_qa'),
@@ -402,6 +436,69 @@ urlpatterns = [
     path('api/v1/read/cert_renew_status', NasMonitorViews.api_cert_renew_status, name='api_cert_renew_status'),
     path('api/v1/update/nas_manual_check', NasMonitorViews.api_nas_manual_check, name='api_nas_manual_check'),
     path('api/v1/read/nas_manual_check_status', NasMonitorViews.api_nas_manual_check_status, name='api_nas_manual_check_status'),
+    path('api/v1/read/nas_ssh_info', NasMonitorViews.api_read_nas_ssh_info, name='api_read_nas_ssh_info'),
+    path('api/v1/update/nas_single_check', NasMonitorViews.api_nas_single_check, name='api_nas_single_check'),
+    path('api/v1/read/nas_single_check_status', NasMonitorViews.api_nas_single_check_status, name='api_nas_single_check_status'),
+    path('api/v1/update/reboot_server', NasMonitorViews.api_reboot_server, name='api_reboot_server'),
+
+    # [api v1] 목표사이트 점검
+    path('api/v1/update/site_check', NasMonitorViews.api_start_site_check, name='api_start_site_check'),
+    path('api/v1/read/site_check_status', NasMonitorViews.api_read_site_check_status, name='api_read_site_check_status'),
+
+    # [render] NAS Cron 관리
+    path('nas_cron', NasMonitorViews.nas_cron, name='nas_cron'),
+
+    # [api v1] NAS Cron 관리 API
+    path('api/v1/read/cron_logs', NasMonitorViews.api_read_cron_logs, name='api_read_cron_logs'),
+    path('api/v1/read/cron_detail', NasMonitorViews.api_read_cron_detail, name='api_read_cron_detail'),
+    path('api/v1/read/cron_latest', NasMonitorViews.api_read_cron_latest, name='api_read_cron_latest'),
+    path('api/v1/read/cron_issue_count', NasMonitorViews.api_read_cron_issue_count, name='api_read_cron_issue_count'),
+    path('api/v1/read/nas_issue_count', NasMonitorViews.api_read_nas_issue_count, name='api_read_nas_issue_count'),
+    path('api/v1/update/run_cron_task', NasMonitorViews.api_run_cron_task, name='api_run_cron_task'),
+    path('api/v1/read/cron_task_status', NasMonitorViews.api_cron_task_status, name='api_cron_task_status'),
+
+    # [api v1] 서버 접속 실패 통계
+    path('api/v1/read/server_failures', NasMonitorViews.api_read_server_failures, name='api_read_server_failures'),
+    path('api/v1/read/server_fail_logs', NasMonitorViews.api_read_server_fail_logs, name='api_read_server_fail_logs'),
+
+    # [render] 서버 분석
+    path('server_analysis', NasMonitorViews.server_analysis, name='server_analysis'),
+    path('api/v1/read/server_analysis', NasMonitorViews.api_read_server_analysis, name='api_read_server_analysis'),
+    path('api/v1/read/server_alert_count', NasMonitorViews.api_read_server_alert_count, name='api_read_server_alert_count'),
+    path('api/v1/read/problem_servers', NasMonitorViews.api_read_problem_servers, name='api_read_problem_servers'),
+
+    # [render] 유저 실패 분석
+    path('user_fail_analysis', NasMonitorViews.user_fail_analysis, name='user_fail_analysis'),
+    path('api/v1/read/user_fail_analysis', NasMonitorViews.api_read_user_fail_analysis, name='api_read_user_fail_analysis'),
+    path('api/v1/read/disconnect_logs', NasMonitorViews.api_read_disconnect_logs, name='api_read_disconnect_logs'),
+    path('api/v1/read/user_deep_analysis', NasMonitorViews.api_read_user_deep_analysis, name='api_read_user_deep_analysis'),
+
+    # [render] 인프라(하이퍼바이저) 관리
+    path('infra_hosts', InfraViews.infra_hosts, name='infra_hosts'),
+    path('infra_vms', InfraViews.infra_vms, name='infra_vms'),
+
+    # [api v1] 인프라 관리 API
+    path('api/v1/read/infra_hosts', InfraViews.api_read_hosts, name='api_read_infra_hosts'),
+    path('api/v1/read/infra_host_detail', InfraViews.api_read_host_detail, name='api_read_infra_host_detail'),
+    path('api/v1/read/infra_vms', InfraViews.api_read_vms, name='api_read_infra_vms'),
+    path('api/v1/read/test_host', InfraViews.api_test_host, name='api_test_host'),
+    path('api/v1/read/infra_logs', InfraViews.api_read_logs, name='api_read_infra_logs'),
+    path('api/v1/read/sync_status', InfraViews.api_sync_status, name='api_sync_status'),
+    path('api/v1/update/sync_hosts', InfraViews.api_sync_hosts, name='api_sync_hosts'),
+    path('api/v1/update/vm_power', InfraViews.api_vm_power, name='api_vm_power'),
+    path('api/v1/create/infra_host', InfraViews.api_create_host, name='api_create_infra_host'),
+    path('api/v1/update/infra_host', InfraViews.api_update_host, name='api_update_infra_host'),
+    path('api/v1/delete/infra_host', InfraViews.api_delete_host, name='api_delete_infra_host'),
+
+    # [render] 유저 이슈 자동 통지 관리
+    path('notification_manage', NotificationViews.UserIssueNotificationViews.page_notification_manage, name='notification_manage'),
+
+    # [api v1] 유저 이슈 통지 API
+    path('api/v1/read/issue_notifications', NotificationViews.UserIssueNotificationViews.api_read_notifications, name='api_read_issue_notifications'),
+    path('api/v1/update/issue_notification', NotificationViews.UserIssueNotificationViews.api_update_notification, name='api_update_issue_notification'),
+    path('api/v1/update/issue_notification_batch', NotificationViews.UserIssueNotificationViews.api_batch_notification, name='api_update_issue_notification_batch'),
+    path('api/v1/create/run_analysis', NotificationViews.UserIssueNotificationViews.api_run_analysis, name='api_run_analysis'),
+    path('api/v1/read/issue_notification_stats', NotificationViews.UserIssueNotificationViews.api_read_notification_stats, name='api_read_issue_notification_stats'),
 
 ]
 

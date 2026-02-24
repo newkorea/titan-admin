@@ -70,12 +70,15 @@ $(document).ready(function () {
     var paymentTypeMap = {
         "creditcard": _t('한국신용카드','韩国信用卡','Korea Credit Card'),
         "PLCreditCard": _t('해외신용카드','国际信用卡','Intl Credit Card'),
-        "PLUnionPay": "银联卡",
-        "WECHAT": "WeChat",
+        "PLUnionPay": _t('은련카드','银联卡','UnionPay'),
+        "WECHAT": _t('위챗페이','微信支付','WeChat Pay'),
+        "W": _t('위챗페이','微信支付','WeChat Pay'),
+        "A": _t('알리페이','支付宝','Alipay'),
+        "ALIPAY": _t('알리페이','支付宝','Alipay'),
         "toss": _t('토스페이','Toss Pay','Toss Pay'),
         "kakaopay": _t('카카오페이','Kakao Pay','Kakao Pay'),
         "payco": _t('페이코','PAYCO','PAYCO'),
-        "kftc": "KFTC",
+        "kftc": _t('계좌이체','银行转账','Bank Transfer'),
         "virtualaccount": _t('가상계좌','虚拟账户','Virtual Account'),
         "apple": _t('애플페이','Apple Pay','Apple Pay'),
         "ssgpay": _t('SSG페이','SSG Pay','SSG Pay'),
@@ -83,6 +86,7 @@ $(document).ready(function () {
     };
 
     var statusMap = {
+        "D": _t('결제완료','支付完成','Payment Complete'),
         "N": _t('결제완료','支付完成','Payment Complete'),
         "A": _t('자동승인','自动批准','Auto Approved'),
         "C": _t('관리자취소','管理员取消','Admin Cancelled'),
@@ -131,9 +135,41 @@ $(document).ready(function () {
             },
             { data: "regist_date" },
             {
-                data: "tid",
-                render: function (data) {
-                    return data ? `<button class="btn btn-info show-receipt" data-tid="` + data + `">` + _t('보기','查看','View') + `</button>` : `<button class="btn btn-secondary" disabled>` + _t('없음','无','N/A') + `</button>`;
+                data: null,
+                render: function (data, type, row) {
+                    // 1개월 이내 결제건만 영수증/인보이스 가능
+                    var oneMonthAgo = new Date();
+                    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                    var regDate = row.regist_date ? new Date(row.regist_date) : null;
+                    var isExpired = !regDate || regDate < oneMonthAgo;
+
+                    // 페이레터 결제 (tid 있음) → 페이레터 영수증 보기
+                    if (row.tid) {
+                        if (isExpired) return '<span class="text-muted" style="font-size:11px;">' + _t('기간만료','已过期','Expired') + '</span>';
+                        return '<button class="btn btn-info btn-sm show-receipt" data-tid="' + row.tid + '">' + _t('보기','查看','View') + '</button>';
+                    }
+                    // 추천보상 → 없음
+                    if (!row.src || row.src === 'reward') return '-';
+                    // 이미 발급된 인보이스 → 다운(기간제한 없음)
+                    if (row.invoice_id) {
+                        return '<button class="btn btn-success btn-sm download-invoice" data-invid="' + row.invoice_id + '">' + _t('다운','下载','Download') + '</button>';
+                    }
+                    // 1개월 경과 → 신청 불가
+                    if (isExpired) return '<span class="text-muted" style="font-size:11px;">' + _t('기간만료','已过期','Expired') + '</span>';
+                    return '<button class="btn btn-primary btn-sm request-invoice"'
+                        + ' data-product="' + (row.product_name||'').replace(/"/g,'&quot;') + '"'
+                        + ' data-type="' + (row.type||'') + '"'
+                        + ' data-amount="' + (row.krw||'') + '"'
+                        + ' data-date="' + (row.regist_date||'') + '"'
+                        + ' data-session="' + (row.session||'') + '"'
+                        + ' data-month="' + (row.month_type||'') + '"'
+                        + ' data-krw="' + (row.krw_raw||'') + '"'
+                        + ' data-usd="' + (row.usd_raw||'') + '"'
+                        + ' data-cny="' + (row.cny_raw||'') + '"'
+                        + ' data-jpy="' + (row.jpy_raw||'') + '"'
+                        + ' data-src="' + (row.src||'') + '"'
+                        + ' data-srcid="' + (row.src_id||'') + '"'
+                        + '>' + _t('신청','申请','Request') + '</button>';
                 }
             }
         ]
@@ -145,14 +181,10 @@ $(document).ready(function () {
     // ✅ 거래명세서 버튼 클릭 이벤트
     $('#transaction-table tbody').on("click", ".show-receipt", function () {
         var transaction_id = $(this).data("tid");
-        console.log("📝 [DEBUG] 거래명세서 요청 ID:", transaction_id);
-        console.log("📝 [DEBUG] 버튼 HTML:", $(this).prop('outerHTML'));
-
-        if (!transaction_id || transaction_id.trim() === "") {
+        if (!transaction_id || transaction_id.toString().trim() === "") {
             alert(_t('⚠️ 이 거래에는 거래명세서가 없습니다.','⚠️ 该交易没有交易明细。','⚠️ No receipt available for this transaction.'));
             return;
         }
-
         $.ajax({
             url: "/get_receipt/",
             type: "POST",
@@ -160,23 +192,86 @@ $(document).ready(function () {
                 transaction_id: transaction_id,
                 csrfmiddlewaretoken: $('#csrf_token').val()
             },
-            beforeSend: function () {
-                console.log("📡 거래명세서 요청 중... (ID: " + transaction_id + ")");
-            },
             success: function (response) {
-                console.log("✅ 거래명세서 응답:", response);
                 if (response.status === "success" && response.receipt_url) {
                     window.open(response.receipt_url, _t('거래명세서','交易明细','Receipt'), "width=800,height=600");
                 } else {
                     alert(_t('⚠️ 거래명세서를 가져올 수 없습니다.','⚠️ 无法获取交易明细。','⚠️ Unable to retrieve the receipt.'));
-                    console.log("🚨 [DEBUG] 거래명세서 응답 상세:", response);
                 }
             },
             error: function (xhr, status, error) {
                 console.error("❌ 거래명세서 요청 실패:", xhr.status, error);
-                console.log("❗ 응답 내용:", xhr.responseText);
             }
         });
+    });
+
+    // ✅ Invoice 신청 버튼 클릭
+    $('#transaction-table tbody').on("click", ".request-invoice", function () {
+        var btn = $(this);
+        var msg = _t(
+            '⚠️ Invoice 발급 후 회사명 변경이 불가합니다.\n오타 없이 정확한 영문 회사명(또는 성명)을 입력하세요:',
+            '⚠️ Invoice一旦发行，公司名称将无法更改。\n请准确输入英文公司名称（或姓名），不要有错别字:',
+            '⚠️ Company name cannot be changed after invoice is issued.\nPlease enter the exact company name (or your name) without typos:'
+        );
+        var companyName = prompt(msg);
+        if (companyName === null || companyName.trim() === '') return;
+        var confirmMsg = _t(
+            '회사명: "' + companyName.trim() + '"\n\n발급 후 변경 불가합니다. 맞습니까?',
+            '公司名称: "' + companyName.trim() + '"\n\n发行后无法更改。确认吗？',
+            'Company name: "' + companyName.trim() + '"\n\nThis cannot be changed after issue. Confirm?'
+        );
+        if (!confirm(confirmMsg)) return;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/generate_invoice/';
+        form.target = '_blank';
+        var fields = {
+            'company_name': companyName.trim(),
+            'product_name': btn.data('product') || '',
+            'payment_type': btn.data('type') || '',
+            'amount': btn.data('amount') || '',
+            'regist_date': btn.data('date') || '',
+            'session': btn.data('session') || '',
+            'month_type': btn.data('month') || '',
+            'krw_raw': btn.data('krw') || '',
+            'usd_raw': btn.data('usd') || '',
+            'cny_raw': btn.data('cny') || '',
+            'jpy_raw': btn.data('jpy') || '',
+            'src': btn.data('src') || '',
+            'src_id': btn.data('srcid') || '',
+            'csrfmiddlewaretoken': $('#csrf_token').val()
+        };
+        for (var k in fields) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = k;
+            inp.value = fields[k];
+            form.appendChild(inp);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        // 신청 후 버튼을 다운으로 변경 (테이블 새로고침)
+        setTimeout(function(){ datatable.ajax.reload(null, false); }, 1500);
+    });
+
+    // ✅ Invoice 다운로드 버튼 클릭
+    $('#transaction-table tbody').on("click", ".download-invoice", function () {
+        var invId = $(this).data('invid');
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/download_invoice/';
+        form.target = '_blank';
+        var inp1 = document.createElement('input');
+        inp1.type = 'hidden'; inp1.name = 'invoice_id'; inp1.value = invId;
+        form.appendChild(inp1);
+        var inp2 = document.createElement('input');
+        inp2.type = 'hidden'; inp2.name = 'csrfmiddlewaretoken'; inp2.value = $('#csrf_token').val();
+        form.appendChild(inp2);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     });
 
 }); // ✅ `$(document).ready()` 닫는 중괄호 추가!
