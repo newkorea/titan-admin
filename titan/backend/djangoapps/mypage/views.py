@@ -1653,3 +1653,58 @@ def api_suspend_account(request):
             cur.execute("UPDATE tbl_user SET is_suspended = 0 WHERE id = %s", [user_id])
 
         return JsonResponse({'result': 200, 'text': _('Account has been resumed.')})
+
+
+# 자동결제 상태 조회
+@csrf_exempt
+def api_autopay_status(request):
+    if 'id' not in request.session:
+        return JsonResponse({'result': 401})
+
+    user_id = request.session['id']
+    cursor = connections['default'].cursor()
+    cursor.execute('''
+        SELECT id, session, month_type, product_name, amount, status, last_paid_date, next_pay_date, created_date
+        FROM tbl_autopay WHERE user_id = %s AND status = 'active' ORDER BY id DESC LIMIT 1
+    ''', [user_id])
+    columns = [col[0] for col in cursor.description]
+    rows = cursor.fetchall()
+
+    if not rows:
+        return JsonResponse({'result': 200, 'has_autopay': False})
+
+    row = dict(zip(columns, rows[0]))
+    return JsonResponse({
+        'result': 200,
+        'has_autopay': True,
+        'autopay': {
+            'id': row['id'],
+            'session': row['session'],
+            'month_type': row['month_type'],
+            'product_name': row['product_name'],
+            'amount': row['amount'],
+            'last_paid_date': row['last_paid_date'].strftime('%Y-%m-%d %H:%M') if row['last_paid_date'] else '',
+            'next_pay_date': row['next_pay_date'].strftime('%Y-%m-%d %H:%M') if row['next_pay_date'] else '',
+            'created_date': row['created_date'].strftime('%Y-%m-%d %H:%M') if row['created_date'] else '',
+        }
+    })
+
+
+# 자동결제 해지
+@csrf_exempt
+def api_autopay_cancel(request):
+    if 'id' not in request.session:
+        return JsonResponse({'result': 401})
+
+    user_id = request.session['id']
+    cursor = connections['default'].cursor()
+    cursor.execute('''
+        UPDATE tbl_autopay SET status = 'cancelled', cancelled_date = NOW()
+        WHERE user_id = %s AND status = 'active'
+    ''', [user_id])
+
+    if cursor.rowcount > 0:
+        print('INFO [AUTOPAY] -> 자동결제 해지: user_id=%s' % user_id)
+        return JsonResponse({'result': 200, 'message': '자동결제가 해지되었습니다.'})
+    else:
+        return JsonResponse({'result': 200, 'message': '활성화된 자동결제가 없습니다.'})

@@ -316,6 +316,32 @@
 
             <!-- 계정 일시차단 (비활성화) -->
 
+            <!-- 자동결제 관리 섹션 -->
+            <div class="row res-r" id="autopay_section" style="display:none;">
+                <div class="col-12">
+                    <div class="testimonial-quote-wrap my-lg-3 my-md-3 rounded white-bg shadow-sm">
+                        <div class="media author-info ref-box">
+                            <div class="author-img mr-3">
+                                <img src="/static/new/img/undraw/season.png" alt="autopay" class="img-fluid rounded-circle ref-img">
+                            </div>
+                            <div class="media-body" style="width:100%;">
+                                <h5 class="mb-2">${_('Auto Payment')}</h5>
+                                <div id="autopay_info">
+                                    <table class="table table-sm table-bordered mb-2" style="font-size:14px;">
+                                        <tr><th style="width:140px;">${_('Plan')}</th><td id="ap_product_name">-</td></tr>
+                                        <tr><th>${_('Amount')}</th><td id="ap_amount">-</td></tr>
+                                        <tr><th>${_('Last Payment')}</th><td id="ap_last_paid">-</td></tr>
+                                        <tr><th>${_('Next Payment')}</th><td id="ap_next_pay">-</td></tr>
+                                        <tr><th>${_('Registered')}</th><td id="ap_created">-</td></tr>
+                                    </table>
+                                    <button onclick="cancelAutopay()" class="btn btn-danger btn-sm">${_('Cancel Auto Payment')}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div> 
     </section>
     <!--customer review section end-->
@@ -620,6 +646,51 @@ function sendVerifyEmail(){
 }
 
 // Session deletion functions have been removed as the session list is now read-only.
+
+// 자동결제 상태 로드
+$(document).ready(function(){
+    loadAutopayStatus();
+});
+
+function loadAutopayStatus(){
+    $.get('/api/mypage/autopay_status').done(function(data){
+        if(data.result == 200 && data.has_autopay){
+            var ap = data.autopay;
+            $('#ap_product_name').text(ap.product_name || ap.session + ' (' + ap.month_type + ')');
+            $('#ap_amount').text(Number(ap.amount).toLocaleString() + '원');
+            $('#ap_last_paid').text(ap.last_paid_date || '-');
+            $('#ap_next_pay').text(ap.next_pay_date || '-');
+            $('#ap_created').text(ap.created_date || '-');
+            $('#autopay_section').show();
+        }
+    });
+}
+
+function cancelAutopay(){
+    var _al = '${LANGUAGE_CODE}';
+    var _t = function(ko,zh,en){ return _al==='en'?en:(_al==='zh'?zh:ko); };
+    Swal.fire({
+        title: _t('자동결제 해지','取消自动付款','Cancel Auto Payment'),
+        text: _t('자동결제를 해지하시겠습니까? 현재 이용기간은 유지됩니다.','确定要取消自动付款吗？当前使用期限将保持不变。','Are you sure you want to cancel auto payment? Your current service period will remain.'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: _t('해지','取消自动付款','Cancel Auto Payment'),
+        cancelButtonText: _t('닫기','关闭','Close'),
+        confirmButtonColor: '#dc3545',
+        reverseButtons: true
+    }).then(function(result){
+        if(result.value){
+            $.post('/api/mypage/autopay_cancel', {csrfmiddlewaretoken: csrfToken}).done(function(data){
+                if(data.result == 200){
+                    Swal.fire({icon:'success', title: _t('해지 완료','取消完成','Cancelled'), text: data.message, confirmButtonColor:'#8a4cf7'});
+                    $('#autopay_section').hide();
+                } else {
+                    Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: data.message || _t('오류가 발생했습니다.','发生了错误。','An error occurred.'), confirmButtonColor:'#8a4cf7'});
+                }
+            });
+        }
+    });
+}
 
 // Password change form removed
 

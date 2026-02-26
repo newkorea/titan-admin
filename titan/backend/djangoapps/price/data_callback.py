@@ -251,8 +251,11 @@ def payletter_callback(request):
         price = r['amount']
         taxfree_amount = r['taxfree_amount']
         tax_amount = r['tax_amount']
-        autopay_flag = 'N'
-        billkey = None
+
+        # 자동결제 여부 확인 (custom_parameter: session_month_autopay)
+        is_autopay = len(custom_parameter) >= 3 and custom_parameter[2] == 'autopay'
+        autopay_flag = 'Y' if is_autopay else 'N'
+        billkey = r.get('billkey', None)
         refund_yn = 'N'
         refund_date = None
         auto_end_date = None
@@ -302,6 +305,29 @@ def payletter_callback(request):
         auto_end_date = auto_end_date
     )
     tph.save()
+
+    # 자동결제 등록: billkey가 있으면 tbl_autopay에 저장
+    if is_autopay and billkey:
+        try:
+            from dateutil.relativedelta import relativedelta
+            cursor = connections['default'].cursor()
+
+            # 기존 active 자동결제가 있으면 해지 처리
+            cursor.execute(
+                "UPDATE tbl_autopay SET status='cancelled', cancelled_date=NOW() WHERE user_id=%s AND status='active'",
+                [user_id]
+            )
+
+            # 다음 결제일 계산
+            next_pay = datetime.datetime.now() + relativedelta(months=int(month_type))
+
+            cursor.execute('''
+                INSERT INTO tbl_autopay (user_id, billkey, pgcode, session, month_type, product_name, amount, status, last_paid_date, next_pay_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'active', NOW(), %s)
+            ''', [user_id, billkey, pgcode, session, month_type, product_name, price, next_pay])
+            print('INFO [AUTOPAY] -> 자동결제 등록 완료: user_id=%s, next_pay=%s' % (user_id, next_pay))
+        except BaseException as err:
+            print('ERROR [AUTOPAY] -> 자동결제 등록 실패: ', err)
 
     return JsonResponse({"code":0, "message":""})
 

@@ -417,6 +417,18 @@
 				 </font></br>
                 </div>
             <div>
+                <!-- 자동결제 옵션 (신용카드 선택 시에만 표시) -->
+                <div id="autopay_option" style="display:none; margin: 10px 0; padding: 12px 15px; background: #f0f8ff; border: 1px solid #3498db; border-radius: 8px;">
+                    <label style="display:flex; align-items:center; cursor:pointer; margin:0;">
+                        <input type="checkbox" id="autopay_check" style="width:18px; height:18px; margin-right:10px;">
+                        <span style="font-size:14px; color:#2c3e50;">
+                            <strong>🔄 ${_('Auto Payment')}</strong>
+                            <span style="color:#7f8c8d; font-size:12px; display:block; margin-top:2px;">
+                                ${_('Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page.')}
+                            </span>
+                        </span>
+                    </label>
+                </div>
                 <button onclick="payment()" class="btn btn-lg btn-block solid-btn border-radius mt-4 mb-3">
                     ${_('Purchase')}
                 </button>
@@ -574,6 +586,13 @@ $(".hackx-session").click(function(e) {
         $(this).addClass("hacky-pick");
         var pgcode = $(this).attr('id');
         $('#state_pgcode').val(pgcode);
+        // 신용카드 선택 시에만 자동결제 옵션 표시
+        if (pgcode === 'creditcard' || pgcode === 'PLCreditCardMpi') {
+            $('#autopay_option').slideDown(200);
+        } else {
+            $('#autopay_option').slideUp(200);
+            $('#autopay_check').prop('checked', false);
+        }
     });
 });
 
@@ -987,7 +1006,10 @@ function payletter_global(pgcode, month_type, session) {
 }
 
 function payletter_korea(pgcode, month_type, session) {
-    $.post("/api_make_payletter", {
+    var isAutopay = $('#autopay_check').is(':checked');
+    var apiUrl = isAutopay ? "/api_make_payletter_autopay" : "/api_make_payletter";
+
+    $.post(apiUrl, {
         csrfmiddlewaretoken: $('#csrf_token').val(),
         pgcode: pgcode,
         session: session,

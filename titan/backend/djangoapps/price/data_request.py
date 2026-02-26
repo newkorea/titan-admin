@@ -297,3 +297,53 @@ def api_make_payletter(request):
     print('DEBUG -> online_url : ', online_url)
 
     return JsonResponse({'result': online_url})
+
+
+# 페이레터 국내 - 자동결제 등록 결제 요청 (autopay_flag=Y)
+def api_make_payletter_autopay(request):
+
+    user_id = request.session['id']
+    user_name = request.session['username']
+    pgcode = request.POST.get('pgcode')
+    session = request.POST.get('session')
+    month_type = request.POST.get('month_type')
+    product_name = makeProductName(session, month_type)
+
+    print('DEBUG [AUTOPAY] -> user_id : ', user_id)
+    print('DEBUG [AUTOPAY] -> pgcode : ', pgcode)
+    print('DEBUG [AUTOPAY] -> session : ', session)
+    print('DEBUG [AUTOPAY] -> month_type : ', month_type)
+
+    # 자동결제는 신용카드만 가능
+    if pgcode not in ('creditcard', 'PLCreditCardMpi'):
+        return JsonResponse({'result': 'fail', 'message': '자동결제는 신용카드만 가능합니다'})
+
+    price = getProductPirce(session, month_type, 'KRW')
+    u1 = TblUser.objects.get(id=user_id)
+
+    if duplicatePaymentProtect(u1):
+        return JsonResponse({'result': 'fail'})
+
+    order_no = createOrderNumber(user_id)
+    # custom_parameter에 autopay 표시 추가: session_month_autopay
+    custom_parameter = str(session) + '_' + str(month_type) + '_autopay'
+
+    p = Payletter(settings.PAYLETTER_MODE)
+    res = p.payments_request_autopay(
+        pgcode,
+        user_id,
+        user_name,
+        int(price),
+        product_name,
+        order_no,
+        custom_parameter,
+        u1.email
+    )
+    res = json.loads(res)
+    online_url = res.get('online_url', '')
+
+    if not online_url:
+        print('ERROR [AUTOPAY] -> no online_url:', res)
+        return JsonResponse({'result': 'fail'})
+
+    return JsonResponse({'result': online_url})

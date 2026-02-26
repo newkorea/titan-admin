@@ -72,6 +72,8 @@ urlpatterns = [
     path('api/mypage/connection_logs', MypageViews.api_my_connection_logs, name='api_my_connection_logs'),
     path('api/mypage/fail_logs', MypageViews.api_my_fail_logs, name='api_my_fail_logs'),
     path('api/mypage/disconnect_logs', MypageViews.api_my_disconnect_logs, name='api_my_disconnect_logs'),
+    path('api/mypage/autopay_status', MypageViews.api_autopay_status, name='api_autopay_status'),                        # [api] 자동결제 상태 조회
+    path('api/mypage/autopay_cancel', MypageViews.api_autopay_cancel, name='api_autopay_cancel'),                        # [api] 자동결제 해지
 
     # [render] VPN 사용기록
     path('vpn_history', MypageViews.vpn_history, name='vpn_history'),
@@ -154,6 +156,7 @@ urlpatterns = [
 
     # 국내결제모듈
     path('api_make_payletter', PriceRequestViews.api_make_payletter, name='api_make_payletter'),                        # [api] 국내 결제모듈 요청
+    path('api_make_payletter_autopay', PriceRequestViews.api_make_payletter_autopay, name='api_make_payletter_autopay'), # [api] 국내 자동결제 등록 요청
     path('payletter_return', PriceReturnViews.payletter_return, name='payletter_return'),                               # [render] 국내 결제모듈 리턴
     path('payletter_callback', PriceCallbackViews.payletter_callback, name='payletter_callback'),                       # [render] 국내 결제모듈 콜백
     path('payletter_cancel', PriceViews.payletter_cancel, name='payletter_cancel'),                                     # [render] 국내 결제모듈 취소
