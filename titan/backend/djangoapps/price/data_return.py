@@ -92,6 +92,31 @@ def payletter_return(request):
     f.close()
 
     context = {}
+
+    # 가상계좌인 경우 계좌 정보를 화면에 전달
+    pgcode = request.POST.get('pgcode', '')
+    if pgcode == 'virtualaccount':
+        context['is_virtual'] = True
+        context['bank_name'] = request.POST.get('bank_name', '')
+        context['account_no'] = request.POST.get('account_no', '')
+        context['account_holder'] = request.POST.get('account_holder', '')
+        context['amount'] = request.POST.get('amount', '')
+        context['expire_date'] = request.POST.get('expire_date', '')
+        context['product_name'] = request.POST.get('product_name', '')
+
+        # 만기일 포맷 변환 (20260305 -> 2026-03-05)
+        ed = context['expire_date']
+        if ed and len(ed) == 8:
+            context['expire_date_fmt'] = ed[:4] + '-' + ed[4:6] + '-' + ed[6:8]
+        else:
+            context['expire_date_fmt'] = ed
+
+        # 금액 포맷 (콤마)
+        try:
+            context['amount_fmt'] = '{:,}'.format(int(context['amount']))
+        except:
+            context['amount_fmt'] = context['amount']
+
     return render(request, 'new/payletter_return.html', context)
 
 

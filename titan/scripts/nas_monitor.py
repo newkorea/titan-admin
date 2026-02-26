@@ -212,14 +212,20 @@ echo "===END==="
 """
 
 
-def ping_host(ip):
-    """ping 체크"""
+def ping_host(ip, count=3):
+    """ping 체크 — count회 보내서 1개라도 응답하면 True"""
     try:
         r = subprocess.run(
-            ['ping', '-c', '1', '-W', str(PING_TIMEOUT), ip],
-            capture_output=True, timeout=PING_TIMEOUT + 2
+            ['ping', '-c', str(count), '-W', str(PING_TIMEOUT), ip],
+            capture_output=True, text=True, timeout=PING_TIMEOUT * count + 5
         )
-        return r.returncode == 0
+        # 0% packet loss 또는 일부 응답이라도 있으면 성공
+        if r.returncode == 0:
+            return True
+        # returncode != 0 이어도 일부 응답이 있을 수 있음
+        if r.stdout and 'bytes from' in r.stdout:
+            return True
+        return False
     except:
         return False
 
@@ -639,6 +645,10 @@ def _do_single_check(srv, ping_results, db_sessions, do_fix=False):
     h = ServerHealth(ip=ip, name=name, server_id=sid, protocol=proto or '')
     h.ping_ok = ping_results.get(ip, False)
 
+    # ping 실패 시 추가 재시도 (3회 → 5회로 재확인)
+    if not h.ping_ok:
+        h.ping_ok = ping_host(ip, count=5)
+
     if not h.ping_ok:
         h.warnings.append("Ping 응답 없음 (ICMP 차단 가능)")
 
@@ -649,7 +659,8 @@ def _do_single_check(srv, ping_results, db_sessions, do_fix=False):
         h.warnings = [w for w in h.warnings if 'Ping' not in w]
         h.criticals.append("Ping + SSH 모두 실패 (서버 다운)")
     elif not h.ping_ok and h.ssh_ok:
-        pass
+        # SSH는 되는데 ping만 실패 → ICMP 차단일 가능성 높음, warning 제거
+        h.warnings = [w for w in h.warnings if 'Ping' not in w]
 
     # DB 세션 vs StrongSwan 실제 연결 비교
     db_cnt = db_sessions.get(ip, 0)

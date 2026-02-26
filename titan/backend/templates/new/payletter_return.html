@@ -1,13 +1,58 @@
 <link rel="stylesheet" href="/static/new/css/payletter_return.css">
+<%
+  _is_virtual = context.get('is_virtual', False)
+  _bank_name = context.get('bank_name', '')
+  _account_no = context.get('account_no', '')
+  _account_holder = context.get('account_holder', '')
+  _amount_fmt = context.get('amount_fmt', '')
+  _expire_date_fmt = context.get('expire_date_fmt', '')
+%>
 <div class="img-con">
   <img class='w100' src="/static/new/img/payment_core/request.png">
 </div>
 <div class="rt-txt1">
   TITAN NETWORKS
 </div>
+
+% if _is_virtual:
+<div class="rt-txt2" style="color:#e74c3c;">
+  가상계좌가 발급되었습니다
+</div>
+<div style="background:#f8f9fa; border:2px solid #3498db; border-radius:12px; padding:20px; margin:15px 20px; text-align:left;">
+  <div style="font-size:14px; color:#666; margin-bottom:12px; text-align:center;">
+    아래 계좌로 입금해주시면 자동으로 결제가 완료됩니다
+  </div>
+  <table style="width:100%; font-size:15px; line-height:2.2;">
+    <tr>
+      <td style="color:#888; width:80px;">은행</td>
+      <td style="font-weight:bold; color:#222;">${_bank_name}</td>
+    </tr>
+    <tr>
+      <td style="color:#888;">계좌번호</td>
+      <td style="font-weight:bold; color:#2c3e50; font-size:17px; letter-spacing:1px;">${_account_no}</td>
+    </tr>
+    <tr>
+      <td style="color:#888;">예금주</td>
+      <td style="font-weight:bold; color:#222;">${_account_holder}</td>
+    </tr>
+    <tr>
+      <td style="color:#888;">금액</td>
+      <td style="font-weight:bold; color:#e74c3c; font-size:17px;">${_amount_fmt}원</td>
+    </tr>
+    <tr>
+      <td style="color:#888;">입금기한</td>
+      <td style="font-weight:bold; color:#e67e22;">${_expire_date_fmt}까지</td>
+    </tr>
+  </table>
+</div>
+<div class="rt-txt3" style="color:#e74c3c; font-weight:bold;">
+  ※ 입금 기한 내에 입금하지 않으면 자동 취소됩니다
+</div>
+% else:
 <div class="rt-txt2">
   결제가 완료되었습니다
 </div>
 <div class="rt-txt3">
   "마이페이지"에서 서비스 시간을 확인하세요!
 </div>
+% endif
