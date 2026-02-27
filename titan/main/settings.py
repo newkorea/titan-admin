@@ -46,7 +46,6 @@ SMTP_PW = ''              # settings_local.py에서 세팅
 # --- 결제/외부 연동: 엔드포인트/ID(비밀 아님) ---
 PAYLETTER_MODE = 'LIVE'
 PAYBOX_MODE    = 'LIVE'
-EXIMBAY_MODE   = 'LIVE'
 
 # Payletter (국내)
 PAYLETTER_KOR_TEST_ENDPOINT = 'https://testpgapi.payletter.com/'
@@ -79,21 +78,13 @@ PAYBOX_WECHATPAY_LIVE_PARTNER_ID = 'nmlqpm5reoubrvtkypkl29q9hse1gj4l'
 PAYBOX_WECHATPAY_TEST_PARTNER_KEY = ''
 PAYBOX_WECHATPAY_LIVE_PARTNER_KEY = ''
 
-# Eximbay
-EXIMBAY_TEST_ENDPOINT = 'https://secureapi.test.eximbay.com/Gateway/BasicProcessor.krp'
-EXIMBAY_TEST_MID = '1849705C64'
-EXIMBAY_LIVE_ENDPOINT = 'https://secureapi.eximbay.com/Gateway/BasicProcessor.krp'
-EXIMBAY_LIVE_MID = '113F89FEE5'
-# 시크릿 키는 로컬에서:
-EXIMBAY_TEST_SECRET_KEY = ''
-EXIMBAY_LIVE_SECRET_KEY = ''
 
 # --- 업로드/로그 경로 ---
 UPLOAD_ROOT = os.path.join(BASE_DIR, 'upload')
 PAYMENT_KOREA_ROOT   = os.path.join(BASE_DIR, 'payment_korea')
 PAYMENT_GLOBAL_ROOT  = os.path.join(BASE_DIR, 'payment_global')
 PAYMENT_PAYBOX_ROOT  = os.path.join(BASE_DIR, 'payment_paybox')
-PAYMENT_EXIMBAY_ROOT = os.path.join(BASE_DIR, 'payment_eximbay')
+
 
 # --- 파일 경로 치환 ---
 REPLACE_ABS_FROM = '/home/ubuntu/project/titan-admin'

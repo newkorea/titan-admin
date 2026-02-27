@@ -402,14 +402,6 @@ def getProductPirce(session, month_type, type):
     return None
 
 
-# 엑심베이 결제코드 변경 (2020.07.15)
-def convertEximbayCode(pgcode):
-    if pgcode == 'WECHAT':
-        return 'P141'
-    elif pgcode == 'ALIPAY':
-        return 'P003'
-
-
 # 이중결제 방지 함수 (2019.09.10 11:31 점검완료)
 def duplicatePaymentProtect(u1):
     try:

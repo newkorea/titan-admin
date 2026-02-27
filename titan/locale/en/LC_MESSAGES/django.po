@@ -572,3 +572,34 @@ msgstr "Success!"
 
 msgid "Version"
 msgstr "Version"
+
+# Auto Payment related translations
+msgid "Auto Payment"
+msgstr "Auto Payment"
+
+msgid "Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page."
+msgstr "Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page."
+
+msgid "Cancel Auto Payment"
+msgstr "Cancel Auto Payment"
+
+msgid "Plan"
+msgstr "Plan"
+
+msgid "Last Payment"
+msgstr "Last Payment"
+
+msgid "Next Payment"
+msgstr "Next Payment"
+
+msgid "Registered"
+msgstr "Registered"
+
+msgid "Auto payment has been cancelled."
+msgstr "Auto payment has been cancelled."
+
+msgid "No active auto payment found."
+msgstr "No active auto payment found."
+
+msgid "KRW"
+msgstr " KRW"

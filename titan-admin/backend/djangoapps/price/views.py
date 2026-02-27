@@ -1471,3 +1471,105 @@ def api_send_bank_invoice_email(request):
         return JsonResponse({'result': 200, 'title': '발송 완료', 'text': f'{email}로 인보이스를 발송했습니다.'})
     except Exception as e:
         return JsonResponse({'result': 500, 'title': '발송 실패', 'text': f'이메일 발송 오류: {str(e)}'})
+
+# ===== 자동결제 관리 =====
+
+# 자동결제 관리 페이지 렌더링
+@allow_admin
+def autopay(request):
+    return render(request, 'admin/autopay.html')
+
+
+# 자동결제 통계 API
+@allow_admin
+def api_read_autopay_stats(request):
+    cursor = connections['default'].cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM tbl_autopay WHERE status = 'active'")
+    active_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM tbl_autopay WHERE status = 'cancelled'")
+    cancelled_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM tbl_autopay WHERE fail_count > 0 AND status = 'active'")
+    failed_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM tbl_autopay")
+    total_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT IFNULL(SUM(amount), 0) FROM tbl_autopay WHERE status = 'active'")
+    monthly_revenue = cursor.fetchone()[0]
+
+    return JsonResponse({
+        'result': 200,
+        'active_count': active_count,
+        'cancelled_count': cancelled_count,
+        'failed_count': failed_count,
+        'total_count': total_count,
+        'monthly_revenue': int(monthly_revenue),
+    })
+
+
+# 자동결제 목록 API
+@allow_admin
+def api_read_autopay_list(request):
+    status = request.POST.get('status', '')
+    email = request.POST.get('email', '')
+
+    where_clauses = []
+    params = []
+
+    if status:
+        where_clauses.append("a.status = %s")
+        params.append(status)
+
+    if email:
+        where_clauses.append("u.email LIKE %s")
+        params.append('%' + email + '%')
+
+    where_sql = ''
+    if where_clauses:
+        where_sql = 'WHERE ' + ' AND '.join(where_clauses)
+
+    cursor = connections['default'].cursor()
+    cursor.execute('''
+        SELECT a.id, a.user_id, u.email, u.username, a.pgcode, a.session, a.month_type,
+               a.product_name, a.amount, a.status, a.fail_count,
+               a.last_paid_date, a.next_pay_date, a.created_date, a.cancelled_date
+        FROM tbl_autopay a
+        LEFT JOIN tbl_user u ON a.user_id = u.id
+        ''' + where_sql + '''
+        ORDER BY a.id DESC
+        LIMIT 500
+    ''', params)
+
+    columns = [col[0] for col in cursor.description]
+    rows = []
+    for row in cursor.fetchall():
+        r = dict(zip(columns, row))
+        for key in ['last_paid_date', 'next_pay_date', 'created_date', 'cancelled_date']:
+            if r.get(key) and hasattr(r[key], 'strftime'):
+                r[key] = r[key].strftime('%Y-%m-%d %H:%M')
+        rows.append(r)
+
+    return JsonResponse({'result': 200, 'rows': rows})
+
+
+# 자동결제 관리자 해지 API
+@allow_admin
+def api_update_autopay_cancel(request):
+    autopay_id = request.POST.get('autopay_id')
+    if not autopay_id:
+        return JsonResponse({'result': 400, 'message': '자동결제 ID가 필요합니다.'})
+
+    cursor = connections['default'].cursor()
+    cursor.execute(
+        "UPDATE tbl_autopay SET status = 'cancelled', cancelled_date = NOW() WHERE id = %s AND status = 'active'",
+        [autopay_id]
+    )
+
+    if cursor.rowcount > 0:
+        print('INFO [ADMIN AUTOPAY] -> 관리자 해지: autopay_id=%s' % autopay_id)
+        return JsonResponse({'result': 200, 'message': '자동결제가 해지되었습니다.'})
+    else:
+        return JsonResponse({'result': 400, 'message': '활성화된 자동결제를 찾을 수 없습니다.'})

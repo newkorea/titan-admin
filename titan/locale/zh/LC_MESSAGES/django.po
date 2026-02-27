@@ -1237,3 +1237,34 @@ msgstr "成功！"
 
 msgid "Version"
 msgstr "版本"
+
+# 自动支付相关翻译
+msgid "Auto Payment"
+msgstr "自动付款"
+
+msgid "Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page."
+msgstr "到期后将自动续费。您可以随时在我的页面取消。"
+
+msgid "Cancel Auto Payment"
+msgstr "取消自动付款"
+
+msgid "Plan"
+msgstr "套餐"
+
+msgid "Last Payment"
+msgstr "上次付款"
+
+msgid "Next Payment"
+msgstr "下次付款"
+
+msgid "Registered"
+msgstr "注册日期"
+
+msgid "Auto payment has been cancelled."
+msgstr "自动付款已取消。"
+
+msgid "No active auto payment found."
+msgstr "没有找到有效的自动付款。"
+
+msgid "KRW"
+msgstr "元"

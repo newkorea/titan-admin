@@ -438,36 +438,6 @@
         </div>
     </section>
 
-    <form id="eximbay" name="regForm" method="post" action="#" style="display: none;">
-      fgkey<input id="fgkey" type="text" name="fgkey" value=""/><br>
-      amt<input id="amt" type="text" name="amt" value=""/><br>
-      paymethod<input id="paymethod" type="text" name="paymethod" value=""/><br>
-      buyer<input id="buyer" type="text" name="buyer" value=""/><br>
-      cur<input id="cur" type="text" name="cur" value=""/><br>
-      displaytype<input id="displaytype" type="text" name="displaytype" value=""/><br>
-      email<input id="email" type="text" name="email" value=""/><br>
-      item_0_product<input id="item_0_product" type="text" name="item_0_product" value=""/><br>
-      item_0_quantity<input id="item_0_quantity" type="text" name="item_0_quantity" value=""/><br>
-      item_0_unitPrice<input id="item_0_unitPrice" type="text" name="item_0_unitPrice" value=""/><br>
-      lang<input id="lang" type="text" name="lang" value=""/><br>
-      mid<input id="mid" type="text" name="mid" value=""/><br>
-      param1<input id="param1" type="text" name="param1" value=""/><br>
-      param2<input id="param2" type="text" name="param2" value=""/><br>
-      ref<input id="ref" type="text" name="ref" value=""/><br>
-      returnurl<input id="returnurl" type="text" name="returnurl" value=""/><br>
-      shipTo_city<input id="shipTo_city" type="text" name="shipTo_city" value=""/><br>
-      shipTo_country<input id="shipTo_country" type="text" name="shipTo_country" value=""/><br>
-      shipTo_firstName<input id="shipTo_firstName" type="text" name="shipTo_firstName" value=""/><br>
-      shipTo_lastName<input id="shipTo_lastName" type="text" name="shipTo_lastName" value=""/><br>
-      shipTo_phoneNumber<input id="shipTo_phoneNumber" type="text" name="shipTo_phoneNumber" value=""/><br>
-      shipTo_postalCode<input id="shipTo_postalCode" type="text" name="shipTo_postalCode" value=""/><br>
-      shipTo_state<input id="shipTo_state" type="text" name="shipTo_state" value=""/><br>
-      shipTo_street1<input id="shipTo_street1" type="text" name="shipTo_street1" value=""/><br>
-      statusurl<input id="statusurl" type="text" name="statusurl" value=""/><br>
-      txntype<input id="txntype" type="text" name="txntype" value=""/><br>
-      ver<input id="ver" type="text" name="ver" value="230"/><br>
-      <button type="submit">Submit</button>
-    </form>
     <!--customer review section end-->
 
 </div>
@@ -889,12 +859,6 @@ function payment() {
     if (pgcode == 'PLCreditCard' || pgcode == 'PLUnionPay' || pgcode == 'PLCreditCardMpi' || pgcode == 'PaypalExpressCheckout') { // 페이레터 해외
         payletter_global(pgcode, month_type, session);
         return false;
-    } else if (pgcode == 'WECHAT') { // 엑심베이 (위쳇페이)
-        eximbay(pgcode, month_type, session);
-        return false;
-    } else if (pgcode == 'ALIPAY') { // 엑심베이 (알리페이)
-        eximbay(pgcode, month_type, session);
-        return false;
     } else if (pgcode == 'WECHAT_deprecated') { // 페이박스 (계약만료)
         // paybox(pgcode, month_type, session);
         return false;
@@ -1020,54 +984,13 @@ function payletter_korea(pgcode, month_type, session) {
             // 이중결제 시도 시 새로고침
             window.location.reload();
         } else {
-            window.open(data.result, 'TITAN NETWORKS', 'width=450, height=550');
-        }
-    });
-}
-
-
-function eximbay(pgcode, month_type, session) {
-    $.post("/api_make_eximbay", {
-        csrfmiddlewaretoken: $('#csrf_token').val(),
-        pgcode: pgcode,
-        session: session,
-        month_type: month_type,
-    })
-    .done(function(data) {
-        if (data.result == 'fail') {
-            // 이중결제 시도 시 새로고침
-            window.location.reload();
-        } else {
-            console.log(data);
-            $('#fgkey').val(data.fgkey);
-            $('#ver').val(data.ver);
-            $('#mid').val(data.mid);
-            $('#txntype').val(data.txntype);
-            $('#ref').val(data.ref);
-            $('#cur').val(data.cur);
-            $('#amt').val(data.amt);
-            $('#paymethod').val(data.paymethod);
-            $('#buyer').val(data.buyer);
-            $('#email').val(data.email);
-            $('#lang').val(data.lang);
-            $('#returnurl').val(data.returnurl);
-            $('#statusurl').val(data.statusurl);
-            $('#param1').val(data.param1);
-            $('#param2').val(data.param2);
-            $('#item_0_product').val(data.item_0_product);
-            $('#item_0_quantity').val(data.item_0_quantity);
-            $('#item_0_unitPrice').val(data.item_0_unitPrice);
-            $('#shipTo_city').val(data.shipTo_city);
-            $('#shipTo_country').val(data.shipTo_country);
-            $('#shipTo_firstName').val(data.shipTo_firstName);
-            $('#shipTo_lastName').val(data.shipTo_lastName);
-            $('#shipTo_phoneNumber').val(data.shipTo_phoneNumber);
-            $('#shipTo_postalCode').val(data.shipTo_postalCode);
-            $('#shipTo_state').val(data.shipTo_state);
-            $('#shipTo_street1').val(data.shipTo_street1);
-            $('#displaytype').val(data.displaytype);
-            $('#eximbay').attr('action', data.url);
-            $("#eximbay").submit();
+            // 모바일(iPhone/Android)에서는 window.open 팝업이 차단되므로 location.href 사용
+            var isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+            if (isMobile) {
+                window.location.href = data.result;
+            } else {
+                window.open(data.result, 'TITAN NETWORKS', 'width=450, height=550');
+            }
         }
     });
 }

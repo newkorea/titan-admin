@@ -1243,3 +1243,34 @@ msgstr "성공!"
 
 msgid "Version"
 msgstr "버전"
+
+# 자동결제(정기결제) 관련 번역
+msgid "Auto Payment"
+msgstr "자동결제"
+
+msgid "Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page."
+msgstr "만료일에 자동으로 결제가 갱신됩니다. 마이페이지에서 언제든 해지할 수 있습니다."
+
+msgid "Cancel Auto Payment"
+msgstr "자동결제 해지"
+
+msgid "Plan"
+msgstr "요금제"
+
+msgid "Last Payment"
+msgstr "최근 결제일"
+
+msgid "Next Payment"
+msgstr "다음 결제일"
+
+msgid "Registered"
+msgstr "등록일"
+
+msgid "Auto payment has been cancelled."
+msgstr "자동결제가 해지되었습니다."
+
+msgid "No active auto payment found."
+msgstr "활성화된 자동결제가 없습니다."
+
+msgid "KRW"
+msgstr "원"

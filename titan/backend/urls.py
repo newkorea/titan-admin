@@ -176,10 +176,6 @@ urlpatterns = [
     path('paybox_cancel', PriceViews.paybox_cancel, name='paybox_cancel'),                                              # [render] 위쳇페이 결제모듈 취소
 
 
-    # 위쳇페이 (엑심베이)
-    path('api_make_eximbay', PriceRequestViews.api_make_eximbay, name='api_make_eximbay'),                              # [api] 엑심베이 결제모듈 요청
-    path('eximbay_return', PriceReturnViews.eximbay_return, name='eximbay_return'),                                     # [render] 엑심베이 결제모듈 리턴(취소)
-    path('eximbay_callback', PriceCallbackViews.eximbay_callback, name='eximbay_callback'),                              # [render] 엑심베이 결제모듈 콜백
 
 
     # 모바일 REST API

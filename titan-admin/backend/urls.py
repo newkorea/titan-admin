@@ -75,6 +75,18 @@ urlpatterns = [
     # [render] 계좌관리
     path('account_setting', PriceViews.account_setting, name='account_setting'),
 
+    # [render] 자동결제 관리
+    path('autopay', PriceViews.autopay, name='autopay'),
+
+    # [api] 자동결제 통계
+    path('api/v1/read/autopay_stats', PriceViews.api_read_autopay_stats, name='api_read_autopay_stats'),
+
+    # [api] 자동결제 목록
+    path('api/v1/read/autopay_list', PriceViews.api_read_autopay_list, name='api_read_autopay_list'),
+
+    # [api] 자동결제 해지
+    path('api/v1/update/autopay_cancel', PriceViews.api_update_autopay_cancel, name='api_update_autopay_cancel'),
+
     # [render] 서비스 내역
     path('service', ServiceViews.service, name='service'),
 

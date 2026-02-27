@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.db import connections
 from django.db import transaction
 from django.db.models import Max, Q
@@ -335,6 +335,31 @@ def mypage(request):
     except Exception:
         next_email = base_email + '_1' if base_email else ''
     context['next_sub_email'] = next_email
+
+    # 자동결제 상태 조회 (서버사이드 렌더링용)
+    autopay_info = None
+    try:
+        with connections['default'].cursor() as cur:
+            cur.execute('''
+                SELECT id, session, month_type, product_name, amount, status, last_paid_date, next_pay_date, created_date
+                FROM tbl_autopay WHERE user_id = %s AND status = 'active' ORDER BY id DESC LIMIT 1
+            ''', [id])
+            cols = [col[0] for col in cur.description]
+            row = cur.fetchone()
+            if row:
+                ap = dict(zip(cols, row))
+                autopay_info = {
+                    'id': ap['id'],
+                    'product_name': ap['product_name'] or ('%s (%s)' % (ap['session'], ap['month_type'])),
+                    'amount': '{:,}'.format(int(ap['amount'])) if ap['amount'] else '0',
+                    'last_paid_date': ap['last_paid_date'].strftime('%Y-%m-%d %H:%M') if ap['last_paid_date'] else '-',
+                    'next_pay_date': ap['next_pay_date'].strftime('%Y-%m-%d %H:%M') if ap['next_pay_date'] else '-',
+                    'created_date': ap['created_date'].strftime('%Y-%m-%d %H:%M') if ap['created_date'] else '-',
+                }
+    except Exception as e:
+        print('ERROR [AUTOPAY MYPAGE] ->', e)
+    context['autopay_info'] = autopay_info
+
     return render(request, 'new/mypage.html', context)
 
 
@@ -1705,6 +1730,6 @@ def api_autopay_cancel(request):
 
     if cursor.rowcount > 0:
         print('INFO [AUTOPAY] -> 자동결제 해지: user_id=%s' % user_id)
-        return JsonResponse({'result': 200, 'message': '자동결제가 해지되었습니다.'})
+        return JsonResponse({'result': 200, 'message': _('Auto payment has been cancelled.')})
     else:
-        return JsonResponse({'result': 200, 'message': '활성화된 자동결제가 없습니다.'})
+        return JsonResponse({'result': 200, 'message': _('No active auto payment found.')})
