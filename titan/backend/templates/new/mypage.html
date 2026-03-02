@@ -338,6 +338,22 @@
                                         <tr><th>${_('Next Payment')}</th><td>${_autopay['next_pay_date']}</td></tr>
                                         <tr><th>${_('Registered')}</th><td>${_autopay['created_date']}</td></tr>
                                     </table>
+                                    <%
+                                        _ap_dr = _autopay.get('discount_rate', 0)
+                                    %>
+                                    % if _ap_dr and int(_ap_dr) > 0:
+                                    <div style="margin-bottom:10px; padding:8px 12px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; font-size:13px;">
+                                        <strong style="color:#e74c3c;">🎁
+                                        % if LANGUAGE_CODE == 'en':
+                                            ${int(_ap_dr)}% discount will be applied on the next auto-payment!
+                                        % elif LANGUAGE_CODE == 'zh':
+                                            下次自动付款时享受${int(_ap_dr)}%折扣！
+                                        % else:
+                                            다음 자동결제 시 ${int(_ap_dr)}% 할인이 적용됩니다!
+                                        % endif
+                                        </strong>
+                                    </div>
+                                    % endif
                                     <button onclick="cancelAutopay()" class="btn btn-danger btn-sm">${_('Cancel Auto Payment')}</button>
                                 </div>
                             </div>
@@ -658,7 +674,7 @@ function cancelAutopay(){
     Swal.fire({
         title: _t('자동결제 해지','取消自动付款','Cancel Auto Payment'),
         text: _t('자동결제를 해지하시겠습니까? 현재 이용기간은 유지됩니다.','确定要取消自动付款吗？当前使用期限将保持不变。','Are you sure you want to cancel auto payment? Your current service period will remain.'),
-        icon: 'warning',
+        type: 'warning',
         showCancelButton: true,
         confirmButtonText: _t('해지','取消自动付款','Cancel Auto Payment'),
         cancelButtonText: _t('닫기','关闭','Close'),
@@ -668,10 +684,13 @@ function cancelAutopay(){
         if(result.value){
             $.post('/api/mypage/autopay_cancel', {csrfmiddlewaretoken: csrfToken}).done(function(data){
                 if(data.result == 200){
-                    Swal.fire({icon:'success', title: _t('해지 완료','取消完成','Cancelled'), text: data.message, confirmButtonColor:'#8a4cf7'}).then(function(){ window.location.reload(); });
+                    Swal.fire({type:'success', title: _t('해지 완료','取消完成','Cancelled'), text: data.message, confirmButtonColor:'#8a4cf7'}).then(function(){ window.location.reload(); });
                 } else {
-                    Swal.fire({icon:'error', title: _t('오류','错误','Error'), text: data.message || _t('오류가 발생했습니다.','发生了错误。','An error occurred.'), confirmButtonColor:'#8a4cf7'});
+                    Swal.fire({type:'error', title: _t('오류','错误','Error'), text: data.message || _t('오류가 발생했습니다.','发生了错误。','An error occurred.'), confirmButtonColor:'#8a4cf7'});
                 }
+            }).fail(function(xhr){
+                console.error('autopay_cancel error:', xhr);
+                Swal.fire({type:'error', title: _t('오류','错误','Error'), text: _t('서버 오류가 발생했습니다.','服务器错误。','Server error occurred.'), confirmButtonColor:'#8a4cf7'});
             });
         }
     });
@@ -765,6 +784,5 @@ function changeSubPassword(el) {
     }
 }
 
-}
 </script>
 </%block>

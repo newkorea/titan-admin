@@ -69,11 +69,24 @@ def update_all_pings():
     with connections['default'].cursor() as cur:
         cur.execute("SELECT id, hostip FROM titan.tbl_agent3 WHERE IFNULL(hostip,'') <> ''")
         rows = cur.fetchall()
+    failed = []
     for _id, ip in rows:
         ms = ping_ip(ip)
         with connections['default'].cursor() as cur:
             # Store -88 for unreachable per display policy
             cur.execute("UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s", [ms if ms is not None else -88, _id])
+        if ms is None:
+            failed.append((_id, ip))
+
+    # 실패한 서버 1회 재시도 (일시적 패킷 로스 방지)
+    if failed:
+        import time
+        time.sleep(3)
+        for _id, ip in failed:
+            ms = ping_ip(ip)
+            if ms is not None:
+                with connections['default'].cursor() as cur:
+                    cur.execute("UPDATE titan.tbl_agent3 SET ping=%s WHERE id=%s", [ms, _id])
 
 
 def main():

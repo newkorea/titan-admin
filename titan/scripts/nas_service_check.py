@@ -830,6 +830,7 @@ def main():
 
     # 병렬 점검
     results = []
+    server_map = {s['hostip']: s for s in servers}
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(check_single_server, s): s for s in servers}
         for future in as_completed(futures):
@@ -846,6 +847,38 @@ def main():
                     'checks': {},
                     'services_config': server['services']
                 })
+
+    # ===== 실패 서버 자동 1회 재점검 (전체 점검 시에만) =====
+    if not target_ip:
+        failed = [r for r in results if r.get('status') in ('CRITICAL', 'ERROR')]
+        if failed:
+            if not output_json:
+                print(f'[RETRY] {len(failed)}대 실패 서버 재점검 (5초 대기 후)')
+            time.sleep(5)
+            retry_results = {}
+            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                retry_futures = {}
+                for r in failed:
+                    s = server_map.get(r['ip'])
+                    if s:
+                        retry_futures[executor.submit(check_single_server, s)] = r['ip']
+                for future in as_completed(retry_futures):
+                    ip = retry_futures[future]
+                    try:
+                        retry_results[ip] = future.result()
+                    except Exception as e:
+                        pass  # 재시도도 실패 → 원래 결과 유지
+            # 재시도 결과가 개선되었으면 교체
+            improved = 0
+            for i, r in enumerate(results):
+                if r['ip'] in retry_results:
+                    new_r = retry_results[r['ip']]
+                    if new_r.get('status') not in ('CRITICAL', 'ERROR') or \
+                       len(new_r.get('issues', [])) < len(r.get('issues', [])):
+                        results[i] = new_r
+                        improved += 1
+            if not output_json:
+                print(f'[RETRY] 재점검 완료: {improved}/{len(failed)}대 복구')
 
     if output_json:
         # JSON 출력

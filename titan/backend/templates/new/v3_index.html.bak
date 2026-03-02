@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TITAN VPN - V3</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#09090b;--bg-2:#111113;--bg-card:#18181b;--bg-card-h:#1f1f23;--emerald:#10b981;--emerald-soft:rgba(16,185,129,0.1);--emerald-glow:rgba(16,185,129,0.25);--white:#fafafa;--gray:#a1a1aa;--gray2:#71717a;--gray3:#52525b;--border:rgba(255,255,255,0.06);--border-2:rgba(255,255,255,0.1);--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+section{padding:96px 0}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:12px 0;backdrop-filter:blur(24px);background:rgba(9,9,11,0.88);border-bottom:1px solid var(--border)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:36px;height:36px;border-radius:6px;object-fit:contain}
+.logo-name{font-weight:800;font-size:16px;letter-spacing:2px;color:var(--white)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--gray2);text-decoration:none;font-size:13px;font-weight:600;transition:color .3s}
+.nav-links a:hover{color:var(--emerald)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;border-radius:8px;font-family:'Manrope';font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .25s;text-decoration:none}
+.btn-o{background:transparent;color:var(--gray);border:1.5px solid var(--border-2)}.btn-o:hover{color:var(--white)}
+.btn-g{background:var(--emerald);color:white;box-shadow:0 2px 16px var(--emerald-glow)}.btn-g:hover{box-shadow:0 4px 24px var(--emerald-glow);transform:translateY(-1px)}
+.btn-lg{padding:14px 32px;font-size:14px}.btn-xl{padding:16px 40px;font-size:15px;border-radius:10px}
+
+.hero{min-height:100vh;display:flex;align-items:center;padding-top:70px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.hero-text{text-align:left}
+.hero-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 8px;border:1px solid var(--border-2);border-radius:50px;margin-bottom:24px;background:rgba(255,255,255,0.02)}
+.hero-chip-text{font-size:12px;color:var(--gray);font-weight:500}
+.hero-chip-badge{background:var(--emerald-soft);color:var(--emerald);font-size:11px;font-weight:700;padding:4px 12px;border-radius:50px}
+.hero h1{font-size:48px;font-weight:800;line-height:1.08;letter-spacing:-2px;margin-bottom:18px}
+.hero h1 .hl{position:relative;display:inline-block}
+.hero h1 .hl::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:10px;background:var(--emerald);opacity:.15;border-radius:2px;z-index:-1}
+.hero-p{font-size:16px;color:var(--gray);line-height:1.7;margin-bottom:32px;max-width:460px}
+.hero-btns{display:flex;gap:12px;margin-bottom:40px}
+.hero-metrics{display:flex;gap:32px}
+.metric{position:relative;padding-left:16px}.metric::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:2px;background:var(--emerald);border-radius:2px}
+.metric-num{font-family:'Fira Code';font-size:24px;font-weight:600;color:var(--emerald)}
+.metric-lbl{font-size:11px;color:var(--gray2);margin-top:2px}
+
+/* === APP MOCKUP VISUAL === */
+.hero-visual{display:flex;justify-content:center;align-items:center;position:relative;min-height:480px}
+.phone{width:260px;background:#f5f0ff;border-radius:32px;border:2px solid rgba(120,80,200,0.2);padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 80px rgba(120,80,200,0.08);position:relative;overflow:hidden;display:flex}
+/* sidebar */
+.ph-sidebar{width:44px;background:linear-gradient(180deg,#6c3fc5 0%,#4a2a8a 100%);display:flex;flex-direction:column;align-items:center;padding:16px 0 12px;gap:18px;flex-shrink:0}
+.ph-sidebar .sb-logo{width:24px;height:24px;border-radius:5px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:13px}
+.ph-sidebar .sb-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:14px;color:rgba(255,255,255,0.5);cursor:pointer;transition:all .2s}
+.ph-sidebar .sb-icon:hover,.ph-sidebar .sb-icon.active{color:#fff;background:rgba(255,255,255,0.15)}
+/* main area */
+.ph-main{flex:1;display:flex;flex-direction:column;align-items:center;padding:18px 14px 14px}
+.ph-brand{font-size:14px;font-weight:800;color:#4a2a8a;letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+.ph-brand .brand-icon{color:#c0a0ff;font-size:12px}
+/* power button */
+.power-ring{width:120px;height:120px;border-radius:50%;border:4px solid #e8b4b8;background:#fff;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 4px 24px rgba(200,100,120,0.15);cursor:pointer;transition:all .4s}
+.power-ring:hover{border-color:var(--emerald);box-shadow:0 4px 32px rgba(16,185,129,0.25)}
+.power-ring:hover .power-icon{color:var(--emerald)}
+.power-ring:hover ~ .ph-conn-status{color:var(--emerald)}
+.power-icon{font-size:36px;color:#e07080;transition:color .4s}
+.ph-conn-status{font-size:13px;font-weight:800;color:#e05060;margin-bottom:14px;transition:color .4s}
+/* server select */
+.ph-server-sel{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:10px}
+.ph-flag{font-size:24px}
+.ph-server-name{font-size:12px;font-weight:700;color:#4a2a8a}
+.ph-server-btn{padding:8px 32px;border-radius:24px;background:linear-gradient(135deg,#7c4dff,#6c3fc5);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;margin-bottom:12px;letter-spacing:0.5px;transition:transform .2s}
+.ph-server-btn:hover{transform:scale(1.04)}
+/* protocol section */
+.ph-proto{width:100%;border-top:1px solid rgba(120,80,200,0.12);padding-top:10px}
+.ph-proto-title{text-align:center;font-size:11px;font-weight:700;color:#4a2a8a;margin-bottom:8px}
+.ph-proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.ph-proto-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:#555}
+.ph-proto-item .proto-check{width:14px;height:14px;border-radius:3px;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;flex-shrink:0}
+.ph-proto-item .proto-check.on{background:#6c3fc5;border-color:#6c3fc5;color:#fff}
+/* chat badge */
+.ph-chat{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:10px;color:#888;font-weight:600}
+.ph-chat .chat-dot{width:8px;height:8px;border-radius:50%;background:#f5a623}
+
+.mock-badge{position:absolute;padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--gray);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.mb-dot{width:5px;height:5px;border-radius:50%;background:var(--emerald);box-shadow:0 0 6px var(--emerald-glow)}
+.mb-1{top:30px;right:-60px;animation:fbob 4s ease-in-out infinite}
+.mb-2{bottom:50px;left:-50px;animation:fbob 5s ease-in-out infinite 1s}
+@keyframes fbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* === FEATURES SECTION === */
+.features{background:var(--bg-2)}
+.section-header{text-align:center;margin-bottom:64px}
+.section-chip{display:inline-block;padding:4px 14px;border-radius:50px;font-size:11px;font-weight:700;color:var(--emerald);background:var(--emerald-soft);margin-bottom:16px;letter-spacing:1px}
+.section-header h2{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:12px}
+.section-header p{color:var(--gray);font-size:15px;max-width:500px;margin:0 auto;line-height:1.6}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px 24px;transition:all .3s}
+.feat-card:hover{background:var(--bg-card-h);border-color:var(--border-2);transform:translateY(-2px)}
+.feat-icon{width:40px;height:40px;border-radius:10px;background:var(--emerald-soft);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:16px}
+.feat-card h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.feat-card p{font-size:13px;color:var(--gray);line-height:1.6}
+
+/* === SERVERS SECTION === */
+.servers{}
+.server-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:40px;flex-wrap:wrap}
+.server-tab{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--gray);transition:all .25s}
+.server-tab:hover{color:var(--white)}
+.server-tab.active{background:var(--emerald);color:white;border-color:var(--emerald)}
+.server-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.server-card{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);transition:all .3s}
+.server-card:hover{border-color:var(--border-2);background:var(--bg-card-h)}
+.sc-left{display:flex;align-items:center;gap:10px}
+.sc-flag{font-size:20px}
+.sc-name{font-size:13px;font-weight:600}
+.sc-isp{font-size:11px;color:var(--gray2)}
+.sc-right{text-align:right}
+.sc-ping{font-family:'Fira Code';font-size:12px;font-weight:600}
+.sc-ping.fast{color:var(--emerald)}.sc-ping.mid{color:#f59e0b}.sc-ping.slow{color:#ef4444}
+.sc-status{font-size:10px;color:var(--gray3)}
+
+/* === PRICING SECTION === */
+.pricing{background:var(--bg-2)}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto}
+.price-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;text-align:center;transition:all .3s;position:relative}
+.price-card:hover{transform:translateY(-4px);border-color:var(--border-2)}
+.price-card.pop{border-color:var(--emerald);box-shadow:0 0 40px rgba(16,185,129,0.1)}
+.price-pop-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--emerald);color:white;padding:4px 16px;border-radius:50px;font-size:11px;font-weight:700}
+.price-period{font-size:13px;color:var(--gray);font-weight:600;margin-bottom:16px}
+.price-amount{font-size:40px;font-weight:800;margin-bottom:4px}
+.price-amount span{font-size:16px;font-weight:500;color:var(--gray)}
+.price-monthly{font-size:12px;color:var(--gray2);margin-bottom:24px}
+.price-features{list-style:none;text-align:left;margin-bottom:28px}
+.price-features li{padding:6px 0;font-size:13px;color:var(--gray);display:flex;align-items:center;gap:8px}
+.price-features li::before{content:'✓';color:var(--emerald);font-weight:700;font-size:12px}
+
+/* === DOWNLOAD SECTION === */
+.download{}
+.dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}
+.dl-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;transition:all .3s;cursor:pointer;text-decoration:none;color:var(--white)}
+.dl-card:hover{background:var(--bg-card-h);border-color:var(--border-2);transform:translateY(-2px)}
+.dl-icon{font-size:32px;margin-bottom:12px}
+.dl-card h4{font-size:14px;font-weight:700;margin-bottom:4px}
+.dl-card p{font-size:11px;color:var(--gray2)}
+
+/* === FAQ SECTION === */
+.faq{background:var(--bg-2)}
+.faq-list{max-width:700px;margin:0 auto}
+.faq-item{border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;transition:border-color .3s}
+.faq-item:hover{border-color:var(--border-2)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;font-size:14px;font-weight:600;transition:background .3s}
+.faq-q:hover{background:var(--bg-card)}
+.faq-q span{color:var(--gray2);transition:transform .3s;font-size:18px}
+.faq-item.open .faq-q span{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.faq-item.open .faq-a{max-height:200px}
+.faq-a-in{padding:0 20px 16px;font-size:13px;color:var(--gray);line-height:1.7}
+
+/* === FOOTER === */
+footer{padding:48px 0;border-top:1px solid var(--border)}
+.footer-in{display:flex;justify-content:space-between;align-items:center}
+.footer-copy{font-size:12px;color:var(--gray3)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:12px;color:var(--gray2);text-decoration:none;transition:color .3s}
+.footer-links a:hover{color:var(--emerald)}
+
+@media(max-width:768px){
+  .hero-grid{grid-template-columns:1fr}.hero-visual{display:none}
+  .hero-text{text-align:center}.hero h1{font-size:34px}
+  .hero-p{margin:0 auto 32px}.hero-btns{justify-content:center}
+  .hero-metrics{justify-content:center;flex-wrap:wrap;gap:20px}
+  .feat-grid{grid-template-columns:1fr}
+  .price-grid{grid-template-columns:1fr}
+  .dl-grid{grid-template-columns:repeat(2,1fr)}
+  .footer-in{flex-direction:column;gap:16px;text-align:center}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav><div class="nav-in">
+  <a href="/v3" class="logo"><img src="/static/new/img/titan.png" alt="TITAN VPN" class="logo-mark"><span class="logo-name">TITAN VPN</span></a>
+  <ul class="nav-links"><li><a href="#features">기능</a></li><li><a href="#servers">서버</a></li><li><a href="#pricing">가격</a></li><li><a href="#download">다운로드</a></li><li><a href="#faq">FAQ</a></li></ul>
+  <div style="display:flex;gap:8px"><a href="/login" class="btn btn-o">로그인</a><a href="/regist" class="btn btn-g">가입하기</a></div>
+</div></nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+<div class="container">
+<div class="hero-grid">
+  <div class="hero-text">
+    <div class="hero-chip"><span class="hero-chip-text">VPN Service for Korea &amp; China</span><span class="hero-chip-badge">v3.0</span></div>
+    <h1>안전하고 빠른 인터넷<br><span class="hl">TITAN VPN</span>과 함께</h1>
+    <p class="hero-p">한국 KT·SK·LG 전용 서버와 해외 거점을 통해 어디서든 자유로운 인터넷을 경험하세요. 군사급 암호화로 보안까지.</p>
+    <div class="hero-btns">
+      <a href="#pricing" class="btn btn-g btn-xl">요금제 선택하기 →</a>
+      <a href="#download" class="btn btn-o btn-lg">다운로드</a>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric"><div class="metric-num">41+</div><div class="metric-lbl">서버</div></div>
+      <div class="metric"><div class="metric-num">99.9%</div><div class="metric-lbl">업타임</div></div>
+      <div class="metric"><div class="metric-num">6</div><div class="metric-lbl">동시접속</div></div>
+      <div class="metric"><div class="metric-num">4</div><div class="metric-lbl">플랫폼</div></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="phone">
+      <!-- Sidebar -->
+      <div class="ph-sidebar">
+        <div class="sb-logo">✦</div>
+        <div class="sb-icon active">👤</div>
+        <div class="sb-icon">🔒</div>
+        <div class="sb-icon">📋</div>
+        <div class="sb-icon">⬇</div>
+        <div class="sb-icon" style="margin-top:auto">➡</div>
+      </div>
+      <!-- Main content -->
+      <div class="ph-main">
+        <div class="ph-brand"><span class="brand-icon">✦</span> TitanVPN</div>
+        <div class="power-ring" id="powerBtn">
+          <span class="power-icon">⏻</span>
+        </div>
+        <div class="ph-conn-status" id="connStatus">연결안됨</div>
+        <div class="ph-server-sel">
+          <span class="ph-flag">🇰🇷</span>
+          <span class="ph-server-name">서버자동매치</span>
+        </div>
+        <button class="ph-server-btn">서버변경</button>
+        <div class="ph-proto">
+          <div class="ph-proto-title">연결방식</div>
+          <div class="ph-proto-grid">
+            <div class="ph-proto-item"><span class="proto-check on">✓</span>IKEV2</div>
+            <div class="ph-proto-item"><span class="proto-check"></span>SSTP</div>
+            <div class="ph-proto-item"><span class="proto-check"></span>OpenVPN</div>
+            <div class="ph-proto-item"><span class="proto-check"></span>V2ray</div>
+          </div>
+        </div>
+        <div class="ph-chat"><span class="chat-dot"></span> 실시간 상담</div>
+      </div>
+    </div>
+    <div class="mock-badge mb-1"><span class="mb-dot"></span>AES-256 암호화</div>
+    <div class="mock-badge mb-2"><span class="mb-dot"></span>V2Ray 프로토콜</div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="features" id="features">
+<div class="container">
+  <div class="section-header">
+    <div class="section-chip">FEATURES</div>
+    <h2>왜 TITAN VPN인가?</h2>
+    <p>중국에서도 안정적인 접속, 한국 전용 서버, 다양한 프로토콜 지원</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">🛡️</div><h3>군사급 암호화</h3><p>AES-256 암호화와 IKEv2, OpenVPN, V2Ray 등 다양한 프로토콜로 안전한 접속.</p></div>
+    <div class="feat-card"><div class="feat-icon">🇰🇷</div><h3>한국 전용 서버</h3><p>KT, SK, LG 각 통신사 직결 서버로 최적의 속도와 안정성을 제공합니다.</p></div>
+    <div class="feat-card"><div class="feat-icon">⚡</div><h3>초고속 연결</h3><p>41개 이상의 서버로 부하를 분산하여 항상 빠른 속도를 유지합니다.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌏</div><h3>해외 서버</h3><p>일본, 미국, 인도 서버를 통해 글로벌 콘텐츠에도 자유롭게 접근하세요.</p></div>
+    <div class="feat-card"><div class="feat-icon">📱</div><h3>모든 기기 지원</h3><p>Android, iOS, Windows, macOS 전용 앱으로 어디서든 간편하게 연결.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔄</div><h3>자동 서버 선택</h3><p>사용자 위치와 통신사를 분석하여 가장 빠른 서버를 자동으로 연결합니다.</p></div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SERVERS ===== -->
+<section class="servers" id="servers">
+<div class="container">
+  <div class="section-header">
+    <div class="section-chip">SERVERS</div>
+    <h2>글로벌 서버 네트워크</h2>
+    <p>한국 3대 통신사 + 해외 거점, 총 41개 이상 서버 운영</p>
+  </div>
+  <div class="server-tabs">
+    <button class="server-tab active" onclick="filterServers('all')">전체</button>
+    <button class="server-tab" onclick="filterServers('kt')">KT</button>
+    <button class="server-tab" onclick="filterServers('sk')">SK</button>
+    <button class="server-tab" onclick="filterServers('lg')">LG</button>
+    <button class="server-tab" onclick="filterServers('overseas')">해외</button>
+  </div>
+  <div class="server-grid" id="serverGrid">
+    <!-- KT서버 -->
+    <div class="server-card" data-isp="kt"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">KT Seoul #1</div><div class="sc-isp">KT</div></div></div><div class="sc-right"><div class="sc-ping fast">3ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="kt"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">KT Seoul #2</div><div class="sc-isp">KT</div></div></div><div class="sc-right"><div class="sc-ping fast">4ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="kt"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">KT Seoul #3</div><div class="sc-isp">KT</div></div></div><div class="sc-right"><div class="sc-ping fast">3ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="kt"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">KT Seoul #4</div><div class="sc-isp">KT</div></div></div><div class="sc-right"><div class="sc-ping fast">5ms</div><div class="sc-status">● Online</div></div></div>
+    <!-- SK서버 -->
+    <div class="server-card" data-isp="sk"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">SK Seoul #1</div><div class="sc-isp">SK Broadband</div></div></div><div class="sc-right"><div class="sc-ping fast">4ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="sk"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">SK Seoul #2</div><div class="sc-isp">SK Broadband</div></div></div><div class="sc-right"><div class="sc-ping fast">5ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="sk"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">SK Seoul #3</div><div class="sc-isp">SK Broadband</div></div></div><div class="sc-right"><div class="sc-ping fast">3ms</div><div class="sc-status">● Online</div></div></div>
+    <!-- LG서버 -->
+    <div class="server-card" data-isp="lg"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">LG Seoul #1</div><div class="sc-isp">LG U+</div></div></div><div class="sc-right"><div class="sc-ping fast">4ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="lg"><div class="sc-left"><span class="sc-flag">🇰🇷</span><div><div class="sc-name">LG Seoul #2</div><div class="sc-isp">LG U+</div></div></div><div class="sc-right"><div class="sc-ping fast">5ms</div><div class="sc-status">● Online</div></div></div>
+    <!-- 해외서버 -->
+    <div class="server-card" data-isp="overseas"><div class="sc-left"><span class="sc-flag">🇯🇵</span><div><div class="sc-name">Tokyo</div><div class="sc-isp">Japan</div></div></div><div class="sc-right"><div class="sc-ping mid">36ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="overseas"><div class="sc-left"><span class="sc-flag">🇺🇸</span><div><div class="sc-name">Los Angeles</div><div class="sc-isp">USA</div></div></div><div class="sc-right"><div class="sc-ping slow">142ms</div><div class="sc-status">● Online</div></div></div>
+    <div class="server-card" data-isp="overseas"><div class="sc-left"><span class="sc-flag">🇮🇳</span><div><div class="sc-name">Mumbai</div><div class="sc-isp">India</div></div></div><div class="sc-right"><div class="sc-ping mid">89ms</div><div class="sc-status">● Online</div></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section class="pricing" id="pricing">
+<div class="container">
+  <div class="section-header">
+    <div class="section-chip">PRICING</div>
+    <h2>합리적인 요금제</h2>
+    <p>모든 플랜에 전체 서버 접속, 무제한 트래픽 포함</p>
+  </div>
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="price-period">1개월</div>
+      <div class="price-amount">¥50 <span>CNY</span></div>
+      <div class="price-monthly">≈ ₩9,500/월</div>
+      <ul class="price-features">
+        <li>전체 서버 접속</li>
+        <li>무제한 트래픽</li>
+        <li>1대 동시접속</li>
+        <li>24시간 지원</li>
+      </ul>
+      <a href="/price" class="btn btn-o" style="width:100%">선택하기</a>
+    </div>
+    <div class="price-card pop">
+      <div class="price-pop-badge">BEST</div>
+      <div class="price-period">6개월</div>
+      <div class="price-amount">¥200 <span>CNY</span></div>
+      <div class="price-monthly">≈ ₩6,300/월 <span style="color:var(--emerald);font-size:11px;font-weight:700">33% 할인</span></div>
+      <ul class="price-features">
+        <li>전체 서버 접속</li>
+        <li>무제한 트래픽</li>
+        <li>2대 동시접속</li>
+        <li>24시간 지원</li>
+        <li>V2Ray 프로토콜</li>
+      </ul>
+      <a href="/price" class="btn btn-g" style="width:100%">선택하기</a>
+    </div>
+    <div class="price-card">
+      <div class="price-period">12개월</div>
+      <div class="price-amount">¥350 <span>CNY</span></div>
+      <div class="price-monthly">≈ ₩5,500/월 <span style="color:var(--emerald);font-size:11px;font-weight:700">42% 할인</span></div>
+      <ul class="price-features">
+        <li>전체 서버 접속</li>
+        <li>무제한 트래픽</li>
+        <li>3대 동시접속</li>
+        <li>VIP 지원</li>
+        <li>V2Ray 프로토콜</li>
+      </ul>
+      <a href="/price" class="btn btn-o" style="width:100%">선택하기</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== DOWNLOAD ===== -->
+<section class="download" id="download">
+<div class="container">
+  <div class="section-header">
+    <div class="section-chip">DOWNLOAD</div>
+    <h2>앱 다운로드</h2>
+    <p>모든 플랫폼에서 사용 가능합니다</p>
+  </div>
+  <div class="dl-grid">
+    <a href="/download" class="dl-card"><div class="dl-icon">🤖</div><h4>Android</h4><p>APK 직접 설치</p></a>
+    <a href="/download" class="dl-card"><div class="dl-icon">🍎</div><h4>iOS</h4><p>App Store</p></a>
+    <a href="/download" class="dl-card"><div class="dl-icon">🪟</div><h4>Windows</h4><p>Windows 10+</p></a>
+    <a href="/download" class="dl-card"><div class="dl-icon">🍏</div><h4>macOS</h4><p>macOS 12+</p></a>
+  </div>
+</div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq" id="faq">
+<div class="container">
+  <div class="section-header">
+    <div class="section-chip">FAQ</div>
+    <h2>자주 묻는 질문</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item"><div class="faq-q">중국에서 사용 가능한가요?<span>+</span></div><div class="faq-a"><div class="faq-a-in">네, TITAN VPN은 중국 사용자 비율이 95% 이상입니다. IKEv2, V2Ray 등 다양한 프로토콜을 지원하여 중국의 네트워크 환경에서도 안정적으로 접속할 수 있습니다.</div></div></div>
+    <div class="faq-item"><div class="faq-q">결제 방법은 무엇인가요?<span>+</span></div><div class="faq-a"><div class="faq-a-in">위챗페이(WeChat Pay), 알리페이(Alipay) 등 중국 결제 수단과 신용카드, 계좌이체 등을 지원합니다.</div></div></div>
+    <div class="faq-item"><div class="faq-q">동시 접속은 몇 대까지 가능한가요?<span>+</span></div><div class="faq-a"><div class="faq-a-in">요금제에 따라 1~6대까지 동시 접속이 가능합니다. 가격 페이지에서 자세한 정보를 확인하세요.</div></div></div>
+    <div class="faq-item"><div class="faq-q">속도가 느려지지 않나요?<span>+</span></div><div class="faq-a"><div class="faq-a-in">한국 KT, SK, LG 통신사 직결 서버를 운영하고 있어 지연시간이 매우 짧습니다. 서버 부하를 실시간 모니터링하여 최적의 속도를 유지합니다.</div></div></div>
+    <div class="faq-item"><div class="faq-q">환불이 가능한가요?<span>+</span></div><div class="faq-a"><div class="faq-a-in">결제 후 7일 이내, 사용량이 적은 경우 환불이 가능합니다. 고객센터로 문의해주세요.</div></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+<div class="container">
+  <div class="footer-in">
+    <div class="footer-copy">© 2026 TITAN VPN. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/policy/privacy">개인정보처리방침</a>
+      <a href="/policy/terms">이용약관</a>
+      <a href="mailto:support@titanvpn.kr">support@titanvpn.kr</a>
+    </div>
+  </div>
+</div>
+</footer>
+
+<script>
+// Server filter
+function filterServers(isp) {
+  document.querySelectorAll('.server-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.server-card').forEach(c => {
+    c.style.display = (isp === 'all' || c.dataset.isp === isp) ? '' : 'none';
+  });
+}
+// FAQ toggle
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => q.parentElement.classList.toggle('open'));
+});
+// Phone power button toggle
+var connected = false;
+document.getElementById('powerBtn').addEventListener('click', function() {
+  connected = !connected;
+  var ring = this;
+  var icon = ring.querySelector('.power-icon');
+  var status = document.getElementById('connStatus');
+  if (connected) {
+    ring.style.borderColor = '#10b981';
+    ring.style.boxShadow = '0 4px 32px rgba(16,185,129,0.3)';
+    icon.style.color = '#10b981';
+    status.style.color = '#10b981';
+    status.textContent = '연결됨';
+  } else {
+    ring.style.borderColor = '#e8b4b8';
+    ring.style.boxShadow = '0 4px 24px rgba(200,100,120,0.15)';
+    icon.style.color = '#e07080';
+    status.style.color = '#e05060';
+    status.textContent = '연결안됨';
+  }
+});
+// Protocol checkbox toggle
+document.querySelectorAll('.ph-proto-item').forEach(item => {
+  item.addEventListener('click', function() {
+    var chk = this.querySelector('.proto-check');
+    chk.classList.toggle('on');
+    chk.textContent = chk.classList.contains('on') ? '✓' : '';
+  });
+});
+</script>
+</body>
+</html>

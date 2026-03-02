@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-매일 아침 7시(KST) 자동 실행 — Gemini/ChatGPT 가용성 체크 후 is_auto 갱신
-- Gemini 차단(cn/hk/ru) 또는 ChatGPT 실패(!=200) → is_auto=0 후보
+매일 아침 7시(KST) 자동 실행 — Gemini 가용성 체크 후 is_auto 갱신
+- Gemini 차단(cn/hk/ru) → is_auto=0 후보
 - 단, is_auto=1 서버가 최소 MIN_AUTO_SERVERS개 이상 유지되도록 보장
 - 결과를 이메일로 발송
 """
@@ -55,13 +55,12 @@ else
   GEO=$(curl -4 -s -A "$UA" --connect-timeout 5 --max-time 12 "https://gemini.google.com" 2>/dev/null | grep -oP '"[a-z]{2}"' | head -1 | tr -d '"')
 fi
 [ -z "$GEO" ] && GEO=EMPTY
-CGP=$(curl -4 -s -A "$UA" --connect-timeout 5 --max-time 10 -o /dev/null -w "%{http_code}" "https://chatgpt.com" 2>/dev/null)
-echo "ETH1=$HAS|GEO=$GEO|CHATGPT=$CGP"
+echo "ETH1=$HAS|GEO=$GEO"
 '''
 
 
 def check_server(name, ip):
-    """SSH로 서버에 접속하여 Gemini GEO + ChatGPT 상태 체크 (최대 3회 재시도)
+    """SSH로 서버에 접속하여 Gemini GEO 상태 체크 (최대 3회 재시도)
     SSH 실패뿐 아니라 체크 결과가 FAIL이어도 재시도하여 일시적 오류를 걸러냄"""
     last_result = None
     last_err = None
@@ -83,16 +82,14 @@ def check_server(name, ip):
                     parts[k] = v.strip()
 
             geo = parts.get('GEO', 'EMPTY')
-            chatgpt = parts.get('CHATGPT', '000')
 
             gemini_ok = geo.lower() not in GEMINI_BLOCKED_GEOS and geo not in ('EMPTY', 'UNKNOWN', '')
-            chatgpt_ok = chatgpt == '200' or chatgpt == '302'
-            both_ok = gemini_ok and chatgpt_ok
+            both_ok = gemini_ok
 
             last_result = {
                 'name': name, 'ip': ip,
-                'geo': geo, 'chatgpt': chatgpt,
-                'gemini_ok': gemini_ok, 'chatgpt_ok': chatgpt_ok,
+                'geo': geo,
+                'gemini_ok': gemini_ok,
                 'both_ok': both_ok,
                 'error': None,
             }
@@ -106,16 +103,11 @@ def check_server(name, ip):
 
             # FAIL이지만 아직 재시도 가능 → 다시 시도
             if attempt < SSH_RETRIES:
-                reasons = []
-                if not gemini_ok:
-                    reasons.append(f"Gemini:{geo}")
-                if not chatgpt_ok:
-                    reasons.append(f"ChatGPT:{chatgpt}")
-                log.warning(f"  {name} ({ip}): attempt {attempt}/{SSH_RETRIES} FAIL ({', '.join(reasons)}), retrying in {SSH_RETRY_DELAY}s")
+                log.warning(f"  {name} ({ip}): attempt {attempt}/{SSH_RETRIES} FAIL (Gemini:{geo}), retrying in {SSH_RETRY_DELAY}s")
                 time.sleep(SSH_RETRY_DELAY)
             else:
                 # 최종 시도도 FAIL → 그 결과를 반환
-                log.info(f"  {name} ({ip}): FAIL confirmed after {SSH_RETRIES} attempts (Gemini:{geo}, ChatGPT:{chatgpt})")
+                log.info(f"  {name} ({ip}): FAIL confirmed after {SSH_RETRIES} attempts (Gemini:{geo})")
 
         except Exception as e:
             last_err = str(e)[:80]
@@ -131,8 +123,8 @@ def check_server(name, ip):
         return last_result
     return {
         'name': name, 'ip': ip,
-        'geo': 'ERROR', 'chatgpt': 'ERROR',
-        'gemini_ok': False, 'chatgpt_ok': False,
+        'geo': 'ERROR',
+        'gemini_ok': False,
         'both_ok': False,
         'error': f'{last_err} ({SSH_RETRIES}x)',
     }
@@ -162,6 +154,38 @@ def main():
 
     results.sort(key=lambda x: x['name'])
 
+    # 2-1) 실패 서버 최종 재점검 (per-server 3회 재시도 후에도 FAIL인 서버에 한 번 더)
+    still_failed = [r for r in results if not r['both_ok'] and r.get('error') is None]
+    if still_failed:
+        log.info(f"Final recheck: {len(still_failed)} servers still FAIL after per-server retries, waiting 10s...")
+        time.sleep(10)
+        recheck_map = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+            futures = {
+                ex.submit(check_server, r['name'], r['ip']): r['ip']
+                for r in still_failed
+            }
+            for f in concurrent.futures.as_completed(futures):
+                ip = futures[f]
+                recheck_map[ip] = f.result()
+
+        improved = 0
+        for i, r in enumerate(results):
+            if r['ip'] in recheck_map:
+                new_r = recheck_map[r['ip']]
+                if new_r['both_ok'] and not r['both_ok']:
+                    results[i] = new_r
+                    improved += 1
+                    log.info(f"  ✓ {new_r['name']} ({new_r['ip']}) recovered on final recheck")
+                elif not new_r['both_ok']:
+                    # 개별 항목이라도 개선되면 교체
+                    if new_r.get('gemini_ok') and not r.get('gemini_ok'):
+                        results[i] = new_r
+                        improved += 1
+                        log.info(f"  ~ {new_r['name']} ({new_r['ip']}) partially improved on final recheck")
+        log.info(f"Final recheck done: {improved}/{len(still_failed)} improved")
+        results.sort(key=lambda x: x['name'])
+
     # 3) 결과 로깅
     ok_servers = [r for r in results if r['both_ok']]
     fail_servers = [r for r in results if not r['both_ok']]
@@ -174,8 +198,6 @@ def main():
             reason = f" (ERROR: {r['error']})"
         elif not r['gemini_ok']:
             reason += f" (Gemini:{r['geo']})"
-        if not r['chatgpt_ok'] and not r['error']:
-            reason += f" (ChatGPT:{r['chatgpt']})"
         log.info(f"  {r['name']:<20} {r['ip']:<18} {status}{reason}")
 
     # 4) is_auto 결정
@@ -213,13 +235,8 @@ def main():
             r for r in auto_off_candidates
             if server_map.get(r['ip'], {}).get('is_auto') == 1
         ]
-        # Gemini만 실패(ChatGPT는 OK)인 서버를 우선 유지
-        gemini_only_fail = [r for r in existing_auto1_fails if r['chatgpt_ok']]
-        chatgpt_only_fail = [r for r in existing_auto1_fails if r['gemini_ok']]
-        both_fail = [r for r in existing_auto1_fails if not r['gemini_ok'] and not r['chatgpt_ok']]
-
-        # 우선순위: ChatGPT만 실패 > Gemini만 실패 > 둘 다 실패
-        keep_pool = chatgpt_only_fail + gemini_only_fail + both_fail
+        # FAIL 서버 중 기존 auto=1이었던 서버를 우선 유지
+        keep_pool = existing_auto1_fails
         keep_ips = set()
         for r in keep_pool:
             if len(keep_ips) >= need:
@@ -296,7 +313,6 @@ def send_report_email(now, results, ok_servers, fail_servers,
 
         if r['error']:
             geo_cell = f'<td style="color:#999">ERROR</td>'
-            cgp_cell = f'<td style="color:#999">ERROR</td>'
         else:
             geo = r['geo']
             if geo.lower() in GEMINI_BLOCKED_GEOS:
@@ -305,12 +321,6 @@ def send_report_email(now, results, ok_servers, fail_servers,
                 geo_cell = f'<td style="color:#f39c12">⚠ {geo}</td>'
             else:
                 geo_cell = f'<td style="color:#27ae60">✅ {geo}</td>'
-
-            cgp = r['chatgpt']
-            if cgp in ('200', '302'):
-                cgp_cell = f'<td style="color:#27ae60">✅ {cgp}</td>'
-            else:
-                cgp_cell = f'<td style="color:#e74c3c;font-weight:bold">❌ {cgp}</td>'
 
         if r['both_ok']:
             status = '<span style="color:#27ae60;font-weight:bold">OK</span>'
@@ -331,7 +341,7 @@ def send_report_email(now, results, ok_servers, fail_servers,
 
         rows_html += f'''<tr>
             <td>{r['name']}</td><td>{r['ip']}</td>
-            {geo_cell}{cgp_cell}
+            {geo_cell}
             <td>{status}</td>{auto_cell}
         </tr>\n'''
 
@@ -342,7 +352,7 @@ def send_report_email(now, results, ok_servers, fail_servers,
 
     <table style="border:1px solid #ddd;padding:8px;margin-bottom:15px">
       <tr><td style="padding:4px 12px"><b>총 서버</b></td><td>{len(results)}</td></tr>
-      <tr><td style="padding:4px 12px"><b>Gemini+ChatGPT OK</b></td>
+      <tr><td style="padding:4px 12px"><b>Gemini OK</b></td>
           <td style="color:#27ae60;font-weight:bold">{len(ok_servers)}</td></tr>
       <tr><td style="padding:4px 12px"><b>FAIL</b></td>
           <td style="color:#e74c3c;font-weight:bold">{len(fail_servers)}</td></tr>
@@ -358,7 +368,6 @@ def send_report_email(now, results, ok_servers, fail_servers,
           <th style="padding:6px 8px;text-align:left">서버</th>
           <th style="padding:6px 8px;text-align:left">IP</th>
           <th style="padding:6px 8px">Gemini</th>
-          <th style="padding:6px 8px">ChatGPT</th>
           <th style="padding:6px 8px">결과</th>
           <th style="padding:6px 8px">is_auto</th>
         </tr>
@@ -369,7 +378,7 @@ def send_report_email(now, results, ok_servers, fail_servers,
     </table>
 
     <p style="color:#95a5a6;font-size:11px;margin-top:15px">
-      최소 유지: {MIN_AUTO_SERVERS}개 | 차단기준: Gemini GEO ∈ {'{'}cn, hk, ru{'}'} 또는 ChatGPT ≠ 200/302
+      최소 유지: {MIN_AUTO_SERVERS}개 | 차단기준: Gemini GEO ∈ {'{'}cn, hk, ru{'}'}
     </p>
     </body></html>
     '''

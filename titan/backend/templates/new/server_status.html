@@ -1,0 +1,422 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%inherit file="base.html"/>
+
+<%block name="css">
+<style>
+.ss-section { padding: 90px 0 60px; min-height: 80vh; background: #f5f6fa; }
+
+/* 헤더 */
+.ss-header { text-align: center; margin-bottom: 28px; }
+.ss-header h2 { font-weight: 800; font-size: 1.7rem; color: #2d2d2d; margin-bottom: 6px; }
+.ss-header p { color: #888; font-size: 0.88rem; margin-bottom: 10px; }
+.ss-header .update-badge {
+    display: inline-block;
+    background: #e8eaf6;
+    color: #3949ab;
+    border-radius: 20px;
+    padding: 5px 18px;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+/* 안내 박스 */
+.ss-guide {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 10px rgba(0,0,0,0.04);
+    padding: 18px 24px;
+    margin-bottom: 18px;
+    font-size: 0.82rem;
+    color: #555;
+    line-height: 1.7;
+}
+.ss-guide summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #333;
+    padding: 4px 0;
+    user-select: none;
+}
+.ss-guide summary:hover { color: #5c6bc0; }
+.ss-guide .guide-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 28px;
+    margin-top: 12px;
+}
+.ss-guide .guide-item b { color: #333; }
+.ss-guide .guide-item { padding: 4px 0; }
+@media (max-width: 768px) {
+    .ss-guide .guide-grid { grid-template-columns: 1fr; gap: 6px; }
+    .ss-guide { padding: 14px 16px; font-size: 0.78rem; }
+}
+
+/* 카드 */
+.ss-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+/* 테이블 */
+.ss-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ss-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.ss-table thead th {
+    background: #f8f9fc;
+    color: #666;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 2px solid #e8eaef;
+}
+.ss-table thead th.th-idx { width: 36px; text-align: center; }
+.ss-table thead th.th-name { text-align: left; padding-left: 16px; min-width: 130px; }
+
+/* 바디 */
+.ss-table tbody tr { transition: background 0.12s; }
+.ss-table tbody tr:nth-child(even) { background: #fafbfe; }
+.ss-table tbody tr:hover { background: #f0f2ff; }
+.ss-table tbody td {
+    padding: 9px 8px;
+    text-align: center;
+    border-bottom: 1px solid #f0f1f5;
+    vertical-align: middle;
+}
+.ss-table tbody td.td-idx { color: #aaa; font-size: 0.78rem; font-weight: 500; }
+.ss-table tbody td.td-name { text-align: left; padding-left: 16px; font-weight: 600; color: #333; }
+
+/* 구분행: VPN 불완전 서버 구분선 */
+.ss-table tbody tr.sep-row td {
+    background: #f0f1f5;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    color: #999;
+    font-weight: 500;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* 불완전 서버 행 연한 배경 */
+.ss-table tbody tr.row-incomplete { opacity: 0.65; }
+
+/* 그룹 구분선 */
+.grp-l { border-left: 2px solid #e8eaef; }
+
+/* 상태 배지 */
+.badge-ok {
+    display: inline-flex; align-items: center; gap: 3px;
+    color: #28a745; font-weight: 600; font-size: 0.8rem;
+}
+.badge-ok::before { content: '✅'; font-size: 0.75rem; }
+.badge-fail {
+    display: inline-flex; align-items: center; gap: 3px;
+    color: #dc3545; font-weight: 600; font-size: 0.8rem;
+}
+.badge-fail::before { content: '❌'; font-size: 0.75rem; }
+.badge-na { color: #ccc; font-size: 0.78rem; }
+
+/* Ping 값 */
+.ping-val { font-weight: 600; font-size: 0.82rem; }
+.ping-good { color: #28a745; }
+.ping-mid { color: #e67e22; }
+.ping-bad { color: #dc3545; }
+.ping-na { color: #ccc; font-size: 0.78rem; }
+
+/* 통신사 헤더 색상 */
+.th-cu { color: #e74c3c !important; font-weight: 800 !important; }
+.th-ct { color: #2196f3 !important; font-weight: 800 !important; }
+.th-cm { color: #4caf50 !important; font-weight: 800 !important; }
+
+/* 통신사 정렬 화살표 */
+.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.th-sort:hover { background: #eef0f8 !important; }
+.sort-arrows { display: inline-flex; flex-direction: column; line-height: 1; margin-left: 3px; vertical-align: middle; font-size: 0.55rem; color: #bbb; }
+.sort-arrows .arr-up, .sort-arrows .arr-dn { transition: color 0.15s; }
+.th-sort.sort-asc .sort-arrows .arr-up { color: #333; }
+.th-sort.sort-desc .sort-arrows .arr-dn { color: #333; }
+
+/* 범례 */
+.ss-legend {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    margin-top: 16px; font-size: 0.78rem; color: #999;
+}
+.ss-legend span { display: inline-flex; align-items: center; gap: 3px; }
+
+/* 정렬 안내 */
+.ss-sort-info {
+    text-align: center;
+    margin-bottom: 12px;
+    font-size: 0.78rem;
+    color: #888;
+}
+
+/* 로딩 */
+.ss-loading { text-align: center; padding: 50px 20px; color: #999; font-size: 0.92rem; }
+.ss-spin { display: inline-block; width: 28px; height: 28px; border: 3px solid #e0e0e0; border-top-color: #7c4dff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 모바일 */
+@media (max-width: 768px) {
+    .ss-section { padding: 75px 6px 36px; }
+    .ss-table { font-size: 0.72rem; }
+    .ss-table thead th { padding: 7px 5px; font-size: 0.68rem; }
+    .ss-table tbody td { padding: 6px 5px; }
+    .ss-header h2 { font-size: 1.3rem; }
+    .badge-ok, .badge-fail { font-size: 0.72rem; }
+    .badge-ok::before, .badge-fail::before { font-size: 0.65rem; }
+}
+</style>
+</%block>
+
+<%block name="content">
+<section class="ss-section">
+    <div class="container">
+        <div class="ss-header">
+            <h2>🖥 ${_('Server Status')}</h2>
+            <p>${_('Real-time status of all VPN servers and accessible services')}</p>
+            <div class="update-badge" id="update-time">Loading...</div>
+        </div>
+
+        <details class="ss-guide" open>
+            <summary>📖 ${_('How to read this table')}</summary>
+            <div class="guide-grid">
+                <div class="guide-item">
+                    <b>🔒 ${_('VPN Protocols')}</b><br>
+                    ${_('IKEv2, SSTP, OpenVPN, V2Ray — Status of each VPN connection method')}
+                </div>
+                <div class="guide-item">
+                    <b>🌐 ${_('Site Access')}</b><br>
+                    ${_('Whether Google, Facebook, etc. are accessible from each server')}
+                </div>
+                <div class="guide-item">
+                    <b>📡 ${_('Ping (ms) — Latency from China to server')}</b><br>
+                    <span style="color:#e74c3c;font-weight:700;">联通</span> China Unicom &nbsp;
+                    <span style="color:#2196f3;font-weight:700;">电信</span> China Telecom &nbsp;
+                    <span style="color:#4caf50;font-weight:700;">移动</span> China Mobile<br>
+                    <span style="color:#28a745;">● &lt;80ms ${_('Fast')}</span> &nbsp;
+                    <span style="color:#e67e22;">● 80~150ms ${_('Normal_speed')}</span> &nbsp;
+                    <span style="color:#dc3545;">● &gt;150ms ${_('Slow')}</span><br>
+                    <span style="color:#888; font-weight:700;">${_('Lower value = faster. Speed varies by region. e.g. Shanghai to SK server: 20~30ms')}</span>
+                </div>
+                <div class="guide-item">
+                    <b>✅❌ ${_('Status Icons')}</b><br>
+                    <span class="badge-ok">OK</span> = ${_('Normal')}<br>
+                    <span class="badge-fail">Fail</span> = ${_('Unavailable')}<br>
+                    <span style="color:#ccc;">—</span> = ${_('Not configured')}
+                </div>
+            </div>
+        </details>
+
+        <div class="ss-card">
+            <div id="loading" class="ss-loading">
+                <div class="ss-spin"></div><br>
+                ${_('Loading server status...')}
+            </div>
+            <div id="table-wrap" class="ss-table-wrap" style="display:none;">
+                <table class="ss-table" id="status-table">
+                    <thead>
+                        <tr>
+                            <th class="th-idx">#</th>
+                            <th class="th-name">${_('Server')}</th>
+                            <th class="grp-l">IKEv2</th>
+                            <th>SSTP</th>
+                            <th>OpenVPN</th>
+                            <th>V2Ray</th>
+                            <th class="grp-l">Google</th>
+                            <th>Gemini</th>
+                            <th>Facebook</th>
+                            <th>Instagram</th>
+                            <th>TikTok</th>
+                            <th>Netflix</th>
+                            <th>YouTube</th>
+                            <th class="grp-l th-cu th-sort" id="sort-cu" onclick="window._ssSort('cu')">联通<span class="sort-arrows"><span class="arr-up">▲</span><span class="arr-dn">▼</span></span></th>
+                            <th class="th-ct th-sort" id="sort-ct" onclick="window._ssSort('ct')">电信<span class="sort-arrows"><span class="arr-up">▲</span><span class="arr-dn">▼</span></span></th>
+                            <th class="th-cm th-sort" id="sort-cm" onclick="window._ssSort('cm')">移动<span class="sort-arrows"><span class="arr-up">▲</span><span class="arr-dn">▼</span></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="status-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+
+    </div>
+</section>
+</%block>
+
+<%block name="js">
+<script>
+(function() {
+    var servers = [];
+    var VPN_INCOMPLETE_LABEL = '${_("Some server protocols disabled")}';
+    var ispSortKey = null;  // 'cu','ct','cm' or null
+    var ispSortAsc = true;  // true=오름차순(빠른순), false=내림차순
+
+    function badge(val) {
+        if (val === true) return '<span class="badge-ok">OK</span>';
+        if (val === false) return '<span class="badge-fail">Fail</span>';
+        return '<span class="badge-na">\u2014</span>';
+    }
+
+    function pingCell(val) {
+        if (val === null || val === undefined) return '<span class="ping-na">\u2014</span>';
+        var cls = val < 80 ? 'ping-good' : (val < 150 ? 'ping-mid' : 'ping-bad');
+        return '<span class="ping-val ' + cls + '">' + val + '</span>';
+    }
+
+    function flag(country) {
+        if (!country) return '';
+        var f = {'KR':'\uD83C\uDDF0\uD83C\uDDF7','JP':'\uD83C\uDDEF\uD83C\uDDF5','US':'\uD83C\uDDFA\uD83C\uDDF8','IN':'\uD83C\uDDEE\uD83C\uDDF3','VN':'\uD83C\uDDFB\uD83C\uDDF3','SG':'\uD83C\uDDF8\uD83C\uDDEC','HK':'\uD83C\uDDED\uD83C\uDDF0','TW':'\uD83C\uDDF9\uD83C\uDDFC'};
+        return f[country.toUpperCase()] || '';
+    }
+
+    /* VPN 4개 프로토콜 모두 OK인지 체크 */
+    function allVpnOk(sv) {
+        var v = sv.vpn;
+        return v.ikev2 === true && v.sstp === true && v.openvpn === true && v.v2ray === true;
+    }
+
+    /* 평균 ping 계산 (cu/ct/cm 중 유효값만) */
+    function calcAvgPing(sv) {
+        var p = sv.ping || {};
+        var vals = [];
+        if (p.cu !== null && p.cu !== undefined) vals.push(p.cu);
+        if (p.ct !== null && p.ct !== undefined) vals.push(p.ct);
+        if (p.cm !== null && p.cm !== undefined) vals.push(p.cm);
+        if (vals.length === 0) return 9999; // ping 없으면 맨 뒤
+        var sum = 0;
+        for (var i = 0; i < vals.length; i++) sum += vals[i];
+        return Math.round(sum / vals.length * 10) / 10;
+    }
+
+    /* 정렬: 1차=allVpnOk(OK먼저), 2차=ISP ping 또는 avgPing */
+    function sortServers(list) {
+        list.forEach(function(sv) {
+            sv._allOk = allVpnOk(sv);
+            sv._avgPing = calcAvgPing(sv);
+        });
+        list.sort(function(a, b) {
+            if (a._allOk && !b._allOk) return -1;
+            if (!a._allOk && b._allOk) return 1;
+            if (ispSortKey) {
+                var av = (a.ping && a.ping[ispSortKey] != null) ? a.ping[ispSortKey] : 9999;
+                var bv = (b.ping && b.ping[ispSortKey] != null) ? b.ping[ispSortKey] : 9999;
+                var diff = ispSortAsc ? (av - bv) : (bv - av);
+                if (diff !== 0) return diff;
+            }
+            return a._avgPing - b._avgPing;
+        });
+    }
+
+    /* ISP 열 클릭 정렬 */
+    function updateSortUI() {
+        ['cu','ct','cm'].forEach(function(k) {
+            var el = document.getElementById('sort-' + k);
+            if (!el) return;
+            el.classList.remove('sort-asc','sort-desc');
+            if (ispSortKey === k) el.classList.add(ispSortAsc ? 'sort-asc' : 'sort-desc');
+        });
+    }
+
+    window._ssSort = function(key) {
+        if (ispSortKey === key) {
+            if (ispSortAsc) { ispSortAsc = false; }
+            else { ispSortKey = null; } // 3번째 클릭: 해제
+        } else {
+            ispSortKey = key;
+            ispSortAsc = true;
+        }
+        updateSortUI();
+        sortServers(servers);
+        renderTable('');
+    };
+
+    function renderTable(filter) {
+        var tbody = document.getElementById('status-body');
+        tbody.innerHTML = '';
+        var q = (filter || '').toLowerCase();
+        var idx = 0;
+        var addedSep = false;
+
+        servers.forEach(function(sv) {
+            if (q && sv.name.toLowerCase().indexOf(q) < 0) return;
+
+            /* 구분행: 불완전 서버 시작 전 */
+            if (!sv._allOk && !addedSep && !q) {
+                addedSep = true;
+                tbody.insertAdjacentHTML('beforeend',
+                    '<tr class="sep-row"><td colspan="15">⚠ ' + VPN_INCOMPLETE_LABEL + '</td></tr>');
+            }
+
+            idx++;
+            var p = sv.ping || {};
+            var rowCls = sv._allOk ? '' : ' class="row-incomplete"';
+            var html = '<tr' + rowCls + '>'
+                + '<td class="td-idx">' + idx + '</td>'
+                + '<td class="td-name">' + flag(sv.country) + ' ' + sv.name + '</td>'
+                + '<td class="grp-l">' + badge(sv.vpn.ikev2) + '</td>'
+                + '<td>' + badge(sv.vpn.sstp) + '</td>'
+                + '<td>' + badge(sv.vpn.openvpn) + '</td>'
+                + '<td>' + badge(sv.vpn.v2ray) + '</td>'
+                + '<td class="grp-l">' + badge(sv.sites.google) + '</td>'
+                + '<td>' + badge(sv.sites.gemini) + '</td>'
+                + '<td>' + badge(sv.sites.facebook) + '</td>'
+                + '<td>' + badge(sv.sites.instagram) + '</td>'
+                + '<td>' + badge(sv.sites.tiktok) + '</td>'
+                + '<td>' + badge(sv.sites.netflix) + '</td>'
+                + '<td>' + badge(sv.sites.youtube) + '</td>'
+                + '<td class="grp-l">' + pingCell(p.cu) + '</td>'
+                + '<td>' + pingCell(p.ct) + '</td>'
+                + '<td>' + pingCell(p.cm) + '</td>'
+                + '</tr>';
+            tbody.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function updateTime(data) {
+        var t = data.ping_time || data.site_time || data.svc_time || '';
+        var label = '${_("Check time")}';
+        document.getElementById('update-time').textContent = t ? label + ' : ' + t + ' (KST)' : '\u2014';
+    }
+
+    function loadData() {
+        fetch('/api/server_status')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.result !== 200) return;
+                servers = data.servers || [];
+                sortServers(servers);
+                updateTime(data);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('table-wrap').style.display = '';
+                renderTable('');
+            })
+            .catch(function() {
+                document.getElementById('loading').innerHTML =
+                    '<div style="color:#dc3545;font-size:1.5rem;">\u26A0</div>${_("Failed to load server status")}';
+            });
+    }
+
+    loadData();
+
+    setInterval(function() {
+        fetch('/api/server_status')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.result !== 200) return;
+                servers = data.servers || [];
+                sortServers(servers);
+                updateTime(data);
+                renderTable('');
+            });
+    }, 300000);
+})();
+</script>
+</%block>

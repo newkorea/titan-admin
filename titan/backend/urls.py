@@ -22,6 +22,7 @@ urlpatterns = [
 
     # [render] 인덱스 페이지
     path('', IndexViews.index, name='index'),
+    path('v3', IndexViews.v3_index, name='v3_index'),
 
     # [render] 테스트 페이지
     # path('test', IndexViews.test, name='test'),
@@ -79,6 +80,10 @@ urlpatterns = [
     path('vpn_history', MypageViews.vpn_history, name='vpn_history'),
     path('api/mypage/active_connections', MypageViews.api_active_connections, name='api_active_connections'),
     path('api/mypage/force_disconnect', MypageViews.api_force_disconnect, name='api_force_disconnect'),
+
+    # [render] 서버 현황
+    path('server_status', MypageViews.server_status, name='server_status'),
+    path('api/server_status', MypageViews.api_server_status, name='api_server_status'),
 
     # [render] 제어센터
     path('control_center', MypageViews.control_center, name='control_center'),

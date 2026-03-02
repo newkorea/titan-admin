@@ -56,13 +56,14 @@ PING_TIMEOUT = 3  # 각 패킷 timeout(초)
 
 
 def get_active_servers():
-    """DB에서 활성 한국 서버 목록 조회"""
+    """DB에서 활성 서버 목록 조회 (해외 서버 포함, 도메인 hostip 제외)"""
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
         SELECT name, hostip, telecom
         FROM tbl_agent3
-        WHERE is_active = 1 AND country = 'KR'
+        WHERE is_active = 1
+          AND hostip REGEXP '^[0-9]'
         ORDER BY name
     """)
     rows = [{'name': r[0], 'ip': r[1], 'telecom': r[2]} for r in cur.fetchall()]
@@ -78,7 +79,7 @@ def get_server_by_name(name):
     cur.execute("""
         SELECT name, hostip, telecom
         FROM tbl_agent3
-        WHERE name = %s AND is_active = 1 AND country = 'KR'
+        WHERE name = %s AND is_active = 1
     """, (name,))
     row = cur.fetchone()
     cur.close()

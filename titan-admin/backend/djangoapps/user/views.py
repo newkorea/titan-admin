@@ -218,10 +218,11 @@ def api_update_block_extend(request):
 # (2020-03-16)
 @allow_admin
 def api_read_user_datatables(request):
+  try:
     # datatables 기본 파라미터
-    start = int(request.POST.get('start'))
-    length = int(request.POST.get('length'))
-    draw = int(request.POST.get('draw'))
+    start = int(request.POST.get('start', 0))
+    length = int(request.POST.get('length', 10))
+    draw = int(request.POST.get('draw', 1))
     orderby_col = int(request.POST.get('order[0][column]', 0))
     orderby_opt = request.POST.get('order[0][dir]', 'desc')
 
@@ -345,6 +346,17 @@ def api_read_user_datatables(request):
         "data": rows
     }
     return JsonResponse(returnData)
+  except Exception as e:
+    import traceback
+    traceback.print_exc()
+    draw = int(request.POST.get('draw', 1))
+    return JsonResponse({
+        "recordsTotal": 0,
+        "recordsFiltered": 0,
+        "draw": draw,
+        "data": [],
+        "error": str(e)
+    })
 
 
 # (2020-03-17) 회원관리안 추가정보(번호id, 이메일email, 본인추천인코드rec, 가입시입력한추천인코드regist_rec)
@@ -385,7 +397,7 @@ def api_read_user_count(request):
             today=datetime.datetime.now())
         cur.execute(query)
         rows = cur.fetchall()
-        deleted_user = rows[0][0]/3
+        deleted_user = int(rows[0][0] or 0) // 3
         purchase_user = rows[0][1]
         expired_user = rows[0][2]
         

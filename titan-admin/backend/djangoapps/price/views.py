@@ -1534,7 +1534,7 @@ def api_read_autopay_list(request):
     cursor = connections['default'].cursor()
     cursor.execute('''
         SELECT a.id, a.user_id, u.email, u.username, a.pgcode, a.session, a.month_type,
-               a.product_name, a.amount, a.status, a.fail_count,
+               a.product_name, a.amount, a.discount_rate, a.status, a.fail_count,
                a.last_paid_date, a.next_pay_date, a.created_date, a.cancelled_date
         FROM tbl_autopay a
         LEFT JOIN tbl_user u ON a.user_id = u.id
@@ -1573,3 +1573,34 @@ def api_update_autopay_cancel(request):
         return JsonResponse({'result': 200, 'message': '자동결제가 해지되었습니다.'})
     else:
         return JsonResponse({'result': 400, 'message': '활성화된 자동결제를 찾을 수 없습니다.'})
+
+
+# 자동결제 할인율 조회 API
+@allow_admin
+def api_read_autopay_discount(request):
+    cursor = connections['default'].cursor()
+    cursor.execute("SELECT config_value FROM tbl_site_config WHERE config_key = 'autopay_discount_rate'")
+    row = cursor.fetchone()
+    rate = int(row[0]) if row else 0
+    return JsonResponse({'result': 200, 'discount_rate': rate})
+
+
+# 자동결제 할인율 설정 API
+@allow_admin
+def api_update_autopay_discount(request):
+    rate = request.POST.get('discount_rate', '0')
+    try:
+        rate = int(rate)
+        if rate < 0 or rate > 50:
+            return JsonResponse({'result': 400, 'message': '할인율은 0~50% 범위만 가능합니다.'})
+    except (ValueError, TypeError):
+        return JsonResponse({'result': 400, 'message': '올바른 숫자를 입력하세요.'})
+
+    cursor = connections['default'].cursor()
+    cursor.execute(
+        "INSERT INTO tbl_site_config (config_key, config_value, description) VALUES ('autopay_discount_rate', %s, '자동결제 할인율') "
+        "ON DUPLICATE KEY UPDATE config_value = %s",
+        [str(rate), str(rate)]
+    )
+    print('INFO [ADMIN AUTOPAY] -> 할인율 변경: %d%%' % rate)
+    return JsonResponse({'result': 200, 'message': '할인율이 %d%%로 설정되었습니다.' % rate})

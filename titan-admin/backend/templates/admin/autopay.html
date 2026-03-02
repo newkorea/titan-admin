@@ -70,6 +70,22 @@
     </div>
 </div>
 
+<!-- 할인율 설정 -->
+<div style="margin-bottom:20px; padding:15px 20px; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px;">
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div style="flex-shrink:0;">
+            <i class="fa fa-percent" style="font-size:20px; color:#6f42c1;"></i>
+            <strong style="margin-left:5px;">자동결제 할인율 설정</strong>
+            <small class="text-muted" style="display:block; margin-top:2px;">다음 자동결제(크론) 시에만 적용됩니다. 현재 결제에는 적용되지 않습니다.</small>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <input type="number" id="discount_rate" class="form-control" style="width:80px; text-align:center; font-size:16px; font-weight:bold;" min="0" max="50" value="0">
+            <span style="font-size:16px; font-weight:bold;">%</span>
+            <button onclick="saveDiscount()" class="btn btn-primary btn-sm" style="white-space:nowrap;"><i class="fa fa-save"></i> 저장</button>
+        </div>
+    </div>
+</div>
+
 <!-- 필터 -->
 <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
     <select id="filter_status" class="form-control" style="width:150px;">
@@ -93,6 +109,7 @@
                 <th>이름</th>
                 <th>요금제</th>
                 <th>결제금액</th>
+                <th>할인율</th>
                 <th>상태</th>
                 <th>최근 결제</th>
                 <th>다음 결제</th>
@@ -102,7 +119,7 @@
             </tr>
         </thead>
         <tbody id="autopay_tbody">
-            <tr><td colspan="11" class="text-center text-muted">로딩 중...</td></tr>
+            <tr><td colspan="12" class="text-center text-muted">로딩 중...</td></tr>
         </tbody>
     </table>
 </div>
@@ -129,6 +146,7 @@ function getCookie(name) {
 $(document).ready(function(){
     loadAutopayStats();
     loadAutopayList();
+    loadDiscount();
 });
 
 function loadAutopayStats(){
@@ -165,7 +183,7 @@ function renderTable(rows){
     tbody.empty();
     
     if(!rows || rows.length == 0){
-        tbody.append('<tr><td colspan="11" class="text-center text-muted">데이터가 없습니다</td></tr>');
+        tbody.append('<tr><td colspan="12" class="text-center text-muted">데이터가 없습니다</td></tr>');
         return;
     }
     
@@ -187,6 +205,7 @@ function renderTable(rows){
             '<td>' + (r.username || '-') + '</td>' +
             '<td>' + (r.product_name || '-') + '</td>' +
             '<td style="text-align:right;">' + Number(r.amount).toLocaleString() + '원</td>' +
+            '<td style="text-align:center;">' + (r.discount_rate > 0 ? '<span style="color:#6f42c1;font-weight:bold;">' + r.discount_rate + '%</span>' : '-') + '</td>' +
             '<td>' + statusBadge + '</td>' +
             '<td>' + (r.last_paid_date || '-') + '</td>' +
             '<td>' + (r.next_pay_date || '-') + '</td>' +
@@ -229,5 +248,35 @@ function cancelAutopay(autopayId, email){
 $('#filter_email').on('keypress', function(e){
     if(e.which == 13) loadAutopayList();
 });
+
+// 할인율 로드
+function loadDiscount(){
+    $.post('/api/v1/read/autopay_discount', {
+        csrfmiddlewaretoken: getCookie('csrftoken')
+    }).done(function(data){
+        if(data.result == 200){
+            $('#discount_rate').val(data.discount_rate);
+        }
+    });
+}
+
+// 할인율 저장
+function saveDiscount(){
+    var rate = parseInt($('#discount_rate').val()) || 0;
+    if(rate < 0 || rate > 50){
+        Swal.fire({icon:'warning', title:'다시 입력', text:'할인율은 0~50% 범위만 가능합니다.'});
+        return;
+    }
+    $.post('/api/v1/update/autopay_discount', {
+        csrfmiddlewaretoken: getCookie('csrftoken'),
+        discount_rate: rate
+    }).done(function(data){
+        if(data.result == 200){
+            Swal.fire({icon:'success', title:'저장 완료', text: data.message, confirmButtonColor:'#8a4cf7'});
+        } else {
+            Swal.fire({icon:'error', title:'오류', text: data.message});
+        }
+    });
+}
 </script>
 </%block>

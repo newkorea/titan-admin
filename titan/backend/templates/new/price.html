@@ -426,6 +426,21 @@
                             <span style="color:#7f8c8d; font-size:12px; display:block; margin-top:2px;">
                                 ${_('Your subscription will be automatically renewed on expiry. You can cancel anytime from My Page.')}
                             </span>
+                            <%
+                                _ap_disc = context.get('autopay_discount_rate', 0)
+                            %>
+                            % if _ap_disc and int(_ap_disc) > 0:
+                            <span style="color:#e74c3c; font-size:13px; font-weight:bold; display:block; margin-top:4px;">
+                                🎁
+                                % if LANGUAGE_CODE == 'en':
+                                    ${int(_ap_disc)}% discount applied from the next auto-payment!
+                                % elif LANGUAGE_CODE == 'zh':
+                                    下次自动付款时享受${int(_ap_disc)}%折扣！
+                                % else:
+                                    다음 자동결제부터 ${int(_ap_disc)}% 할인 적용!
+                                % endif
+                            </span>
+                            % endif
                         </span>
                     </label>
                 </div>

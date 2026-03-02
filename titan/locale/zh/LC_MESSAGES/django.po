@@ -1268,3 +1268,76 @@ msgstr "没有找到有效的自动付款。"
 
 msgid "KRW"
 msgstr "元"
+
+# 服务器状态页面翻译
+msgid "Server Status"
+msgstr "服务器状态"
+
+msgid "Real-time status of all VPN servers and accessible services"
+msgstr "所有VPN服务器的实时状态及可访问网站"
+
+msgid "Search server name..."
+msgstr "搜索服务器名称..."
+
+msgid "Loading server status..."
+msgstr "正在加载服务器状态..."
+
+msgid "Failed to load server status"
+msgstr "加载服务器状态失败"
+
+msgid "Normal"
+msgstr "正常"
+
+msgid "Unavailable"
+msgstr "不可用"
+
+msgid "Not configured"
+msgstr "未配置"
+
+msgid "Sorted by fastest average ping"
+msgstr "按平均延迟从低到高排序"
+
+msgid "Some server protocols disabled"
+msgstr "部分服务器协议已禁用"
+
+msgid "Sites"
+msgstr "网站"
+
+msgid "How to read this table"
+msgstr "如何查看此表"
+
+msgid "VPN Protocols"
+msgstr "VPN协议"
+
+msgid "IKEv2, SSTP, OpenVPN, V2Ray — Status of each VPN connection method"
+msgstr "IKEv2, SSTP, OpenVPN, V2Ray — 各VPN连接方式是否正常"
+
+msgid "Site Access"
+msgstr "网站访问"
+
+msgid "Whether Google, Facebook, etc. are accessible from each server"
+msgstr "该服务器能否访问Google、Facebook等网站"
+
+msgid "Ping (ms) — Latency from China to server"
+msgstr "Ping (ms) — 中国到服务器的延迟"
+
+msgid "Fast"
+msgstr "快"
+
+msgid "Normal_speed"
+msgstr "一般"
+
+msgid "Slow"
+msgstr "慢"
+
+msgid "Lower value = faster connection"
+msgstr "数值越小越快"
+
+msgid "Lower value = faster. Speed varies by region. e.g. Shanghai to SK server: 20~30ms"
+msgstr "数值越小越快。速度因地区而异。例: 上海到SK服务器ping速度为20~30ms"
+
+msgid "Status Icons"
+msgstr "状态说明"
+
+msgid "Check time"
+msgstr "检查时间"

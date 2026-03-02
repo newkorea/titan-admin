@@ -86,7 +86,15 @@ def create_custom_parameter(session, month_type):
     return '%s_%s_autopay' % (session, month_type)
 
 
-def execute_autopay(ap, dry_run=False):
+def get_global_discount_rate():
+    """tbl_site_config에서 자동결제 할인율 조회"""
+    cursor = connections['default'].cursor()
+    cursor.execute("SELECT config_value FROM tbl_site_config WHERE config_key = 'autopay_discount_rate'")
+    row = cursor.fetchone()
+    return int(row[0]) if row else 0
+
+
+def execute_autopay(ap, dry_run=False, discount_rate=0):
     """단일 자동결제 실행"""
     autopay_id = ap['id']
     user_id = ap['user_id']
@@ -98,8 +106,15 @@ def execute_autopay(ap, dry_run=False):
     username = ap['username']
     product_name = ap['product_name'] or 'TITAN NETWORKS 자동결제'
 
-    logger.info('처리 시작: autopay_id=%d, user_id=%d (%s), amount=%d, session=%d, month=%d',
-                autopay_id, user_id, email, amount, session, month_type)
+    # 할인 적용
+    original_amount = amount
+    if discount_rate > 0:
+        amount = int(amount * (100 - discount_rate) / 100)
+        if amount < 100:
+            amount = 100  # 최소 결제금액
+
+    logger.info('처리 시작: autopay_id=%d, user_id=%d (%s), 원가=%d, 할인=%d%%, 결제=%d, session=%d, month=%d',
+                autopay_id, user_id, email, original_amount, discount_rate, amount, session, month_type)
 
     if dry_run:
         logger.info('  [DRY-RUN] 건너뜀')
@@ -141,9 +156,9 @@ def execute_autopay(ap, dry_run=False):
 
             cursor.execute('''
                 UPDATE tbl_autopay
-                SET last_paid_date = NOW(), next_pay_date = %s, fail_count = 0
+                SET last_paid_date = NOW(), next_pay_date = %s, fail_count = 0, discount_rate = %s
                 WHERE id = %s
-            ''', [next_pay, autopay_id])
+            ''', [next_pay, discount_rate, autopay_id])
 
             # 성공 로그
             cursor.execute('''
@@ -201,6 +216,11 @@ def main():
     pending = get_pending_autopays(force=args.force)
     logger.info('결제 대상: %d건', len(pending))
 
+    # 글로벌 할인율 조회
+    discount_rate = get_global_discount_rate()
+    if discount_rate > 0:
+        logger.info('할인율 적용: %d%%', discount_rate)
+
     if not pending:
         logger.info('처리할 건이 없습니다.')
         return
@@ -209,7 +229,7 @@ def main():
     fail_count = 0
 
     for ap in pending:
-        result = execute_autopay(ap, dry_run=args.dry_run)
+        result = execute_autopay(ap, dry_run=args.dry_run, discount_rate=discount_rate)
         if result:
             success_count += 1
         else:

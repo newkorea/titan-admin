@@ -341,17 +341,22 @@ def mypage(request):
     try:
         with connections['default'].cursor() as cur:
             cur.execute('''
-                SELECT id, session, month_type, product_name, amount, status, last_paid_date, next_pay_date, created_date
+                SELECT id, session, month_type, product_name, amount, discount_rate, status, last_paid_date, next_pay_date, created_date
                 FROM tbl_autopay WHERE user_id = %s AND status = 'active' ORDER BY id DESC LIMIT 1
             ''', [id])
             cols = [col[0] for col in cur.description]
             row = cur.fetchone()
             if row:
                 ap = dict(zip(cols, row))
+                # 글로벌 할인율 조회
+                cur.execute("SELECT config_value FROM tbl_site_config WHERE config_key = 'autopay_discount_rate'")
+                disc_row = cur.fetchone()
+                global_discount = int(disc_row[0]) if disc_row else 0
                 autopay_info = {
                     'id': ap['id'],
                     'product_name': ap['product_name'] or ('%s (%s)' % (ap['session'], ap['month_type'])),
                     'amount': '{:,}'.format(int(ap['amount'])) if ap['amount'] else '0',
+                    'discount_rate': global_discount,
                     'last_paid_date': ap['last_paid_date'].strftime('%Y-%m-%d %H:%M') if ap['last_paid_date'] else '-',
                     'next_pay_date': ap['next_pay_date'].strftime('%Y-%m-%d %H:%M') if ap['next_pay_date'] else '-',
                     'created_date': ap['created_date'].strftime('%Y-%m-%d %H:%M') if ap['created_date'] else '-',
@@ -1733,3 +1738,185 @@ def api_autopay_cancel(request):
         return JsonResponse({'result': 200, 'message': _('Auto payment has been cancelled.')})
     else:
         return JsonResponse({'result': 200, 'message': _('No active auto payment found.')})
+
+
+# =====================================================================
+#  서버 현황 (Server Status) — 고객 대상 공개 페이지
+# =====================================================================
+
+def server_status(request):
+    """서버 현황 페이지 렌더"""
+    LANGUAGE_CODE = request.LANGUAGE_CODE
+    try:
+        translation.activate(LANGUAGE_CODE)
+    except Exception:
+        pass
+    context = {'LANGUAGE_CODE': LANGUAGE_CODE}
+    return render(request, 'new/server_status.html', context)
+
+
+@csrf_exempt
+def api_server_status(request):
+    """서버 현황 API — VPN 프로토콜 + 사이트 접근 상태를 JSON으로 반환
+    tbl_nas_monitor_log에서 service / site_check 최신 데이터를 읽어 결합"""
+    cursor = connections['default'].cursor()
+
+    # 1) 최신 service check (VPN 프로토콜)
+    cursor.execute("""
+        SELECT report_json, check_time
+        FROM tbl_nas_monitor_log
+        WHERE check_type = 'service'
+        ORDER BY check_time DESC LIMIT 1
+    """)
+    svc_row = cursor.fetchone()
+
+    # 2) 최신 site_check (사이트 접근성)
+    cursor.execute("""
+        SELECT report_json, check_time
+        FROM tbl_nas_monitor_log
+        WHERE check_type = 'site_check'
+        ORDER BY check_time DESC LIMIT 1
+    """)
+    site_row = cursor.fetchone()
+
+    # 3) 서버 기본 정보 (is_active + hostdomain for ping)
+    cursor.execute("""
+        SELECT name, hostip, hostdomain, protocol, country, is_auto
+        FROM tbl_agent3
+        WHERE is_active = 1
+        ORDER BY name
+    """)
+    agent_rows = cursor.fetchall()
+    agent_map = {}
+    for r in agent_rows:
+        agent_map[r[1]] = {
+            'name': r[0], 'ip': r[1], 'hostdomain': r[2],
+            'protocol': r[3], 'country': r[4], 'is_auto': r[5],
+        }
+
+    # 서비스 체크 데이터 파싱
+    svc_servers = {}
+    svc_time = None
+    if svc_row and svc_row[0]:
+        svc_time = svc_row[1].strftime('%Y-%m-%d %H:%M:%S') if svc_row[1] else None
+        try:
+            svc_data = json.loads(svc_row[0])
+            for s in svc_data.get('servers', []):
+                svc_servers[s.get('ip', '')] = s
+        except Exception:
+            pass
+
+    # 사이트 체크 데이터 파싱
+    site_servers = {}
+    site_time = None
+    if site_row and site_row[0]:
+        site_time = site_row[1].strftime('%Y-%m-%d %H:%M:%S') if site_row[1] else None
+        try:
+            site_data = json.loads(site_row[0])
+            for s in site_data.get('servers', []):
+                site_servers[s.get('ip', '')] = s
+        except Exception:
+            pass
+
+    # 4) 중국 3대 통신사별 최신 ping 데이터
+    ping_map = {}  # ip -> {'ct': avg, 'cm': avg, 'cu': avg}
+    ping_time = None
+    try:
+        cursor.execute("""
+            SELECT p.server_ip, p.cn_telecom, p.ping_avg, p.check_time
+            FROM tbl_server_telecom_ping p
+            INNER JOIN (
+                SELECT server_ip, cn_telecom, MAX(id) AS max_id
+                FROM tbl_server_telecom_ping
+                WHERE check_time > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                GROUP BY server_ip, cn_telecom
+            ) latest ON p.id = latest.max_id
+        """)
+        for row in cursor.fetchall():
+            ip_addr, tc, avg, ct = row
+            if ip_addr not in ping_map:
+                ping_map[ip_addr] = {}
+            ping_map[ip_addr][tc] = float(avg) if avg is not None else None
+            if ct and (ping_time is None or ct > ping_time):
+                ping_time = ct
+    except Exception:
+        pass
+    ping_time_str = ping_time.strftime('%Y-%m-%d %H:%M:%S') if ping_time else None
+
+    # VPN 프로토콜 상태 추출 헬퍼
+    def _proto_ok(chk):
+        if not chk:
+            return None  # 미설정
+        if 'effective_status' in chk:
+            es = chk['effective_status']
+            return es in ('OK', 'RESP', 'OK_TLSAUTH', 'OK_LISTEN')
+        if 'handshake' in chk:
+            return chk['handshake'] == 'OK'
+        if 'port443' in chk:
+            return chk['port443'] == 'OK'
+        if 'connection' in chk:
+            c = chk['connection']
+            return c in ('OK', 'OK_HTTP', 'RESPONSE', 'OK_SILENT')
+        if 'process' in chk:
+            return chk['process']
+        return None
+
+    # 사이트 상태 추출 헬퍼
+    def _site_ok(sd, key):
+        s = sd.get(key)
+        if not s:
+            return None
+        return s.get('ok', False)
+
+    # 결합 — OK 서버만 반환
+    result_servers = []
+    for ip, agent in agent_map.items():
+        svc = svc_servers.get(ip, {})
+        site = site_servers.get(ip, {})
+
+        svc_status = svc.get('status', 'UNKNOWN')
+        if svc_status not in ('OK',):
+            continue
+
+        checks = svc.get('checks', {})
+        sites = site.get('sites', {})
+        pings = ping_map.get(ip, {})
+
+        server_entry = {
+            'name': agent['name'],
+            'country': agent['country'],
+            'hostdomain': agent['hostdomain'],
+            'ip': ip,
+            'vpn': {
+                'ikev2': _proto_ok(checks.get('ikev2')),
+                'sstp': _proto_ok(checks.get('sstp')),
+                'openvpn': _proto_ok(checks.get('openvpn')),
+                'v2ray': _proto_ok(checks.get('v2ray')),
+            },
+            'sites': {
+                'google': _site_ok(sites, 'google') if 'google' in sites else _site_ok(sites, 'gemini'),
+                'gemini': _site_ok(sites, 'gemini'),
+                'facebook': _site_ok(sites, 'facebook'),
+                'instagram': _site_ok(sites, 'instagram'),
+                'tiktok': _site_ok(sites, 'tiktok'),
+                'netflix': _site_ok(sites, 'netflix'),
+                'youtube': _site_ok(sites, 'youtube'),
+            },
+            'ping': {
+                'cu': round(pings['cu'], 1) if pings.get('cu') is not None else None,
+                'ct': round(pings['ct'], 1) if pings.get('ct') is not None else None,
+                'cm': round(pings['cm'], 1) if pings.get('cm') is not None else None,
+            },
+        }
+        result_servers.append(server_entry)
+
+    # 이름순 정렬
+    result_servers.sort(key=lambda x: x['name'])
+
+    return JsonResponse({
+        'result': 200,
+        'svc_time': svc_time,
+        'site_time': site_time,
+        'ping_time': ping_time_str,
+        'servers': result_servers,
+    })

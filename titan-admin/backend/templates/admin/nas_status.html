@@ -153,6 +153,12 @@
         border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; margin-left: 4px;
     }
     .btn-reboot:hover { background: #c82333; border-color: #bd2130; }
+    .btn-svc-fix {
+        padding: 1px 6px; border: 1px solid #fd7e14; background: #fd7e14; color: #fff;
+        border-radius: 3px; cursor: pointer; font-size: 10px; white-space: nowrap; margin-left: 3px;
+        vertical-align: middle;
+    }
+    .btn-svc-fix:hover { background: #e8590c; border-color: #e8590c; }
     /* Uptime 배지 */
     .uptime-badge { font-size: 12px; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
     .uptime-ok { color: #28a745; }
@@ -398,8 +404,6 @@
         <div class="reboot-modal-body">
             <p id="reboot-modal-msg" style="font-size:15px;"></p>
             <p style="color:#dc3545;font-size:13px;"><i class="fa fa-exclamation-triangle"></i> 재부팅 시 VPN 접속자가 일시 끊깁니다. 신중히 진행하세요.</p>
-            <label style="font-size:13px;color:#666;margin-bottom:5px;display:block;">관리자 비밀번호 확인</label>
-            <input type="password" id="reboot-password" placeholder="관리자 비밀번호 입력" onkeydown="if(event.key==='Enter')confirmReboot()">
             <input type="hidden" id="reboot-target-ip">
             <input type="hidden" id="reboot-target-name">
         </div>
@@ -562,7 +566,7 @@ function renderHealthTable() {
         row += '<td>'
             + '<button class="btn-ssh" onclick="showSSHInfo(\'' + (sv.ip || '') + '\', \'' + (sv.name || '').replace(/'/g, "\\'") + '\')" title="SSH 접속"><i class="fa fa-terminal"></i></button>'
             + '<button class="btn-recheck" id="recheck-' + (sv.ip || '').replace(/\./g, '-') + '" onclick="singleNasCheck(\'' + (sv.ip || '') + '\', \'' + (sv.name || '').replace(/'/g, "\\'") + '\')" title="이 서버만 재점검"><i class="fa fa-refresh"></i></button>'
-            + '<button class="btn-reboot" onclick="showRebootModal(\'' + (sv.ip || '') + '\', \'' + (sv.name || '').replace(/'/g, "\\'") + '\')" title="서버 재부팅"><i class="fa fa-power-off"></i></button>'
+            + '<button class="btn-reboot" id="reboot-' + (sv.ip || '').replace(/\./g, '-') + '" onclick="showRebootModal(\'' + (sv.ip || '') + '\', \'' + (sv.name || '').replace(/'/g, "\\'") + '\')" title="서버 재부팅"><i class="fa fa-power-off"></i></button>'
             + '</td>';
         row += '</tr>';
         tbody.append(row);
@@ -627,7 +631,10 @@ function certHtml(sv) {
         certText = '<span style="color:#dc3545;font-weight:700;"><i class="fa fa-times-circle"></i> 만료 (' + expiry + ')</span>';
         showRenew = true;
     } else if (status === 'EXPIRING') {
-        certText = '<span style="color:#fd7e14;font-weight:600;"><i class="fa fa-exclamation-triangle"></i> ' + days + '일 (' + expiry + ')</span>';
+        certText = '<span style="color:#fd7e14;font-weight:700;"><i class="fa fa-exclamation-triangle"></i> ' + days + '일 (' + expiry + ')</span>';
+        showRenew = true;
+    } else if (status === 'OK' && days !== null && days !== undefined && days <= 30) {
+        certText = '<span style="color:#fd7e14;font-weight:700;"><i class="fa fa-exclamation-triangle"></i> ' + days + '일</span>';
         showRenew = true;
     } else if (status === 'OK') {
         certText = '<span style="color:#28a745;"><i class="fa fa-check"></i> ' + days + '일</span>';
@@ -660,10 +667,10 @@ function renderServiceTable() {
 
         const svName = sv.name || '';
         const svFail = failData[svName] || {};
-        const ikev2 = svcCheckHtml(checks.ikev2, svName, 'IKEV2', svFail.ikev2 || 0);
-        const sstp = svcCheckHtml(checks.sstp, svName, 'SSTP', svFail.sstp || 0);
-        const openvpn = svcCheckHtml(checks.openvpn, svName, 'OPENVPN', svFail.openvpn || 0);
-        const v2ray = svcCheckHtml(checks.v2ray, svName, 'V2RAY', svFail.v2ray || 0);
+        const ikev2 = svcCheckHtml(checks.ikev2, svName, 'IKEV2', svFail.ikev2 || 0, sv.ip);
+        const sstp = svcCheckHtml(checks.sstp, svName, 'SSTP', svFail.sstp || 0, sv.ip);
+        const openvpn = svcCheckHtml(checks.openvpn, svName, 'OPENVPN', svFail.openvpn || 0, sv.ip);
+        const v2ray = svcCheckHtml(checks.v2ray, svName, 'V2RAY', svFail.v2ray || 0, sv.ip);
 
         // 프로토콜별 접속자 합계
         const totalClients = (checks.ikev2 ? (checks.ikev2.clients || 0) : 0)
@@ -698,7 +705,7 @@ function renderServiceTable() {
     });
 }
 
-function svcCheckHtml(chk, svName, proto, failCnt) {
+function svcCheckHtml(chk, svName, proto, failCnt, svIp) {
     const failBadge = (failCnt > 0)
         ? ' <span class="fail-badge" title="최근 1시간 실패 ' + failCnt + '건" onclick="showFailLogs(\'' + (svName||'').replace(/'/g, "\\'") + '\',\'' + proto + '\')">' + failCnt + '</span>'
         : '';
@@ -708,34 +715,37 @@ function svcCheckHtml(chk, svName, proto, failCnt) {
     const clients = (chk.clients !== undefined && chk.clients > 0)
         ? ' <span style="color:#555;font-size:11px;">(' + chk.clients + ')</span>' : '';
 
+    // 복구 버튼 (FAIL 상태일 때만)
+    const fixBtn = svIp ? ' <button class="btn-svc-fix" onclick="restartService(\'' + svIp + '\', \'' + proto + '\', \'' + (svName||'').replace(/'/g, "\\'") + '\', this)" title="서비스 재시작"><i class="fa fa-wrench"></i></button>' : '';
+
     // OpenVPN — effective_status 우선 사용
     if (chk.effective_status !== undefined) {
         const es = chk.effective_status;
         if (es === 'OK' || es === 'RESP') return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + '</span>' + failBadge;
         if (es === 'OK_TLSAUTH') return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + ' <small style="opacity:0.7">(tls-auth)</small></span>' + failBadge;
         if (es === 'OK_LISTEN') return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + ' <small style="opacity:0.7">(listen)</small></span>' + failBadge;
-        if (es === 'TIMEOUT') return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>TIMEOUT</span>' + failBadge;
-        if (es === 'REFUSED') return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>REFUSED</span>' + failBadge;
-        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + es + '</span>' + failBadge;
+        if (es === 'TIMEOUT') return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>TIMEOUT</span>' + fixBtn + failBadge;
+        if (es === 'REFUSED') return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>REFUSED</span>' + fixBtn + failBadge;
+        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + es + '</span>' + fixBtn + failBadge;
     }
 
     // IKEv2
     if (chk.handshake !== undefined) {
         if (chk.handshake === 'OK') return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + '</span>' + failBadge;
-        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + (chk.handshake || 'FAIL') + '</span>' + failBadge;
+        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + (chk.handshake || 'FAIL') + '</span>' + fixBtn + failBadge;
     }
     // SSTP
     if (chk.port443 !== undefined) {
         if (chk.port443 === 'OK') return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + '</span>' + failBadge;
-        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + (chk.port443 || 'FAIL') + '</span>' + failBadge;
+        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + (chk.port443 || 'FAIL') + '</span>' + fixBtn + failBadge;
     }
     // V2Ray
     if (chk.ports !== undefined) {
         const ok = chk.ports.filter(p => p.status === 'OK').length;
         const total = chk.ports.length;
         if (ok === total && total > 0) return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>' + ok + '/' + total + clients + '</span>' + failBadge;
-        if (ok > 0) return '<span style="color:#856404;"><i class="fa fa-exclamation-circle svc-icon"></i>' + ok + '/' + total + clients + '</span>' + failBadge;
-        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>0/' + total + '</span>' + failBadge;
+        if (ok > 0) return '<span style="color:#856404;"><i class="fa fa-exclamation-circle svc-icon"></i>' + ok + '/' + total + clients + '</span>' + fixBtn + failBadge;
+        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>0/' + total + '</span>' + fixBtn + failBadge;
     }
     // V2Ray connection 필드
     if (chk.connection !== undefined) {
@@ -743,14 +753,14 @@ function svcCheckHtml(chk, svName, proto, failCnt) {
             return '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + '</span>' + failBadge;
         if (chk.connection === 'SKIP' || chk.connection === 'NO_PORT_CONFIG')
             return '<span class="svc-na">-</span>' + failBadge;
-        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + chk.connection + '</span>' + failBadge;
+        return '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>' + chk.connection + '</span>' + fixBtn + failBadge;
     }
 
     // process 체크
     if (chk.process !== undefined) {
         return chk.process
             ? '<span class="svc-ok"><i class="fa fa-check-circle svc-icon"></i>OK' + clients + '</span>' + failBadge
-            : '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>DOWN</span>' + failBadge;
+            : '<span class="svc-fail"><i class="fa fa-times-circle svc-icon"></i>DOWN</span>' + fixBtn + failBadge;
     }
     return '<span class="svc-na">-</span>' + failBadge;
 }
@@ -1114,15 +1124,52 @@ function closeSSHModal() {
     $('#ssh-modal-overlay').removeClass('show');
 }
 
+// ===== 서비스 복구 (재시작) =====
+function restartService(ip, service, serverName, btnEl) {
+    const $btn = $(btnEl);
+    if ($btn.prop('disabled')) return;
+    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+    showToast(serverName + ' — ' + service + ' 재시작 중...');
+    $.ajax({
+        url: '/api/v1/update/restart_service',
+        type: 'POST',
+        data: { ip: ip, service: service },
+        headers: { 'X-CSRFToken': getCsrfToken() },
+        success: function(res) {
+            if (res.result === 200) {
+                $btn.html('<i class="fa fa-check"></i>').css({'background':'#28a745','border-color':'#28a745'});
+                showToast(res.msg, 'success');
+                // 5초 후 자동 재점검
+                setTimeout(function() {
+                    singleNasCheck(ip, serverName);
+                }, 5000);
+            } else {
+                $btn.html('<i class="fa fa-times"></i>').css({'background':'#dc3545','border-color':'#dc3545'});
+                showToast(res.msg || '복구 실패', 'error');
+                setTimeout(function() {
+                    $btn.prop('disabled', false).html('<i class="fa fa-wrench"></i>')
+                       .css({'background':'#fd7e14','border-color':'#fd7e14'});
+                }, 3000);
+            }
+        },
+        error: function() {
+            $btn.html('<i class="fa fa-times"></i>').css({'background':'#dc3545','border-color':'#dc3545'});
+            showToast('서버 통신 실패', 'error');
+            setTimeout(function() {
+                $btn.prop('disabled', false).html('<i class="fa fa-wrench"></i>')
+                   .css({'background':'#fd7e14','border-color':'#fd7e14'});
+            }, 3000);
+        }
+    });
+}
+
 // ===== 재부팅 모달 =====
 function showRebootModal(ip, serverName) {
     $('#reboot-modal-msg').html('<strong>' + serverName + '</strong> (' + ip + ') 서버를 재부팅하시겠습니까?');
     $('#reboot-target-ip').val(ip);
     $('#reboot-target-name').val(serverName);
-    $('#reboot-password').val('');
     $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
     $('#reboot-modal-overlay').addClass('show');
-    setTimeout(function() { $('#reboot-password').focus(); }, 200);
 }
 
 function closeRebootModal() {
@@ -1132,26 +1179,17 @@ function closeRebootModal() {
 function confirmReboot() {
     const ip = $('#reboot-target-ip').val();
     const name = $('#reboot-target-name').val();
-    const pw = $('#reboot-password').val();
-    if (!pw) {
-        alert('관리자 비밀번호를 입력해주세요.');
-        $('#reboot-password').focus();
-        return;
-    }
     $('#btn-reboot-go').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 처리 중...');
     $.ajax({
         url: '/api/v1/update/reboot_server',
         type: 'POST',
-        data: { ip: ip, password: pw },
+        data: { ip: ip },
         headers: { 'X-CSRFToken': getCsrfToken() },
         success: function(res) {
             if (res.result === 200) {
                 closeRebootModal();
                 showToast(res.msg || '재부팅 명령 전송 완료', 'success');
-            } else if (res.result === 403) {
-                alert(res.msg || '비밀번호가 일치하지 않습니다.');
-                $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
-                $('#reboot-password').val('').focus();
+                startRebootWatch(ip, name);
             } else {
                 alert(res.msg || '재부팅 실패');
                 $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
@@ -1162,6 +1200,137 @@ function confirmReboot() {
             $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
         }
     });
+}
+
+function _getRebootBtn(ip) {
+    const ipKey = ip.replace(/\./g, '-');
+    return $('#reboot-' + ipKey);
+}
+
+function startRebootWatch(ip, serverName) {
+    const btn = _getRebootBtn(ip);
+    btn.prop('disabled', true).addClass('checking')
+       .css({'background':'#fd7e14','border-color':'#fd7e14','color':'#fff'})
+       .html('<i class="fa fa-spinner fa-spin"></i>');
+    let elapsed = 0;
+    const countdown = setInterval(function() {
+        elapsed += 1;
+        btn.html('<i class="fa fa-spinner fa-spin"></i> ' + elapsed + 's');
+    }, 1000);
+    showToast(serverName + ' 재부팅 중... 약 35초 후 자동 재점검합니다.');
+    // 35초 후부터 3초 간격으로 서버 응답 확인
+    setTimeout(function() {
+        clearInterval(countdown);
+        btn.html('<i class="fa fa-spinner fa-spin"></i> 점검 중...');
+        pollRebootRecovery(ip, serverName, 0);
+    }, 35000);
+}
+
+function pollRebootRecovery(ip, serverName, attempt) {
+    const btn = _getRebootBtn(ip);
+    if (attempt > 40) { // 추가 2분 대기 한도
+        btn.removeClass('checking').prop('disabled', false)
+           .css({'background':'','border-color':'','color':''})
+           .html('<i class="fa fa-power-off"></i>');
+        showToast(serverName + ' 재부팅 응답 타임아웃. 수동으로 점검해주세요.', 'error');
+        return;
+    }
+    // singleNasCheck를 트리거하고 폴링으로 완료 대기
+    $.ajax({
+        url: '/api/v1/update/nas_single_check',
+        method: 'POST',
+        data: { ip: ip },
+        headers: { 'X-CSRFToken': getCsrfToken() },
+    }).done(function(res) {
+        if (res.result === 200 || res.result === 409) {
+            // 점검 시작됨 → 기존 pollSingleCheck 재사용하되 reboot 버튼도 같이 처리
+            pollRebootCheck(ip, serverName, 0);
+        } else {
+            // 아직 안 살아남 → 3초 후 재시도
+            setTimeout(function() { pollRebootRecovery(ip, serverName, attempt + 1); }, 3000);
+        }
+    }).fail(function() {
+        setTimeout(function() { pollRebootRecovery(ip, serverName, attempt + 1); }, 3000);
+    });
+}
+
+function pollRebootCheck(ip, serverName, count) {
+    const btn = _getRebootBtn(ip);
+    const recheckBtns = _getRecheckBtns(ip);
+    recheckBtns.addClass('checking').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+    if (count > 40) {
+        btn.removeClass('checking').prop('disabled', false)
+           .css({'background':'','border-color':'','color':''})
+           .html('<i class="fa fa-power-off"></i>');
+        recheckBtns.removeClass('checking').prop('disabled', false).html('<i class="fa fa-refresh"></i>');
+        showToast(serverName + ' 점검 타임아웃');
+        return;
+    }
+
+    setTimeout(function() {
+        $.get('/api/v1/read/nas_single_check_status', { ip: ip }).done(function(res) {
+            if (!res.running && res.data) {
+                // 점검 완료
+                recheckBtns.removeClass('checking').prop('disabled', false);
+                btn.removeClass('checking').prop('disabled', false)
+                   .css({'background':'','border-color':'','color':''});
+
+                if (res.data.success) {
+                    let statusText = '완료';
+                    if (res.data.health && res.data.health.servers && res.data.health.servers.length > 0) {
+                        const sv = res.data.health.servers[0];
+                        statusText = getHealthStatus(sv).toUpperCase();
+                        if (healthData && healthData.servers) {
+                            const idx = healthData.servers.findIndex(s => s.ip === ip);
+                            if (idx >= 0) healthData.servers[idx] = sv;
+                            else healthData.servers.push(sv);
+                            healthData.ok = healthData.servers.filter(s => getHealthStatus(s) === 'ok').length;
+                            healthData.warning = healthData.servers.filter(s => getHealthStatus(s) === 'warning').length;
+                            healthData.critical = healthData.servers.filter(s => getHealthStatus(s) === 'critical').length;
+                            renderSummary();
+                            renderHealthTable();
+                        }
+                    }
+                    if (res.data.service && res.data.service.servers && res.data.service.servers.length > 0) {
+                        const svSvc = res.data.service.servers[0];
+                        if (serviceData && serviceData.servers) {
+                            const idx = serviceData.servers.findIndex(s => s.ip === ip);
+                            if (idx >= 0) serviceData.servers[idx] = svSvc;
+                            else serviceData.servers.push(svSvc);
+                            serviceData.ok = serviceData.servers.filter(s => (s.status||'OK').toLowerCase() === 'ok').length;
+                            serviceData.warning = serviceData.servers.filter(s => (s.status||'').toLowerCase() === 'warning').length;
+                            serviceData.critical = serviceData.servers.filter(s => (s.status||'').toLowerCase() === 'critical').length;
+                            renderSummary();
+                            renderServiceTable();
+                        }
+                    }
+                    recheckBtns.addClass('check-ok').html('<i class="fa fa-check"></i>');
+                    btn.html('<i class="fa fa-check" style="color:#28a745"></i>');
+                    showToast(serverName + ' 재부팅 완료! 상태: ' + statusText + ' (' + (res.data.elapsed || '?') + '초)', 'success');
+                    setTimeout(function() {
+                        _getRecheckBtns(ip).removeClass('check-ok check-fail').html('<i class="fa fa-refresh"></i>');
+                        _getRebootBtn(ip).html('<i class="fa fa-power-off"></i>');
+                    }, 5000);
+                } else {
+                    recheckBtns.addClass('check-fail').html('<i class="fa fa-times"></i>');
+                    btn.html('<i class="fa fa-times" style="color:#dc3545"></i>');
+                    showToast(serverName + ' 재부팅 후 점검 실패: ' + (res.data.message || ''));
+                    setTimeout(function() {
+                        _getRecheckBtns(ip).removeClass('check-ok check-fail').html('<i class="fa fa-refresh"></i>');
+                        _getRebootBtn(ip).html('<i class="fa fa-power-off"></i>');
+                    }, 5000);
+                }
+            } else {
+                const el = res.elapsed ? Math.round(res.elapsed) : (count * 3);
+                recheckBtns.html('<i class="fa fa-spinner fa-spin"></i> ' + el + 's');
+                btn.html('<i class="fa fa-spinner fa-spin"></i> 점검 ' + el + 's');
+                pollRebootCheck(ip, serverName, count + 1);
+            }
+        }).fail(function() {
+            pollRebootCheck(ip, serverName, count + 1);
+        });
+    }, 3000);
 }
 
 function togglePassword(pw, btn) {
@@ -1410,15 +1579,26 @@ function startSiteCheckPolling() {
                 const pct = res.total > 0 ? Math.round(res.completed / res.total * 100) : 0;
                 const elapsed = res.elapsed ? Math.round(res.elapsed) : 0;
                 if (res.running) {
-                    $('#btn-site-check').prop('disabled', true)
-                        .css({background:'#6c757d',borderColor:'#6c757d'})
-                        .html('<i class="fa fa-spinner fa-spin"></i> 점검중 ' + pct + '%');
-                    $('#site-check-progress').html(
-                        res.completed + '/' + res.total + ' 서버 완료 (' + elapsed + '초)'
-                    );
+                    if (res.retry) {
+                        $('#btn-site-check').prop('disabled', true)
+                            .css({background:'#e67e22',borderColor:'#e67e22'})
+                            .html('<i class="fa fa-spinner fa-spin"></i> 재점검 ' + (res.retry_count||'') + '개');
+                        $('#site-check-progress').html(
+                            '<span style="color:#e67e22;"><i class="fa fa-repeat"></i> '
+                            + (res.retry_count||'') + '개 실패 서버 자동 재점검 중... (' + elapsed + '초)</span>'
+                        );
+                    } else {
+                        $('#btn-site-check').prop('disabled', true)
+                            .css({background:'#6c757d',borderColor:'#6c757d'})
+                            .html('<i class="fa fa-spinner fa-spin"></i> 점검중 ' + pct + '%');
+                        $('#site-check-progress').html(
+                            res.completed + '/' + res.total + ' 서버 완료 (' + elapsed + '초)'
+                        );
+                    }
                 } else {
                     clearInterval(siteCheckPolling);
                     siteCheckPolling = null;
+                    window._siteCheckRetried = false;
                     resetSiteCheckBtn();
                     $('#site-check-progress').html(
                         '<span style="color:#28a745;"><i class="fa fa-check"></i> 점검 완료 — '
@@ -1472,13 +1652,15 @@ function renderSiteCheckTable(res) {
             });
             row += '<td style="text-align:center;"><span class="svc-fail">SSH 실패</span></td>';
         } else {
+            const _ip = (r.ip||'').replace(/'/g, "\\'");
+            const _name = (r.name||'').replace(/'/g, "\\'");
             sites.forEach(function(s) {
                 const chk = (r.sites || {})[s.key];
                 if (!chk) {
                     row += '<td style="text-align:center;"><span class="svc-na">-</span></td>';
                 } else if (chk.ok) {
                     if (chk.bot_blocked) {
-                        row += '<td style="text-align:center;"><span style="color:#856404;" title="x.com은 curl/봇 요청을 차단 (브라우저 fingerprint 필요)"><i class="fa fa-robot"></i> 봇차단</span></td>';
+                        row += '<td style="text-align:center;"><span style="color:#856404;" title="Cloudflare 봇 감지 (curl 차단, 브라우저 정상)"><i class="fa fa-robot"></i> 봇차단</span></td>';
                     } else {
                         row += '<td style="text-align:center;"><span class="svc-ok" title="HTTP ' + chk.code + '"><i class="fa fa-check-circle"></i> OK</span></td>';
                     }
@@ -1492,7 +1674,11 @@ function renderSiteCheckTable(res) {
                         row += '<td style="text-align:center;"><span class="svc-fail" title="Google geo: ' + (chk.geo||'') + '"><i class="fa fa-ban"></i> 차단(' + (chk.geo||'?') + ')</span></td>';
                     }
                 } else {
-                    row += '<td style="text-align:center;"><span class="svc-fail"><i class="fa fa-times-circle"></i> ' + (chk.code||'ERR') + '</span></td>';
+                    // 실패 셀 — 클릭하면 재점검
+                    row += '<td style="text-align:center;cursor:pointer;" onclick="startSingleSiteCheck(\'' + _ip + '\', \'' + _name + '\')" title="클릭하면 이 서버를 재점검합니다">'
+                         + '<span class="svc-fail"><i class="fa fa-times-circle"></i> ' + (chk.code||'ERR') + '</span>'
+                         + ' <i class="fa fa-refresh" style="font-size:10px;color:#888;"></i>'
+                         + '</td>';
                 }
             });
 

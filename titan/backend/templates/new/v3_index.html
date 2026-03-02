@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TITAN VPN - 시안 C: Dark Vivid</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090b;
+  --bg-2: #111113;
+  --bg-card: #18181b;
+  --bg-card-h: #1f1f23;
+  --emerald: #10b981;
+  --emerald-soft: rgba(16,185,129,0.1);
+  --emerald-glow: rgba(16,185,129,0.25);
+  --violet: #8b5cf6;
+  --violet-soft: rgba(139,92,246,0.1);
+  --white: #fafafa;
+  --gray: #a1a1aa;
+  --gray2: #71717a;
+  --gray3: #52525b;
+  --border: rgba(255,255,255,0.06);
+  --border-2: rgba(255,255,255,0.1);
+  --r: 12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--white);overflow-x:hidden}
+
+/* NOISE TEXTURE */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+section{padding:96px 0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:12px 0;
+  backdrop-filter:blur(24px);background:rgba(9,9,11,0.88);border-bottom:1px solid var(--border)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:36px;height:36px;border-radius:6px;object-fit:contain}
+.logo-name{font-weight:800;font-size:16px;letter-spacing:2px;color:var(--white)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--gray2);text-decoration:none;font-size:13px;font-weight:600;transition:color .3s}
+.nav-links a:hover{color:var(--emerald)}
+.nav-btns{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;border-radius:8px;font-family:'Manrope';font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .25s;text-decoration:none}
+.btn-o{background:transparent;color:var(--gray);border:1.5px solid var(--border-2)}
+.btn-o:hover{color:var(--white);border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.03)}
+.btn-g{background:var(--emerald);color:white;box-shadow:0 2px 16px var(--emerald-glow)}
+.btn-g:hover{box-shadow:0 4px 24px var(--emerald-glow);transform:translateY(-1px)}
+.btn-lg{padding:14px 32px;font-size:14px}
+.btn-xl{padding:16px 40px;font-size:15px;border-radius:10px}
+.mob-menu{display:none;background:none;border:none;color:var(--white);font-size:22px;cursor:pointer}
+
+/* LANG SWITCHER */
+.lang-sw{position:relative}
+.lang-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1.5px solid var(--border-2);background:transparent;color:var(--gray);font-family:'Manrope';font-size:12px;font-weight:600;cursor:pointer;transition:all .25s}
+.lang-btn:hover{color:var(--white);border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.03)}
+.lang-btn .flag{font-size:14px}
+.lang-btn .arrow{font-size:10px;transition:transform .3s;color:var(--gray3)}
+.lang-sw.open .lang-btn .arrow{transform:rotate(180deg)}
+.lang-drop{position:absolute;top:calc(100% + 8px);right:0;min-width:160px;background:var(--bg-card);border:1px solid var(--border-2);border-radius:8px;padding:6px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .25s;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.lang-sw.open .lang-drop{opacity:1;visibility:visible;transform:translateY(0)}
+.lang-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;cursor:pointer;transition:background .2s;border:none;background:none;width:100%;text-align:left;font-family:'Manrope';color:var(--gray)}
+.lang-opt:hover{background:rgba(255,255,255,0.04)}
+.lang-opt.active{color:var(--emerald)}
+.lang-opt .flag{font-size:16px}
+.lang-opt .lang-info{display:flex;flex-direction:column}
+.lang-opt .lang-name{font-size:13px;font-weight:600}
+.lang-opt .lang-native{font-size:11px;color:var(--gray3)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;padding-top:70px;position:relative}
+.hero-glow{position:absolute;top:10%;left:50%;transform:translateX(-50%);width:600px;height:400px;
+  background:radial-gradient(ellipse,rgba(16,185,129,0.08),transparent 60%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.hero-text{text-align:left}
+.hero-content{max-width:none;margin:0}
+.hero-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 8px;border:1px solid var(--border-2);border-radius:50px;margin-bottom:24px;background:rgba(255,255,255,0.02)}
+.hero-chip-text{font-size:12px;color:var(--gray);font-weight:500}
+.hero-chip-badge{background:var(--emerald-soft);color:var(--emerald);font-size:11px;font-weight:700;padding:4px 12px;border-radius:50px}
+.hero h1{font-size:52px;font-weight:800;line-height:1.08;letter-spacing:-2px;margin-bottom:20px}
+.hero h1 .hl{position:relative;display:inline-block}
+.hero h1 .hl::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:10px;background:var(--emerald);opacity:.15;border-radius:2px;z-index:-1}
+.hero-p{font-size:17px;color:var(--gray);line-height:1.7;margin-bottom:36px;max-width:460px}
+.hero-btns{display:flex;gap:12px;margin-bottom:56px}
+.hero-metrics{display:flex;gap:28px;flex-wrap:nowrap}
+.metric{position:relative;padding-left:16px}
+.metric::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:2px;background:var(--emerald);border-radius:2px}
+.metric-num{font-family:'Fira Code';font-size:22px;font-weight:600;color:var(--emerald)}
+.metric-lbl{font-size:11px;color:var(--gray2);margin-top:2px;white-space:nowrap}
+
+/* APP VISUAL */
+.hero-visual{display:flex;justify-content:center;align-items:center;position:relative}
+.app-phone{position:relative}
+.app-phone img{width:260px;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.app-badge{position:absolute;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--gray);display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.ab-dot{width:5px;height:5px;border-radius:50%;background:var(--emerald);box-shadow:0 0 6px var(--emerald-glow)}
+.ab-1{top:20px;right:-60px;animation:abob 4s ease-in-out infinite}
+.ab-2{bottom:60px;left:-50px;animation:abob 5s ease-in-out infinite 1s}
+.ab-3{top:45%;right:-70px;animation:abob 4.5s ease-in-out infinite .5s}
+@keyframes abob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* LOGOS BAR */
+.logos-bar{padding:48px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.logos-title{text-align:center;font-size:12px;color:var(--gray3);text-transform:uppercase;letter-spacing:3px;margin-bottom:24px;font-weight:600}
+.logos-row{display:flex;justify-content:center;gap:48px;align-items:center;flex-wrap:wrap}
+.logos-row span{font-size:16px;font-weight:700;color:var(--gray3);letter-spacing:1px;opacity:.5}
+
+/* FEATURES */
+.sec-hdr{margin-bottom:48px}
+.sec-hdr.center{text-align:center}
+.sec-chip{display:inline-flex;padding:5px 12px;border-radius:6px;font-family:'Fira Code';font-size:11px;color:var(--emerald);background:var(--emerald-soft);font-weight:500;margin-bottom:12px}
+.sec-title{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px}
+.sec-desc{font-size:14px;color:var(--gray);max-width:440px;line-height:1.7}
+.sec-hdr.center .sec-desc{margin:0 auto}
+
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.feat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;transition:all .3s;position:relative;overflow:hidden}
+.feat-card:hover{background:var(--bg-card-h);border-color:var(--border-2);transform:translateY(-2px)}
+.feat-num{font-family:'Fira Code';font-size:11px;color:var(--gray3);margin-bottom:16px}
+.feat-card h3{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.feat-card h3 span{font-size:16px}
+.feat-card p{font-size:13px;color:var(--gray);line-height:1.7}
+
+/* SERVERS */
+.srv-section{background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.srv-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.srv-visual{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:32px;position:relative}
+.srv-list{display:flex;flex-direction:column;gap:8px}
+.srv-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:border-color .3s}
+.srv-item:hover{border-color:var(--border-2)}
+.srv-left{display:flex;align-items:center;gap:10px}
+.srv-flag{font-size:18px}
+.srv-name{font-size:13px;font-weight:600}
+.srv-loc{font-size:11px;color:var(--gray2)}
+.srv-right{display:flex;align-items:center;gap:16px}
+.srv-status{width:8px;height:8px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald-glow)}
+.srv-ping{font-family:'Fira Code';font-size:12px;color:var(--emerald)}
+.isp-row{display:flex;gap:8px;margin-top:28px}
+.isp-pill{padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;color:var(--gray)}
+
+/* PRICING */
+.price-toggle{display:flex;justify-content:center;gap:2px;background:var(--bg-card);padding:3px;border-radius:8px;width:fit-content;margin:0 auto 44px;border:1px solid var(--border)}
+.ptab{padding:9px 24px;border-radius:6px;font-size:13px;font-weight:700;color:var(--gray3);cursor:pointer;border:none;background:transparent;font-family:'Manrope';transition:all .25s}
+.ptab.on{background:var(--emerald);color:white}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.price-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px 22px;transition:all .3s;position:relative}
+.price-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
+.price-card.pop{border-color:rgba(16,185,129,0.3);background:linear-gradient(180deg,rgba(16,185,129,0.04),var(--bg-card))}
+.pop-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--emerald);color:white;font-size:10px;font-weight:700;padding:3px 12px;border-radius:4px;text-transform:uppercase;letter-spacing:1px}
+.price-tier{font-size:12px;color:var(--gray2);margin-bottom:4px;font-weight:600}
+.price-name{font-size:18px;font-weight:800;margin-bottom:16px}
+.price-amt{display:flex;align-items:baseline;gap:3px;margin-bottom:2px}
+.price-sym{font-size:14px;color:var(--gray)}
+.price-num{font-family:'Fira Code';font-size:34px;font-weight:600;color:var(--emerald)}
+.price-per{font-size:12px;color:var(--gray3);margin-bottom:4px}
+.price-mo{font-family:'Fira Code';font-size:11px;color:var(--gray3);margin-bottom:20px}
+.price-list{list-style:none;margin-bottom:22px;padding-top:16px;border-top:1px solid var(--border)}
+.price-list li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);padding:5px 0}
+.price-list li::before{content:'→';color:var(--emerald);font-family:'Fira Code';font-size:11px}
+.price-btn{width:100%;text-align:center;padding:11px;border-radius:8px}
+
+/* DOWNLOAD */
+.dl-section{background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dl-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:28px 18px;text-align:center;transition:all .3s}
+.dl-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
+.dl-ico{font-size:32px;margin-bottom:12px}
+.dl-card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.dl-card p{font-family:'Fira Code';font-size:10px;color:var(--gray3);margin-bottom:16px}
+
+/* FAQ */
+.faq-box{max-width:640px;margin:0 auto}
+.faq-i{border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;cursor:pointer;font-weight:700;font-size:13px;background:transparent;border:none;color:var(--white);width:100%;text-align:left;font-family:'Manrope';transition:color .3s}
+.faq-q:hover{color:var(--emerald)}
+.faq-q .arr{color:var(--gray3);transition:transform .3s;font-size:14px}
+.faq-i.open .faq-q .arr{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s,padding .4s}
+.faq-i.open .faq-a{max-height:200px;padding:0 20px 16px}
+.faq-a p{font-size:13px;color:var(--gray);line-height:1.7}
+
+/* CTA */
+.cta-box{text-align:center;border:1px solid var(--border);border-radius:16px;padding:64px 32px;position:relative;overflow:hidden;background:var(--bg-card)}
+.cta-glow{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:400px;height:300px;background:radial-gradient(ellipse,rgba(16,185,129,0.08),transparent);pointer-events:none}
+.cta-box h2{font-size:32px;font-weight:800;margin-bottom:12px;position:relative}
+.cta-box p{color:var(--gray);font-size:14px;margin-bottom:28px;position:relative}
+
+/* FOOTER */
+footer{padding:48px 0 20px;border-top:1px solid var(--border)}
+.ft-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:32px}
+.ft-brand .logo{margin-bottom:12px}
+.ft-brand p{font-size:12px;color:var(--gray3);line-height:1.7;max-width:240px}
+.ft-col h4{font-family:'Fira Code';font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:2px;color:var(--gray2);margin-bottom:14px}
+.ft-col a{display:block;font-size:12px;color:var(--gray3);text-decoration:none;padding:4px 0;transition:color .3s}
+.ft-col a:hover{color:var(--emerald)}
+.ft-btm{border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;align-items:center}
+.ft-btm p{font-size:11px;color:var(--gray3)}
+.ft-langs{display:flex;gap:12px}
+.ft-langs a{font-size:11px;color:var(--gray3);text-decoration:none;transition:color .3s}
+.ft-langs a:hover{color:var(--emerald)}
+
+@media(max-width:768px){
+  .nav-links,.nav-btns{display:none}.mob-menu{display:block}
+  .hero h1{font-size:34px}.hero-metrics{gap:24px;flex-wrap:wrap;justify-content:center}
+  .hero-grid{grid-template-columns:1fr}.hero-visual{display:none}
+  .hero-text{text-align:center}.hero-btns{justify-content:center}
+  .hero-p{margin:0 auto 36px}
+  .feat-grid{grid-template-columns:1fr}.srv-grid{grid-template-columns:1fr;gap:32px}
+  .price-grid{grid-template-columns:1fr;max-width:340px;margin-left:auto;margin-right:auto}
+  .dl-grid{grid-template-columns:1fr 1fr}.ft-grid{grid-template-columns:1fr 1fr}
+  section{padding:60px 0}.logos-row{gap:24px}
+}
+
+.rv{opacity:0;transform:translateY(24px);transition:all .6s cubic-bezier(.16,1,.3,1)}
+.rv.vis{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="nav-in">
+  <a href="#" class="logo"><img src="/static/new/img/titan.png" alt="TITAN VPN" class="logo-mark"><span class="logo-name">TITAN VPN</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">기능</a></li>
+    <li><a href="#servers">서버</a></li>
+    <li><a href="#pricing">가격</a></li>
+    <li><a href="#download">다운로드</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="nav-btns">
+    <div class="lang-sw" id="langSw">
+      <button class="lang-btn" onclick="toggleLang()">
+        <span class="flag" id="curFlag">🇰🇷</span>
+        <span id="curLang">한국어</span>
+        <span class="arrow">▾</span>
+      </button>
+      <div class="lang-drop">
+        <button class="lang-opt active" onclick="setLang('ko','🇰🇷','한국어',this)">
+          <span class="flag">🇰🇷</span>
+          <div class="lang-info"><span class="lang-name">한국어</span><span class="lang-native">Korean</span></div>
+        </button>
+        <button class="lang-opt" onclick="setLang('zh','🇨🇳','中文',this)">
+          <span class="flag">🇨🇳</span>
+          <div class="lang-info"><span class="lang-name">中文</span><span class="lang-native">Chinese</span></div>
+        </button>
+        <button class="lang-opt" onclick="setLang('en','🇺🇸','English',this)">
+          <span class="flag">🇺🇸</span>
+          <div class="lang-info"><span class="lang-name">English</span><span class="lang-native">English</span></div>
+        </button>
+      </div>
+    </div>
+    <a href="#" class="btn btn-o">로그인</a>
+    <a href="#" class="btn btn-g">가입하기</a>
+  </div>
+  <button class="mob-menu">☰</button>
+</div>
+</nav>
+
+<section class="hero">
+<div class="hero-glow"></div>
+<div class="container">
+<div class="hero-grid">
+  <div class="hero-text">
+    <div class="hero-chip">
+      <span class="hero-chip-text">VPN Service for Korea &amp; China</span>
+      <span class="hero-chip-badge">v2.0</span>
+    </div>
+    <h1>모든 세상이 열리는<br><span class="hl">TITAN</span>과 함께</h1>
+    <p class="hero-p">한국 KT·SK·LG 전용 서버와 해외 서버들을 통해 자유로운 인터넷을 경험하세요. 구글프리미엄, 클로드, 제미나이, 챗지피티 등 모든 AI가 열립니다.</p>
+    <div class="hero-btns">
+      <a href="#pricing" class="btn btn-g btn-xl">요금제 선택하기 →</a>
+      <a href="#download" class="btn btn-o btn-lg">다운로드</a>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric"><div class="metric-num">13+</div><div class="metric-lbl">서버 위치</div></div>
+      <div class="metric"><div class="metric-num">99.9%</div><div class="metric-lbl">업타임</div></div>
+      <div class="metric"><div class="metric-num">6</div><div class="metric-lbl">동시접속</div></div>
+      <div class="metric"><div class="metric-num">4</div><div class="metric-lbl">플랫폼</div></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="app-phone">
+      <img src="/static/new/img/app-screenshot.png?v=20260301" alt="TitanVPN App">
+      <div class="app-badge ab-1"><span class="ab-dot"></span>AES-256 암호화</div>
+      <div class="app-badge ab-2"><span class="ab-dot"></span>V2Ray 프로토콜</div>
+      <div class="app-badge ab-3"><span class="ab-dot"></span>Kill Switch</div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<div class="logos-bar">
+<div class="container">
+  <div class="logos-title">접속 가능한 서비스</div>
+  <div class="logos-row">
+    <span>NAVER</span><span>KAKAO</span><span>DAUM</span><span>YouTube</span><span>Google</span><span>Facebook</span>
+  </div>
+</div>
+</div>
+
+<section id="features">
+<div class="container">
+<div class="sec-hdr center rv"><div class="sec-chip">features</div><h2 class="sec-title">왜 TITAN VPN인가요?</h2><p class="sec-desc">속도, 보안, 편의성 — 모두 갖춘 VPN 서비스</p></div>
+<div class="feat-grid">
+  <div class="feat-card rv"><div class="feat-num">01</div><h3><span>⚡</span> 초고속 연결</h3><p>KT, SK, LG 전용 서버로 최적화된 속도를 제공합니다.</p></div>
+  <div class="feat-card rv"><div class="feat-num">02</div><h3><span>🔐</span> 군사급 암호화</h3><p>IKEv2, OpenVPN, V2Ray, SSTP 등 다양한 프로토콜 지원.</p></div>
+  <div class="feat-card rv"><div class="feat-num">03</div><h3><span>🌐</span> 글로벌 서버</h3><p>한국, 미국(LA), 일본, 인도 주요 지역 서버 운영.</p></div>
+  <div class="feat-card rv"><div class="feat-num">04</div><h3><span>📱</span> 전 기기 호환</h3><p>Android, iOS, Windows, MacOS 모두 지원합니다.</p></div>
+  <div class="feat-card rv"><div class="feat-num">05</div><h3><span>👥</span> 최대 6명 동시접속</h3><p>하나의 계정으로 가족과 함께 사용하세요.</p></div>
+  <div class="feat-card rv"><div class="feat-num">06</div><h3><span>🇨🇳</span> 중국 전용 지원</h3><p>중국 내 아이폰, 윈도우, 맥에서 안정적 연결.</p></div>
+</div>
+</div>
+</section>
+
+<section id="servers" class="srv-section">
+<div class="container">
+<div class="srv-grid">
+  <div class="rv">
+    <div class="sec-chip">servers</div>
+    <h2 class="sec-title" style="margin-bottom:12px">서버 현황</h2>
+    <p class="sec-desc" style="margin-bottom:24px">한국 3대 ISP 전용 서버와 해외 거점에 고성능 서버를 운영합니다.</p>
+    <div class="isp-row"><div class="isp-pill">KT</div><div class="isp-pill">SK</div><div class="isp-pill">LG U+</div></div>
+  </div>
+  <div class="srv-visual rv">
+    <div class="srv-list">
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇰🇷</span><div><div class="srv-name">Seoul KT</div><div class="srv-loc">Korea · KT</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">3ms</span></div></div>
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇰🇷</span><div><div class="srv-name">Seoul SK</div><div class="srv-loc">Korea · SK</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">4ms</span></div></div>
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇰🇷</span><div><div class="srv-name">Seoul LG</div><div class="srv-loc">Korea · LG U+</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">5ms</span></div></div>
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇯🇵</span><div><div class="srv-name">Tokyo</div><div class="srv-loc">Japan</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">36ms</span></div></div>
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇺🇸</span><div><div class="srv-name">Los Angeles</div><div class="srv-loc">United States</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">142ms</span></div></div>
+      <div class="srv-item"><div class="srv-left"><span class="srv-flag">🇮🇳</span><div><div class="srv-name">Mumbai</div><div class="srv-loc">India</div></div></div><div class="srv-right"><div class="srv-status"></div><span class="srv-ping">98ms</span></div></div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<section id="pricing">
+<div class="container">
+<div class="sec-hdr center rv"><div class="sec-chip">pricing</div><h2 class="sec-title">요금제</h2><p class="sec-desc">7일 이내 무료 환불 보장</p></div>
+<div class="price-toggle rv"><button class="ptab" onclick="sw(1)">1개월</button><button class="ptab on" onclick="sw(6)">6개월</button><button class="ptab" onclick="sw(12)">12개월</button></div>
+<div class="price-grid rv" id="pg"></div>
+</div>
+</section>
+
+<section id="download" class="dl-section">
+<div class="container">
+<div class="sec-hdr center rv"><div class="sec-chip">download</div><h2 class="sec-title">앱 다운로드</h2><p class="sec-desc">사용 중인 기기에 맞는 앱을 설치하세요</p></div>
+<div class="dl-grid">
+  <div class="dl-card rv"><div class="dl-ico">🤖</div><h3>Android</h3><p>IKEv2 · OpenVPN · V2Ray</p><a href="#" class="btn btn-o" style="width:100%">다운로드</a></div>
+  <div class="dl-card rv"><div class="dl-ico">🍎</div><h3>iOS</h3><p>IKEv2 · OpenVPN · V2Ray</p><a href="#" class="btn btn-o" style="width:100%">다운로드</a></div>
+  <div class="dl-card rv"><div class="dl-ico">🪟</div><h3>Windows</h3><p>IKEv2 · OVPN · V2Ray · SSTP</p><a href="#" class="btn btn-o" style="width:100%">다운로드</a></div>
+  <div class="dl-card rv"><div class="dl-ico">💻</div><h3>MacOS</h3><p>IKEv2 · OpenVPN · V2Ray</p><a href="#" class="btn btn-o" style="width:100%">다운로드</a></div>
+</div>
+</div>
+</section>
+
+<section id="faq">
+<div class="container">
+<div class="sec-hdr center rv"><div class="sec-chip">faq</div><h2 class="sec-title">자주 묻는 질문</h2></div>
+<div class="faq-box">
+  <div class="faq-i rv"><button class="faq-q" onclick="tf(this)">환불 정책은 어떻게 되나요?<span class="arr">▾</span></button><div class="faq-a"><p>결제일로부터 7일 이내 무료 환불이 가능합니다.</p></div></div>
+  <div class="faq-i rv"><button class="faq-q" onclick="tf(this)">동시 접속은 몇 대까지?<span class="arr">▾</span></button><div class="faq-a"><p>요금제에 따라 1대부터 최대 6대까지 동시 접속 가능합니다.</p></div></div>
+  <div class="faq-i rv"><button class="faq-q" onclick="tf(this)">중국에서도 사용 가능한가요?<span class="arr">▾</span></button><div class="faq-a"><p>네, V2Ray 프로토콜을 통해 중국 내에서도 안정적으로 연결됩니다.</p></div></div>
+  <div class="faq-i rv"><button class="faq-q" onclick="tf(this)">어떤 프로토콜을 지원하나요?<span class="arr">▾</span></button><div class="faq-a"><p>IKEv2, OpenVPN, V2Ray, SSTP(Windows) 프로토콜을 지원합니다.</p></div></div>
+  <div class="faq-i rv"><button class="faq-q" onclick="tf(this)">한국 서비스 접속이 가능한가요?<span class="arr">▾</span></button><div class="faq-a"><p>네, KT/SK/LG 전용 서버로 네이버, 카카오톡 등 모든 한국 서비스에 접속 가능합니다.</p></div></div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="container">
+<div class="cta-box rv">
+  <div class="cta-glow"></div>
+  <h2>지금 <span style="color:var(--emerald)">TITAN VPN</span>을 시작하세요</h2>
+  <p>7일 무료 환불 보장 · 1분이면 시작 가능</p>
+  <a href="#pricing" class="btn btn-g btn-xl" style="position:relative">시작하기 →</a>
+</div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+<div class="ft-grid">
+  <div class="ft-brand"><a href="#" class="logo"><img src="/static/new/img/titan.png" alt="TITAN VPN" class="logo-mark"><span class="logo-name">TITAN VPN</span></a><p>대전광역시 대덕구 대화로 160<br>사업자등록번호: 732-43-00614<br>TEL: +82-70-8016-3303</p></div>
+  <div class="ft-col"><h4>서비스</h4><a href="#">가격</a><a href="#">결제</a><a href="#">FAQ</a></div>
+  <div class="ft-col"><h4>다운로드</h4><a href="#">Android</a><a href="#">iOS</a><a href="#">Windows</a><a href="#">MacOS</a></div>
+  <div class="ft-col"><h4>정책</h4><a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">환불 정책</a></div>
+</div>
+<div class="ft-btm"><p>© 2025 TitanVPN. All rights reserved.</p><div class="ft-langs"><a href="#">🇰🇷 한국어</a><a href="#">🇨🇳 中文</a><a href="#">🇺🇸 English</a></div></div>
+</div>
+</footer>
+
+<script>
+var P={1:[{n:'1인',u:1,k:'8,300',d:'7'},{n:'2인',u:2,k:'14,000',d:'12'},{n:'3인',u:3,k:'22,000',d:'19'}],6:[{n:'1인',u:1,k:'47,000',d:'40',m:'~7,833'},{n:'2인',u:2,k:'69,000',d:'58',m:'~11,500'},{n:'3인',u:3,k:'110,000',d:'95',m:'~18,333'}],12:[{n:'1인',u:1,k:'83,000',d:'70',m:'~6,917'},{n:'2인',u:2,k:'125,000',d:'105',m:'~10,417'},{n:'3인',u:3,k:'199,000',d:'169',m:'~16,583'}]};
+var cur=6;
+function sw(m){cur=m;document.querySelectorAll('.ptab').forEach(function(t,i){t.classList.toggle('on',[1,6,12][i]===m)});rp()}
+function rp(){var d=P[cur],g=document.getElementById('pg'),pr=cur===1?'/ 월':'/ '+cur+'개월';
+g.innerHTML=d.map(function(it,i){return '<div class="price-card '+(i===1?'pop':'')+'">'+(i===1?'<div class="pop-tag">BEST</div>':'')+
+'<div class="price-tier">'+it.n+' 동시접속</div><div class="price-name">'+(it.u===1?'Basic':it.u===2?'Duo':'Family')+'</div>'+
+'<div class="price-amt"><span class="price-sym">₩</span><span class="price-num">'+it.k+'</span></div>'+
+'<div class="price-per">'+pr+'</div><div class="price-mo">'+(it.m?'월 '+it.m+'원':'&nbsp;')+'</div>'+
+'<ul class="price-list"><li>'+it.u+'대 기기 동시 접속</li><li>전 서버 무제한 이용</li><li>모든 프로토콜 지원</li><li>7일 무료 환불</li></ul>'+
+'<a href="#" class="btn '+(i===1?'btn-g':'btn-o')+' price-btn">구매하기</a></div>'}).join('')}
+rp();
+function tf(b){var it=b.parentElement,o=it.classList.contains('open');document.querySelectorAll('.faq-i').forEach(function(e){e.classList.remove('open')});if(!o)it.classList.add('open')}
+var ob=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting)en.target.classList.add('vis')})},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rv').forEach(function(el){ob.observe(el)});
+
+// Language Switcher
+function toggleLang(){document.getElementById('langSw').classList.toggle('open')}
+function setLang(code,flag,name,el){
+  document.getElementById('curFlag').textContent=flag;
+  document.getElementById('curLang').textContent=name;
+  document.querySelectorAll('.lang-opt').forEach(function(o){o.classList.remove('active')});
+  el.classList.add('active');
+  document.getElementById('langSw').classList.remove('open');
+}
+document.addEventListener('click',function(e){
+  var sw=document.getElementById('langSw');
+  if(sw && !sw.contains(e.target))sw.classList.remove('open');
+});
+</script>
+</body>
+</html>

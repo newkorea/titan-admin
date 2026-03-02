@@ -105,6 +105,13 @@ def run_alert_check():
         print(f'  알림 오류: {result.stderr[:200]}')
 
 
+def has_failures(data):
+    """점검 결과에 CRITICAL/ERROR 서버가 있는지 확인"""
+    if not data:
+        return False
+    return data.get('critical', 0) > 0
+
+
 def main():
     print(f'[{datetime.now()}] NAS 일일 점검 시작')
     print('=' * 60)
@@ -112,6 +119,30 @@ def main():
     health = run_health_check()
     print()
     service = run_service_check()
+
+    # ===== 실패 서버 자동 재점검 =====
+    # health/service 각각 실패 있으면 10초 대기 후 한번 더 (nas_monitor/nas_service_check 내부에도 재시도 있으므로 보완적)
+    need_recheck = has_failures(health) or has_failures(service)
+    if need_recheck:
+        import time
+        print(f'\n[{datetime.now()}] === 실패 서버 감지 — 10초 대기 후 전체 재점검 ===')
+        time.sleep(10)
+
+        if has_failures(health):
+            print(f'[{datetime.now()}] === 서버상태 재점검 ===')
+            health2 = run_health_check()
+            if health2 and health2.get('critical', 0) < health.get('critical', 0):
+                print(f'  개선됨: critical {health["critical"]} → {health2["critical"]}')
+                health = health2  # 개선된 결과로 교체
+            print()
+
+        if has_failures(service):
+            print(f'[{datetime.now()}] === VPN서비스 재점검 ===')
+            service2 = run_service_check()
+            if service2 and service2.get('critical', 0) < service.get('critical', 0):
+                print(f'  개선됨: critical {service["critical"]} → {service2["critical"]}')
+                service = service2
+            print()
 
     # 점검 후 이슈 알림 발송
     print()

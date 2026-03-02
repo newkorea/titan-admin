@@ -87,6 +87,12 @@ urlpatterns = [
     # [api] 자동결제 해지
     path('api/v1/update/autopay_cancel', PriceViews.api_update_autopay_cancel, name='api_update_autopay_cancel'),
 
+    # [api] 자동결제 할인율 조회
+    path('api/v1/read/autopay_discount', PriceViews.api_read_autopay_discount, name='api_read_autopay_discount'),
+
+    # [api] 자동결제 할인율 설정
+    path('api/v1/update/autopay_discount', PriceViews.api_update_autopay_discount, name='api_update_autopay_discount'),
+
     # [render] 서비스 내역
     path('service', ServiceViews.service, name='service'),
 
@@ -452,6 +458,7 @@ urlpatterns = [
     path('api/v1/update/nas_single_check', NasMonitorViews.api_nas_single_check, name='api_nas_single_check'),
     path('api/v1/read/nas_single_check_status', NasMonitorViews.api_nas_single_check_status, name='api_nas_single_check_status'),
     path('api/v1/update/reboot_server', NasMonitorViews.api_reboot_server, name='api_reboot_server'),
+    path('api/v1/update/restart_service', NasMonitorViews.api_restart_service, name='api_restart_service'),
 
     # [api v1] 목표사이트 점검
     path('api/v1/update/site_check', NasMonitorViews.api_start_site_check, name='api_start_site_check'),

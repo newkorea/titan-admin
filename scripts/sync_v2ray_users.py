@@ -358,11 +358,6 @@ def build_xray_config(server, users):
                 {
                     "type": "field",
                     "outboundTag": "blocked",
-                    "ip": ["geoip:cn"]
-                },
-                {
-                    "type": "field",
-                    "outboundTag": "blocked",
                     "protocol": ["bittorrent"]
                 }
             ]

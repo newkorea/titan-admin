@@ -38,12 +38,44 @@ def _get_server_num():
     <span class="tag" style="--i:4">TWITTER</span>
     <span class="tag" style="--i:5">Google</span>
     <span class="tag" style="--i:6">Gemini</span>
-    <span class="tag" style="--i:7">Copilot</span>
-    <span class="tag" style="--i:8">YouTube Premium</span>
-    <span class="tag" style="--i:9">Roblox</span>
+    <span class="tag" style="--i:7">YouTube Premium</span>
+    <span class="tag" style="--i:8">Netflix</span>
+    <span class="tag" style="--i:9">Instagram</span>
+    <span class="tag" style="--i:10">TikTok</span>
+    <span class="tag" style="--i:11">Copilot</span>
   </div>
 </section>
 <!--hero section end-->
+
+<!-- Service Status Section -->
+<section class="ptb-20" style="background:#f8f9fa;">
+  <div class="container">
+    <div class="text-center" style="margin-bottom:20px;">
+      <span class="badge badge-success badge-pill">${_('Service Status')}</span>
+      <p style="font-size:13px;color:#666;margin-top:8px;">${_('All major services are accessible through TITAN VPN')}</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;">
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Google</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Gemini</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>YouTube Premium</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Netflix</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Facebook</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Instagram</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>TikTok</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Naver</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>KakaoTalk</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Daum</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Twitter / X</div>
+      <div class="svc-status-chip"><span class="svc-dot ok"></span>Copilot</div>
+    </div>
+  </div>
+</section>
+<style>
+.svc-status-chip{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #e0e0e0;border-radius:20px;padding:7px 16px;font-size:13px;font-weight:600;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.svc-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.svc-dot.ok{background:#28a745;box-shadow:0 0 6px rgba(40,167,69,.5);}
+@media(max-width:760px){.svc-status-chip{font-size:11px;padding:5px 12px;}}
+</style>
 
 <!--promo section start-->
 <section class="promo-section ptb-20 mob-off">
@@ -510,7 +542,8 @@ def _get_server_num():
             </div>
             <div class="row justify-content-center mob-sp" style="margin-top: -20px;">
 
-                <div class="col-lg-6 col-md">
+                <div class="col-lg-6 col-md mx-auto">
+                  <a href="https://titan.channel.io" target="_blank" style="text-decoration:none; color:inherit;">
                   <div class="card cus-box">
                     <img class="lf-size" src="/static/new/img/channel.png">
                     <div class="cus-txt">
@@ -518,15 +551,7 @@ def _get_server_num():
                       ${_('If you want to direct contact, Please click on the bottom right icon')}<br>
                     </div>
                   </div>
-                </div>
-
-                <div class="col-lg-6 col-md">
-                  <div class="card cus-box">
-                    <img class="qr-size" src="/static/new/img/titan_qr.jpeg">
-                    <div class="cus-txt">
-                      ${_('You can scan the top QR code in Wechat for contact')}
-                    </div>
-                  </div>
+                  </a>
                 </div>
 
             </div>

@@ -500,6 +500,16 @@ def price(request):
     context['bank_name'] = bank_name
     context['bank_number'] = bank_number
     context['owner_id'] = id
+
+    # 자동결제 할인율 조회
+    try:
+        cursor = connections['default'].cursor()
+        cursor.execute("SELECT config_value FROM tbl_site_config WHERE config_key = 'autopay_discount_rate'")
+        row = cursor.fetchone()
+        context['autopay_discount_rate'] = int(row[0]) if row else 0
+    except Exception:
+        context['autopay_discount_rate'] = 0
+
     return render(request, 'new/price.html', context)
 
 

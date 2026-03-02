@@ -48,6 +48,10 @@ LINE_COLOR_PURPLE = 'rgba(136, 80, 255, 1)'
 BACK_COLOR_PURPLE = 'rgba(136, 80, 255, 0.2)'
 LINE_COLOR_BLACK = 'rgba(0, 0, 0, 1)'
 
+# 환율 (외화 → KRW 변환용)
+EXCHANGE_RATE_USD_TO_KRW = 1450
+EXCHANGE_RATE_CNY_TO_KRW = 200
+
 COLOR_BLUE = 'rgba(0, 0, 255, 1)'
 COLOR_RED = 'rgba(255, 0, 0, 1)'
 COLOR_YELLOW = 'rgba(255, 255, 0, 1)'
@@ -156,6 +160,11 @@ def _sum_series(a, b):
     a2 = list(a) + [0] * (n - len(a))
     b2 = list(b) + [0] * (n - len(b))
     return [a2[i] + b2[i] for i in range(n)]
+
+
+# 벡터 스케일링 유틸 (배열 * 환율)
+def _scale_series(a, rate):
+    return [int(v * rate) for v in a]
 
 
 # 헤더 텍스트 생성
@@ -1845,11 +1854,18 @@ def get_dd_payment(year, month, x_axis, type, add_type='', rec=''):
     return payment
 
 
-# 코어 / 일별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
+# 코어 / 일별 / 전체(krw) = 무통장(krw) + 결제모듈(krw) + 결제모듈(usd)*환율 + 결제모듈(cny)*환율
 def get_dd_total_krw(year, month, x_axis):
     send_krw = get_dd_send(year, month, x_axis)
     pay_krw = get_dd_payment(year, month, x_axis, 'krw')
-    return _sum_series(send_krw, pay_krw)
+    pay_usd = get_dd_payment(year, month, x_axis, 'usd')
+    pay_cny = get_dd_payment(year, month, x_axis, 'cny')
+    usd_as_krw = _scale_series(pay_usd, EXCHANGE_RATE_USD_TO_KRW)
+    cny_as_krw = _scale_series(pay_cny, EXCHANGE_RATE_CNY_TO_KRW)
+    total = _sum_series(send_krw, pay_krw)
+    total = _sum_series(total, usd_as_krw)
+    total = _sum_series(total, cny_as_krw)
+    return total
 
 
 # 코어 / 일별 / 전체 건수 = 무통장 건수 + 결제모듈 건수
@@ -1963,11 +1979,16 @@ def get_mm_payment(year):
     return krw, usd, cny
 
 
-# 코어 / 월별 / 전체(krw) = 무통장(krw) + 결제모듈(krw)
+# 코어 / 월별 / 전체(krw) = 무통장(krw) + 결제모듈(krw) + 결제모듈(usd)*환율 + 결제모듈(cny)*환율
 def get_mm_total_krw(year):
     send = get_mm_send(year)
-    krw, _, _ = get_mm_payment(year)
-    return _sum_series(send, krw)
+    krw, usd, cny = get_mm_payment(year)
+    usd_as_krw = _scale_series(usd, EXCHANGE_RATE_USD_TO_KRW)
+    cny_as_krw = _scale_series(cny, EXCHANGE_RATE_CNY_TO_KRW)
+    total = _sum_series(send, krw)
+    total = _sum_series(total, usd_as_krw)
+    total = _sum_series(total, cny_as_krw)
+    return total
 
 
 # 코어 / 월별 / 전체 건수 = 무통장 건수 + 결제모듈 건수

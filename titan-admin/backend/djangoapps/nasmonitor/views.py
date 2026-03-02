@@ -848,35 +848,102 @@ def api_read_nas_ssh_info(request):
     })
 
 
-# ===== API: 서버 재부팅 =====
+# ===== API: 서비스 복구 (재시작) =====
 @allow_admin
-def api_reboot_server(request):
-    """서버 재부팅 (관리자 비밀번호 확인 후 SSH reboot 실행)"""
+def api_restart_service(request):
+    """실패한 VPN 서비스를 SSH로 재시작"""
     if request.method != 'POST':
         return JsonResponse({'result': 400, 'msg': 'POST only'})
 
     ip = request.POST.get('ip', '').strip()
-    password = request.POST.get('password', '').strip()
+    service = request.POST.get('service', '').strip().upper()
 
-    if not ip or not password:
-        return JsonResponse({'result': 400, 'msg': 'IP와 비밀번호를 입력해주세요.'})
+    if not ip or not service:
+        return JsonResponse({'result': 400, 'msg': 'IP와 서비스명이 필요합니다.'})
 
-    # 관리자 비밀번호 확인
-    admin_email = request.session.get('email', '')
-    if not admin_email:
-        return JsonResponse({'result': 401, 'msg': '로그인이 필요합니다.'})
+    # 서비스별 재시작 명령어 매핑
+    SERVICE_MAP = {
+        'IKEV2': {
+            'restart': 'systemctl restart strongswan',
+            'verify': 'systemctl is-active strongswan',
+            'label': 'IKEv2 (StrongSwan)',
+        },
+        'OPENVPN': {
+            'restart': 'systemctl stop openvpn-server@test2; sleep 1; kill -9 $(pgrep -f "openvpn.*test2") 2>/dev/null; sleep 1; systemctl start openvpn-server@test2',
+            'verify': 'ss -ulnp | grep -q openvpn && echo active || echo inactive',
+            'label': 'OpenVPN',
+        },
+        'SSTP': {
+            'restart': 'systemctl restart vpnserver',
+            'verify': 'systemctl is-active vpnserver',
+            'label': 'SSTP (SoftEther)',
+        },
+        'V2RAY': {
+            'restart': 'systemctl restart xray',
+            'verify': 'systemctl is-active xray',
+            'label': 'V2Ray (Xray)',
+        },
+    }
 
+    if service not in SERVICE_MAP:
+        return JsonResponse({'result': 400, 'msg': f'알 수 없는 서비스: {service}'})
+
+    svc = SERVICE_MAP[service]
+
+    # 서버 이름 조회
     cursor = connections['default'].cursor()
-    cursor.execute("SELECT password FROM tbl_user WHERE email = %s AND is_staff = 1 LIMIT 1", [admin_email])
+    cursor.execute("SELECT name FROM tbl_agent3 WHERE hostip = %s LIMIT 1", [ip])
     row = cursor.fetchone()
-    if not row:
-        return JsonResponse({'result': 403, 'msg': '관리자 계정을 찾을 수 없습니다.'})
+    srv_name = row[0] if row else ip
 
-    from backend.djangoapps.common.views import matchHashedText
-    if not matchHashedText(row[0], password):
-        return JsonResponse({'result': 403, 'msg': '비밀번호가 일치하지 않습니다.'})
+    import paramiko
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            ssh.connect(ip, username='root', key_filename='/root/.ssh/id_rsa', timeout=15, banner_timeout=20)
+        except Exception:
+            ssh.connect(ip, username='root', timeout=15, banner_timeout=20)
+
+        # 1) 재시작
+        stdin, stdout, stderr = ssh.exec_command(svc['restart'], timeout=30)
+        stdout.channel.recv_exit_status()
+
+        # 2) 잠시 대기 후 확인
+        import time
+        time.sleep(2)
+        stdin2, stdout2, stderr2 = ssh.exec_command(svc['verify'], timeout=10)
+        result = stdout2.read().decode().strip()
+        ssh.close()
+
+        if result == 'active':
+            return JsonResponse({
+                'result': 200,
+                'msg': f'{srv_name} — {svc["label"]} 재시작 성공!'
+            })
+        else:
+            return JsonResponse({
+                'result': 500,
+                'msg': f'{srv_name} — {svc["label"]} 재시작했으나 상태: {result}'
+            })
+    except Exception as e:
+        return JsonResponse({'result': 500, 'msg': f'SSH 연결 실패: {str(e)[:100]}'})
+
+
+# ===== API: 서버 재부팅 =====
+@allow_admin
+def api_reboot_server(request):
+    """서버 재부팅 (관리자 로그인 상태만 확인, SSH key 우선 사용)"""
+    if request.method != 'POST':
+        return JsonResponse({'result': 400, 'msg': 'POST only'})
+
+    ip = request.POST.get('ip', '').strip()
+
+    if not ip:
+        return JsonResponse({'result': 400, 'msg': 'IP를 입력해주세요.'})
 
     # SSH 접속 정보 조회
+    cursor = connections['default'].cursor()
     cursor.execute("SELECT username, password, name FROM tbl_agent3 WHERE hostip = %s LIMIT 1", [ip])
     srv = cursor.fetchone()
     if not srv:
@@ -886,12 +953,17 @@ def api_reboot_server(request):
     srv_pass = srv[1] or ''
     srv_name = srv[2] or ip
 
-    # SSH로 reboot 실행
+    # SSH로 reboot 실행 (key 우선, password fallback)
     import paramiko
     try:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(ip, username=srv_user, password=srv_pass, timeout=10)
+        # SSH key 먼저 시도
+        try:
+            ssh.connect(ip, username='root', key_filename='/root/.ssh/id_rsa', timeout=15, banner_timeout=20)
+        except Exception:
+            # key 실패 시 password로 재시도
+            ssh.connect(ip, username=srv_user, password=srv_pass, timeout=15, banner_timeout=20)
         ssh.exec_command('nohup bash -c "sleep 3 && reboot" &')
         ssh.close()
         return JsonResponse({
@@ -2415,10 +2487,11 @@ os.makedirs(SITE_CHECK_DIR, exist_ok=True)
 
 SITES_TO_CHECK = [
     ('gemini',    'Google Gemini',   'https://gemini.google.com'),
+    ('youtube',   'YouTube',         'https://www.youtube.com'),
     ('facebook',  'Facebook',        'https://www.facebook.com'),
     ('instagram', 'Instagram',       'https://www.instagram.com'),
-    ('chatgpt',   'ChatGPT',         'https://chatgpt.com'),
     ('tiktok',    'TikTok',          'https://www.tiktok.com'),
+    ('netflix',   'Netflix',         'https://www.netflix.com'),
 ]
 
 
@@ -2446,13 +2519,41 @@ def _write_site_check_data(data):
 
 
 def _check_single_server_sites(ip, server_name):
-    """SSH into a VPN server and check target sites + exit IP via fwmark"""
+    """SSH into a VPN server and check target sites + exit IP via fwmark
+    실패한 사이트는 최대 2회 재시도 (총 3회 시도)"""
     urls = ' '.join(f'"{s[2]}"' for s in SITES_TO_CHECK)
     script = f'''UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0"
+# 1차 시도
+RETRY_URLS=""
 for url in {urls}; do
   code=$(curl -4 -s -A "$UA" --connect-timeout 5 --max-time 10 -o /dev/null -w "%{{http_code}}" "$url" 2>/dev/null)
   echo "SITE|$url|$code"
+  case "$code" in
+    2*|3*) ;;
+    *) RETRY_URLS="$RETRY_URLS $url" ;;
+  esac
 done
+# 2차 재시도 (실패한 URL만, 3초 대기 후)
+if [ -n "$RETRY_URLS" ]; then
+  sleep 3
+  RETRY2_URLS=""
+  for url in $RETRY_URLS; do
+    code=$(curl -4 -s -A "$UA" --connect-timeout 7 --max-time 12 -o /dev/null -w "%{{http_code}}" "$url" 2>/dev/null)
+    echo "RETRY|$url|$code"
+    case "$code" in
+      2*|3*) ;;
+      *) RETRY2_URLS="$RETRY2_URLS $url" ;;
+    esac
+  done
+  # 3차 재시도 (여전히 실패한 URL만, 5초 대기 후)
+  if [ -n "$RETRY2_URLS" ]; then
+    sleep 5
+    for url in $RETRY2_URLS; do
+      code=$(curl -4 -s -A "$UA" --connect-timeout 10 --max-time 15 -o /dev/null -w "%{{http_code}}" "$url" 2>/dev/null)
+      echo "RETRY|$url|$code"
+    done
+  fi
+fi
 # Gemini geo check — HTML body에서 첫 번째 2글자 국가코드 추출 (en=정상, cn=차단)
 # fwmark로 Passwall(eth1) 경유하여 Google 국가 분류 확인
 if ip link show eth1 >/dev/null 2>&1; then
@@ -2488,29 +2589,54 @@ else
 fi
 '''
     try:
-        cmd = (
-            f"sshpass -p 'ss135690' ssh -o StrictHostKeyChecking=no "
+        # SSH 키 인증 우선, 실패 시 sshpass 비밀번호 인증 fallback
+        ssh_base = (
+            f"ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no "
             f"-o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "
             f"root@{ip} bash << 'SITECHECKEOF'\n{script}\nSITECHECKEOF"
         )
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=90)
+        result = subprocess.run(ssh_base, shell=True, capture_output=True, text=True, timeout=150)
+        if result.returncode != 0:
+            # 키 인증 실패 → sshpass 비밀번호로 재시도
+            ssh_pass = (
+                f"sshpass -p 'ss135690' ssh -o StrictHostKeyChecking=no "
+                f"-o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "
+                f"root@{ip} bash << 'SITECHECKEOF'\n{script}\nSITECHECKEOF"
+            )
+            result = subprocess.run(ssh_pass, shell=True, capture_output=True, text=True, timeout=150)
 
         sites = {}
         exit_ip = ''
         has_eth1 = False
         for line in result.stdout.strip().split('\n'):
             line = line.strip()
-            if line.startswith('SITE|'):
+            if line.startswith('SITE|') or line.startswith('RETRY|'):
                 parts = line.split('|')
                 if len(parts) >= 3:
                     url = parts[1]
                     code = parts[2]
+                    is_retry = line.startswith('RETRY|')
                     for key, _name, check_url in SITES_TO_CHECK:
                         if check_url == url:
-                            sites[key] = {
-                                'code': code,
-                                'ok': bool(code and code[0] in ('2', '3')),
-                            }
+                            new_ok = bool(code and code[0] in ('2', '3'))
+                            if is_retry:
+                                # 재시도: 성공하면 덮어쓰기, 실패해도 마지막 결과로 업데이트
+                                prev = sites.get(key, {})
+                                sites[key] = {
+                                    'code': code,
+                                    'ok': new_ok,
+                                    'retried': True,
+                                    'retry_count': prev.get('retry_count', 0) + 1,
+                                }
+                                if prev.get('first_code'):
+                                    sites[key]['first_code'] = prev['first_code']
+                                else:
+                                    sites[key]['first_code'] = prev.get('code', '')
+                            else:
+                                sites[key] = {
+                                    'code': code,
+                                    'ok': new_ok,
+                                }
                             break
             elif line.startswith('GEMINI_GEO|'):
                 geo = line.split('|')[1].strip()
@@ -2531,10 +2657,13 @@ fi
             elif line.startswith('HAS_ETH1|'):
                 has_eth1 = line.split('|')[1].strip() == 'YES'
 
-        # Twitter/X: curl 봇 차단 (403은 정상 — 브라우저 fingerprint 필요)
-        if 'twitter' in sites and sites['twitter'].get('code') == '403':
-            sites['twitter']['bot_blocked'] = True
-            sites['twitter']['ok'] = True  # 실제 사이트 접속 가능, curl만 차단
+        # Cloudflare/CDN 봇 차단 처리 (403은 정상 — 브라우저 fingerprint 필요)
+        # Twitter/X, ChatGPT 등 Cloudflare 보호 사이트는 curl에 403 반환
+        BOT_BLOCKED_SITES = {'twitter', 'chatgpt'}
+        for site_key in BOT_BLOCKED_SITES:
+            if site_key in sites and sites[site_key].get('code') == '403':
+                sites[site_key]['bot_blocked'] = True
+                sites[site_key]['ok'] = True  # 실제 사이트 접속 가능, curl만 차단
 
         # KT0/1/2: V2RAY relay를 통해 google/gemini/youtube가 LG3로 우회됨
         V2RAY_RELAY_IPS = {'14.51.2.130', '14.51.2.131', '14.51.2.132'}
@@ -2639,12 +2768,80 @@ def api_start_site_check(request):
         merged = dict(prev_results)
         merged.update(new_results)
         merged_list = sorted(merged.values(), key=lambda x: x.get('name', ''))
+
+        # ===== 실패 서버 자동 1회 재점검 (전체 점검 시에만) =====
+        if not target_ip:
+            def _is_failed(r):
+                if not r.get('ssh_ok'):
+                    return True
+                if not r.get('exit_ip'):
+                    return True
+                for k, chk in (r.get('sites') or {}).items():
+                    if chk and not chk.get('ok') and not chk.get('blocked'):
+                        return True
+                return False
+
+            failed_servers = [r for r in merged_list if _is_failed(r)]
+            if failed_servers:
+                import logging
+                logger = logging.getLogger('nasmonitor')
+                logger.info(f"[site_check] {len(failed_servers)}개 실패 서버 자동 재점검 시작")
+                _write_site_check_data({
+                    'running': True, 'started': started,
+                    'total': len(servers), 'completed': len(servers),
+                    'results': merged_list,
+                    'retry': True, 'retry_count': len(failed_servers),
+                })
+                retry_results = {}
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    retry_futures = {
+                        executor.submit(_check_single_server_sites, r['ip'], r['name']): r
+                        for r in failed_servers
+                    }
+                    for future in as_completed(retry_futures):
+                        r_orig = retry_futures[future]
+                        try:
+                            r_new = future.result()
+                        except Exception as e:
+                            r_new = None  # 재시도 실패 → 원래 결과 유지
+
+                        if r_new is None:
+                            continue  # 에러 시 원래 결과 유지
+
+                        # 재시도 결과가 원래보다 나을 때만 교체
+                        orig = merged.get(r_orig['ip'], r_orig)
+                        orig_ok_cnt = sum(1 for c in (orig.get('sites') or {}).values() if c and c.get('ok'))
+                        new_ok_cnt = sum(1 for c in (r_new.get('sites') or {}).values() if c and c.get('ok'))
+                        if r_new.get('ssh_ok') and (new_ok_cnt > orig_ok_cnt or (not orig.get('ssh_ok') and r_new.get('ssh_ok'))):
+                            retry_results[r_new['ip']] = r_new
+                        # 그렇지 않으면 원래 결과 유지
+                # merge retry results
+                merged.update(retry_results)
+                merged_list = sorted(merged.values(), key=lambda x: x.get('name', ''))
+                retry_ok = len([r for r in retry_results.values() if not _is_failed(r)])
+                logger.info(f"[site_check] 재점검 완료: {retry_ok}/{len(failed_servers)}개 복구")
+
         _write_site_check_data({
             'running': False, 'started': started, 'finished': time.time(),
             'total': len(servers), 'completed': len(servers),
             'results': merged_list,
             'elapsed': round(time.time() - started, 1),
         })
+
+        # DB에도 저장 (titan에서 고객 페이지용으로 읽을 수 있도록)
+        try:
+            from django.db import connections as _conns
+            _cur = _conns['default'].cursor()
+            ok_cnt = len([r for r in merged_list if r.get('ssh_ok')])
+            fail_cnt = len(merged_list) - ok_cnt
+            report = json.dumps({'servers': merged_list}, ensure_ascii=False, default=str)
+            _cur.execute(
+                "INSERT INTO tbl_nas_monitor_log (check_time, check_type, total_servers, ok_count, warning_count, critical_count, report_json) "
+                "VALUES (NOW(), 'site_check', %s, %s, 0, %s, %s)",
+                [len(merged_list), ok_cnt, fail_cnt, report]
+            )
+        except Exception:
+            pass
 
     t = threading.Thread(target=run_check, daemon=True)
     t.start()
@@ -2665,6 +2862,8 @@ def api_read_site_check_status(request):
         'total': data.get('total', 0),
         'completed': data.get('completed', 0),
         'elapsed': elapsed,
+        'retry': data.get('retry', False),
+        'retry_count': data.get('retry_count', 0),
         'results': data.get('results', []),
         'sites': [{'key': s[0], 'name': s[1]} for s in SITES_TO_CHECK],
     })

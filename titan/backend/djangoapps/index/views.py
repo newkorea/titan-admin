@@ -76,6 +76,11 @@ def index(request):
     return render(request, 'new/index.html', context)
 
 
+def v3_index(request):
+    """V3 디자인 랜딩 페이지 (테스트용)"""
+    return render(request, 'new/v3_index.html', {})
+
+
 '''
 # 테스트 페이지 렌더링 (2020-06-29)
 @csrf_exempt
