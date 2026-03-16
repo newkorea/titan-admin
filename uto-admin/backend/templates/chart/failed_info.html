@@ -1,0 +1,109 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">서버접속실패로그</%block>
+<%block name="subtitle">You can see user server connection failed logs</%block>
+
+<%block name="content">
+<div>
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_username">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>플랫폼</label>
+      <select class="form-control" id="filter_platform" name="filter_platform">
+        <option value="All">All</option>
+        <option value="Windows">Windows</option>
+        <option value="MacOS">MacOS</option>
+        <option value="Android">Android</option>
+        <option value="iOS">iOS</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>앱버젼[=]</label>
+      <input class="form-control" id="filter_version">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>서버 이름[Like]</label>
+      <input class="form-control" id="filter_server_name">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>서버 도메인[Like]</label>
+      <input class="form-control" id="filter_server_domain">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>프로토콜</label>
+      <select class="form-control" id="filter_protocol" name="filter_protocol">
+        <option value="All">All</option>
+        <option value="IKEV2">IKEV2</option>
+        <option value="OPENVPN">OPENVPN</option>
+        <option value="SSTP">SSTP</option>
+        <option value="L2TP">L2TP</option>
+        <option value="PPTP">PPTP</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>사용자 아이피</label>
+      <input class="form-control" id="filter_user_ip">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>사용자 위치</label>
+      <input class="form-control" id="filter_user_location">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>접속시도 시간[From]</label>
+      <input id="filter_failed_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>접속시도 시간[To]</label>
+      <input id="filter_failed_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    
+    <div class="form-group col-sm-4">
+    </div>
+  </div>
+
+<div class='btn-store'>
+	<button class="btn btn-fw primary" onclick="reload_data()">
+      <i class="fa fa-search mr5"></i>
+      검색하기
+    </button>
+  </div>
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="connection-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>플랫폼</th>
+          <th>앱버젼</th>
+          <th>서버 이름</th>
+          <th>서버 도메인</th>
+          <th>프로토콜</th>
+          <th>사용자 아이피</th>
+          <th>사용자 위치</th>
+          <th>장치</th>
+          <th>날짜</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/failed_info.js"></script>
+</%block>

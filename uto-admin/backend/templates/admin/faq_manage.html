@@ -1,0 +1,423 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .cat-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px;
+                display: flex; align-items: center; gap: 12px; cursor: pointer; transition: box-shadow 0.2s; }
+    .cat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .cat-card.active { border-color: #2196F3; background: #e3f2fd; }
+    .cat-icon { font-size: 28px; }
+    .cat-info { flex: 1; }
+    .cat-info .title { font-weight: 700; font-size: 15px; }
+    .cat-info .meta { font-size: 12px; color: #888; }
+    .cat-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .cat-active { background: #d4edda; color: #155724; }
+    .cat-inactive { background: #f8d7da; color: #721c24; }
+
+    .item-card { border: 1px solid #eee; border-radius: 6px; padding: 14px; margin-bottom: 10px; background: #fafafa; }
+    .item-card .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .item-card .item-preview { max-height: 120px; overflow: hidden; font-size: 13px; color: #555; line-height: 1.6; }
+    .item-card .item-preview h6 { font-size: 13px; font-weight: 700; margin: 4px 0; }
+
+    .lang-tabs .nav-link { font-size: 13px; padding: 6px 14px; }
+    .lang-tabs .nav-link.active { font-weight: 700; }
+
+    .editor-area { min-height: 300px; }
+    #edit-modal .modal-dialog { max-width: 900px; }
+    #cat-modal .modal-dialog { max-width: 600px; }
+
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .btn-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .preview-html { border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fff;
+                    max-height: 200px; overflow-y: auto; font-size: 13px; line-height: 1.7; }
+    .preview-html h6 { font-weight: 700; margin: 8px 0 4px; }
+    .preview-html ul { padding-left: 20px; }
+    .preview-html .notice { background: #fff8e1; border-left: 4px solid #ffc107; padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-size: 12px; }
+</style>
+</%block>
+
+<%block name="title">FAQ 관리</%block>
+<%block name="subtitle">웹사이트 FAQ 페이지 카테고리 및 항목을 관리합니다 (한국어/중문/영문)</%block>
+
+<%block name="content">
+<div class="row">
+    <!-- 좌측: 카테고리 목록 -->
+    <div class="col-md-4">
+        <div class="section-title">📂 카테고리
+            <button class="btn btn-sm btn-success ml-auto" onclick="openCatCreateModal()"><i class="fa fa-plus"></i> 추가</button>
+        </div>
+        <div id="cat-list"></div>
+    </div>
+
+    <!-- 우측: FAQ 항목 목록 -->
+    <div class="col-md-8">
+        <div class="section-title" id="items-title">📝 FAQ 항목 <small class="text-muted">(카테고리를 선택하세요)</small></div>
+        <div class="btn-toolbar">
+            <button class="btn btn-sm btn-primary" onclick="openItemCreateModal()" id="btn-add-item" style="display:none;">
+                <i class="fa fa-plus"></i> 항목 추가
+            </button>
+        </div>
+        <div id="item-list"></div>
+    </div>
+</div>
+
+<!-- ===== 카테고리 수정 모달 ===== -->
+<div class="modal fade" id="cat-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cat-modal-title">카테고리 수정</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cat-edit-id">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>카테고리 KEY</label>
+                            <input type="text" id="cat-edit-key" class="form-control" placeholder="예: DOWNLOAD">
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            <label>아이콘</label>
+                            <input type="text" id="cat-edit-icon" class="form-control" placeholder="📥">
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            <label>순서</label>
+                            <input type="number" id="cat-edit-order" class="form-control" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>제목 (한국어) <span class="text-danger">*</span></label>
+                    <input type="text" id="cat-edit-title-ko" class="form-control" placeholder="다운로드 / 설치">
+                </div>
+                <div class="form-group">
+                    <label>제목 (中文)</label>
+                    <input type="text" id="cat-edit-title-zh" class="form-control" placeholder="下载 / 安装">
+                </div>
+                <div class="form-group">
+                    <label>제목 (English)</label>
+                    <input type="text" id="cat-edit-title-en" class="form-control" placeholder="Download / Install">
+                </div>
+                <div class="form-group">
+                    <label>그라디언트 CSS</label>
+                    <input type="text" id="cat-edit-gradient" class="form-control" placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+                </div>
+                <div class="form-group">
+                    <label>활성</label>
+                    <select id="cat-edit-active" class="form-control" style="width:100px;">
+                        <option value="1">활성</option>
+                        <option value="0">비활성</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <button class="btn btn-primary" onclick="saveCat()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== FAQ 항목 수정 모달 ===== -->
+<div class="modal fade" id="edit-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edit-modal-title">FAQ 항목 수정</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-item-id">
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <label>카테고리</label>
+                        <select id="edit-cat-id" class="form-control">
+                            % for c in categories:
+                            <option value="${c['id']}">${c['title_ko']}</option>
+                            % endfor
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <label>순서</label>
+                        <input type="number" id="edit-sort" class="form-control" value="0">
+                    </div>
+                    <div class="col-3">
+                        <label>활성</label>
+                        <select id="edit-active" class="form-control">
+                            <option value="1">활성</option>
+                            <option value="0">비활성</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 언어 탭 -->
+                <ul class="nav nav-tabs lang-tabs mt-3" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tab-ko">🇰🇷 한국어</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-zh">🇨🇳 中文</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-en">🇺🇸 English</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-preview">👁 미리보기</a></li>
+                </ul>
+                <div class="tab-content mt-2">
+                    <div class="tab-pane fade show active" id="tab-ko">
+                        <textarea id="edit-content-ko" class="form-control editor-area" rows="12" placeholder="HTML 형식으로 입력 (예: <h6>제목</h6><ul><li>내용</li></ul>)"></textarea>
+                    </div>
+                    <div class="tab-pane fade" id="tab-zh">
+                        <textarea id="edit-content-zh" class="form-control editor-area" rows="12" placeholder="中文内容 (HTML)"></textarea>
+                    </div>
+                    <div class="tab-pane fade" id="tab-en">
+                        <textarea id="edit-content-en" class="form-control editor-area" rows="12" placeholder="English content (HTML)"></textarea>
+                    </div>
+                    <div class="tab-pane fade" id="tab-preview">
+                        <div class="row">
+                            <div class="col-4">
+                                <strong>🇰🇷 한국어</strong>
+                                <div class="preview-html" id="preview-ko"></div>
+                            </div>
+                            <div class="col-4">
+                                <strong>🇨🇳 中文</strong>
+                                <div class="preview-html" id="preview-zh"></div>
+                            </div>
+                            <div class="col-4">
+                                <strong>🇺🇸 English</strong>
+                                <div class="preview-html" id="preview-en"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <button class="btn btn-primary" onclick="saveItem()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+var csrf_token = '${request.META.get("CSRF_COOKIE", "")}';
+var currentCatId = null;
+
+// ===== 카테고리 목록 로드 =====
+function loadCategories() {
+    $.post('/api/v1/read/faq_categories', {csrfmiddlewaretoken: csrf_token}, function(res) {
+        if (res.result !== 200) return;
+        var html = '';
+        res.data.forEach(function(c) {
+            var badge = c.is_active ? '<span class="cat-badge cat-active">활성</span>' : '<span class="cat-badge cat-inactive">비활성</span>';
+            var cls = currentCatId == c.id ? 'cat-card active' : 'cat-card';
+            html += '<div class="' + cls + '" onclick="selectCat(' + c.id + ', this)" data-id="' + c.id + '">';
+            html += '  <span class="cat-icon">' + c.icon + '</span>';
+            html += '  <div class="cat-info">';
+            html += '    <div class="title">' + c.title_ko + '</div>';
+            html += '    <div class="meta">' + c.category_key + ' · 항목 ' + c.item_count + '개 · ' + badge + '</div>';
+            html += '  </div>';
+            html += '  <button class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); openCatEditModal(' + c.id + ')"><i class="fa fa-pencil"></i></button>';
+            html += '</div>';
+        });
+        $('#cat-list').html(html);
+    });
+}
+
+// ===== 카테고리 선택 → 항목 로드 =====
+function selectCat(catId, el) {
+    currentCatId = catId;
+    $('.cat-card').removeClass('active');
+    $(el).addClass('active');
+    $('#btn-add-item').show();
+    loadItems(catId);
+}
+
+// ===== 항목 목록 로드 =====
+function loadItems(catId) {
+    $.post('/api/v1/read/faq_items', {csrfmiddlewaretoken: csrf_token, category_id: catId}, function(res) {
+        if (res.result !== 200) return;
+        var html = '';
+        if (res.data.length === 0) {
+            html = '<div class="text-center text-muted p-4">이 카테고리에 아직 FAQ 항목이 없습니다.</div>';
+        }
+        res.data.forEach(function(item) {
+            var statusBadge = item.is_active
+                ? '<span class="cat-badge cat-active">활성</span>'
+                : '<span class="cat-badge cat-inactive">비활성</span>';
+            html += '<div class="item-card">';
+            html += '  <div class="item-header">';
+            html += '    <span>' + statusBadge + ' <small class="text-muted ml-2">순서: ' + item.sort_order + ' · 수정: ' + item.updated_at + '</small></span>';
+            html += '    <span>';
+            html += '      <button class="btn btn-sm btn-info" onclick="openItemEditModal(' + item.id + ')"><i class="fa fa-pencil"></i> 수정</button> ';
+            html += '      <button class="btn btn-sm btn-warning" onclick="toggleItem(' + item.id + ')"><i class="fa fa-toggle-on"></i></button> ';
+            html += '      <button class="btn btn-sm btn-danger" onclick="deleteItem(' + item.id + ')"><i class="fa fa-trash"></i></button>';
+            html += '    </span>';
+            html += '  </div>';
+            html += '  <div class="item-preview">' + item.content_ko + '</div>';
+            html += '</div>';
+        });
+        $('#item-list').html(html);
+        $('#items-title').html('📝 FAQ 항목 <small class="text-muted">(' + res.data[0]?.cat_title + ')</small>');
+    });
+}
+
+// ===== 카테고리 모달 =====
+var catCache = {};
+function openCatEditModal(catId) {
+    $.post('/api/v1/read/faq_categories', {csrfmiddlewaretoken: csrf_token}, function(res) {
+        var cat = res.data.find(function(c) { return c.id === catId; });
+        if (!cat) return;
+        $('#cat-modal-title').text('카테고리 수정');
+        $('#cat-edit-id').val(cat.id);
+        $('#cat-edit-key').val(cat.category_key).prop('disabled', true);
+        $('#cat-edit-icon').val(cat.icon);
+        $('#cat-edit-order').val(cat.sort_order);
+        $('#cat-edit-title-ko').val(cat.title_ko);
+        $('#cat-edit-title-zh').val(cat.title_zh);
+        $('#cat-edit-title-en').val(cat.title_en);
+        $('#cat-edit-gradient').val(cat.gradient);
+        $('#cat-edit-active').val(cat.is_active);
+        $('#cat-modal').modal('show');
+    });
+}
+
+function openCatCreateModal() {
+    $('#cat-modal-title').text('카테고리 추가');
+    $('#cat-edit-id').val('');
+    $('#cat-edit-key').val('').prop('disabled', false);
+    $('#cat-edit-icon').val('📌');
+    $('#cat-edit-order').val(99);
+    $('#cat-edit-title-ko').val('');
+    $('#cat-edit-title-zh').val('');
+    $('#cat-edit-title-en').val('');
+    $('#cat-edit-gradient').val('linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+    $('#cat-edit-active').val(1);
+    $('#cat-modal').modal('show');
+}
+
+function saveCat() {
+    var catId = $('#cat-edit-id').val();
+    var url = catId ? '/api/v1/update/faq_category' : '/api/v1/create/faq_category';
+    var params = {
+        csrfmiddlewaretoken: csrf_token,
+        icon: $('#cat-edit-icon').val(),
+        title_ko: $('#cat-edit-title-ko').val(),
+        title_zh: $('#cat-edit-title-zh').val(),
+        title_en: $('#cat-edit-title-en').val(),
+        sort_order: $('#cat-edit-order').val(),
+        is_active: $('#cat-edit-active').val(),
+        gradient: $('#cat-edit-gradient').val(),
+    };
+    if (catId) params.id = catId;
+    else params.category_key = $('#cat-edit-key').val();
+
+    $.post(url, params, function(res) {
+        if (res.result === 200) {
+            $('#cat-modal').modal('hide');
+            loadCategories();
+            swal(res.title, res.text, 'success');
+        } else {
+            swal(res.title || '오류', res.text || '요청 실패', 'error');
+        }
+    });
+}
+
+// ===== FAQ 항목 모달 =====
+function openItemCreateModal() {
+    if (!currentCatId) { swal('알림', '카테고리를 먼저 선택하세요.', 'warning'); return; }
+    $('#edit-modal-title').text('FAQ 항목 추가');
+    $('#edit-item-id').val('');
+    $('#edit-cat-id').val(currentCatId);
+    $('#edit-sort').val(0);
+    $('#edit-active').val(1);
+    $('#edit-content-ko').val('');
+    $('#edit-content-zh').val('');
+    $('#edit-content-en').val('');
+    $('#edit-modal').modal('show');
+}
+
+function openItemEditModal(itemId) {
+    $.post('/api/v1/read/faq_item_detail', {csrfmiddlewaretoken: csrf_token, item_id: itemId}, function(res) {
+        if (res.result !== 200) return;
+        var d = res.data;
+        $('#edit-modal-title').text('FAQ 항목 수정');
+        $('#edit-item-id').val(d.id);
+        $('#edit-cat-id').val(d.category_id);
+        $('#edit-sort').val(d.sort_order);
+        $('#edit-active').val(d.is_active);
+        $('#edit-content-ko').val(d.content_ko);
+        $('#edit-content-zh').val(d.content_zh);
+        $('#edit-content-en').val(d.content_en);
+        $('#edit-modal').modal('show');
+    });
+}
+
+// 미리보기 탭 클릭 시 업데이트
+$('a[href="#tab-preview"]').on('shown.bs.tab', function() {
+    $('#preview-ko').html($('#edit-content-ko').val());
+    $('#preview-zh').html($('#edit-content-zh').val());
+    $('#preview-en').html($('#edit-content-en').val());
+});
+
+function saveItem() {
+    var itemId = $('#edit-item-id').val();
+    var url = itemId ? '/api/v1/update/faq_item' : '/api/v1/create/faq_item';
+    var params = {
+        csrfmiddlewaretoken: csrf_token,
+        category_id: $('#edit-cat-id').val(),
+        sort_order: $('#edit-sort').val(),
+        is_active: $('#edit-active').val(),
+        content_ko: $('#edit-content-ko').val(),
+        content_zh: $('#edit-content-zh').val(),
+        content_en: $('#edit-content-en').val(),
+    };
+    if (itemId) params.item_id = itemId;
+
+    $.post(url, params, function(res) {
+        if (res.result === 200) {
+            $('#edit-modal').modal('hide');
+            if (currentCatId) loadItems(currentCatId);
+            loadCategories();
+            swal(res.title, res.text, 'success');
+        } else {
+            swal(res.title || '오류', res.text || '요청 실패', 'error');
+        }
+    });
+}
+
+function toggleItem(itemId) {
+    $.post('/api/v1/toggle/faq_item', {csrfmiddlewaretoken: csrf_token, item_id: itemId}, function(res) {
+        if (res.result === 200 && currentCatId) loadItems(currentCatId);
+    });
+}
+
+function deleteItem(itemId) {
+    swal({
+        title: '삭제 확인',
+        text: '이 FAQ 항목을 삭제하시겠습니까?',
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: '삭제',
+        cancelButtonText: '취소'
+    }, function(confirmed) {
+        if (confirmed) {
+            $.post('/api/v1/delete/faq_item', {csrfmiddlewaretoken: csrf_token, item_id: itemId}, function(res) {
+                if (res.result === 200 && currentCatId) {
+                    loadItems(currentCatId);
+                    loadCategories();
+                }
+            });
+        }
+    });
+}
+
+// ===== 초기화 =====
+$(document).ready(function() {
+    loadCategories();
+});
+</script>
+</%block>

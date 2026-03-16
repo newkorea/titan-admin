@@ -1,0 +1,282 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="title">자동결제 관리</%block>
+<%block name="subtitle">PayLetter 빌링 자동결제 등록 회원 목록</%block>
+
+<%block name="css">
+<style>
+.autopay-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px 25px;
+    flex: 1;
+    text-align: center;
+}
+.stat-card .stat-num {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+.stat-card .stat-label {
+    font-size: 13px;
+    color: #888;
+    margin-top: 4px;
+}
+.stat-card.active .stat-num { color: #28a745; }
+.stat-card.cancelled .stat-num { color: #dc3545; }
+.stat-card.failed .stat-num { color: #fd7e14; }
+.stat-card.total .stat-num { color: #007bff; }
+.stat-card.revenue .stat-num { color: #6f42c1; }
+
+.badge-active { background: #28a745; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+.badge-cancelled { background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+.badge-failed { background: #fd7e14; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+
+#autopay_table th { font-size: 13px; white-space: nowrap; }
+#autopay_table td { font-size: 13px; vertical-align: middle; }
+.btn-cancel-autopay { font-size: 11px; padding: 2px 8px; }
+</style>
+</%block>
+
+<%block name="content">
+
+<!-- 통계 카드 -->
+<div class="autopay-stats" id="stats_area">
+    <div class="stat-card active">
+        <div class="stat-num" id="stat_active">-</div>
+        <div class="stat-label">활성 구독</div>
+    </div>
+    <div class="stat-card cancelled">
+        <div class="stat-num" id="stat_cancelled">-</div>
+        <div class="stat-label">해지됨</div>
+    </div>
+    <div class="stat-card failed">
+        <div class="stat-num" id="stat_failed">-</div>
+        <div class="stat-label">결제 실패</div>
+    </div>
+    <div class="stat-card total">
+        <div class="stat-num" id="stat_total">-</div>
+        <div class="stat-label">전체 등록</div>
+    </div>
+    <div class="stat-card revenue">
+        <div class="stat-num" id="stat_revenue">-</div>
+        <div class="stat-label">월 예상 매출</div>
+    </div>
+</div>
+
+<!-- 할인율 설정 -->
+<div style="margin-bottom:20px; padding:15px 20px; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px;">
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div style="flex-shrink:0;">
+            <i class="fa fa-percent" style="font-size:20px; color:#6f42c1;"></i>
+            <strong style="margin-left:5px;">자동결제 할인율 설정</strong>
+            <small class="text-muted" style="display:block; margin-top:2px;">다음 자동결제(크론) 시에만 적용됩니다. 현재 결제에는 적용되지 않습니다.</small>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <input type="number" id="discount_rate" class="form-control" style="width:80px; text-align:center; font-size:16px; font-weight:bold;" min="0" max="50" value="0">
+            <span style="font-size:16px; font-weight:bold;">%</span>
+            <button onclick="saveDiscount()" class="btn btn-primary btn-sm" style="white-space:nowrap;"><i class="fa fa-save"></i> 저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- 필터 -->
+<div style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+    <select id="filter_status" class="form-control" style="width:150px;">
+        <option value="">전체 상태</option>
+        <option value="active" selected>활성</option>
+        <option value="cancelled">해지</option>
+        <option value="failed">실패</option>
+    </select>
+    <input type="text" id="filter_email" class="form-control" placeholder="이메일 검색" style="width:250px;">
+    <button onclick="loadAutopayList()" class="btn btn-primary btn-sm"><i class="fa fa-search"></i> 검색</button>
+    <button onclick="$('#filter_status').val('');$('#filter_email').val('');loadAutopayList();" class="btn btn-default btn-sm"><i class="fa fa-refresh"></i> 초기화</button>
+</div>
+
+<!-- 테이블 -->
+<div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover" id="autopay_table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>이메일</th>
+                <th>이름</th>
+                <th>요금제</th>
+                <th>결제금액</th>
+                <th>할인율</th>
+                <th>상태</th>
+                <th>최근 결제</th>
+                <th>다음 결제</th>
+                <th>실패횟수</th>
+                <th>등록일</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody id="autopay_tbody">
+            <tr><td colspan="12" class="text-center text-muted">로딩 중...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+$(document).ready(function(){
+    loadAutopayStats();
+    loadAutopayList();
+    loadDiscount();
+});
+
+function loadAutopayStats(){
+    $.post('/api/v1/read/autopay_stats', {
+        csrfmiddlewaretoken: getCookie('csrftoken')
+    }).done(function(data){
+        if(data.result == 200){
+            $('#stat_active').text(data.active_count.toLocaleString());
+            $('#stat_cancelled').text(data.cancelled_count.toLocaleString());
+            $('#stat_failed').text(data.failed_count.toLocaleString());
+            $('#stat_total').text(data.total_count.toLocaleString());
+            $('#stat_revenue').text('₩' + data.monthly_revenue.toLocaleString());
+        }
+    });
+}
+
+function loadAutopayList(){
+    var status = $('#filter_status').val();
+    var email = $('#filter_email').val();
+    
+    $.post('/api/v1/read/autopay_list', {
+        csrfmiddlewaretoken: getCookie('csrftoken'),
+        status: status,
+        email: email
+    }).done(function(data){
+        if(data.result == 200){
+            renderTable(data.rows);
+        }
+    });
+}
+
+function renderTable(rows){
+    var tbody = $('#autopay_tbody');
+    tbody.empty();
+    
+    if(!rows || rows.length == 0){
+        tbody.append('<tr><td colspan="12" class="text-center text-muted">데이터가 없습니다</td></tr>');
+        return;
+    }
+    
+    for(var i=0; i<rows.length; i++){
+        var r = rows[i];
+        var statusBadge = '';
+        if(r.status == 'active') statusBadge = '<span class="badge-active">활성</span>';
+        else if(r.status == 'cancelled') statusBadge = '<span class="badge-cancelled">해지</span>';
+        else statusBadge = '<span class="badge-failed">' + r.status + '</span>';
+        
+        var actionBtn = '';
+        if(r.status == 'active'){
+            actionBtn = '<button class="btn btn-danger btn-sm btn-cancel-autopay" onclick="cancelAutopay(' + r.id + ',\'' + (r.email||'') + '\')"><i class="fa fa-ban"></i> 해지</button>';
+        }
+        
+        var tr = '<tr>' +
+            '<td>' + r.id + '</td>' +
+            '<td>' + (r.email || '-') + '</td>' +
+            '<td>' + (r.username || '-') + '</td>' +
+            '<td>' + (r.product_name || '-') + '</td>' +
+            '<td style="text-align:right;">' + Number(r.amount).toLocaleString() + '원</td>' +
+            '<td style="text-align:center;">' + (r.discount_rate > 0 ? '<span style="color:#6f42c1;font-weight:bold;">' + r.discount_rate + '%</span>' : '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + (r.last_paid_date || '-') + '</td>' +
+            '<td>' + (r.next_pay_date || '-') + '</td>' +
+            '<td style="text-align:center;">' + (r.fail_count || 0) + '</td>' +
+            '<td>' + (r.created_date || '-') + '</td>' +
+            '<td>' + actionBtn + '</td>' +
+            '</tr>';
+        tbody.append(tr);
+    }
+}
+
+function cancelAutopay(autopayId, email){
+    Swal.fire({
+        title: '자동결제 해지',
+        html: '<b>' + email + '</b> 회원의 자동결제를 해지하시겠습니까?<br><small class="text-muted">현재 이용기간은 유지됩니다.</small>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '해지',
+        cancelButtonText: '취소',
+        confirmButtonColor: '#dc3545'
+    }).then(function(result){
+        if(result.value){
+            $.post('/api/v1/update/autopay_cancel', {
+                csrfmiddlewaretoken: getCookie('csrftoken'),
+                autopay_id: autopayId
+            }).done(function(data){
+                if(data.result == 200){
+                    Swal.fire({icon:'success', title:'해지 완료', text: email + ' 자동결제가 해지되었습니다.', confirmButtonColor:'#8a4cf7'});
+                    loadAutopayStats();
+                    loadAutopayList();
+                } else {
+                    Swal.fire({icon:'error', title:'오류', text: data.message || '처리 중 오류가 발생했습니다.'});
+                }
+            });
+        }
+    });
+}
+
+// 엔터키 검색
+$('#filter_email').on('keypress', function(e){
+    if(e.which == 13) loadAutopayList();
+});
+
+// 할인율 로드
+function loadDiscount(){
+    $.post('/api/v1/read/autopay_discount', {
+        csrfmiddlewaretoken: getCookie('csrftoken')
+    }).done(function(data){
+        if(data.result == 200){
+            $('#discount_rate').val(data.discount_rate);
+        }
+    });
+}
+
+// 할인율 저장
+function saveDiscount(){
+    var rate = parseInt($('#discount_rate').val()) || 0;
+    if(rate < 0 || rate > 50){
+        Swal.fire({icon:'warning', title:'다시 입력', text:'할인율은 0~50% 범위만 가능합니다.'});
+        return;
+    }
+    $.post('/api/v1/update/autopay_discount', {
+        csrfmiddlewaretoken: getCookie('csrftoken'),
+        discount_rate: rate
+    }).done(function(data){
+        if(data.result == 200){
+            Swal.fire({icon:'success', title:'저장 완료', text: data.message, confirmButtonColor:'#8a4cf7'});
+        } else {
+            Swal.fire({icon:'error', title:'오류', text: data.message});
+        }
+    });
+}
+</script>
+</%block>

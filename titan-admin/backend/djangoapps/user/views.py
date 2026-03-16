@@ -595,6 +595,61 @@ def api_update_user_password(request):
     return JsonResponse({'result': 200, 'title': title, 'text': text})
 
 
+# 관리자 직접 비밀번호 변경 (앱 + VPN 동시)
+@allow_admin
+def api_update_user_password_direct(request):
+    new_password = request.POST.get('new_password')
+    change_reason = request.POST.get('change_reason')
+    user_id = request.POST.get('user_id')
+    user = TblUser.objects.get(id=user_id)
+
+    if not new_password:
+        return JsonResponse({'result': 500, 'title': '오류', 'text': '비밀번호를 입력해주세요.'})
+
+    # 비밀번호 8자리 이상 체크
+    if len(new_password) < 8:
+        title, text = get_swal('NOT_PASSWORD_RULE')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    # 비밀번호 2조합 이상 체크
+    rule_cnt = 0
+    if len(re.findall(r"[!@#$%^&*()\-=_+~]", new_password)) > 0:
+        rule_cnt += 1
+    if len(re.findall(r"[a-zA-Z]", new_password)) > 0:
+        rule_cnt += 1
+    if len(re.findall(r"[0-9]", new_password)) > 0:
+        rule_cnt += 1
+    if rule_cnt < 2:
+        title, text = get_swal('NOT_PASSWORD_RULE')
+        return JsonResponse({'result': 500, 'title': title, 'text': text})
+
+    try:
+        # 1. tbl_user.password (앱 로그인) — SHA256+salt
+        user.password = hashText(new_password)
+        user.save()
+
+        # 2. radius Cleartext-Password (VPN 인증) — 평문 저장
+        radcheck = Radcheck.objects.using('radius').get(username=user.email, attribute='Cleartext-Password')
+        radcheck.value = new_password
+        radcheck.save()
+
+        st = TblServiceTime(
+            user_id=user_id,
+            prev_time='비공개',
+            prev_time_rad='',
+            after_time='비공개',
+            after_time_rad='',
+            diff='비밀번호 직접변경(앱+VPN)',
+            reason=change_reason,
+            regist_date=datetime.datetime.now())
+        st.save()
+        return JsonResponse({'result': 200, 'title': '성공', 'text': '비밀번호가 변경되었습니다. (앱+VPN 모두 적용)'})
+    except Radcheck.DoesNotExist:
+        return JsonResponse({'result': 500, 'title': '오류', 'text': 'Radius DB에 해당 유저의 비밀번호 레코드가 없습니다.'})
+    except Exception as e:
+        return JsonResponse({'result': 500, 'title': '오류', 'text': '오류 발생: ' + str(e)})
+
+
 # (2020-03-17)
 @allow_admin
 def api_update_user_active(request):
@@ -1663,3 +1718,180 @@ def api_read_user_connection_logs(request):
             'private_ip': r[9] or '',
         })
     return JsonResponse({'result': 200, 'logs': logs})
+
+
+# ===== 사용자 종합 진단 (계정/세션/실패/기기 분석) =====
+@allow_admin
+def api_read_user_diagnosis(request):
+    """고객 문의 시 한눈에 파악할 수 있는 종합 진단 데이터 반환"""
+    user_id = request.POST.get('user_id')
+    try:
+        user = TblUser.objects.get(id=user_id)
+    except TblUser.DoesNotExist:
+        return JsonResponse({'result': 404, 'msg': '사용자를 찾을 수 없습니다'})
+    email = user.email
+
+    data = {
+        'account': {},
+        'subscription': {},
+        'active_sessions': [],
+        'recent_sessions': [],
+        'recent_failures': [],
+        'device_history': [],
+        'server_map': {},  # nasip → server name
+    }
+
+    cur = connections['default'].cursor()
+    rcur = connections['radius'].cursor()
+
+    # ── 1. 계정 기본 정보 ──
+    data['account'] = {
+        'id': user.id,
+        'email': user.email,
+        'username': getattr(user, 'username', ''),
+        'v2ray_uuid': getattr(user, 'v2ray_uuid', '') or '',
+        'v2ray_deployed': getattr(user, 'v2ray_deployed', 0),
+        'is_active': getattr(user, 'is_active', 0),
+        'delete_yn': getattr(user, 'delete_yn', 'N'),
+        'regist_date': str(getattr(user, 'regist_date', '')) if getattr(user, 'regist_date', None) else '',
+    }
+
+    # ── 2. 구독 정보 (radcheck) ──
+    rcur.execute("""
+        SELECT attribute, value FROM radcheck WHERE username = %s
+    """, [email])
+    for row in rcur.fetchall():
+        attr, val = row[0], row[1]
+        if attr == 'Expiration':
+            data['subscription']['expiry'] = val
+            # 만료 여부 계산
+            try:
+                from datetime import datetime
+                exp_str = val.replace(' KST', '')
+                exp_dt = datetime.strptime(exp_str, '%d %b %Y %H:%M:%S')
+                data['subscription']['expired'] = exp_dt < datetime.now()
+                data['subscription']['days_left'] = (exp_dt - datetime.now()).days
+            except:
+                data['subscription']['expired'] = None
+                data['subscription']['days_left'] = None
+        elif attr == 'Simultaneous-Use':
+            data['subscription']['max_sessions'] = int(val)
+
+    # ── 3. 현재 활성 세션 ──
+    rcur.execute("""
+        SELECT radacctid, nasipaddress, nasporttype, acctstarttime,
+               acctsessiontime, callingstationid, framedipaddress,
+               acctinputoctets, acctoutputoctets
+        FROM radacct
+        WHERE username = %s AND acctstoptime IS NULL
+        ORDER BY acctstarttime DESC
+    """, [email])
+    nas_ips = set()
+    for r in rcur.fetchall():
+        csid = r[5] or ''
+        idx = csid.find('=5B')
+        client_ip = csid[:idx] if idx > 0 else csid
+        nas_ips.add(r[1])
+        # nasporttype → 프로토콜 이름
+        proto_map = {'Virtual': 'IKEv2', 'ISDN': 'OpenVPN', '61': 'SSTP', 'V2RAY': 'V2RAY'}
+        data['active_sessions'].append({
+            'radacctid': r[0],
+            'nas_ip': r[1] or '',
+            'protocol': proto_map.get(r[2], r[2] or ''),
+            'protocol_raw': r[2] or '',
+            'start_time': str(r[3]) if r[3] else '',
+            'session_sec': r[4] or 0,
+            'client_ip': client_ip,
+            'private_ip': r[6] or '',
+            'input_bytes': r[7] or 0,
+            'output_bytes': r[8] or 0,
+        })
+
+    # ── 4. 최근 세션 (마지막 20건) ──
+    rcur.execute("""
+        SELECT radacctid, nasipaddress, nasporttype, acctstarttime, acctstoptime,
+               acctsessiontime, callingstationid, acctterminatecause,
+               acctinputoctets, acctoutputoctets
+        FROM radacct
+        WHERE username = %s
+        ORDER BY radacctid DESC
+        LIMIT 20
+    """, [email])
+    for r in rcur.fetchall():
+        csid = r[6] or ''
+        idx = csid.find('=5B')
+        client_ip = csid[:idx] if idx > 0 else csid
+        nas_ips.add(r[1])
+        proto_map = {'Virtual': 'IKEv2', 'ISDN': 'OpenVPN', '61': 'SSTP', 'V2RAY': 'V2RAY'}
+        sess = r[5] or 0
+        if sess > 0:
+            status = 'success'
+        elif r[4] is None:
+            status = 'active'
+        else:
+            status = 'failed'
+        data['recent_sessions'].append({
+            'radacctid': r[0],
+            'nas_ip': r[1] or '',
+            'protocol': proto_map.get(r[2], r[2] or ''),
+            'start_time': str(r[3]) if r[3] else '',
+            'stop_time': str(r[4]) if r[4] else '',
+            'session_sec': sess,
+            'client_ip': client_ip,
+            'terminate_cause': r[7] or '',
+            'status': status,
+            'input_bytes': r[8] or 0,
+            'output_bytes': r[9] or 0,
+        })
+
+    # ── 5. 최근 접속 실패 (최근 20건) ──
+    cur.execute("""
+        SELECT server_name, server_domain, server_protocol, platform,
+               device_info, failed_time, user_ip, user_location, app_version
+        FROM tbl_agent_failed
+        WHERE username = %s
+        ORDER BY failed_time DESC
+        LIMIT 20
+    """, [email])
+    for r in dictfetchall(cur):
+        data['recent_failures'].append({
+            'server_name': r['server_name'] or '',
+            'server_domain': r['server_domain'] or '',
+            'protocol': r['server_protocol'] or '',
+            'platform': r['platform'] or '',
+            'device': r['device_info'] or '',
+            'time': str(r['failed_time']) if r['failed_time'] else '',
+            'ip': r['user_ip'] or '',
+            'location': r['user_location'] or '',
+            'app_version': r['app_version'] or '',
+        })
+
+    # ── 6. 기기 정보 (최근 10건) ──
+    cur.execute("""
+        SELECT device_type, device_isp, device_city, device_country, login_time
+        FROM tbl_device_info
+        WHERE user_id = %s
+        ORDER BY login_time DESC
+        LIMIT 10
+    """, [user_id])
+    for r in dictfetchall(cur):
+        data['device_history'].append({
+            'type': r['device_type'] or '',
+            'isp': r['device_isp'] or '',
+            'city': r['device_city'] or '',
+            'country': r['device_country'] or '',
+            'time': str(r['login_time']) if r['login_time'] else '',
+        })
+
+    # ── 7. NAS IP → 서버 이름 매핑 ──
+    if nas_ips:
+        nas_ips.discard(None)
+        if nas_ips:
+            placeholders = ','.join(['%s'] * len(nas_ips))
+            cur.execute("""
+                SELECT hostip, name FROM tbl_agent3 WHERE hostip IN ({})
+            """.format(placeholders), list(nas_ips))
+            for r in dictfetchall(cur):
+                data['server_map'][r['hostip']] = r['name']
+
+    return JsonResponse({'result': 200, 'data': data})

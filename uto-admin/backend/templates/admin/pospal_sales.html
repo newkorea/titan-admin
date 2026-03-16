@@ -1,0 +1,677 @@
+## -*- coding: utf-8 -*-
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .pospal-container { max-width: 900px; margin: 0 auto; }
+    .section-card {
+        background: #fff; border-radius: 10px; padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px;
+    }
+    .section-card h4 {
+        font-size: 15px; font-weight: 700; color: #333;
+        border-bottom: 2px solid #e83e8c; padding-bottom: 8px; margin-bottom: 14px;
+    }
+    .date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .date-row input { padding: 7px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .btn-fetch {
+        padding: 7px 18px; background: #e83e8c; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-fetch:hover { background: #d63384; }
+    .btn-fetch:disabled { background: #ccc; }
+    .stats-row { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .stat-badge {
+        padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .stat-total { background: #e3f2fd; color: #1565c0; }
+    .stat-frs { background: #fce4ec; color: #c62828; }
+    .stat-pending { background: #fff3e0; color: #e65100; }
+    .stat-done { background: #e8f5e9; color: #2e7d32; }
+
+    /* ticket cards */
+    .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+    .ticket-card {
+        border: 1px solid #eee; border-radius: 8px; padding: 14px;
+        background: #fafafa; transition: all 0.2s;
+    }
+    .ticket-card.processed { background: #f0f9f0; border-color: #c8e6c9; opacity: 0.7; }
+    .ticket-card.processing { border-color: #e83e8c; background: #fff5f8; }
+    .ticket-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 8px;
+    }
+    .ticket-sn { font-size: 12px; color: #888; font-family: monospace; }
+    .ticket-time { font-size: 13px; font-weight: 600; color: #333; }
+    .ticket-amount { font-size: 16px; font-weight: 700; color: #e83e8c; }
+    .ticket-items { margin: 8px 0; }
+    .ticket-item {
+        display: flex; align-items: center; gap: 8px; padding: 4px 0;
+        font-size: 13px; color: #444;
+    }
+    .ticket-item .barcode { color: #999; font-size: 11px; font-family: monospace; }
+    .item-badge {
+        padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .badge-new { background: #e3f2fd; color: #1565c0; }
+    .badge-renew { background: #f3e5f5; color: #7b1fa2; }
+    .badge-months { background: #fff8e1; color: #f57f17; }
+    .badge-session { background: #e8f5e9; color: #2e7d32; }
+
+    /* extend form inside ticket */
+    .extend-form {
+        margin-top: 10px; padding: 10px; background: #fff; border-radius: 6px;
+        border: 1px dashed #e83e8c;
+    }
+    .extend-form .form-inline {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .extend-form input {
+        padding: 6px 10px; border: 1px solid #ddd; border-radius: 5px;
+        font-size: 13px; width: 200px;
+    }
+    .extend-form input:focus { border-color: #e83e8c; outline: none; }
+    .btn-extend-pos {
+        padding: 6px 16px; background: #28a745; color: #fff; border: none;
+        border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-extend-pos:hover { background: #218838; }
+    .btn-extend-pos:disabled { background: #adb5bd; cursor: not-allowed; }
+    .extend-result {
+        margin-top: 6px; padding: 6px 10px; border-radius: 5px; font-size: 12px;
+        display: none;
+    }
+    .extend-result.success { display: block; background: #d4edda; color: #155724; }
+    .extend-result.error { display: block; background: #f8d7da; color: #721c24; }
+    .done-badge {
+        display: inline-block; padding: 4px 12px; background: #28a745; color: #fff;
+        border-radius: 12px; font-size: 12px; font-weight: 600;
+    }
+    .refunded-badge {
+        display: inline-block; padding: 4px 12px; background: #dc3545; color: #fff;
+        border-radius: 12px; font-size: 12px; font-weight: 600;
+    }
+    .btn-refund {
+        padding: 5px 14px; background: #dc3545; color: #fff; border: none;
+        border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-refund:hover { background: #c82333; }
+    .btn-refund:disabled { background: #adb5bd; cursor: not-allowed; }
+    .processed-info {
+        margin-top: 8px; padding: 10px; background: #f0f9f0; border-radius: 6px;
+        border: 1px solid #c8e6c9;
+    }
+    .processed-info .pi-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 6px;
+    }
+    .processed-info .pi-vuser { font-weight: 700; color: #2e7d32; font-size: 14px; }
+    .processed-info .pi-grid {
+        display: grid; grid-template-columns: 80px 1fr 80px 1fr; gap: 3px 10px;
+        font-size: 12px;
+    }
+    .processed-info .pi-grid .label { color: #666; font-weight: 600; }
+    .processed-info .pi-grid .value { color: #333; }
+    .ticket-card.refunded-card { background: #fff5f5; border-color: #f5c6cb; opacity: 0.8; }
+    /* 결제수단 배지 */
+    .pay-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .pay-badge {
+        padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+        background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2;
+    }
+    .pay-badge .pay-amount { margin-left: 3px; font-weight: 700; }
+    /* 비FRS 상품 */
+    .other-item {
+        display: flex; align-items: center; gap: 8px; padding: 3px 0;
+        font-size: 12px; color: #888;
+    }
+    .other-item .item-name { color: #666; }
+    .other-divider { font-size: 11px; color: #bbb; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; }
+    .stat-amount { background: #ede7f6; color: #4527a0; }
+    .ticket-card.no-frs { border-left: 3px solid #ddd; }
+
+    /* 유저 조회 패널 */
+    .user-panel {
+        margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    .user-info-grid {
+        display: grid; grid-template-columns: 80px 1fr; gap: 4px 12px;
+        font-size: 13px; margin-bottom: 10px;
+    }
+    .user-info-grid .label { color: #666; font-weight: 600; }
+    .user-info-grid .value { color: #333; }
+    .status-active { color: #28a745; font-weight: 700; }
+    .status-expired { color: #dc3545; font-weight: 700; }
+    .status-stopped { color: #dc3545; font-weight: 700; }
+    .conn-online { color: #28a745; font-weight: 600; }
+    .conn-offline { color: #999; }
+    .preview-box {
+        margin-top: 8px; padding: 10px; background: #fff3cd; border-radius: 6px;
+        border: 1px solid #ffc107; font-size: 13px;
+    }
+    .preview-box .preview-row { display: flex; gap: 16px; align-items: center; margin-bottom: 4px; }
+    .preview-box .arrow { color: #e83e8c; font-weight: 700; }
+    .session-warn {
+        margin-top: 6px; padding: 6px 10px; background: #fff3e0; border-radius: 5px;
+        border-left: 3px solid #ff9800; font-size: 12px; color: #e65100;
+    }
+    .btn-lookup {
+        padding: 6px 14px; background: #17a2b8; color: #fff; border: none;
+        border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-lookup:hover { background: #138496; }
+    .btn-lookup:disabled { background: #adb5bd; cursor: not-allowed; }
+    .btn-phone {
+        padding: 6px 14px; background: #6f42c1; color: #fff; border: none;
+        border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-phone:hover { background: #5a32a3; }
+    .btn-phone:disabled { background: #adb5bd; cursor: not-allowed; }
+    .phone-results {
+        margin-top: 8px; padding: 0; background: #fff; border: 1px solid #dee2e6;
+        border-radius: 6px; max-height: 200px; overflow-y: auto;
+    }
+    .phone-results .pr-item {
+        padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex;
+        justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;
+    }
+    .phone-results .pr-item:last-child { border-bottom: none; }
+    .phone-results .pr-item:hover { background: #e8f5e9; }
+    .phone-results .pr-vuser { font-weight: 700; color: #333; }
+    .phone-results .pr-meta { font-size: 11px; color: #888; display: flex; gap: 8px; }
+    .phone-results .pr-expired { color: #dc3545; }
+    .phone-results .pr-active { color: #28a745; }
+    .user-not-found {
+        margin-top: 8px; padding: 8px 12px; background: #f8d7da; color: #721c24;
+        border-radius: 6px; font-size: 13px;
+    }
+    .empty-msg { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+    .loading { text-align: center; padding: 20px; color: #888; }
+</style>
+</%block>
+
+<%block name="content">
+<div class="pospal-container">
+    <div class="section-card">
+        <h4><i class="fa fa-cash-register"></i> Pospal(银豹) POS 판매 연동</h4>
+        <div class="date-row">
+            <label style="font-weight:600; font-size:13px;">조회 날짜:</label>
+            <input type="date" id="queryDate" value="">
+            <button class="btn-fetch" id="btnFetch" onclick="fetchTickets()">
+                <i class="fa fa-search"></i> 판매 불러오기
+            </button>
+            <button class="btn-fetch" style="background:#6c757d;" onclick="fetchTickets(true)">
+                <i class="fa fa-refresh"></i> 새로고침
+            </button>
+        </div>
+        <div class="stats-row" id="statsRow" style="display:none;">
+            <span class="stat-badge stat-total"><i class="fa fa-receipt"></i> 전체 <b id="statTotal">0</b>건</span>
+            <span class="stat-badge stat-frs"><i class="fa fa-star"></i> FRS <b id="statFrs">0</b>건</span>
+            <span class="stat-badge stat-pending"><i class="fa fa-clock-o"></i> 미처리 <b id="statPending">0</b>건</span>
+            <span class="stat-badge stat-done"><i class="fa fa-check"></i> 완료 <b id="statDone">0</b>건</span>
+            <span class="stat-badge stat-amount"><i class="fa fa-money"></i> ¥<b id="statAmount">0</b></span>
+        </div>
+    </div>
+
+    <div id="ticketArea">
+        <div class="empty-msg">
+            <i class="fa fa-shopping-cart" style="font-size:40px; margin-bottom:10px; display:block;"></i>
+            날짜를 선택하고 "판매 불러오기"를 클릭하세요.
+        </div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+var csrfToken = (function(){
+    var v = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+})();
+
+// 오늘 날짜 기본값
+document.getElementById('queryDate').value = new Date().toISOString().split('T')[0];
+
+var ticketCache = [];
+
+function fetchTickets(isRefresh) {
+    var dateVal = document.getElementById('queryDate').value;
+    if (!dateVal) { alert('날짜를 선택하세요.'); return; }
+
+    var btn = document.getElementById('btnFetch');
+    btn.disabled = true;
+    document.getElementById('ticketArea').innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i> Pospal 판매 데이터 불러오는 중...</div>';
+
+    fetch('/api/v1/read/pospal_tickets?date=' + dateVal)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btn.disabled = false;
+            if (data.result !== 200) {
+                document.getElementById('ticketArea').innerHTML = '<div class="section-card" style="color:#dc3545;"><b>오류:</b> ' + (data.msg || 'Unknown') + '</div>';
+                return;
+            }
+            ticketCache = data.tickets || [];
+            updateStats(data);
+            renderTickets(ticketCache);
+        })
+        .catch(function(err) {
+            btn.disabled = false;
+            document.getElementById('ticketArea').innerHTML = '<div class="section-card" style="color:#dc3545;"><b>네트워크 오류:</b> ' + err.message + '</div>';
+        });
+}
+
+function updateStats(data) {
+    var row = document.getElementById('statsRow');
+    row.style.display = 'flex';
+    document.getElementById('statTotal').textContent = data.total_count || 0;
+    document.getElementById('statFrs').textContent = data.frs_count || 0;
+    document.getElementById('statAmount').textContent = (data.total_amount || 0).toLocaleString();
+    var pending = 0, done = 0;
+    (data.tickets || []).forEach(function(t) {
+        if (t.has_frs) { if (t.processed) done++; else pending++; }
+    });
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statDone').textContent = done;
+}
+
+function renderTickets(tickets) {
+    var area = document.getElementById('ticketArea');
+    if (!tickets.length) {
+        area.innerHTML = '<div class="empty-msg"><i class="fa fa-shopping-cart" style="font-size:40px; margin-bottom:10px; display:block;"></i>해당 날짜에 판매 내역이 없습니다.</div>';
+        return;
+    }
+
+    // FRS 미처리 먼저, FRS 처리완료, 비FRS 순
+    tickets.sort(function(a, b) {
+        if (a.has_frs !== b.has_frs) return a.has_frs ? -1 : 1;
+        if (a.has_frs && b.has_frs && a.processed !== b.processed) return a.processed ? 1 : -1;
+        return a.datetime < b.datetime ? 1 : -1;
+    });
+
+    var html = '<div class="ticket-list">';
+    tickets.forEach(function(t, idx) {
+        var cardClass = 'ticket-card';
+        if (t.has_frs && t.processed) cardClass += ' processed';
+        if (t.has_frs && t.refunded && !t.processed) cardClass += ' refunded-card';
+        if (!t.has_frs) cardClass += ' no-frs';
+        html += '<div class="' + cardClass + '" id="ticket-' + idx + '">';
+        html += '<div class="ticket-header">';
+        html += '<div><span class="ticket-time">' + t.datetime + '</span> <span class="ticket-sn">' + t.sn + '</span></div>';
+        html += '<span class="ticket-amount">¥' + t.totalAmount + '</span>';
+        html += '</div>';
+
+        // 캐셔 + 결제수단
+        var metaHtml = '';
+        if (t.cashier) metaHtml += '<i class="fa fa-user"></i> ' + t.cashier + ' ';
+        if (t.payments && t.payments.length) {
+            metaHtml += '<span class="pay-badges">';
+            t.payments.forEach(function(p) {
+                metaHtml += '<span class="pay-badge">' + p.name + '<span class="pay-amount"> ¥' + p.amount + '</span></span>';
+            });
+            metaHtml += '</span>';
+        }
+        if (metaHtml) html += '<div style="font-size:12px; color:#888; margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' + metaHtml + '</div>';
+
+        html += '<div class="ticket-items">';
+
+        // FRS 상품
+        t.frs_items.forEach(function(item, iidx) {
+            html += '<div class="ticket-item">';
+            html += '<b>' + item.name + '</b>';
+            html += ' <span class="item-badge badge-months">' + item.months + '개월</span>';
+            html += ' <span class="item-badge badge-session">' + item.session + '세션</span>';
+            html += ' <span class="item-badge ' + (item.is_new ? 'badge-new' : 'badge-renew') + '">' + (item.is_new ? '신규' : '연장') + '</span>';
+            html += ' <span style="color:#e83e8c; font-weight:600;">¥' + item.amount + '</span>';
+            html += ' <span class="barcode">' + item.barcode + '</span>';
+            html += '</div>';
+
+    // FRS 미처리 → 조회+연장 폼, FRS 처리완료 → 사용자정보+환불버튼, FRS 환불 → 조회 폼 다시
+            if (!t.processed && !t.refunded) {
+                html += '<div class="extend-form" id="form-' + idx + '-' + iidx + '">';
+                html += '<div class="form-inline">';
+                html += '<input type="text" id="vuser-' + idx + '-' + iidx + '" placeholder="VPN 사용자명 (vuser) 입력" autocomplete="off">';
+                html += '<button class="btn-lookup" onclick="lookupUser(' + idx + ',' + iidx + ',\'' + item.barcode + '\')">'
+                html += '<i class="fa fa-search"></i> 조회</button>';
+                html += '<button class="btn-phone" onclick="lookupByPhone(' + idx + ',' + iidx + ',\'' + item.barcode + '\')">';
+                html += '<i class="fa fa-phone"></i> 전화번호</button>';
+                html += '</div>';
+                html += '<div id="phone-results-' + idx + '-' + iidx + '"></div>';
+                html += '<div id="user-panel-' + idx + '-' + iidx + '"></div>';
+                html += '</div>';
+            } else if (t.refunded) {
+                // 환불됨: 입력 폼 다시 표시
+                html += '<div class="extend-form" id="form-' + idx + '-' + iidx + '">';
+                html += '<div style="margin-bottom:6px;"><span class="refunded-badge"><i class="fa fa-undo"></i> ' + (t.processed_vuser || '') + ' 환불됨</span></div>';
+                html += '<div class="form-inline">';
+                html += '<input type="text" id="vuser-' + idx + '-' + iidx + '" placeholder="VPN 사용자명 (vuser) 입력" autocomplete="off">';
+                html += '<button class="btn-lookup" onclick="lookupUser(' + idx + ',' + iidx + ',\'' + item.barcode + '\')">';
+                html += '<i class="fa fa-search"></i> 조회</button>';
+                html += '<button class="btn-phone" onclick="lookupByPhone(' + idx + ',' + iidx + ',\'' + item.barcode + '\')">';
+                html += '<i class="fa fa-phone"></i> 전화번호</button>';
+                html += '</div>';
+                html += '<div id="phone-results-' + idx + '-' + iidx + '"></div>';
+                html += '<div id="user-panel-' + idx + '-' + iidx + '"></div>';
+                html += '</div>';
+            }
+        });
+
+        // 비FRS 상품
+        if (t.other_items && t.other_items.length) {
+            if (t.frs_items.length) html += '<div class="other-divider">기타 상품</div>';
+            t.other_items.forEach(function(item) {
+                html += '<div class="other-item">';
+                html += '<span class="item-name">' + item.name + '</span>';
+                if (item.quantity > 1) html += ' <span style="color:#999;">x' + item.quantity + '</span>';
+                html += ' <span style="color:#666;">¥' + item.amount + '</span>';
+                if (item.barcode) html += ' <span class="barcode">' + item.barcode + '</span>';
+                html += '</div>';
+            });
+        }
+        html += '</div>';
+
+        // FRS 처리 완료 표시: 사용자 정보 + 환불 버튼
+        if (t.has_frs && t.processed) {
+            html += '<div class="processed-info" id="pi-' + idx + '">';
+            html += '<div class="pi-header">';
+            html += '<span class="pi-vuser"><i class="fa fa-user"></i> ' + (t.processed_vuser || '') + '</span>';
+            html += '<span class="done-badge"><i class="fa fa-check"></i> 처리 완료</span>';
+            html += '</div>';
+            html += '<div class="pi-grid" id="pi-grid-' + idx + '"><span class="label">조회 중...</span></div>';
+            html += '<div style="margin-top:8px; text-align:right;">';
+            html += '<button class="btn-refund" id="btn-refund-' + idx + '" onclick="processRefund(' + idx + ',\'' + t.sn + '\',\'' + t.frs_items[0].barcode + '\')">';
+            html += '<i class="fa fa-undo"></i> 환불</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        // FRS 환불 표시
+        if (t.has_frs && t.refunded && !t.processed) {
+            html += '<div style="text-align:right;"><span class="refunded-badge"><i class="fa fa-undo"></i> ' + (t.processed_vuser||'') + ' 환불됨</span></div>';
+        }
+
+        html += '</div>';
+    });
+    html += '</div>';
+    area.innerHTML = html;
+
+    // 처리완료 카드: 사용자 정보 자동 로드
+    tickets.forEach(function(t, idx) {
+        if (t.has_frs && t.processed && t.processed_vuser) {
+            loadProcessedUserInfo(idx, t.processed_vuser);
+        }
+    });
+}
+
+function lookupByPhone(ticketIdx, itemIdx, barcode) {
+    var input = document.getElementById('vuser-' + ticketIdx + '-' + itemIdx);
+    var phoneDiv = document.getElementById('phone-results-' + ticketIdx + '-' + itemIdx);
+    var panel = document.getElementById('user-panel-' + ticketIdx + '-' + itemIdx);
+    var phone = (input.value || '').trim();
+
+    if (!phone || phone.length < 4) {
+        input.focus();
+        input.style.borderColor = '#dc3545';
+        input.placeholder = '전화번호 4자리 이상 입력';
+        return;
+    }
+    input.style.borderColor = '#ddd';
+    phoneDiv.innerHTML = '<div style="padding:8px; color:#888; font-size:12px;"><i class="fa fa-spinner fa-spin"></i> 전화번호 검색 중...</div>';
+    panel.innerHTML = '';
+
+    fetch('/api/v1/read/pospal_user_by_phone?phone=' + encodeURIComponent(phone))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result === 404) {
+                phoneDiv.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-triangle"></i> ' + data.msg + '</div>';
+                return;
+            }
+            if (data.result !== 200) {
+                phoneDiv.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-circle"></i> ' + (data.msg || '오류') + '</div>';
+                return;
+            }
+            var h = '<div class="phone-results">';
+            h += '<div style="padding:6px 12px; background:#f8f9fa; font-size:11px; color:#666; font-weight:600; border-bottom:1px solid #eee;">'
+               + '<i class="fa fa-phone"></i> ' + phone + ' — ' + data.count + '건</div>';
+            data.users.forEach(function(u) {
+                h += '<div class="pr-item" onclick="selectPhoneUser(\'' + u.vuser + '\',' + ticketIdx + ',' + itemIdx + ',\'' + barcode + '\')">';
+                h += '<span class="pr-vuser">' + u.vuser + '</span>';
+                h += '<span class="pr-meta">';
+                h += '<span>' + u.hyname + '</span>';
+                h += '<span>' + u.session + '세션</span>';
+                h += '<span class="' + (u.expired ? 'pr-expired' : 'pr-active') + '">' + u.lastdate.substring(0, 10) + (u.expired ? ' 만료' : '') + '</span>';
+                h += '<span>' + (u.kz === '정상' ? '✓' : '✗') + '</span>';
+                h += '</span></div>';
+            });
+            h += '</div>';
+            phoneDiv.innerHTML = h;
+        })
+        .catch(function(err) {
+            phoneDiv.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-circle"></i> 네트워크 오류: ' + err.message + '</div>';
+        });
+}
+
+function selectPhoneUser(vuser, ticketIdx, itemIdx, barcode) {
+    var input = document.getElementById('vuser-' + ticketIdx + '-' + itemIdx);
+    var phoneDiv = document.getElementById('phone-results-' + ticketIdx + '-' + itemIdx);
+    input.value = vuser;
+    phoneDiv.innerHTML = '';
+    lookupUser(ticketIdx, itemIdx, barcode);
+}
+
+function lookupUser(ticketIdx, itemIdx, barcode) {
+    var input = document.getElementById('vuser-' + ticketIdx + '-' + itemIdx);
+    var panel = document.getElementById('user-panel-' + ticketIdx + '-' + itemIdx);
+    var phoneDiv = document.getElementById('phone-results-' + ticketIdx + '-' + itemIdx);
+    var vuser = (input.value || '').trim();
+
+    if (!vuser) {
+        input.focus();
+        input.style.borderColor = '#dc3545';
+        return;
+    }
+    input.style.borderColor = '#ddd';
+    if (phoneDiv) phoneDiv.innerHTML = '';
+    panel.innerHTML = '<div style="padding:8px; color:#888; font-size:12px;"><i class="fa fa-spinner fa-spin"></i> 조회 중...</div>';
+
+    fetch('/api/v1/read/pospal_user?vuser=' + encodeURIComponent(vuser) + '&barcode=' + encodeURIComponent(barcode))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result === 404) {
+                panel.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-triangle"></i> ' + data.msg + '</div>';
+                return;
+            }
+            if (data.result !== 200) {
+                panel.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-circle"></i> ' + (data.msg || '오류') + '</div>';
+                return;
+            }
+            var u = data.user;
+            var p = data.preview;
+            var ticketSn = ticketCache[ticketIdx].sn;
+
+            var h = '<div class="user-panel">';
+            h += '<div class="user-info-grid">';
+            h += '<span class="label">ID</span><span class="value">' + u.id + '</span>';
+            h += '<span class="label">사용자명</span><span class="value"><b>' + u.vuser + '</b></span>';
+            h += '<span class="label">상태</span><span class="value ' + (u.kz === '정상' ? 'status-active' : 'status-stopped') + '">' + u.kz + '</span>';
+            h += '<span class="label">그룹</span><span class="value">' + u.groups + '</span>';
+            h += '<span class="label">세션</span><span class="value">' + u.session + '</span>';
+            h += '<span class="label">만료일</span><span class="value ' + (u.expired ? 'status-expired' : 'status-active') + '">' + u.lastdate + (u.expired ? ' (만료)' : ' (유효)') + '</span>';
+            h += '<span class="label">가입일</span><span class="value">' + u.creatdate + '</span>';
+            h += '<span class="label">전화번호</span><span class="value">' + (u.phone || '-') + '</span>';
+            h += '<span class="label">대리점</span><span class="value">' + u.hyname + '</span>';
+            h += '<span class="label">접속상태</span><span class="value ' + (u.active_sessions > 0 ? 'conn-online' : 'conn-offline') + '">';
+            h += u.active_sessions > 0 ? '<i class="fa fa-circle"></i> 접속 중 (' + u.active_sessions + '세션)' : '<i class="fa fa-circle-o"></i> 미접속';
+            h += '</span>';
+            h += '</div>';
+
+            // 연장 미리보기
+            if (p) {
+                h += '<div class="preview-box">';
+                h += '<div class="preview-row">';
+                h += '<span><b>만료일:</b> ' + u.lastdate + '</span>';
+                h += '<span class="arrow">→</span>';
+                h += '<span style="color:#28a745; font-weight:700;">' + p.new_lastdate + '</span>';
+                h += '</div>';
+                h += '<div class="preview-row">';
+                h += '<span><b>세션:</b> ' + p.old_session + '</span>';
+                if (p.session_changed) {
+                    h += '<span class="arrow">→</span>';
+                    h += '<span style="color:#e65100; font-weight:700;">' + p.new_session + '</span>';
+                }
+                h += '</div>';
+                if (p.session_changed) {
+                    h += '<div class="session-warn"><i class="fa fa-exclamation-triangle"></i> 세션이 <b>' + p.old_session + '</b>에서 <b>' + p.new_session + '</b>으로 변경됩니다.';
+                    if (p.converted_days > 0) {
+                        h += '<br>기존 남은기간(' + p.old_session + '세션 ¥' + p.old_yearly_price + '/년)을 ' + p.new_session + '세션(¥' + p.new_yearly_price + '/년) 기준 가격비례 환산 → <b>+' + p.converted_days + '일</b> 추가';
+                    }
+                    h += '</div>';
+                }
+                h += '</div>';
+            }
+
+            // 연장 버튼
+            h += '<div style="margin-top:10px; display:flex; gap:8px; align-items:center;">';
+            h += '<button class="btn-extend-pos" id="btn-ext-' + ticketIdx + '-' + itemIdx + '" onclick="processExtend(' + ticketIdx + ',' + itemIdx + ',\'' + ticketSn + '\',\'' + barcode + '\')">';
+            h += '<i class="fa fa-bolt"></i> 자동연장</button>';
+            h += '<div class="extend-result" id="result-' + ticketIdx + '-' + itemIdx + '"></div>';
+            h += '</div>';
+
+            h += '</div>';
+            panel.innerHTML = h;
+        })
+        .catch(function(err) {
+            panel.innerHTML = '<div class="user-not-found"><i class="fa fa-exclamation-circle"></i> 네트워크 오류: ' + err.message + '</div>';
+        });
+}
+
+function processExtend(ticketIdx, itemIdx, ticketSn, barcode) {
+    var input = document.getElementById('vuser-' + ticketIdx + '-' + itemIdx);
+    var resultDiv = document.getElementById('result-' + ticketIdx + '-' + itemIdx);
+    var btn = document.getElementById('btn-ext-' + ticketIdx + '-' + itemIdx);
+    var vuser = (input.value || '').trim();
+
+    if (!vuser) { input.focus(); return; }
+
+    var item = ticketCache[ticketIdx].frs_items[itemIdx];
+    if (!confirm(vuser + ' — ' + item.name + ' (' + item.months + '개월, ' + item.session + '세션) 연장 처리하시겠습니까?')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 처리 중...';
+    resultDiv.className = 'extend-result';
+    resultDiv.style.display = 'none';
+
+    var formData = new FormData();
+    formData.append('ticket_sn', ticketSn);
+    formData.append('vuser', vuser);
+    formData.append('barcode', barcode);
+
+    fetch('/api/v1/create/pospal_extend', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.result === 200) {
+            resultDiv.className = 'extend-result success';
+            resultDiv.innerHTML = '<i class="fa fa-check-circle"></i> ' + data.msg;
+            resultDiv.style.display = 'block';
+            btn.innerHTML = '<i class="fa fa-check"></i> 완료';
+            btn.style.background = '#28a745';
+            input.disabled = true;
+
+            var card = document.getElementById('ticket-' + ticketIdx);
+            card.className = 'ticket-card processed';
+            ticketCache[ticketIdx].processed = true;
+            ticketCache[ticketIdx].processed_vuser = vuser;
+
+            // 새로고침하면 처리완료 상태로 표시됨 — 바로 전체 리렌더링
+            setTimeout(function() { fetchTickets(true); }, 1000);
+        } else {
+            resultDiv.className = 'extend-result error';
+            resultDiv.innerHTML = '<i class="fa fa-exclamation-circle"></i> ' + (data.msg || '처리 실패');
+            resultDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-bolt"></i> 자동연장';
+        }
+    })
+    .catch(function(err) {
+        resultDiv.className = 'extend-result error';
+        resultDiv.innerHTML = '<i class="fa fa-exclamation-circle"></i> 네트워크 오류: ' + err.message;
+        resultDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-bolt"></i> 자동연장';
+    });
+}
+
+// 처리완료 카드에서 사용자 정보 자동 로드
+function loadProcessedUserInfo(ticketIdx, vuser) {
+    var grid = document.getElementById('pi-grid-' + ticketIdx);
+    if (!grid) return;
+    fetch('/api/v1/read/pospal_user?vuser=' + encodeURIComponent(vuser))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result !== 200) {
+                grid.innerHTML = '<span style="color:#999;">정보 조회 실패</span>';
+                return;
+            }
+            var u = data.user;
+            var h = '';
+            h += '<span class="label">세션</span><span class="value">' + u.session + '</span>';
+            h += '<span class="label">만료일</span><span class="value ' + (u.expired ? 'status-expired' : 'status-active') + '">' + u.lastdate + '</span>';
+            h += '<span class="label">상태</span><span class="value ' + (u.kz === '정상' ? 'status-active' : 'status-stopped') + '">' + u.kz + '</span>';
+            h += '<span class="label">접속</span><span class="value ' + (u.active_sessions > 0 ? 'conn-online' : 'conn-offline') + '">';
+            h += u.active_sessions > 0 ? '접속 중 (' + u.active_sessions + ')' : '미접속';
+            h += '</span>';
+            h += '<span class="label">가입일</span><span class="value">' + u.creatdate + '</span>';
+            h += '<span class="label">전화</span><span class="value">' + (u.phone || '-') + '</span>';
+            h += '<span class="label">그룹</span><span class="value">' + u.groups + '</span>';
+            h += '<span class="label">대리점</span><span class="value">' + u.hyname + '</span>';
+            grid.innerHTML = h;
+        })
+        .catch(function() {
+            grid.innerHTML = '<span style="color:#999;">조회 실패</span>';
+        });
+}
+
+// 환불 처리
+function processRefund(ticketIdx, ticketSn, barcode) {
+    var vuser = ticketCache[ticketIdx].processed_vuser || '';
+    if (!confirm(vuser + ' — 환불 처리하시겠습니까?\n만료일과 세션이 연장 전 상태로 복원됩니다.')) return;
+
+    var btn = document.getElementById('btn-refund-' + ticketIdx);
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 처리 중...';
+
+    var formData = new FormData();
+    formData.append('ticket_sn', ticketSn);
+    formData.append('barcode', barcode);
+
+    fetch('/api/v1/create/pospal_refund', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.result === 200) {
+            alert(data.msg);
+            ticketCache[ticketIdx].processed = false;
+            ticketCache[ticketIdx].refunded = true;
+            // 새로고침
+            fetchTickets(true);
+        } else {
+            alert('환불 실패: ' + (data.msg || '알 수 없는 오류'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-undo"></i> 환불';
+        }
+    })
+    .catch(function(err) {
+        alert('네트워크 오류: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-undo"></i> 환불';
+    });
+}
+</script>
+</%block>

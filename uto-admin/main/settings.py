@@ -1,0 +1,291 @@
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# ① 캐시 디렉터리 경로 변수
+MAKO_CACHE_DIR = os.path.join(BASE_DIR, 'mako_modules')
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Secrets & credentials sourced from environment with sane defaults (override in systemd unit or /etc/environment)
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fj@9(_0ecerym9(a=lqv_-@6smmg92^lm3z=02kr@xl7d=4m7i')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+
+
+# 글로벌 변수 관리 영역
+DEBUG = False
+SESSION_COOKIE_AGE = 24 * 60 * 60                       # 세션 타임아웃 (sec)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True                  # 브라우저 닫을 시 세션 만료 (크롬 적용 불가)
+APPEND_SLASH = False
+# 고유 세션 쿠키 이름으로 교차 서비스 충돌 방지
+SESSION_COOKIE_NAME = 'utoadmin_sessionid'
+# 메시지는 세션에 저장하여 쿠키 Base64 디코딩 이슈 방지
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+# settings.py
+#USE_TZ = True  # 시간을 시간대가 고려된 datetime으로 처리
+#TIME_ZONE = 'Asia/Seoul'  # 서울 시간대 (한국 표준시)
+
+
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.naver.com')             # SMTP 도메인
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))                   # SMTP 포트
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'kakaovpn@naver.com')       # SMTP 이메일
+SMTP_ID = os.environ.get('SMTP_ID', 'kakaovpn')                       # SMTP 아이디
+# 네이버 애플리케이션 비밀번호 (2025-11-19 갱신)
+SMTP_PW = os.environ.get('SMTP_PW', '41XKPLFFXBN7')                   # SMTP 비밀번호
+#SMTP_HOST = 'smtp-relay.gmail.com'                      # SMTP 도메인
+#SMTP_PORT = 25                                          # SMTP 포트
+#SMTP_EMAIL = 'master@titanvpn.io'                       # SMTP 이메일
+#SMTP_ID = 'titanvpnsupport'                            # SMTP 아이디
+#SMTP_PW = 'xkdlxks12!@'                                # SMTP 비밀번호
+
+# API Key 설정 (강력한 키로 변경하세요!)
+API_SECRET_KEY = os.environ.get('API_SECRET_KEY', 'MyJohnFCandy670312!@bemyslave')  # 원격연장승인API용 비밀번호
+
+# 이메일 인증 링크 생성에 필요한 공용 설정 (회원 서비스와 동일해야 함)
+# 운영 환경에서는 환경변수로 주입됩니다.
+ACTIVE_AES_KEY = os.environ.get('ACTIVE_AES_KEY', 'hellotitan')
+# Public site domains for user-facing links (activation, password reset)
+# Requested domains: titan.jobjapan.com, titanvpn.kr, tl.jobjapan.net
+FULL_URL  = os.environ.get('FULL_URL',  'titan.jobjapan.com')
+FULL_URL2 = os.environ.get('FULL_URL2', 'titanvpn.kr')
+FULL_URL3 = os.environ.get('FULL_URL3', 'tl.jobjapan.net')
+
+LOGIN_FAIL_ATTEMPT = 10                                 # 로그인 시도 가능 회수
+
+UPLOAD_ROOT = BASE_DIR + '/upload'                      # 업로드 디렉토리
+
+REPLACE_ABS_FROM = '/www/wwwroot/aws1.titanvpn.kr'         # 파일 서브 디렉토리 변경 (FROM)
+REPLACE_ABS_TO = ''                                     # 파일 서브 디렉토리 변경 (TO)
+
+# 상품 이름 관리
+SESSION_MONTH_1_1   = 'TITAN NETWORKS 세션1 (1개월)'
+SESSION_MONTH_1_2   = 'TITAN NETWORKS 세션1 (2개월)'
+SESSION_MONTH_1_3   = 'TITAN NETWORKS 세션1 (3개월)'
+SESSION_MONTH_1_6   = 'TITAN NETWORKS 세션1 (6개월)'
+SESSION_MONTH_1_12  = 'TITAN NETWORKS 세션1 (12개월)'
+SESSION_MONTH_2_1   = 'TITAN NETWORKS 세션2 (1개월)'
+SESSION_MONTH_2_2   = 'TITAN NETWORKS 세션2 (2개월)'
+SESSION_MONTH_2_3   = 'TITAN NETWORKS 세션2 (3개월)'
+SESSION_MONTH_2_6   = 'TITAN NETWORKS 세션2 (6개월)'
+SESSION_MONTH_2_12  = 'TITAN NETWORKS 세션2 (12개월)'
+SESSION_MONTH_3_1   = 'TITAN NETWORKS 세션3 (1개월)'
+SESSION_MONTH_3_2   = 'TITAN NETWORKS 세션3 (2개월)'
+SESSION_MONTH_3_3   = 'TITAN NETWORKS 세션3 (3개월)'
+SESSION_MONTH_3_6   = 'TITAN NETWORKS 세션3 (6개월)'
+SESSION_MONTH_3_12  = 'TITAN NETWORKS 세션3 (12개월)'
+SESSION_MONTH_4_1   = 'TITAN NETWORKS 세션4 (1개월)'
+SESSION_MONTH_4_2   = 'TITAN NETWORKS 세션4 (2개월)'
+SESSION_MONTH_4_3   = 'TITAN NETWORKS 세션4 (3개월)'
+SESSION_MONTH_4_6   = 'TITAN NETWORKS 세션4 (6개월)'
+SESSION_MONTH_4_12  = 'TITAN NETWORKS 세션4 (12개월)'
+SESSION_MONTH_5_1   = 'TITAN NETWORKS 세션5 (1개월)'
+SESSION_MONTH_5_2   = 'TITAN NETWORKS 세션5 (2개월)'
+SESSION_MONTH_5_3   = 'TITAN NETWORKS 세션5 (3개월)'
+SESSION_MONTH_5_6   = 'TITAN NETWORKS 세션5 (6개월)'
+SESSION_MONTH_5_12  = 'TITAN NETWORKS 세션5 (12개월)'
+SESSION_MONTH_6_1   = 'TITAN NETWORKS 세션6 (1개월)'
+SESSION_MONTH_6_2   = 'TITAN NETWORKS 세션6 (2개월)'
+SESSION_MONTH_6_3   = 'TITAN NETWORKS 세션6 (3개월)'
+SESSION_MONTH_6_6   = 'TITAN NETWORKS 세션6 (6개월)'
+SESSION_MONTH_6_12  = 'TITAN NETWORKS 세션6 (12개월)'
+
+# 페이레터 모드 설정 ('LIVE' or 'TEST')
+PAYLETTER_MODE  = 'LIVE'
+PAYBOX_MODE     = 'LIVE'
+
+# 페이레터 국내 테스트 설정
+PAYLETTER_KOR_TEST_ENDPOINT         = 'https://testpgapi.payletter.com/'
+PAYLETTER_KOR_TEST_SHOPID           = 'pay_test'
+PAYLETTER_KOR_TEST_APIKEY_PAYMENT   = 'MTFBNTAzNTEwNDAxQUIyMjlCQzgwNTg1MkU4MkZENDA='
+PAYLETTER_KOR_TEST_APIKEY_SEARCH    = 'MUI3MjM0RUExQTgyRDA1ODZGRDUyOEM4OTY2QTVCN0Y='
+
+# 페이레터 국내 라이브 설정
+PAYLETTER_KOR_LIVE_ENDPOINT         = 'https://pgapi.payletter.com/'
+PAYLETTER_KOR_LIVE_SHOPID           = 'utocom'
+PAYLETTER_KOR_LIVE_APIKEY_PAYMENT   = 'MDdGQkZBQkNDNUM5N0QwNDFCMEMyRTkxRENBRkJBMEY='
+PAYLETTER_KOR_LIVE_APIKEY_SEARCH    = 'QjYxNTlFMjMwQTY2MEQzRjVGRkMyQzA1Mjg1MjJCMTg='
+
+# 페이레터 해외 테스트 설정
+PAYLETTER_GLOBAL_TEST_ENDPOINT      = 'https://dev-gpgclient.payletter.com/'
+PAYLETTER_GLOBAL_TEST_ENDPOINT_API  = 'https://dev-api.payletter.com/'
+PAYLETTER_GLOBAL_TEST_STOREID       = 'utocom_test'
+PAYLETTER_GLOBAL_TEST_STORE_HASHKEY = 'utocom_test_210908'
+
+# 페이레터 해외 라이브 설정
+PAYLETTER_GLOBAL_LIVE_ENDPOINT      = 'https://psp.payletter.com/'
+PAYLETTER_GLOBAL_LIVE_ENDPOINT_API  = 'https://api.payletter.com/'
+PAYLETTER_GLOBAL_LIVE_STOREID       = 'shanghai'
+PAYLETTER_GLOBAL_LIVE_STORE_HASHKEY = 'shanghai_220315'
+
+# 페이박스 위쳇페이 테스트 설정
+PAYBOX_WECHATPAY_TEST_ENDPOINT      = 'http://devapi.paybox.store/'
+PAYBOX_WECHATPAY_TEST_PARTNER_ID    = 'riv1mmx7zirp4l4mtnntwf6ii7i6no4z'
+PAYBOX_WECHATPAY_TEST_PARTNER_KEY   = 'bTZnd3UzZjNhZnI2aXdrMngxY291NGlrM3k4bmp5anI='
+
+# 페이박스 위쳇페이 라이브 설정
+PAYBOX_WECHATPAY_LIVE_ENDPOINT      = 'https://api.paybox.store/'
+PAYBOX_WECHATPAY_LIVE_PARTNER_ID    = 'nmlqpm5reoubrvtkypkl29q9hse1gj4l'
+PAYBOX_WECHATPAY_LIVE_PARTNER_KEY   = 'dHQzbnBlMmZwbHcxcXRibDN1YjNqbjEzNmphMmRoeWY='
+
+
+# 데이터베이스 커넥션 관리
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME', 'titan'),
+        'USER': os.environ.get('DB_USER', 'titan'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'xkdlxks12!@'),
+        'HOST': os.environ.get('DB_HOST', os.environ.get('DB_DEFAULT_HOST', '218.158.57.48')),
+        'PORT': os.environ.get('DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '5')),
+            'charset': 'utf8mb4',
+        }
+    },
+    'radius': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('RADIUS_DB_NAME', 'radius'),
+        'USER': os.environ.get('RADIUS_DB_USER', os.environ.get('DB_USER', 'titan')),
+        'PASSWORD': os.environ.get('RADIUS_DB_PASSWORD', os.environ.get('DB_PASSWORD', 'xkdlxks12!@')),
+        'HOST': os.environ.get('RADIUS_DB_HOST', os.environ.get('DB_RADIUS_HOST', os.environ.get('DB_HOST', '218.158.57.48'))),
+        'PORT': os.environ.get('RADIUS_DB_PORT', os.environ.get('DB_PORT', '3306')),
+        'CONN_MAX_AGE': int(os.environ.get('RADIUS_DB_CONN_MAX_AGE', os.environ.get('DB_CONN_MAX_AGE', '60'))),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('RADIUS_DB_CONNECT_TIMEOUT', os.environ.get('DB_CONNECT_TIMEOUT', '5'))),
+            'charset': 'utf8'
+        }
+    },
+    # UTO VPN 관리 DB (별도 서버)
+    'uto': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('UTO_DB_NAME', 'vcsvpn2013'),
+        'USER': os.environ.get('UTO_DB_USER', 'root'),
+        'PASSWORD': os.environ.get('UTO_DB_PASSWORD', 'uto6703'),
+        'HOST': os.environ.get('UTO_DB_HOST', '218.158.57.51'),
+        'PORT': os.environ.get('UTO_DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('UTO_DB_CONN_MAX_AGE', '60')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('UTO_DB_CONNECT_TIMEOUT', '5')),
+            'charset': 'utf8',
+        }
+    },
+    'uto_radius': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('UTO_RADIUS_DB_NAME', 'radius'),
+        'USER': os.environ.get('UTO_RADIUS_DB_USER', 'root'),
+        'PASSWORD': os.environ.get('UTO_RADIUS_DB_PASSWORD', 'uto6703'),
+        'HOST': os.environ.get('UTO_RADIUS_DB_HOST', '218.158.57.51'),
+        'PORT': os.environ.get('UTO_RADIUS_DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('UTO_RADIUS_DB_CONN_MAX_AGE', '60')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('UTO_RADIUS_DB_CONNECT_TIMEOUT', '5')),
+            'charset': 'utf8',
+        }
+    },
+}
+
+
+# 설치 앱 관리
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'backend',
+    'django_extensions',
+    'backend.djangoapps.price',  # ✅ `backend.`를 앞에 추가해야 함
+]
+
+
+# 미들웨어 관리
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+
+# 루트 URL 관리
+ROOT_URLCONF = 'main.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'djangomako.backends.MakoBackend',
+        'NAME': 'mako',
+        'DIRS': [os.path.join(BASE_DIR, 'backend', 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            # ✅ 요 두 줄이 **반드시** 있어야 /tmp 대신 이 경로로 컴파일합니다
+            'module_directory': MAKO_CACHE_DIR,
+            'filesystem_checks': True,          # DEBUG 시 템플릿 변경 자동 감지
+            #
+            'input_encoding': 'utf-8',
+            'output_encoding': 'utf-8',
+            'default_filters': ['decode.utf8'],
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'NAME': 'django',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+
+
+WSGI_APPLICATION = 'main.wsgi.application'
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+
+# 기본 관리
+DATABASAE_OPTIONS = {'charset':'utf8'}
+LANGUAGE_CODE = 'ko-kr'
+TIME_ZONE = 'Asia/Seoul'
+
+USE_I18N = True
+USE_L10N = True
+
+
+# 스태틱 관리
+STATIC_ROOT = BASE_DIR + '/static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR + '/backend/static/'
+]
+
+# ② 존재·권한 보장 (settings.py 맨 아래쪽에 임시 코드로 넣어도 OK)
+if not os.path.exists(MAKO_CACHE_DIR):
+    os.makedirs(MAKO_CACHE_DIR, exist_ok=True)

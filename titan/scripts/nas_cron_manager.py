@@ -474,6 +474,43 @@ def run_task(task_name: str, servers: List[Dict]) -> Dict:
                     'status': 'fail', 'output': str(e)[:500],
                 })
 
+    # ── FAIL 서버 자동 재시도 (SSH 일시 오류 대응) ──
+    failed_results = [r for r in results if r.get('status') == 'fail']
+    if failed_results:
+        failed_ips = {r['ip'] for r in failed_results}
+        failed_servers = [s for s in servers if s['ip'] in failed_ips]
+        log.info(f"[{task_name}] {len(failed_servers)}대 FAIL → 5초 대기 후 재시도: {', '.join(s['name'] for s in failed_servers)}")
+        time.sleep(5)
+
+        retry_results = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_map2 = {executor.submit(func, s): s for s in failed_servers}
+            for future in concurrent.futures.as_completed(future_map2):
+                server = future_map2[future]
+                try:
+                    result = future.result(timeout=120)
+                    retry_results[server['ip']] = result
+                except Exception as e:
+                    retry_results[server['ip']] = {
+                        'name': server['name'], 'ip': server['ip'],
+                        'status': 'fail', 'output': str(e)[:500],
+                    }
+
+        # 재시도 성공한 서버 결과 교체
+        improved = 0
+        for i, r in enumerate(results):
+            if r['ip'] in retry_results and r.get('status') == 'fail':
+                new_r = retry_results[r['ip']]
+                if new_r.get('status') != 'fail':
+                    results[i] = new_r
+                    improved += 1
+                    log.info(f"  ✓ {new_r['name']} ({new_r['ip']}) 재시도 성공")
+                else:
+                    # 재시도도 실패면 최신 결과로 교체 (에러 메시지 갱신)
+                    results[i] = new_r
+                    log.info(f"  ✗ {new_r['name']} ({new_r['ip']}) 재시도도 실패")
+        log.info(f"[{task_name}] 재시도 결과: {improved}/{len(failed_servers)}대 복구")
+
     elapsed = round(time.time() - start_time, 1)
 
     # 결과 정렬 (이름순)

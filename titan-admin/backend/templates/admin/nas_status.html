@@ -439,6 +439,7 @@ let historyChart = null;
 
 $(document).ready(function() {
     loadNasStatus();
+    loadCachedSiteCheck();  // 페이지 로드 시 캐시된 점검 결과 미리 로드
 });
 
 function loadNasStatus() {
@@ -839,7 +840,7 @@ function switchTab(name) {
     $('.tab-panel').removeClass('active');
     $('[onclick="switchTab(\'' + name + '\')"]').addClass('active');
     $('#tab-' + name).addClass('active');
-    if (name === 'sitecheck' && !siteCheckData) {
+    if (name === 'sitecheck') {
         loadCachedSiteCheck();
     }
 }
@@ -1618,6 +1619,7 @@ function resetSiteCheckBtn() {
 
 function renderSiteCheckTable(res) {
     const sites = res.sites || [];
+    const vpnChecks = res.vpn_checks || [];
     const results = res.results || [];
     if (sites.length === 0 && results.length === 0) return;
 
@@ -1625,6 +1627,10 @@ function renderSiteCheckTable(res) {
     let hdr = '<th>#</th><th>서버명</th><th>IP</th>';
     sites.forEach(function(s) {
         hdr += '<th style="min-width:80px;text-align:center;">' + s.name + '</th>';
+    });
+    // VPN 포워딩 헤더
+    vpnChecks.forEach(function(v) {
+        hdr += '<th style="min-width:90px;text-align:center;background:#fff3cd;">' + v.name + '</th>';
     });
     hdr += '<th style="min-width:120px;text-align:center;">출구IP</th>';
     hdr += '<th style="min-width:50px;text-align:center;">점검</th>';
@@ -1634,7 +1640,7 @@ function renderSiteCheckTable(res) {
     const tbody = $('#sitecheck-table tbody');
     tbody.empty();
     if (results.length === 0) {
-        tbody.html('<tr><td colspan="' + (sites.length + 5) + '" style="text-align:center;padding:40px;color:#888;">'
+        tbody.html('<tr><td colspan="' + (sites.length + vpnChecks.length + 5) + '" style="text-align:center;padding:40px;color:#888;">'
             + '<i class="fa fa-info-circle"></i> 점검 결과가 없습니다. "전체 점검 시작" 버튼을 클릭하세요.</td></tr>');
         return;
     }
@@ -1649,6 +1655,9 @@ function renderSiteCheckTable(res) {
             // SSH 실패
             sites.forEach(function() {
                 row += '<td style="text-align:center;"><span class="svc-fail"><i class="fa fa-times"></i> SSH</span></td>';
+            });
+            vpnChecks.forEach(function() {
+                row += '<td style="text-align:center;background:#fffbe6;"><span class="svc-fail"><i class="fa fa-times"></i> SSH</span></td>';
             });
             row += '<td style="text-align:center;"><span class="svc-fail">SSH 실패</span></td>';
         } else {
@@ -1679,6 +1688,23 @@ function renderSiteCheckTable(res) {
                          + '<span class="svc-fail"><i class="fa fa-times-circle"></i> ' + (chk.code||'ERR') + '</span>'
                          + ' <i class="fa fa-refresh" style="font-size:10px;color:#888;"></i>'
                          + '</td>';
+                }
+            });
+
+            // VPN 포워딩 결과
+            vpnChecks.forEach(function(v) {
+                const fwd = (r.vpn_forward || {})[v.key];
+                if (!fwd) {
+                    if (r.vpn_if === 'NONE') {
+                        row += '<td style="text-align:center;background:#fffbe6;"><span class="svc-na" title="VPN 인터페이스 없음">N/A</span></td>';
+                    } else {
+                        row += '<td style="text-align:center;background:#fffbe6;"><span class="svc-na">-</span></td>';
+                    }
+                } else if (fwd.ok) {
+                    row += '<td style="text-align:center;background:#fffbe6;"><span class="svc-ok" title="HTTP ' + fwd.code + ' (VPN: ' + (r.vpn_if||'?') + ')"><i class="fa fa-check-circle"></i> OK</span></td>';
+                } else {
+                    row += '<td style="text-align:center;background:#fffbe6;cursor:pointer;" onclick="startSingleSiteCheck(\'' + _ip + '\', \'' + _name + '\')" title="VPN 포워딩 실패! (VPN: ' + (r.vpn_if||'?') + ')">'
+                         + '<span class="svc-fail"><i class="fa fa-exclamation-triangle"></i> ' + (fwd.code||'ERR') + '</span></td>';
                 }
             });
 

@@ -17,7 +17,7 @@ GEOIP2_ASN_DB_PATH = os.path.join(BASE_DIR, 'data', 'GeoLite2-ASN.mmdb')
 
 # --- 세션 ---
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # --- 서비스 전역 상수(민감 아님) ---
 ACTIVE_AES_KEY = ''  # 로컬에서 덮어쓰기

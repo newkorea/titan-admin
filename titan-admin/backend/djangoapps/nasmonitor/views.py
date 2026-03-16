@@ -2494,6 +2494,14 @@ SITES_TO_CHECK = [
     ('netflix',   'Netflix',         'https://www.netflix.com'),
 ]
 
+# VPN 포워딩 테스트 — VPN 서브넷에서 실제 사이트 접속 가능한지 체크
+# 비-Google URL 사용 (google_ai OUTPUT 규칙이 curl 테스트에 거짓양성 발생)
+# Google 차단은 Gemini geo 체크에서 별도 감지
+VPN_FORWARD_CHECK = [
+    ('vpn_https', 'VPN→HTTPS', 'https://www.naver.com'),
+    ('vpn_http',  'VPN→HTTP',  'http://httpbin.org/ip'),
+]
+
 
 def _site_check_file():
     return os.path.join(SITE_CHECK_DIR, 'results.json')
@@ -2522,6 +2530,8 @@ def _check_single_server_sites(ip, server_name):
     """SSH into a VPN server and check target sites + exit IP via fwmark
     실패한 사이트는 최대 2회 재시도 (총 3회 시도)"""
     urls = ' '.join(f'"{s[2]}"' for s in SITES_TO_CHECK)
+    vpn_urls = ' '.join(f'"{s[2]}"' for s in VPN_FORWARD_CHECK)
+    vpn_keys = ' '.join(f'"{s[0]}"' for s in VPN_FORWARD_CHECK)
     script = f'''UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0"
 # 1차 시도
 RETRY_URLS=""
@@ -2553,6 +2563,25 @@ if [ -n "$RETRY_URLS" ]; then
       echo "RETRY|$url|$code"
     done
   fi
+fi
+# VPN 포워딩 테스트 — VPN 서브넷 IP로 바인딩해서 사이트 접속
+VPN_IF=""
+for iface in vpn-bridge tun0 tap_soft; do
+  VPN_IF=$(ip addr show "$iface" 2>/dev/null | grep "inet " | awk '{{print $2}}' | cut -d/ -f1 | head -1)
+  [ -n "$VPN_IF" ] && break
+done
+if [ -n "$VPN_IF" ]; then
+  echo "VPN_IF|$VPN_IF"
+  vpn_urls=({vpn_urls})
+  vpn_keys=({vpn_keys})
+  for i in $(seq 0 $(($(echo {len(VPN_FORWARD_CHECK)}) - 1))); do
+    url=${{vpn_urls[$i]}}
+    key=${{vpn_keys[$i]}}
+    code=$(curl -4 -s -A "$UA" --interface "$VPN_IF" --connect-timeout 5 --max-time 10 -o /dev/null -w "%{{http_code}}" "$url" 2>/dev/null)
+    echo "VPN_FWD|$key|$code"
+  done
+else
+  echo "VPN_IF|NONE"
 fi
 # Gemini geo check — HTML body에서 첫 번째 2글자 국가코드 추출 (en=정상, cn=차단)
 # fwmark로 Passwall(eth1) 경유하여 Google 국가 분류 확인
@@ -2608,6 +2637,8 @@ fi
         sites = {}
         exit_ip = ''
         has_eth1 = False
+        vpn_forward = {}
+        vpn_if = ''
         for line in result.stdout.strip().split('\n'):
             line = line.strip()
             if line.startswith('SITE|') or line.startswith('RETRY|'):
@@ -2638,6 +2669,17 @@ fi
                                     'ok': new_ok,
                                 }
                             break
+            elif line.startswith('VPN_FWD|'):
+                parts = line.split('|')
+                if len(parts) >= 3:
+                    key = parts[1]
+                    code = parts[2]
+                    vpn_forward[key] = {
+                        'code': code,
+                        'ok': bool(code and code[0] in ('2', '3')),
+                    }
+            elif line.startswith('VPN_IF|'):
+                vpn_if = line.split('|')[1].strip()
             elif line.startswith('GEMINI_GEO|'):
                 geo = line.split('|')[1].strip()
                 # Gemini 차단 국가: cn(중국), 기타 차단 국가 도메인
@@ -2677,6 +2719,8 @@ fi
             'ip': ip,
             'name': server_name,
             'sites': sites,
+            'vpn_forward': vpn_forward,
+            'vpn_if': vpn_if,
             'exit_ip': exit_ip,
             'exit_ip_diff': bool(exit_ip and exit_ip != ip),
             'has_eth1': has_eth1,
@@ -2685,12 +2729,14 @@ fi
     except subprocess.TimeoutExpired:
         return {
             'ip': ip, 'name': server_name, 'sites': {},
+            'vpn_forward': {}, 'vpn_if': '',
             'exit_ip': '', 'exit_ip_diff': False, 'has_eth1': False,
             'ssh_ok': False, 'error': 'SSH 타임아웃',
         }
     except Exception as e:
         return {
             'ip': ip, 'name': server_name, 'sites': {},
+            'vpn_forward': {}, 'vpn_if': '',
             'exit_ip': '', 'exit_ip_diff': False, 'has_eth1': False,
             'ssh_ok': False, 'error': str(e),
         }
@@ -2866,4 +2912,5 @@ def api_read_site_check_status(request):
         'retry_count': data.get('retry_count', 0),
         'results': data.get('results', []),
         'sites': [{'key': s[0], 'name': s[1]} for s in SITES_TO_CHECK],
+        'vpn_checks': [{'key': s[0], 'name': s[1]} for s in VPN_FORWARD_CHECK],
     })

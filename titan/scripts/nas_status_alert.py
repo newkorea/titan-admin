@@ -128,6 +128,10 @@ def parse_issues(row):
         name = s.get('name', '?')
         ip = s.get('ip', '?')
 
+        # 한국 서버가 아닌 경우 알림 제외 (JAPAN, US, INDIA, VN 등)
+        if not name.startswith('KOREA-'):
+            continue
+
         # criticals 리스트
         crit_list = s.get('criticals', [])
         if crit_list:

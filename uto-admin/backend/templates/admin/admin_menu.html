@@ -1,0 +1,123 @@
+<div class="app" id="app">
+<div id="aside" class="app-aside fade box-shadow-x nav-expand white" aria-hidden="true">
+<div class="sidenav modal-dialog dk">
+  <div class="navbar d-lg-none">
+    <a href="../index.html" class="navbar-brand">
+    <svg viewBox="0 0 24 24" height="28" width="28" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 0h24v24H0z" fill="none"/>
+        <path d="M19.51 3.08L3.08 19.51c.09.34.27.65.51.9.25.24.56.42.9.51L20.93 4.49c-.19-.69-.73-1.23-1.42-1.41zM11.88 3L3 11.88v2.83L14.71 3h-2.83zM5 3c-1.1 0-2 .9-2 2v2l4-4H5zm14 18c.55 0 1.05-.22 1.41-.59.37-.36.59-.86.59-1.41v-2l-4 4h2zm-9.71 0h2.83L21 12.12V9.29L9.29 21z" fill="#fff" class="fill-theme"/>
+    </svg>
+    <img src="/static/common/assets/images/logo.png" alt="." class="hide">
+    <span class="hidden-folded d-inline">UTO Admin</span>
+    </a>
+  </div>
+
+  <div class="flex hide-scroll" style="position: fixed; height: -webkit-fill-available;">
+      <div class="scroll" style="min-height: -webkit-fill-available;">
+        <div class="nav-stacked nav-active-theme" data-nav>
+          <ul class="nav ">
+
+              <li class="nav-header">
+                <span class="text-xs hidden-folded top-menu-deco" style="color:#17a2b8;">UTO 관리</span>
+</li>
+
+% if request.session.get('is_staff') in [1]:
+
+<li>
+<a href="#" onclick="location.href='/uto_user'">
+<span class="nav-icon">
+<i class="fa fa-users" style="color:#17a2b8;"></i>
+</span>
+<span class="nav-text">UTO 회원관리</span>
+</a>
+</li>
+% if request.session.get('role') == 1:
+<li>
+<a href="#" onclick="location.href='/uto_server'">
+<span class="nav-icon">
+<i class="fa fa-server" style="color:#6f42c1;"></i>
+</span>
+<span class="nav-text">UTO 서버관리</span>
+</a>
+</li>
+<li>
+<a href="#" onclick="location.href='/uto_nas_status'">
+<span class="nav-icon">
+<i class="fa fa-heartbeat" style="color:#e83e8c;"></i>
+</span>
+<span class="nav-text">UTO 서버 현황</span>
+</a>
+</li>
+<li>
+<a href="#" onclick="location.href='/uto_assignment'">
+<span class="nav-icon">
+<i class="fa fa-exchange" style="color:#fd7e14;"></i>
+</span>
+<span class="nav-text">UTO 서버배정현황</span>
+</a>
+</li>
+% endif
+
+<li class="nav-header">
+                <span class="text-xs hidden-folded top-menu-deco" style="color:#28a745;">결제 관리</span>
+</li>
+
+<li>
+<a href="#" onclick="location.href='/uto_register'">
+<span class="nav-icon">
+<i class="fa fa-user-plus" style="color:#6f42c1;"></i>
+</span>
+<span class="nav-text">신규가입</span>
+</a>
+</li>
+<li>
+<a href="#" onclick="location.href='/uto_extend'">
+<span class="nav-icon">
+<i class="fa fa-credit-card" style="color:#28a745;"></i>
+</span>
+<span class="nav-text">무통장 연장</span>
+</a>
+</li>
+% if request.session.get('role') == 1:
+<li>
+<a href="#" onclick="location.href='/uto_change_history'">
+<span class="nav-icon">
+<i class="fa fa-history" style="color:#fd7e14;"></i>
+</span>
+<span class="nav-text">변경내역</span>
+</a>
+</li>
+% endif
+<li>
+<a href="#" onclick="location.href='/pospal'">
+<span class="nav-icon">
+<i class="fa fa-cash-register" style="color:#e83e8c;"></i>
+</span>
+<span class="nav-text">POS 판매연동</span>
+</a>
+</li>
+
+% if request.session.get('role') == 1:
+<li class="nav-header">
+                <span class="text-xs hidden-folded top-menu-deco" style="color:#dc3545;">프록시 관리</span>
+</li>
+<li>
+<a href="#" onclick="location.href='/uto_reality'">
+<span class="nav-icon">
+<i class="fa fa-shield" style="color:#dc3545;"></i>
+</span>
+<span class="nav-text">Reality 설정</span>
+</a>
+</li>
+% endif
+
+% endif
+
+          </ul>
+        </div>
+ </div>
+  </div>
+
+</div>
+</div>
+

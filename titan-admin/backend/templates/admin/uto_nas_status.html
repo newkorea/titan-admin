@@ -1,0 +1,1684 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    /* ===== 요약 카드 ===== */
+    .summary-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .summary-card {
+        flex: 1; min-width: 180px; border-radius: 10px; padding: 20px; color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12); position: relative; overflow: hidden;
+    }
+    .summary-card .card-icon { position: absolute; right: 16px; top: 16px; font-size: 36px; opacity: 0.3; }
+    .summary-card .card-value { font-size: 32px; font-weight: 800; }
+    .summary-card .card-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+    .bg-ok { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .bg-warn { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); }
+    .bg-crit { background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); }
+    .bg-total { background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%); }
+
+    /* ===== 섹션 ===== */
+    .section-header {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 18px; font-weight: 700; margin: 24px 0 12px;
+        border-bottom: 2px solid #eee; padding-bottom: 8px;
+    }
+
+    /* ===== 서버 테이블 ===== */
+    .server-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .server-table th {
+        background: #f8f9fa; padding: 10px 8px; text-align: left;
+        border-bottom: 2px solid #dee2e6; font-weight: 700; white-space: nowrap;
+    }
+    .server-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .server-table tr:hover { background: #f5f7fa; }
+    .server-table .status-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 12px;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+    }
+    .status-ok { background: #d4edda; color: #155724; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    .status-critical { background: #f8d7da; color: #721c24; }
+
+    /* ===== 진행바 ===== */
+    .bar-wrap { width: 80px; height: 8px; background: #eee; border-radius: 4px; display: inline-block; vertical-align: middle; }
+    .bar-fill { height: 100%; border-radius: 4px; }
+    .bar-ok { background: #28a745; }
+    .bar-warn { background: #ffc107; }
+    .bar-crit { background: #dc3545; }
+
+    /* ===== 이슈 텍스트 ===== */
+    .issue-list { font-size: 11px; color: #dc3545; max-width: 300px; }
+    .warn-list { font-size: 11px; color: #856404; max-width: 300px; }
+
+    /* ===== 프로토콜 배지 ===== */
+    .proto-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap;
+    }
+    .proto-ikev2 { background: #007bff; }
+    .proto-sstp { background: #6f42c1; }
+    .proto-openvpn { background: #28a745; }
+    .proto-v2ray { background: #fd7e14; }
+    .proto-default { background: #6c757d; }
+
+    /* ===== 필터/검색 ===== */
+    .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .filter-bar input, .filter-bar select {
+        padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+    }
+    .filter-bar input { width: 220px; }
+
+    /* Uptime 배지 */
+    .uptime-badge { font-size: 12px; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+    .uptime-ok { color: #28a745; }
+    .uptime-warn { color: #fd7e14; font-weight: 600; }
+    .uptime-crit { color: #dc3545; font-weight: 700; }
+
+    /* ===== 인증서 갱신 버튼 ===== */
+    .btn-renew {
+        display: inline-block; padding: 2px 8px; border-radius: 4px;
+        font-size: 11px; font-weight: 600; cursor: pointer;
+        border: 1px solid #007bff; background: #fff; color: #007bff;
+        margin-left: 4px; vertical-align: middle;
+        transition: all 0.2s;
+    }
+    .btn-renew:hover { background: #007bff; color: #fff; }
+    .btn-renew:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-renew.renewing { border-color: #fd7e14; color: #fd7e14; }
+    .btn-renew.renewing:hover { background: #fd7e14; color: #fff; }
+    .btn-renew.success { border-color: #28a745; color: #28a745; }
+    .btn-renew.failed { border-color: #dc3545; color: #dc3545; }
+
+    /* ===== 로딩 ===== */
+    .loading-overlay {
+        display: flex; align-items: center; justify-content: center;
+        min-height: 200px; color: #888; font-size: 15px;
+    }
+    .loading-overlay i { margin-right: 8px; }
+
+    /* ===== 버튼 ===== */
+    .btn-ssh {
+        padding: 4px 10px; border: 1px solid #17a2b8; background: #17a2b8; color: #fff;
+        border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;
+    }
+    .btn-ssh:hover { background: #138496; border-color: #117a8b; }
+    .btn-recheck {
+        padding: 4px 8px; border: 1px solid #6f42c1; background: #6f42c1; color: #fff;
+        border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; margin-left: 4px;
+    }
+    .btn-recheck:hover { background: #5a32a3; border-color: #5a32a3; }
+    .btn-recheck.checking { background: #6c757d; border-color: #6c757d; cursor: not-allowed; }
+    .btn-recheck.check-ok { background: #28a745; border-color: #28a745; }
+    .btn-recheck.check-fail { background: #dc3545; border-color: #dc3545; }
+    .btn-reboot {
+        padding: 4px 8px; border: 1px solid #dc3545; background: #dc3545; color: #fff;
+        border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; margin-left: 4px;
+    }
+    .btn-reboot:hover { background: #c82333; border-color: #bd2130; }
+    .btn-cleanup {
+        padding: 4px 8px; border: 1px solid #fd7e14; background: #fd7e14; color: #fff;
+        border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; margin-left: 4px;
+    }
+    .btn-cleanup:hover { background: #e8590c; border-color: #e8590c; }
+
+    /* ===== SSH 정보 모달 ===== */
+    .ssh-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 3000; justify-content: center; align-items: center;
+    }
+    .ssh-modal-overlay.show { display: flex; }
+    .ssh-modal {
+        background: #fff; border-radius: 10px; width: 420px; max-width: 90%;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25); overflow: hidden;
+    }
+    .ssh-modal-header {
+        background: #17a2b8; color: #fff; padding: 14px 20px; font-weight: 700; font-size: 15px;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .ssh-modal-header .close-btn {
+        background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .ssh-modal-body { padding: 20px; }
+    .ssh-info-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
+    .ssh-info-label { font-weight: 600; color: #555; min-width: 80px; font-size: 13px; }
+    .ssh-info-value {
+        flex: 1; background: #f4f6f9; padding: 8px 12px; border-radius: 6px;
+        font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; color: #333;
+        word-break: break-all;
+    }
+    .ssh-info-value.password-field { letter-spacing: 2px; }
+    .ssh-info-value.password-field.revealed { letter-spacing: normal; }
+    .btn-copy {
+        padding: 5px 10px; border: 1px solid #6c757d; background: #fff; color: #6c757d;
+        border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;
+    }
+    .btn-copy:hover { background: #6c757d; color: #fff; }
+    .btn-copy.copied { background: #28a745; border-color: #28a745; color: #fff; }
+    .ssh-actions {
+        margin-top: 16px; padding-top: 14px; border-top: 1px solid #eee;
+        display: flex; gap: 10px; justify-content: center;
+    }
+    .btn-ssh-connect {
+        padding: 8px 20px; border: none; background: #17a2b8; color: #fff;
+        border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .btn-ssh-connect:hover { background: #138496; }
+    .btn-ssh-copy-all {
+        padding: 8px 20px; border: 1px solid #6c757d; background: #fff; color: #6c757d;
+        border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .btn-ssh-copy-all:hover { background: #6c757d; color: #fff; }
+
+    /* ===== Reboot 모달 ===== */
+    .reboot-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 4000; justify-content: center; align-items: center;
+    }
+    .reboot-modal-overlay.show { display: flex; }
+    .reboot-modal {
+        background: #fff; border-radius: 10px; width: 400px; max-width: 90%;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25); overflow: hidden;
+    }
+    .reboot-modal-header {
+        background: #dc3545; color: #fff; padding: 15px 20px; font-size: 16px; font-weight: 600;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .reboot-modal-header .close-btn { cursor: pointer; font-size: 20px; opacity: 0.8; background:none; border:none; color:#fff; }
+    .reboot-modal-header .close-btn:hover { opacity: 1; }
+    .reboot-modal-body { padding: 20px; }
+    .reboot-modal-body p { margin: 0 0 15px; color: #333; font-size: 14px; }
+    .reboot-modal-footer { padding: 15px 20px; text-align: right; border-top: 1px solid #eee; }
+    .btn-reboot-confirm {
+        padding: 8px 20px; background: #dc3545; color: #fff; border: none;
+        border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .btn-reboot-confirm:hover { background: #c82333; }
+    .btn-reboot-cancel {
+        padding: 8px 20px; background: #6c757d; color: #fff; border: none;
+        border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 8px;
+    }
+    .btn-reboot-cancel:hover { background: #5a6268; }
+
+    /* ===== 재부팅 카운트다운 오버레이 ===== */
+    .reboot-countdown-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.75); z-index: 6000; justify-content: center; align-items: center;
+        flex-direction: column;
+    }
+    .reboot-countdown-overlay.show { display: flex; }
+    .countdown-circle {
+        width: 180px; height: 180px; border-radius: 50%; border: 6px solid rgba(255,255,255,0.2);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        position: relative; margin-bottom: 24px;
+    }
+    .countdown-circle svg {
+        position: absolute; top: -3px; left: -3px; width: 186px; height: 186px;
+        transform: rotate(-90deg);
+    }
+    .countdown-circle svg circle {
+        fill: none; stroke: #fd7e14; stroke-width: 6; stroke-linecap: round;
+        stroke-dasharray: 565; stroke-dashoffset: 0;
+        transition: stroke-dashoffset 1s linear;
+    }
+    .countdown-number { font-size: 52px; font-weight: 800; color: #fff; line-height: 1; }
+    .countdown-label { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .countdown-server { font-size: 18px; color: #fff; font-weight: 600; margin-bottom: 8px; }
+    .countdown-status { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 8px; }
+    .countdown-status.success { color: #28a745; font-size: 20px; font-weight: 700; }
+    .countdown-status.fail { color: #dc3545; font-size: 16px; font-weight: 600; }
+    .countdown-users { font-size: 13px; color: #ffc107; margin-bottom: 16px; }
+
+    /* ===== 디스크 정리 모달 ===== */
+    .cleanup-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 5000; justify-content: center; align-items: center;
+    }
+    .cleanup-modal-overlay.show { display: flex; }
+    .cleanup-modal {
+        background: #fff; border-radius: 10px; width: 520px; max-width: 95%;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25); overflow: hidden;
+    }
+    .cleanup-modal-header {
+        background: #fd7e14; color: #fff; padding: 15px 20px; font-size: 16px; font-weight: 600;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .cleanup-modal-header .close-btn { cursor: pointer; font-size: 20px; opacity: 0.8; background:none; border:none; color:#fff; }
+    .cleanup-modal-header .close-btn:hover { opacity: 1; }
+    .cleanup-modal-body { padding: 20px; overflow-y: auto; flex: 1; min-height: 0; }
+    .cleanup-modal-footer {
+        padding: 15px 20px; text-align: right; border-top: 2px solid #eee; flex-shrink: 0;
+        background: #f8f9fa; display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .cleanup-item {
+        display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f0f0f0;
+        gap: 10px;
+    }
+    .cleanup-item:last-child { border-bottom: none; }
+    .cleanup-item label { flex: 1; cursor: pointer; font-size: 13px; color: #333; margin: 0; }
+    .cleanup-item .size { font-weight: 700; color: #dc3545; font-size: 13px; min-width: 60px; text-align: right; }
+    .cleanup-summary {
+        background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
+        padding: 10px 15px; margin-top: 12px; font-size: 13px; color: #856404;
+    }
+    .btn-cleanup-go {
+        padding: 8px 20px; background: #fd7e14; color: #fff; border: none;
+        border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .btn-cleanup-go:hover { background: #e8590c; }
+    .btn-cleanup-go:disabled { background: #adb5bd; cursor: not-allowed; }
+    .btn-cleanup-cancel {
+        padding: 8px 20px; background: #6c757d; color: #fff; border: none;
+        border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 8px;
+    }
+    .btn-cleanup-selectall {
+        padding: 5px 12px; background: #17a2b8; color: #fff; border: none;
+        border-radius: 4px; cursor: pointer; font-size: 12px;
+    }
+
+    /* ===== 안내 메시지 ===== */
+    .info-box {
+        background: #e8f4fd; border: 1px solid #bee5eb; border-radius: 8px;
+        padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: #0c5460;
+    }
+    .info-box i { margin-right: 6px; }
+
+    /* ===== 서비스 아이콘 ===== */
+    .svc-ok { color: #28a745; }
+    .svc-fail { color: #dc3545; }
+    .svc-na { color: #aaa; }
+
+    /* ===== 탭 ===== */
+    .tab-nav { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid #dee2e6; }
+    .tab-nav .tab-btn {
+        padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+        border: none; background: none; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .tab-nav .tab-btn.active { color: #17a2b8; border-bottom-color: #17a2b8; }
+    .tab-panel { display: none; padding-top: 16px; }
+    .tab-panel.active { display: block; }
+
+    /* ===== 인프라 서버 전용 ===== */
+    .proto-api { background: #e83e8c; }
+    .proto-db { background: #20c997; }
+    .proto-infra { background: #6610f2; }
+    .infra-section-header {
+        display: flex; align-items: center; gap: 10px;
+        font-size: 16px; font-weight: 700; margin: 24px 0 12px;
+        color: #495057; border-top: 2px solid #e83e8c; padding-top: 16px;
+    }
+    .infra-section-header i { color: #e83e8c; }
+    .svc-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 700; color: #fff; margin-right: 4px;
+    }
+    .svc-badge.svc-up { background: #28a745; }
+    .svc-badge.svc-down { background: #dc3545; }
+
+    @media (max-width: 768px) {
+        .summary-cards { flex-direction: column; }
+        .server-table { font-size: 11px; }
+    }
+</style>
+</%block>
+
+<%block name="title">UTO 서버 현황</%block>
+<%block name="subtitle">UTO VPN 서버 상태 모니터링 (SSH 기반 실시간 점검)
+<button id="btn-manual-check" onclick="startFullCheck()" style="margin-left:16px;padding:4px 14px;font-size:12px;border-radius:4px;border:1px solid #17a2b8;background:#17a2b8;color:#fff;cursor:pointer;vertical-align:middle;">
+    <i class="fa fa-refresh"></i> 수동 점검
+</button>
+<span id="last-check-time" style="margin-left:12px;font-size:11px;color:#888;"></span>
+<span id="manual-check-status" style="margin-left:8px;font-size:12px;"></span>
+</%block>
+
+<%block name="content">
+<!-- 로딩 -->
+<div id="loading" class="loading-overlay">
+    <i class="fa fa-spinner fa-spin"></i> 데이터를 불러오는 중...
+</div>
+
+<!-- 메인 컨텐츠 -->
+<div id="main-content" style="display:none;">
+
+    <!-- 요약 카드 -->
+    <div id="summary-section"></div>
+
+    <!-- 안내 -->
+    <div class="info-box" id="info-box" style="display:none;">
+        <i class="fa fa-info-circle"></i> 아직 점검 데이터가 없습니다. <strong>"수동 점검"</strong> 버튼을 클릭하여 전체 서버를 점검하세요.
+    </div>
+
+    <!-- 탭 -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('health')"><i class="fa fa-heartbeat"></i> 서버 상태</button>
+        <button class="tab-btn" onclick="switchTab('sitecheck')"><i class="fa fa-globe"></i> 목표사이트 점검</button>
+    </div>
+
+    <!-- Health 탭 -->
+    <div id="tab-health" class="tab-panel active">
+        <div class="filter-bar">
+            <input type="search" id="health-search" placeholder="서버명 / IP 검색..." oninput="filterTable()" autocomplete="off">
+            <select id="health-filter" onchange="filterTable()">
+                <option value="all">전체</option>
+                <option value="critical">Critical만</option>
+                <option value="warning">Warning만</option>
+                <option value="ok">정상만</option>
+            </select>
+            <span id="server-count" style="font-size:12px;color:#888;margin-left:auto;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="server-table" id="health-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>서버명</th>
+                        <th>IP</th>
+                        <th>프로토콜</th>
+                        <th>상태</th>
+                        <th>Uptime</th>
+                        <th>디스크</th>
+                        <th>메모리</th>
+                        <th>CPU Load</th>
+                        <th>접속자</th>
+                        <th>인증서</th>
+                        <th>이슈</th>
+                        <th style="min-width:150px;">SSH / 점검</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 목표사이트 점검 탭 -->
+    <div id="tab-sitecheck" class="tab-panel">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+            <button id="btn-site-check" onclick="startSiteCheck()" style="padding:6px 18px;border-radius:5px;border:1px solid #17a2b8;background:#17a2b8;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">
+                <i class="fa fa-play-circle"></i> 전체 점검 시작
+            </button>
+            <span id="site-check-progress" style="font-size:12px;color:#888;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="server-table" id="sitecheck-table">
+                <thead><tr id="sitecheck-header"></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SSH 접속 정보 모달 -->
+<div id="ssh-modal-overlay" class="ssh-modal-overlay" onclick="if(event.target===this)closeSSHModal()">
+    <div class="ssh-modal">
+        <div class="ssh-modal-header">
+            <span><i class="fa fa-terminal"></i> SSH 접속 정보</span>
+            <button class="close-btn" onclick="closeSSHModal()">&times;</button>
+        </div>
+        <div class="ssh-modal-body" id="ssh-modal-body">
+            <div class="loading-overlay"><i class="fa fa-spinner fa-spin"></i> 로딩 중...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 서버 재부팅 모달 -->
+<div id="reboot-modal-overlay" class="reboot-modal-overlay" onclick="if(event.target===this)closeRebootModal()">
+    <div class="reboot-modal">
+        <div class="reboot-modal-header">
+            <span><i class="fa fa-power-off"></i> 서버 재부팅</span>
+            <button class="close-btn" onclick="closeRebootModal()">&times;</button>
+        </div>
+        <div class="reboot-modal-body">
+            <p id="reboot-modal-msg" style="font-size:15px;"></p>
+            <div id="reboot-users-warning" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:13px; color:#856404;">
+                <i class="fa fa-users"></i> 현재 접속자: <strong id="reboot-online-count">0</strong>명 — 재부팅 시 모두 끊깁니다.
+            </div>
+            <p style="color:#dc3545;font-size:13px;"><i class="fa fa-exclamation-triangle"></i> 재부팅 시 VPN 접속자가 일시 끊깁니다. 신중히 진행하세요.</p>
+            <input type="hidden" id="reboot-target-ip">
+            <input type="hidden" id="reboot-target-name">
+        </div>
+        <div class="reboot-modal-footer">
+            <button class="btn-reboot-cancel" onclick="closeRebootModal()">취소</button>
+            <button class="btn-reboot-confirm" id="btn-reboot-go" onclick="confirmReboot()"><i class="fa fa-power-off"></i> 재부팅</button>
+        </div>
+    </div>
+</div>
+
+<!-- 재부팅 카운트다운 오버레이 -->
+<div id="reboot-countdown-overlay" class="reboot-countdown-overlay" onclick="">
+    <div id="countdown-server-name" class="countdown-server"></div>
+    <div id="countdown-users-info" class="countdown-users"></div>
+    <div class="countdown-circle">
+        <svg><circle cx="93" cy="93" r="90" id="countdown-ring"></circle></svg>
+        <div class="countdown-number" id="countdown-number">40</div>
+        <div class="countdown-label" id="countdown-phase">재부팅 대기</div>
+    </div>
+    <div class="countdown-status" id="countdown-status"><i class="fa fa-spinner fa-spin"></i> 재부팅 명령 전송됨</div>
+</div>
+
+<!-- 디스크 정리 모달 -->
+<div id="cleanup-modal-overlay" class="cleanup-modal-overlay" onclick="if(event.target===this)closeCleanupModal()">
+    <div class="cleanup-modal">
+        <div class="cleanup-modal-header">
+            <span><i class="fa fa-trash-o"></i> 디스크 정리 — <span id="cleanup-server-label"></span></span>
+            <button class="close-btn" onclick="closeCleanupModal()">&times;</button>
+        </div>
+        <div class="cleanup-modal-body" id="cleanup-modal-body">
+            <div style="text-align:center;padding:30px;"><i class="fa fa-spinner fa-spin fa-2x"></i><br>분석 중...</div>
+        </div>
+        <div class="cleanup-modal-footer">
+            <button class="btn-cleanup-cancel" onclick="closeCleanupModal()">닫기</button>
+            <button class="btn-cleanup-go" id="btn-cleanup-go" onclick="confirmCleanup()" disabled><i class="fa fa-trash-o"></i> 선택 항목 정리</button>
+        </div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+let serverData = null;
+
+function getCsrfToken() {
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+        c = c.trim();
+        if (c.startsWith('csrftoken=')) return c.substring('csrftoken='.length);
+    }
+    return '';
+}
+
+$(document).ready(function() {
+    loadData();
+    // 5분마다 데이터 자동 새로고침 (cron이 1시간마다 실행)
+    setInterval(loadData, 300000);
+});
+
+// ===== 데이터 로드 =====
+function loadData() {
+    $.ajax({
+        url: '/api/v1/read/uto_nas_status',
+        method: 'GET',
+    }).done(function(res) {
+        if (res.result === 200) {
+            if ((res.servers && res.servers.length > 0) || (res.infra_servers && res.infra_servers.length > 0)) {
+                serverData = res;
+                renderSummary();
+                renderTable();
+                $('#info-box').hide();
+                // 마지막 체크 시간 표시
+                if (res.check_time) {
+                    $('#last-check-time').html('<i class="fa fa-clock-o"></i> 마지막 점검: ' + res.check_time);
+                }
+            } else {
+                $('#info-box').show();
+                renderEmptySummary();
+            }
+        }
+        $('#loading').hide();
+        $('#main-content').show();
+    }).fail(function() {
+        $('#loading').html('<i class="fa fa-exclamation-triangle"></i> 데이터 로드 실패');
+    });
+}
+
+// ===== 요약 카드 =====
+function renderEmptySummary() {
+    let html = '<div class="summary-cards">';
+    html += cardHtml('bg-total', 'fa-server', '-', '전체 서버');
+    html += cardHtml('bg-ok', 'fa-check-circle', '-', '정상');
+    html += cardHtml('bg-warn', 'fa-exclamation-triangle', '-', '경고');
+    html += cardHtml('bg-crit', 'fa-times-circle', '-', '위험');
+    html += '</div>';
+    $('#summary-section').html(html);
+}
+
+function renderSummary() {
+    if (!serverData) return;
+    const total = serverData.total || 0;
+    const ok = serverData.ok || 0;
+    const warn = serverData.warning || 0;
+    const crit = serverData.critical || 0;
+    const vpnCount = serverData.vpn_count || (total - (serverData.infra_count || 0));
+    const infraCount = serverData.infra_count || 0;
+    const checkTime = serverData.check_time || '-';
+    const elapsed = serverData.elapsed || '-';
+
+    let html = '<div class="summary-cards">';
+    html += cardHtml('bg-total', 'fa-server', total, 'VPN ' + vpnCount + ' + 인프라 ' + infraCount);
+    html += cardHtml('bg-ok', 'fa-check-circle', ok, '정상');
+    html += cardHtml('bg-warn', 'fa-exclamation-triangle', warn, '경고');
+    html += cardHtml('bg-crit', 'fa-times-circle', crit, '위험');
+    html += '</div>';
+    html += '<div style="text-align:right;font-size:12px;color:#888;margin-top:-16px;margin-bottom:16px;">';
+    html += '<i class="fa fa-clock-o"></i> 마지막 체크: ' + checkTime + ' (' + elapsed + '초 소요)</div>';
+    $('#summary-section').html(html);
+}
+
+function cardHtml(bg, icon, value, label) {
+    return '<div class="summary-card ' + bg + '">'
+        + '<div class="card-icon"><i class="fa ' + icon + '"></i></div>'
+        + '<div class="card-value">' + value + '</div>'
+        + '<div class="card-label">' + label + '</div></div>';
+}
+
+// ===== 서버 테이블 =====
+function renderTable() {
+    if (!serverData || !serverData.servers) return;
+    const tbody = $('#health-table tbody');
+    tbody.empty();
+
+    // 상태순: critical → warning → ok
+    const sorted = [...serverData.servers].sort((a, b) => statusOrder(a) - statusOrder(b));
+
+    sorted.forEach(function(sv, idx) {
+        tbody.append(buildServerRow(sv, idx + 1));
+    });
+
+    // 인프라 서버 섹션
+    const infraServers = serverData.infra_servers || [];
+    if (infraServers.length > 0) {
+        // 구분선 헤더 행
+        tbody.append('<tr class="infra-separator" data-status="all" data-name="infra" data-ip="">'
+            + '<td colspan="13" style="padding:0;">'
+            + '<div class="infra-section-header"><i class="fa fa-building"></i> 인프라 서버 (API / DB)</div>'
+            + '</td></tr>');
+
+        const infraSorted = [...infraServers].sort((a, b) => statusOrder(a) - statusOrder(b));
+        infraSorted.forEach(function(sv, idx) {
+            tbody.append(buildInfraRow(sv, idx + 1));
+        });
+    }
+
+    updateCount();
+}
+
+function buildServerRow(sv, num) {
+    const status = getStatus(sv);
+    const issues = (sv.criticals || []).concat(sv.warnings || []);
+    const issueHtml = issues.length > 0
+        ? '<div class="' + (sv.criticals && sv.criticals.length ? 'issue-list' : 'warn-list') + '">'
+          + issues.join('<br>') + '</div>'
+        : '<span style="color:#28a745;">-</span>';
+
+    const diskPct = sv.disk_pct || 0;
+    const memPct = sv.mem_pct || 0;
+    const load = sv.load_1m !== undefined ? sv.load_1m : '-';
+    const escapedName = (sv.name || '').replace(/'/g, "\\'");
+    const escapedIp = (sv.ip || '');
+
+    let row = '<tr data-status="' + status + '" data-name="' + (sv.name||'').toLowerCase() + '" data-ip="' + escapedIp + '">';
+    row += '<td>' + num + '</td>';
+    row += '<td><strong>' + (sv.name || '-') + '</strong></td>';
+    row += '<td>' + (sv.ip || '-') + '</td>';
+    row += '<td>' + protoBadge(sv.protocol) + '</td>';
+    row += '<td><span class="status-badge status-' + status + '">' + status + '</span></td>';
+    row += '<td>' + uptimeHtml(sv) + '</td>';
+    row += '<td>' + barHtml(diskPct) + ' ' + diskPct + '%</td>';
+    row += '<td>' + barHtml(memPct) + ' ' + memPct + '%</td>';
+    row += '<td>' + load + '</td>';
+    row += '<td><strong>' + (sv.online_users || 0) + '</strong></td>';
+    row += '<td>' + certHtml(sv) + '</td>';
+    row += '<td>' + issueHtml + '</td>';
+    row += '<td>'
+        + '<button class="btn-ssh" onclick="showSSHInfo(\'' + escapedIp + '\', \'' + escapedName + '\')" title="SSH 접속"><i class="fa fa-terminal"></i></button>'
+        + '<button class="btn-recheck" id="recheck-' + escapedIp.replace(/\./g, '-') + '" onclick="singleCheck(\'' + escapedIp + '\', \'' + escapedName + '\')" title="이 서버만 재점검"><i class="fa fa-refresh"></i></button>'
+        + '<button class="btn-reboot" id="reboot-' + escapedIp.replace(/\./g, '-') + '" onclick="showRebootModal(\'' + escapedIp + '\', \'' + escapedName + '\')" title="서버 재부팅"><i class="fa fa-power-off"></i></button>'
+        + (diskPct >= 75 ? '<button class="btn-cleanup" onclick="showCleanupModal(\'' + escapedIp + '\', \'' + escapedName + '\', ' + diskPct + ')" title="디스크 정리"><i class="fa fa-hdd-o"></i></button>' : '')
+        + '</td>';
+    row += '</tr>';
+    return row;
+}
+
+function buildInfraRow(sv, num) {
+    const status = getStatus(sv);
+    const issues = (sv.criticals || []).concat(sv.warnings || []);
+    const services = sv.services || {};
+
+    // 서비스 상태 배지
+    let svcHtml = '';
+    for (const [svcName, svcOk] of Object.entries(services)) {
+        svcHtml += '<span class="svc-badge ' + (svcOk ? 'svc-up' : 'svc-down') + '">'
+                + svcName + (svcOk ? ' OK' : ' FAIL') + '</span>';
+    }
+
+    // API 서버 상세 정보 (Apache, PHP 에러, 응답 시간)
+    let apiDetailHtml = '';
+    if (sv.protocol === 'API') {
+        const parts = [];
+        if (sv.httpd_count !== undefined) parts.push('Apache: ' + sv.httpd_count + 'p');
+        if (sv.tcp_estab !== undefined) parts.push('TCP: ' + sv.tcp_estab);
+        if (sv.access_1h !== undefined) parts.push('접속: ' + sv.access_1h + '/h');
+        if (sv.http_response_time !== undefined) parts.push('응답: ' + (sv.http_response_time * 1000).toFixed(0) + 'ms');
+        if (sv.php_errors_1h !== undefined && sv.php_errors_1h > 0) {
+            var errColor = sv.php_errors_1h >= 100 ? '#dc3545' : sv.php_errors_1h >= 20 ? '#fd7e14' : '#888';
+            parts.push('<span style="color:' + errColor + '">에러: ' + sv.php_errors_1h + '/h</span>');
+        }
+        if (parts.length > 0) apiDetailHtml = '<div style="font-size:10px;color:#888;margin-top:2px;">' + parts.join(' | ') + '</div>';
+    }
+
+    const issueHtml = issues.length > 0
+        ? '<div class="' + (sv.criticals && sv.criticals.length ? 'issue-list' : 'warn-list') + '">'
+          + issues.join('<br>') + '</div>'
+        : '<span style="color:#28a745;">-</span>';
+
+    const diskPct = sv.disk_pct || 0;
+    const memPct = sv.mem_pct || 0;
+    const load = sv.load_1m !== undefined ? sv.load_1m : '-';
+    const escapedName = (sv.name || '').replace(/'/g, "\\'");
+    const escapedIp = (sv.ip || '');
+
+    let row = '<tr data-status="' + status + '" data-name="' + (sv.name||'').toLowerCase() + '" data-ip="' + escapedIp + '" style="background:#fdf6ff;">';
+    row += '<td>' + num + '</td>';
+    row += '<td><strong>' + (sv.name || '-') + '</strong></td>';
+    row += '<td>' + (sv.ip || '-') + '</td>';
+    row += '<td>' + infraProtoBadge(sv.protocol) + '</td>';
+    row += '<td><span class="status-badge status-' + status + '">' + status + '</span></td>';
+    row += '<td>' + uptimeHtml(sv) + '</td>';
+    row += '<td>' + (diskPct > 0 ? barHtml(diskPct) + ' ' + diskPct + '%' : '<span style="color:#aaa;">-</span>') + '</td>';
+    row += '<td>' + (memPct > 0 ? barHtml(memPct) + ' ' + memPct + '%' : '<span style="color:#aaa;">-</span>') + '</td>';
+    row += '<td>' + load + '</td>';
+    row += '<td><strong>' + (sv.online_users || 0) + '</strong>' + (sv.protocol === 'DB' ? ' <span style="font-size:10px;color:#888;">세션</span>' : '') + '</td>';
+    row += '<td>' + (svcHtml || '<span style="color:#aaa;">-</span>') + apiDetailHtml + '</td>';
+    row += '<td>' + issueHtml + '</td>';
+    row += '<td>';
+    if (sv.ssh_ok) {
+        row += '<button class="btn-ssh" onclick="showSSHInfo(\'' + escapedIp + '\', \'' + escapedName + '\')" title="SSH 접속"><i class="fa fa-terminal"></i></button>';
+    } else {
+        row += '<span style="color:#aaa;font-size:11px;" title="SSH 미지원">'
+            + (sv.ping_ok ? '<i class="fa fa-check" style="color:#28a745;"></i> Ping' : '<i class="fa fa-times" style="color:#dc3545;"></i>')
+            + '</span>';
+    }
+    row += '</td>';
+    row += '</tr>';
+    return row;
+}
+
+function infraProtoBadge(proto) {
+    if (!proto) return '<span class="proto-badge proto-infra">INFRA</span>';
+    const p = proto.toUpperCase();
+    if (p === 'API') return '<span class="proto-badge proto-api">API</span>';
+    if (p === 'DB' || p === 'RADIUS') return '<span class="proto-badge proto-db">DB/RADIUS</span>';
+    return '<span class="proto-badge proto-infra">' + proto + '</span>';
+}
+}
+
+function getStatus(sv) {
+    if (sv.criticals && sv.criticals.length > 0) return 'critical';
+    if (sv.warnings && sv.warnings.length > 0) return 'warning';
+    if (!sv.ssh_ok) return 'critical';
+    return 'ok';
+}
+
+function statusOrder(sv) {
+    const s = getStatus(sv);
+    if (s === 'critical') return 0;
+    if (s === 'warning') return 1;
+    return 2;
+}
+
+function protoBadge(proto) {
+    if (!proto) return '<span class="proto-badge proto-default">-</span>';
+    const p = proto.toLowerCase();
+    if (p.includes('ikev2') || p.includes('ike')) return '<span class="proto-badge proto-ikev2">IKEv2</span>';
+    if (p.includes('sstp')) return '<span class="proto-badge proto-sstp">SSTP</span>';
+    if (p.includes('openvpn') || p.includes('ovpn')) return '<span class="proto-badge proto-openvpn">OpenVPN</span>';
+    if (p.includes('v2ray') || p.includes('xray')) return '<span class="proto-badge proto-v2ray">V2Ray</span>';
+    return '<span class="proto-badge proto-default">' + proto + '</span>';
+}
+
+function barHtml(pct) {
+    const cls = pct >= 90 ? 'bar-crit' : (pct >= 75 ? 'bar-warn' : 'bar-ok');
+    return '<div class="bar-wrap"><div class="bar-fill ' + cls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+}
+
+function uptimeHtml(sv) {
+    const secs = sv.uptime_seconds || 0;
+    if (!secs) return '<span style="color:#aaa;">-</span>';
+
+    const days = Math.floor(secs / 86400);
+    const hours = Math.floor((secs % 86400) / 3600);
+    let text = '';
+    if (days > 0) text = days + '일 ' + hours + '시간';
+    else if (hours > 0) text = hours + '시간';
+    else text = Math.floor(secs / 60) + '분';
+
+    if (days >= 90) {
+        return '<span class="uptime-badge uptime-crit" title="재부팅 권장 (90일+)"><i class="fa fa-exclamation-triangle"></i> ' + text + '</span>';
+    } else if (days >= 60) {
+        return '<span class="uptime-badge uptime-warn" title="60일 이상">' + text + '</span>';
+    }
+    return '<span class="uptime-badge uptime-ok">' + text + '</span>';
+}
+
+function certHtml(sv) {
+    const status = sv.cert_status || '';
+    const expiry = sv.cert_expiry || '';
+    const days = sv.cert_days_left;
+    const issuer = sv.cert_issuer || '';
+    const ip = sv.ip || '';
+    const name = sv.name || '';
+
+    let certText = '';
+    let showRenew = false;
+
+    if (status === 'EXPIRED') {
+        certText = '<span style="color:#dc3545;font-weight:700;" title="' + issuer + '"><i class="fa fa-times-circle"></i> 만료 (' + expiry + ')</span>';
+        showRenew = true;
+    } else if (status === 'EXPIRING') {
+        certText = '<span style="color:#fd7e14;font-weight:700;" title="' + issuer + ' / ' + expiry + '"><i class="fa fa-exclamation-triangle"></i> ' + days + '일</span>';
+        showRenew = true;
+    } else if (status === 'OK' && days !== null && days !== undefined) {
+        if (days <= 30) {
+            certText = '<span style="color:#fd7e14;font-weight:600;" title="' + issuer + ' / ' + expiry + '"><i class="fa fa-exclamation-triangle"></i> ' + days + '일</span>';
+            showRenew = true;
+        } else {
+            certText = '<span style="color:#28a745;" title="' + issuer + ' / ' + expiry + '"><i class="fa fa-check"></i> ' + days + '일</span>';
+            showRenew = true;
+        }
+    } else if (status === 'NO_CERT') {
+        certText = '<span style="color:#aaa;">미설치</span>';
+    } else {
+        certText = '<span style="color:#aaa;">-</span>';
+    }
+
+    if (showRenew && ip) {
+        const safeIp = ip.replace(/\./g, '-');
+        certText += ' <button class="btn-renew" id="renew-' + safeIp + '" '
+                 + 'onclick="certRenew(\'' + ip + '\', \'' + name.replace(/'/g, "\\'") + '\')" '
+                 + 'title="인증서 수동 갱신">갱신</button>';
+    }
+    return certText;
+}
+
+// ===== 인증서 갱신 =====
+function certRenew(ip, serverName) {
+    const safeIp = ip.replace(/\./g, '-');
+    const btn = $('#renew-' + safeIp);
+    if (btn.hasClass('renewing')) return;
+
+    if (!confirm((serverName || ip) + ' 서버의 인증서를 갱신하시겠습니까?\n(certbot renew + strongswan reload 실행)')) return;
+
+    btn.addClass('renewing').prop('disabled', true).text('갱신중...');
+
+    $.ajax({
+        url: '/api/v1/update/uto_cert_renew',
+        method: 'POST',
+        data: { ip: ip, name: serverName },
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        if (res.result === 200) {
+            showToast((serverName || ip) + ' 인증서 갱신 시작...', 'success');
+            pollCertRenew(ip, serverName, 1);
+        } else {
+            btn.removeClass('renewing').prop('disabled', false).text('갱신');
+            showToast(res.msg || '갱신 시작 실패', 'error');
+        }
+    }).fail(function() {
+        btn.removeClass('renewing').prop('disabled', false).text('갱신');
+        showToast('서버 통신 오류', 'error');
+    });
+}
+
+function pollCertRenew(ip, serverName, count) {
+    if (count > 60) {
+        const safeIp = ip.replace(/\./g, '-');
+        const btn = $('#renew-' + safeIp);
+        btn.removeClass('renewing').addClass('failed').prop('disabled', false).text('실패');
+        setTimeout(function() { btn.removeClass('failed').text('갱신'); }, 5000);
+        showToast('인증서 갱신 타임아웃', 'error');
+        return;
+    }
+    setTimeout(function() {
+        $.get('/api/v1/read/uto_cert_renew_status', {ip: ip}).done(function(res) {
+            if (res.result === 200 && !res.running && res.data) {
+                const safeIp = ip.replace(/\./g, '-');
+                const btn = $('#renew-' + safeIp);
+                btn.removeClass('renewing').prop('disabled', false);
+                if (res.data.success) {
+                    btn.addClass('success').text('완료');
+                    const msg = (serverName || ip) + ' 인증서 갱신 완료'
+                        + (res.data.new_days_left ? ' (만료까지 ' + res.data.new_days_left + '일)' : '');
+                    showToast(msg, 'success');
+                    // 서버 재점검하여 캐시 업데이트
+                    singleCheck(ip, serverName);
+                } else {
+                    btn.addClass('failed').text('실패');
+                    showToast('인증서 갱신 실패: ' + (res.data.message || ''), 'error');
+                }
+                setTimeout(function() { btn.removeClass('success failed').text('갱신'); }, 8000);
+            } else {
+                pollCertRenew(ip, serverName, count + 1);
+            }
+        }).fail(function() {
+            pollCertRenew(ip, serverName, count + 1);
+        });
+    }, 2000);
+}
+
+// ===== 필터 =====
+function filterTable() {
+    const search = ($('#health-search').val() || '').toLowerCase();
+    const status = $('#health-filter').val();
+    let hasVisibleInfra = false;
+    $('#health-table tbody tr').each(function() {
+        // 인프라 구분선은 별도 처리
+        if ($(this).hasClass('infra-separator')) return;
+        const name = $(this).data('name') || '';
+        const ip = $(this).data('ip') || '';
+        const st = $(this).data('status') || '';
+        const matchSearch = !search || name.includes(search) || ip.includes(search);
+        const matchStatus = status === 'all' || st === status;
+        const visible = matchSearch && matchStatus;
+        $(this).toggle(visible);
+        if (visible && $(this).css('background').includes('fdf6ff')) hasVisibleInfra = true;
+    });
+    // 인프라 구분선: 인프라 행이 하나라도 보이면 표시
+    $('.infra-separator').toggle(hasVisibleInfra || (status === 'all' && !search));
+    updateCount();
+}
+
+function updateCount() {
+    const visible = $('#health-table tbody tr:visible').not('.infra-separator').length;
+    const total = $('#health-table tbody tr').not('.infra-separator').length;
+    if (visible === total) {
+        $('#server-count').text(total + '개 서버');
+    } else {
+        $('#server-count').text(visible + ' / ' + total + '개 서버');
+    }
+}
+
+// ===== 전체 점검 =====
+function startFullCheck() {
+    if (!confirm('전체 UTO 서버 점검을 실행하시겠습니까?\n(약 15~30초 소요)')) return;
+
+    const btn = $('#btn-manual-check');
+    const statusSpan = $('#manual-check-status');
+    btn.prop('disabled', true).css({background: '#6c757d', borderColor: '#6c757d'});
+    btn.html('<i class="fa fa-spinner fa-spin"></i> 점검중...');
+    statusSpan.text('');
+
+    $.ajax({
+        url: '/api/v1/update/uto_nas_check',
+        method: 'POST',
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        if (res.result === 200) {
+            pollCheckStatus(1);
+        } else if (res.result === 409) {
+            statusSpan.html('<span style="color:#856404;">' + res.msg + '</span>');
+            pollCheckStatus(1);
+        } else {
+            showToast(res.msg || '요청 실패', 'error');
+            resetCheckBtn();
+        }
+    }).fail(function() {
+        showToast('서버 통신 오류', 'error');
+        resetCheckBtn();
+    });
+}
+
+function pollCheckStatus(count) {
+    if (count > 120) {
+        $('#manual-check-status').html('<span style="color:#dc3545;">타임아웃</span>');
+        resetCheckBtn();
+        return;
+    }
+    setTimeout(function() {
+        $.get('/api/v1/read/uto_nas_check_status').done(function(res) {
+            if (!res.running && res.data) {
+                // 완료
+                const elapsed = res.elapsed || res.data.elapsed || '?';
+                $('#manual-check-status').html(
+                    '<span style="color:#28a745;"><i class="fa fa-check"></i> 점검 완료 (' + elapsed + '초)</span>'
+                );
+                serverData = res.data;
+                renderSummary();
+                renderTable();
+                $('#info-box').hide();
+                resetCheckBtn();
+            } else {
+                // 진행중
+                const elapsed = res.elapsed ? Math.round(res.elapsed) : (count * 3);
+                $('#btn-manual-check').html('<i class="fa fa-spinner fa-spin"></i> 점검중(' + elapsed + 's)');
+                pollCheckStatus(count + 1);
+            }
+        }).fail(function() {
+            pollCheckStatus(count + 1);
+        });
+    }, 3000);
+}
+
+function resetCheckBtn() {
+    const btn = $('#btn-manual-check');
+    btn.prop('disabled', false).css({background: '#17a2b8', borderColor: '#17a2b8'});
+    btn.html('<i class="fa fa-refresh"></i> 수동 점검');
+}
+
+// ===== 단일 서버 점검 =====
+function singleCheck(ip, serverName) {
+    const btnId = 'recheck-' + ip.replace(/\./g, '-');
+    const btn = $('#' + btnId);
+    if (btn.hasClass('checking')) return;
+
+    btn.addClass('checking').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+    showToast(serverName + ' (' + ip + ') 점검 시작...');
+
+    $.ajax({
+        url: '/api/v1/update/uto_single_check',
+        method: 'POST',
+        data: { ip: ip },
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        btn.removeClass('checking').prop('disabled', false);
+        if (res.result === 200 && res.data) {
+            btn.addClass('check-ok').html('<i class="fa fa-check"></i>');
+            const status = getStatus(res.data);
+            showToast(serverName + ' 점검 완료 — ' + status.toUpperCase(), 'success');
+
+            // 캐시 데이터 업데이트
+            if (serverData && serverData.servers) {
+                const idx = serverData.servers.findIndex(s => s.ip === ip);
+                if (idx >= 0) serverData.servers[idx] = res.data;
+                else serverData.servers.push(res.data);
+                recalcSummary();
+                renderSummary();
+                renderTable();
+            }
+        } else {
+            btn.addClass('check-fail').html('<i class="fa fa-times"></i>');
+            showToast(res.msg || '점검 실패', 'error');
+        }
+        setTimeout(function() {
+            $('#' + btnId).removeClass('check-ok check-fail').html('<i class="fa fa-refresh"></i>');
+        }, 5000);
+    }).fail(function() {
+        btn.removeClass('checking').prop('disabled', false).html('<i class="fa fa-refresh"></i>');
+        showToast('서버 통신 오류', 'error');
+    });
+}
+
+function recalcSummary() {
+    if (!serverData || !serverData.servers) return;
+    const servers = serverData.servers;
+    serverData.total = servers.length;
+    serverData.ok = servers.filter(s => !s.criticals.length && !s.warnings.length).length;
+    serverData.warning = servers.filter(s => s.warnings.length > 0 && !s.criticals.length).length;
+    serverData.critical = servers.filter(s => s.criticals.length > 0).length;
+}
+
+// ===== SSH 정보 모달 =====
+function showSSHInfo(ip, serverName) {
+    $('#ssh-modal-body').html('<div style="text-align:center;padding:40px;color:#888;"><i class="fa fa-spinner fa-spin"></i> SSH 정보 조회 중...</div>');
+    $('#ssh-modal-overlay').addClass('show');
+
+    $.ajax({
+        url: '/api/v1/read/uto_ssh_info',
+        method: 'GET',
+        data: { ip: ip },
+    }).done(function(res) {
+        if (res.result === 200 && res.data) {
+            const d = res.data;
+            const maskedPw = '••••••••';
+            let html = '<div style="margin-bottom:12px;font-size:14px;color:#333;">'
+                     + '<strong>' + (serverName || d.name || '') + '</strong> — ' + d.ip + '</div>';
+
+            html += '<div class="ssh-info-row">'
+                  + '<span class="ssh-info-label">사용자</span>'
+                  + '<span class="ssh-info-value">' + d.username + '</span>'
+                  + '<button class="btn-copy" onclick="copyText(\'' + d.username + '\', this)">복사</button>'
+                  + '</div>';
+
+            html += '<div class="ssh-info-row">'
+                  + '<span class="ssh-info-label">비밀번호</span>'
+                  + '<span class="ssh-info-value password-field" id="ssh-password">' + maskedPw + '</span>'
+                  + '<button class="btn-copy" onclick="togglePassword(\'' + (d.password || '').replace(/'/g, "\\'") + '\', this)">보기</button>'
+                  + '<button class="btn-copy" onclick="copyText(\'' + (d.password || '').replace(/'/g, "\\'") + '\', this)">복사</button>'
+                  + '</div>';
+
+            html += '<div class="ssh-info-row">'
+                  + '<span class="ssh-info-label">IP</span>'
+                  + '<span class="ssh-info-value">' + d.ip + '</span>'
+                  + '<button class="btn-copy" onclick="copyText(\'' + d.ip + '\', this)">복사</button>'
+                  + '</div>';
+
+            html += '<div class="ssh-info-row">'
+                  + '<span class="ssh-info-label">SSH 명령</span>'
+                  + '<span class="ssh-info-value">ssh ' + d.username + '@' + d.ip + '</span>'
+                  + '<button class="btn-copy" onclick="copyText(\'ssh ' + d.username + '@' + d.ip + '\', this)">복사</button>'
+                  + '</div>';
+
+            html += '<div class="ssh-actions">';
+            html += '<button class="btn-ssh-connect" onclick="openSSH(\'' + d.username + '\', \'' + d.ip + '\')">'
+                  + '<i class="fa fa-external-link"></i> PuTTY 열기</button>';
+            html += '<button class="btn-ssh-copy-all" onclick="copyAllSSH(\'' + d.username + '\', \'' + (d.password || '').replace(/'/g, "\\'") + '\', \'' + d.ip + '\')">'
+                  + '<i class="fa fa-clipboard"></i> 전체 복사</button>';
+            html += '</div>';
+
+            $('#ssh-modal-body').html(html);
+            $('#ssh-password').data('pw', d.password);
+        } else {
+            $('#ssh-modal-body').html('<div style="text-align:center;padding:40px;color:#dc3545;">'
+                + '<i class="fa fa-exclamation-triangle"></i> ' + (res.msg || 'SSH 정보를 찾을 수 없습니다.') + '</div>');
+        }
+    }).fail(function() {
+        $('#ssh-modal-body').html('<div style="text-align:center;padding:40px;color:#dc3545;">'
+            + '<i class="fa fa-exclamation-triangle"></i> SSH 정보 조회 실패</div>');
+    });
+}
+
+function closeSSHModal() {
+    $('#ssh-modal-overlay').removeClass('show');
+}
+
+function togglePassword(pw, btn) {
+    const el = $('#ssh-password');
+    if (el.hasClass('revealed')) {
+        el.text('••••••••').removeClass('revealed');
+        $(btn).text('보기');
+    } else {
+        el.text(pw).addClass('revealed');
+        $(btn).text('숨기기');
+    }
+}
+
+function openSSH(user, ip) {
+    const pw = $('#ssh-password').data('pw') || '';
+    if (pw) {
+        navigator.clipboard.writeText(pw).then(function() {
+            showToast('비밀번호가 클립보드에 복사되었습니다.');
+        }).catch(function() {});
+    }
+    window.location.href = 'ssh://' + user + '@' + ip;
+}
+
+function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(function() {
+        const orig = $(btn).text();
+        $(btn).text('✓').addClass('copied');
+        setTimeout(function() { $(btn).text(orig).removeClass('copied'); }, 1500);
+    }).catch(function() {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const orig = $(btn).text();
+        $(btn).text('✓').addClass('copied');
+        setTimeout(function() { $(btn).text(orig).removeClass('copied'); }, 1500);
+    });
+}
+
+function copyAllSSH(user, pw, ip) {
+    const text = 'SSH 접속 정보\n호스트: ' + ip + '\n사용자: ' + user + '\n비밀번호: ' + pw + '\n명령어: ssh ' + user + '@' + ip;
+    navigator.clipboard.writeText(text).then(function() {
+        const btn = event.target.closest('button');
+        $(btn).html('<i class="fa fa-check"></i> 복사완료').css({background: '#28a745', borderColor: '#28a745', color: '#fff'});
+        setTimeout(function() {
+            $(btn).html('<i class="fa fa-clipboard"></i> 전체 복사').css({background: '#fff', borderColor: '#6c757d', color: '#6c757d'});
+        }, 2000);
+    });
+}
+
+// ===== 재부팅 모달 =====
+function showRebootModal(ip, serverName) {
+    $('#reboot-modal-msg').html('<strong>' + serverName + '</strong> (' + ip + ') 서버를 재부팅하시겠습니까?');
+    $('#reboot-target-ip').val(ip);
+    $('#reboot-target-name').val(serverName);
+    $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
+    // 현재 접속자 수 표시
+    var onlineCount = 0;
+    if (serverData && serverData.servers) {
+        var sv = serverData.servers.find(function(s){ return s.ip === ip; });
+        if (sv) onlineCount = sv.online_users || 0;
+    }
+    if (onlineCount > 0) {
+        $('#reboot-online-count').text(onlineCount);
+        $('#reboot-users-warning').show();
+    } else {
+        $('#reboot-users-warning').hide();
+    }
+    $('#reboot-modal-overlay').addClass('show');
+}
+
+function closeRebootModal() {
+    $('#reboot-modal-overlay').removeClass('show');
+}
+
+var _rebootCountdownTimer = null;
+var _rebootPollTimer = null;
+var REBOOT_WAIT_SEC = 40;
+var REBOOT_POLL_MAX = 30;
+var REBOOT_RING_CIRCUM = 565;  // 2 * PI * 90
+
+function confirmReboot() {
+    const ip = $('#reboot-target-ip').val();
+    const name = $('#reboot-target-name').val();
+    $('#btn-reboot-go').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 처리 중...');
+
+    $.ajax({
+        url: '/api/v1/update/uto_reboot',
+        type: 'POST',
+        data: { ip: ip },
+        headers: {'X-CSRFToken': getCsrfToken()},
+        success: function(res) {
+            if (res.result === 200) {
+                closeRebootModal();
+                startRebootCountdown(ip, name);
+            } else {
+                showToast(res.msg || '재부팅 실패', 'error');
+                $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
+            }
+        },
+        error: function() {
+            showToast('서버 통신 실패', 'error');
+            $('#btn-reboot-go').prop('disabled', false).html('<i class="fa fa-power-off"></i> 재부팅');
+        }
+    });
+}
+
+function startRebootCountdown(ip, serverName) {
+    // 버튼도 비활성
+    const ipKey = ip.replace(/\./g, '-');
+    const btn = $('#reboot-' + ipKey);
+    btn.prop('disabled', true).css({'background':'#fd7e14','border-color':'#fd7e14'})
+       .html('<i class="fa fa-spinner fa-spin"></i>');
+
+    // 접속자 수
+    var onlineCount = 0;
+    if (serverData && serverData.servers) {
+        var sv = serverData.servers.find(function(s){ return s.ip === ip; });
+        if (sv) onlineCount = sv.online_users || 0;
+    }
+
+    // 오버레이 표시
+    $('#countdown-server-name').html('<i class="fa fa-server"></i> ' + serverName + ' (' + ip + ')');
+    if (onlineCount > 0) {
+        $('#countdown-users-info').html('<i class="fa fa-users"></i> 접속자 ' + onlineCount + '명 연결 끊김').show();
+    } else {
+        $('#countdown-users-info').hide();
+    }
+    $('#countdown-status').removeClass('success fail').html('<i class="fa fa-spinner fa-spin"></i> 재부팅 명령 전송됨');
+    $('#countdown-phase').text('재부팅 중');
+    $('#countdown-number').text(REBOOT_WAIT_SEC);
+    $('#countdown-ring').css('stroke-dashoffset', '0');
+    $('#reboot-countdown-overlay').addClass('show');
+
+    var remaining = REBOOT_WAIT_SEC;
+    if (_rebootCountdownTimer) clearInterval(_rebootCountdownTimer);
+
+    _rebootCountdownTimer = setInterval(function() {
+        remaining--;
+        $('#countdown-number').text(remaining);
+        // ring progress: offset goes from 0 to CIRCUM
+        var offset = REBOOT_RING_CIRCUM * (1 - remaining / REBOOT_WAIT_SEC);
+        $('#countdown-ring').css('stroke-dashoffset', offset);
+
+        if (remaining <= 10) {
+            $('#countdown-phase').text('곧 복구...');
+            $('#countdown-ring').parent().find('circle').css('stroke', '#28a745');
+        }
+
+        if (remaining <= 0) {
+            clearInterval(_rebootCountdownTimer);
+            _rebootCountdownTimer = null;
+            $('#countdown-number').html('<i class="fa fa-search" style="font-size:36px"></i>');
+            $('#countdown-phase').text('서버 점검 중');
+            $('#countdown-status').html('<i class="fa fa-spinner fa-spin"></i> 응답 대기 중...');
+            pollRebootRecovery(ip, serverName, 0);
+        }
+    }, 1000);
+}
+
+function pollRebootRecovery(ip, serverName, attempt) {
+    const ipKey = ip.replace(/\./g, '-');
+    const btn = $('#reboot-' + ipKey);
+
+    if (attempt > REBOOT_POLL_MAX) {
+        // 타임아웃
+        btn.prop('disabled', false).css({'background':'','border-color':''})
+           .html('<i class="fa fa-power-off"></i>');
+        $('#countdown-number').html('<i class="fa fa-times" style="font-size:40px;color:#dc3545"></i>');
+        $('#countdown-phase').text('');
+        $('#countdown-status').addClass('fail').html('<i class="fa fa-exclamation-triangle"></i> 응답 타임아웃 — 수동 점검 필요');
+        // 3초 후 자동 닫기
+        setTimeout(function() { $('#reboot-countdown-overlay').removeClass('show'); }, 4000);
+        return;
+    }
+
+    $('#countdown-status').html('<i class="fa fa-spinner fa-spin"></i> 점검 시도 ' + (attempt + 1) + '/' + REBOOT_POLL_MAX + '...');
+
+    $.ajax({
+        url: '/api/v1/update/uto_single_check',
+        method: 'POST',
+        data: { ip: ip },
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        if (res.result === 200 && res.data) {
+            // 성공!
+            btn.prop('disabled', false).css({'background':'','border-color':''})
+               .html('<i class="fa fa-power-off"></i>');
+            const status = getStatus(res.data);
+            $('#countdown-number').html('<i class="fa fa-check" style="font-size:44px;color:#28a745"></i>');
+            $('#countdown-phase').text('');
+            $('#countdown-ring').parent().find('circle').css('stroke', '#28a745');
+            $('#countdown-status').addClass('success').html('재부팅 완료! 상태: ' + status.toUpperCase());
+
+            if (serverData && serverData.servers) {
+                const idx = serverData.servers.findIndex(s => s.ip === ip);
+                if (idx >= 0) serverData.servers[idx] = res.data;
+                recalcSummary();
+                renderSummary();
+                renderTable();
+            }
+
+            // 3초 후 자동 닫기
+            setTimeout(function() { $('#reboot-countdown-overlay').removeClass('show'); }, 3000);
+        } else {
+            _rebootPollTimer = setTimeout(function() { pollRebootRecovery(ip, serverName, attempt + 1); }, 3000);
+        }
+    }).fail(function() {
+        _rebootPollTimer = setTimeout(function() { pollRebootRecovery(ip, serverName, attempt + 1); }, 3000);
+    });
+}
+
+// ===== 디스크 정리 =====
+var cleanupIp = '';
+var cleanupName = '';
+var cleanupItems = [];
+
+function showCleanupModal(ip, name, diskPct) {
+    cleanupIp = ip;
+    cleanupName = name;
+    $('#cleanup-server-label').text(name + ' (' + ip + ') — ' + diskPct + '% 사용');
+    $('#cleanup-modal-body').html('<div style="text-align:center;padding:30px;"><i class="fa fa-spinner fa-spin fa-2x"></i><br>분석 중...</div>');
+    $('#btn-cleanup-go').show().prop('disabled', true).html('<i class="fa fa-trash-o"></i> 선택 항목 정리');
+    $('#cleanup-modal-overlay').addClass('show');
+    loadDiskAnalysis(ip);
+}
+
+function closeCleanupModal() {
+    $('#cleanup-modal-overlay').removeClass('show');
+}
+
+function loadDiskAnalysis(ip) {
+    $.ajax({
+        url: '/api/v1/read/uto_disk_analysis',
+        data: { ip: ip },
+        timeout: 30000,
+        success: function(res) {
+            if (res.result === 200) {
+                cleanupItems = res.items || [];
+                renderCleanupItems(res);
+            } else {
+                $('#cleanup-modal-body').html('<div style="padding:20px;color:#dc3545;"><i class="fa fa-exclamation-triangle"></i> ' + (res.msg || '분석 실패') + '</div>');
+            }
+        },
+        error: function() {
+            $('#cleanup-modal-body').html('<div style="padding:20px;color:#dc3545;"><i class="fa fa-exclamation-triangle"></i> 서버 통신 실패</div>');
+        }
+    });
+}
+
+function renderCleanupItems(res) {
+    var items = res.items || [];
+    var html = '';
+    html += '<div class="cleanup-summary-box" style="margin-bottom:12px;padding:10px 14px;background:#1a1a2e;border:1px solid #333;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">';
+    html += '<span>현재 디스크: <strong style="color:#fd7e14;">' + (res.disk_used || '-') + '</strong> / ' + (res.disk_total || '-') + ' (' + (res.disk_pct || '-') + '%)</span>';
+    html += '<span>정리 가능: <strong id="cleanup-total-size" style="color:#28a745;">0 MB</strong></span>';
+    html += '</div>';
+
+    if (items.length === 0) {
+        html += '<div style="padding:20px;text-align:center;color:#888;">정리할 항목이 없습니다.</div>';
+        $('#cleanup-modal-body').html(html);
+        return;
+    }
+
+    html += '<div style="margin-bottom:8px;"><button class="btn-select-all" onclick="toggleSelectAllCleanup()" style="background:none;border:1px solid #555;color:#ccc;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;"><i class="fa fa-check-square-o"></i> 전체 선택</button></div>';
+    html += '<div class="cleanup-items-list" style="max-height:320px;overflow-y:auto;">';
+
+    var catNames = {
+        'journal': '시스템 저널 로그',
+        'rotated_logs': '압축된 로그 (.gz)',
+        'btmp': '실패 로그인 로그 (btmp)',
+        'root_logs': '루트 로그 파일',
+        'trojan': 'Trojan-web 설치파일',
+        'old_kernels': '이전 커널',
+        'yum_cache': 'Yum 캐시',
+        'large_logs': '대용량 로그 (>50MB)',
+        'pkt_log': 'VPN 패킷 로그',
+        'softether_log': 'SoftEther 서버 로그',
+        'nodejs': 'Node.js (미사용)',
+        'xui': '구 x-ui 패널',
+        'cleanup_log': 'QoS 정리 크론 로그'
+    };
+    var catIcons = {
+        'journal': 'fa-book',
+        'rotated_logs': 'fa-file-archive-o',
+        'btmp': 'fa-ban',
+        'root_logs': 'fa-file-text-o',
+        'trojan': 'fa-folder-o',
+        'old_kernels': 'fa-linux',
+        'yum_cache': 'fa-archive',
+        'large_logs': 'fa-file-o',
+        'pkt_log': 'fa-database',
+        'softether_log': 'fa-server',
+        'nodejs': 'fa-code',
+        'xui': 'fa-trash',
+        'cleanup_log': 'fa-clock-o'
+    };
+
+    items.forEach(function(item) {
+        var icon = catIcons[item.category] || 'fa-file-o';
+        var label = catNames[item.category] || item.category;
+        var sizeMB = item.size_mb || 0;
+        var sizeStr = sizeMB >= 1024 ? (sizeMB / 1024).toFixed(1) + ' GB' : sizeMB + ' MB';
+        var barColor = sizeMB >= 200 ? '#dc3545' : sizeMB >= 100 ? '#fd7e14' : '#28a745';
+
+        html += '<div class="cleanup-item" style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #2a2a3e;gap:10px;">';
+        html += '<input type="checkbox" class="cleanup-check" data-category="' + item.category + '" data-size="' + sizeMB + '" onchange="updateCleanupSummary()">';
+        html += '<i class="fa ' + icon + '" style="color:#888;width:18px;text-align:center;"></i>';
+        html += '<div style="flex:1;">';
+        html += '<div style="font-size:13px;color:#ddd;">' + label + '</div>';
+        if (item.detail) html += '<div style="font-size:11px;color:#888;margin-top:2px;">' + item.detail + '</div>';
+        html += '</div>';
+        html += '<div style="min-width:70px;text-align:right;">';
+        html += '<span style="color:' + barColor + ';font-weight:bold;font-size:13px;">' + sizeStr + '</span>';
+        html += '</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    $('#cleanup-modal-body').html(html);
+    updateCleanupSummary();
+}
+
+function toggleSelectAllCleanup() {
+    var checks = $('.cleanup-check');
+    var allChecked = checks.length === checks.filter(':checked').length;
+    checks.prop('checked', !allChecked);
+    updateCleanupSummary();
+}
+
+function updateCleanupSummary() {
+    var total = 0;
+    var count = 0;
+    $('.cleanup-check:checked').each(function() {
+        total += parseFloat($(this).data('size')) || 0;
+        count++;
+    });
+    var str = total >= 1024 ? (total / 1024).toFixed(1) + ' GB' : total.toFixed(0) + ' MB';
+    $('#cleanup-total-size').text(str);
+    $('#btn-cleanup-go').prop('disabled', count === 0);
+    if (count > 0) {
+        $('#btn-cleanup-go').html('<i class="fa fa-trash-o"></i> ' + count + '개 항목 정리 (' + str + ')');
+    } else {
+        $('#btn-cleanup-go').html('<i class="fa fa-trash-o"></i> 선택 항목 정리');
+    }
+}
+
+function confirmCleanup() {
+    var categories = [];
+    $('.cleanup-check:checked').each(function() {
+        categories.push($(this).data('category'));
+    });
+    if (categories.length === 0) return;
+
+    $('#btn-cleanup-go').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 정리 중...');
+
+    $.ajax({
+        url: '/api/v1/update/uto_disk_cleanup',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ ip: cleanupIp, categories: categories }),
+        headers: {'X-CSRFToken': getCsrfToken()},
+        timeout: 60000,
+        success: function(res) {
+            if (res.result === 200) {
+                var msg = '정리 완료! ' + (res.before_pct || '?') + '% → ' + (res.after_pct || '?') + '% (▼' + (res.freed || '?') + ')';
+                var resultHtml = '<div style="padding:20px;text-align:center;">';
+                resultHtml += '<div style="font-size:40px;color:#28a745;margin-bottom:10px;"><i class="fa fa-check-circle"></i></div>';
+                resultHtml += '<div style="font-size:16px;color:#ddd;margin-bottom:6px;">디스크 정리 완료</div>';
+                resultHtml += '<div style="font-size:24px;font-weight:bold;color:#fd7e14;">' + (res.before_pct || '?') + '% <i class="fa fa-long-arrow-right"></i> <span style="color:#28a745;">' + (res.after_pct || '?') + '%</span></div>';
+                resultHtml += '<div style="font-size:13px;color:#888;margin-top:6px;">' + (res.freed || '?') + ' 확보됨</div>';
+                if (res.details && res.details.length > 0) {
+                    resultHtml += '<div style="margin-top:12px;text-align:left;max-height:150px;overflow-y:auto;">';
+                    res.details.forEach(function(d) {
+                        var ic = d.ok ? '✓' : '✗';
+                        var cl = d.ok ? '#28a745' : '#dc3545';
+                        resultHtml += '<div style="font-size:12px;padding:3px 8px;color:' + cl + ';">' + ic + ' ' + d.category + ': ' + (d.msg || '') + '</div>';
+                    });
+                    resultHtml += '</div>';
+                }
+                resultHtml += '</div>';
+                $('#cleanup-modal-body').html(resultHtml);
+                $('#btn-cleanup-go').hide();
+                showToast(msg, 'success');
+
+                // refresh this server
+                singleCheck(cleanupIp, cleanupName);
+            } else {
+                showToast(res.msg || '정리 실패', 'error');
+                $('#btn-cleanup-go').prop('disabled', false).html('<i class="fa fa-trash-o"></i> 선택 항목 정리');
+            }
+        },
+        error: function() {
+            showToast('서버 통신 실패', 'error');
+            $('#btn-cleanup-go').prop('disabled', false).html('<i class="fa fa-trash-o"></i> 선택 항목 정리');
+        }
+    });
+}
+
+// ===== 토스트 =====
+function showToast(msg, type) {
+    let toast = $('#uto-toast');
+    if (toast.length === 0) {
+        $('body').append('<div id="uto-toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;max-width:500px;text-align:center;"></div>');
+        toast = $('#uto-toast');
+    }
+    const bg = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+    toast.css({background: bg, color: '#fff'}).text(msg).fadeIn(300);
+    setTimeout(function() { toast.fadeOut(500); }, 4000);
+}
+
+// ===== 탭 전환 =====
+function switchTab(name) {
+    $('.tab-btn').removeClass('active');
+    $('.tab-panel').removeClass('active');
+    $('[onclick="switchTab(\'' + name + '\')"]').addClass('active');
+    $('#tab-' + name).addClass('active');
+    if (name === 'sitecheck' && !siteCheckData) {
+        loadCachedSiteCheck();
+    }
+}
+
+// ===== 목표사이트 점검 =====
+let siteCheckData = null;
+let siteCheckPolling = null;
+
+function loadCachedSiteCheck() {
+    $.get('/api/v1/read/uto_site_check_status').done(function(res) {
+        if (res.result === 200) {
+            siteCheckData = res;
+            renderSiteCheckTable(res);
+            if (res.running) {
+                startSiteCheckPolling();
+            }
+        }
+    });
+}
+
+function startSiteCheck() {
+    const btn = $('#btn-site-check');
+    btn.prop('disabled', true).css({background:'#6c757d',borderColor:'#6c757d'});
+    btn.html('<i class="fa fa-spinner fa-spin"></i> 점검중...');
+    $('#site-check-progress').html('');
+
+    $.ajax({
+        url: '/api/v1/update/uto_site_check',
+        method: 'POST',
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        if (res.result === 200 || res.result === 409) {
+            showToast(res.msg);
+            startSiteCheckPolling();
+        } else {
+            resetSiteCheckBtn();
+            showToast(res.msg || '요청 실패', 'error');
+        }
+    }).fail(function() {
+        resetSiteCheckBtn();
+        showToast('서버 통신 오류', 'error');
+    });
+}
+
+function startSingleSiteCheck(ip, name) {
+    const btn = $('#sc-btn-' + ip.replace(/\./g, '-'));
+    btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+    $.ajax({
+        url: '/api/v1/update/uto_site_check',
+        method: 'POST',
+        data: { ip: ip },
+        headers: {'X-CSRFToken': getCsrfToken()},
+    }).done(function(res) {
+        if (res.result === 200 || res.result === 409) {
+            showToast(name + ' 점검 시작');
+            startSiteCheckPolling();
+        } else {
+            btn.prop('disabled', false).html('<i class="fa fa-refresh"></i>');
+        }
+    }).fail(function() {
+        btn.prop('disabled', false).html('<i class="fa fa-refresh"></i>');
+    });
+}
+
+function startSiteCheckPolling() {
+    if (siteCheckPolling) return;
+    siteCheckPolling = setInterval(function() {
+        $.get('/api/v1/read/uto_site_check_status').done(function(res) {
+            if (res.result === 200) {
+                siteCheckData = res;
+                renderSiteCheckTable(res);
+                const pct = res.total > 0 ? Math.round(res.completed / res.total * 100) : 0;
+                const elapsed = res.elapsed ? Math.round(res.elapsed) : 0;
+                if (res.running) {
+                    if (res.retry) {
+                        $('#btn-site-check').prop('disabled', true)
+                            .css({background:'#e67e22',borderColor:'#e67e22'})
+                            .html('<i class="fa fa-spinner fa-spin"></i> 재점검 ' + (res.retry_count||'') + '개');
+                        $('#site-check-progress').html(
+                            '<span style="color:#e67e22;"><i class="fa fa-repeat"></i> '
+                            + (res.retry_count||'') + '개 실패 서버 자동 재점검 중... (' + elapsed + '초)</span>'
+                        );
+                    } else {
+                        $('#btn-site-check').prop('disabled', true)
+                            .css({background:'#6c757d',borderColor:'#6c757d'})
+                            .html('<i class="fa fa-spinner fa-spin"></i> 점검중 ' + pct + '%');
+                        $('#site-check-progress').html(
+                            res.completed + '/' + res.total + ' 서버 완료 (' + elapsed + '초)'
+                        );
+                    }
+                } else {
+                    clearInterval(siteCheckPolling);
+                    siteCheckPolling = null;
+                    resetSiteCheckBtn();
+                    $('#site-check-progress').html(
+                        '<span style="color:#28a745;"><i class="fa fa-check"></i> 점검 완료 — '
+                        + res.completed + '개 서버 (' + elapsed + '초)</span>'
+                    );
+                }
+            }
+        });
+    }, 2000);
+}
+
+function resetSiteCheckBtn() {
+    const btn = $('#btn-site-check');
+    btn.prop('disabled', false).css({background:'#17a2b8',borderColor:'#17a2b8'});
+    btn.html('<i class="fa fa-play-circle"></i> 전체 점검 시작');
+}
+
+function renderSiteCheckTable(res) {
+    const sites = res.sites || [];
+    const results = res.results || [];
+    if (sites.length === 0 && results.length === 0) return;
+
+    // 헤더
+    let hdr = '<th>#</th><th>서버명</th><th>IP</th>';
+    sites.forEach(function(s) {
+        hdr += '<th style="min-width:80px;text-align:center;">' + s.name + '</th>';
+    });
+    hdr += '<th style="min-width:120px;text-align:center;">출구IP</th>';
+    hdr += '<th style="min-width:50px;text-align:center;">점검</th>';
+    $('#sitecheck-header').html(hdr);
+
+    // 바디
+    const tbody = $('#sitecheck-table tbody');
+    tbody.empty();
+    if (results.length === 0) {
+        tbody.html('<tr><td colspan="' + (sites.length + 5) + '" style="text-align:center;padding:40px;color:#888;">'
+            + '<i class="fa fa-info-circle"></i> 점검 결과가 없습니다. "전체 점검 시작" 버튼을 클릭하세요.</td></tr>');
+        return;
+    }
+
+    results.forEach(function(r, idx) {
+        let row = '<tr>';
+        row += '<td>' + (idx+1) + '</td>';
+        row += '<td><strong>' + (r.name||'-') + '</strong></td>';
+        row += '<td>' + (r.ip||'-') + '</td>';
+
+        const _ip = (r.ip||'').replace(/'/g, "\\'");
+        const _name = (r.name||'').replace(/'/g, "\\'");
+
+        if (!r.ssh_ok) {
+            sites.forEach(function() {
+                row += '<td style="text-align:center;"><span class="svc-fail"><i class="fa fa-times"></i> SSH</span></td>';
+            });
+            row += '<td style="text-align:center;"><span class="svc-fail">SSH 실패</span></td>';
+        } else {
+            sites.forEach(function(s) {
+                const chk = (r.sites || {})[s.key];
+                if (!chk) {
+                    row += '<td style="text-align:center;"><span class="svc-na">-</span></td>';
+                } else if (chk.ok) {
+                    if (chk.bot_blocked) {
+                        row += '<td style="text-align:center;"><span style="color:#856404;" title="봇 감지 (curl 차단, 브라우저 정상)"><i class="fa fa-shield"></i> 봇차단</span></td>';
+                    } else {
+                        row += '<td style="text-align:center;"><span class="svc-ok" title="HTTP ' + chk.code + '"><i class="fa fa-check-circle"></i> OK</span></td>';
+                    }
+                } else if (chk.blocked) {
+                    row += '<td style="text-align:center;"><span class="svc-fail" title="Google geo: ' + (chk.geo||'') + '"><i class="fa fa-ban"></i> 차단(' + (chk.geo||'?') + ')</span></td>';
+                } else {
+                    row += '<td style="text-align:center;cursor:pointer;" onclick="startSingleSiteCheck(\'' + _ip + '\', \'' + _name + '\')" title="클릭하면 재점검">'
+                         + '<span class="svc-fail"><i class="fa fa-times-circle"></i> ' + (chk.code||'ERR') + '</span>'
+                         + ' <i class="fa fa-refresh" style="font-size:10px;color:#888;"></i>'
+                         + '</td>';
+                }
+            });
+
+            // 출구IP
+            if (r.exit_ip) {
+                if (r.exit_ip_diff) {
+                    row += '<td style="text-align:center;"><span class="svc-ok" title="' + r.exit_ip + '"><i class="fa fa-check-circle"></i> OK</span>'
+                         + '<br><small style="color:#888;font-size:10px;">' + r.exit_ip + '</small></td>';
+                } else {
+                    row += '<td style="text-align:center;"><span style="color:#856404;" title="자체IP와 동일"><i class="fa fa-minus-circle"></i> 자체IP</span>'
+                         + '<br><small style="color:#aaa;font-size:10px;">' + r.exit_ip + '</small></td>';
+                }
+            } else {
+                row += '<td style="text-align:center;"><span class="svc-fail"><i class="fa fa-times"></i> 실패</span></td>';
+            }
+        }
+
+        // 개별 점검 버튼
+        row += '<td style="text-align:center;">'
+            + '<button class="btn-recheck" id="sc-btn-' + (r.ip||'').replace(/\./g,'-') + '" '
+            + 'onclick="startSingleSiteCheck(\'' + _ip + '\', \'' + _name + '\')" '
+            + 'title="이 서버만 점검"><i class="fa fa-refresh"></i></button></td>';
+
+        row += '</tr>';
+        tbody.append(row);
+    });
+}
+</script>
+</%block>

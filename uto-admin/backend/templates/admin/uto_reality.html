@@ -1,0 +1,454 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="title">VLESS+Reality 설정 관리</%block>
+<%block name="subtitle">OpenWrt PassWall 클라이언트 설정 조회 및 서버 관리</%block>
+
+<%block name="css">
+<style>
+.reality-card { border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.reality-card.online { border-left: 4px solid #28a745; }
+.reality-card.offline { border-left: 4px solid #dc3545; }
+.uuid-text { font-family: 'Courier New', monospace; font-size: 13px; color: #495057; background: #f8f9fa; padding: 2px 6px; border-radius: 3px; user-select: all; }
+.config-table td { padding: 4px 8px; font-size: 13px; }
+.config-table .label { font-weight: 600; color: #6c757d; width: 120px; }
+.config-table .value { font-family: 'Courier New', monospace; color: #212529; user-select: all; }
+.badge-active { background: #28a745; color: #fff; }
+.badge-expired { background: #dc3545; color: #fff; }
+.search-box { max-width: 400px; }
+.config-modal .modal-body { max-height: 80vh; overflow-y: auto; }
+.copy-btn { cursor: pointer; color: #007bff; margin-left: 4px; }
+.copy-btn:hover { color: #0056b3; }
+.srv-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.srv-status.online { background: #28a745; }
+.srv-status.offline { background: #dc3545; }
+.srv-status.unknown { background: #ffc107; }
+#userTable th, #userTable td { white-space: nowrap; font-size: 13px; }
+</style>
+</%block>
+
+<%block name="content">
+<!-- 서버 상태 카드 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="mb-0"><i class="fa fa-server"></i> Reality 서버 현황</h5>
+            <button class="btn btn-sm btn-outline-primary" onclick="checkServerStatus()">
+                <i class="fa fa-refresh"></i> 상태 확인
+            </button>
+        </div>
+        <div id="serverCards" class="d-flex flex-wrap gap-2">
+            <div class="text-muted">서버 상태를 확인하려면 버튼을 클릭하세요</div>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<!-- 검색 + 동기화 -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group search-box">
+            <input type="text" id="searchInput" class="form-control" placeholder="아이디, QQ, 이메일로 검색..." onkeypress="if(event.key==='Enter') searchUsers()">
+            <div class="input-group-append">
+                <button class="btn btn-primary" onclick="searchUsers()"><i class="fa fa-search"></i> 검색</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 text-right">
+        <label class="mr-3">
+            <input type="checkbox" id="showAll" onchange="searchUsers()"> 만료 포함
+        </label>
+        <button class="btn btn-sm btn-warning" onclick="syncReality()">
+            <i class="fa fa-sync"></i> 수동 동기화
+        </button>
+        <span id="activeCount" class="ml-2 badge badge-info">-</span>
+    </div>
+</div>
+
+<!-- 사용자 테이블 -->
+<div class="table-responsive">
+    <table class="table table-sm table-striped table-hover" id="userTable">
+        <thead class="thead-light">
+            <tr>
+                <th>아이디</th>
+                <th>UUID (Reality)</th>
+                <th>만료일</th>
+                <th>세션</th>
+                <th>상태</th>
+                <th>설정 조회</th>
+                <th>배포</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <tr><td colspan="7" class="text-center text-muted py-4">검색하면 결과가 표시됩니다</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 설정 모달 -->
+<div class="modal fade config-modal" id="configModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-cog"></i> PassWall 설정 — <span id="modalUser"></span></h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="configExpiredAlert" class="alert alert-danger" style="display:none;">
+                    <i class="fa fa-exclamation-triangle"></i> 이 사용자는 <strong>만료</strong>되었습니다. 동기화 실행 시 서버에서 UUID가 제거됩니다.
+                </div>
+
+                <!-- 서버 선택 탭 -->
+                <div class="mb-3">
+                    <label class="font-weight-bold mr-2"><i class="fa fa-server"></i> 서버 선택:</label>
+                    <div class="btn-group" id="serverBtnGroup" role="group"></div>
+                </div>
+
+                <h6><i class="fa fa-shield"></i> PassWall Node Config</h6>
+                <table class="table table-bordered config-table mb-3">
+                    <tbody id="configTableBody"></tbody>
+                </table>
+
+                <h6 class="mt-3"><i class="fa fa-link"></i> PassWall Share URL (한번에 넣기)</h6>
+                <div class="input-group mb-3">
+                    <input type="text" id="shareUrlInput" class="form-control" readonly style="font-family:monospace; font-size:12px;">
+                    <div class="input-group-append">
+                        <button class="btn btn-success" onclick="copyShareUrl()"><i class="fa fa-copy"></i> URL 복사</button>
+                    </div>
+                </div>
+                <p class="text-muted" style="font-size:12px;">이 URL을 PassWall → Node Config → <strong>FROM SHARE URL</strong>에 붙여넣으면 설정이 자동 완성됩니다.</p>
+
+                <hr>
+                <h6><i class="fa fa-rss"></i> Node Subscribe URL (자동 갱신 — SSR + Reality 전체 서버)</h6>
+                <div class="input-group mb-3">
+                    <input type="text" id="subUrlInput" class="form-control" readonly style="font-family:monospace; font-size:12px;">
+                    <div class="input-group-append">
+                        <button class="btn btn-info" onclick="copySubUrl()"><i class="fa fa-copy"></i> 구독 URL 복사</button>
+                    </div>
+                </div>
+                <p class="text-muted" style="font-size:12px;">
+                    PassWall → <strong>Node Subscribe</strong> 탭에 이 URL을 등록하면 <strong>전체 9개 서버</strong>가 자동으로 추가됩니다:<br>
+                    <strong>SSR</strong>: NSO, NSP, NSV (포트: 유저별 개인포트, 비밀번호: vpass) | <strong>Reality</strong>: DU3, UTOLGDHCP1, SK110, KT43, UTOLGDHCP2, KT118238<br>
+                    서버 설정이 변경되어도 구독 갱신 시 자동 반영됩니다. Load Balancing 설정은 처음 한 번만 수동 구성하면 됩니다.
+                </p>
+
+                <hr>
+                <h6><i class="fa fa-list"></i> 수동 설정 (참고용)</h6>
+                <button class="btn btn-sm btn-outline-secondary mb-2" onclick="copyAllConfig()">
+                    <i class="fa fa-copy"></i> 수동 설정값 복사
+                </button>
+
+                <hr>
+                <h6><i class="fa fa-info-circle"></i> 사용자 정보</h6>
+                <table class="table table-bordered config-table">
+                    <tbody id="userInfoBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 동기화 결과 모달 -->
+<div class="modal fade" id="syncModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-sync"></i> 동기화 결과</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="syncOutput" style="max-height: 400px; overflow-y: auto; font-size: 12px; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 4px;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+function getCookie(name) {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + name + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+function searchUsers() {
+    var search = document.getElementById('searchInput').value.trim();
+    var showAll = document.getElementById('showAll').checked ? '1' : '0';
+
+    $.ajax({
+        url: '/api/v1/read/uto_reality_users',
+        method: 'POST',
+        data: { search: search, show_all: showAll },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            if (res.result !== 200) { alert(res.msg); return; }
+            document.getElementById('activeCount').textContent = '유효 ' + res.active_count + '명';
+            renderUsers(res.users);
+        },
+        error: function() { alert('요청 실패'); }
+    });
+}
+
+function renderUsers(users) {
+    var tbody = document.getElementById('userTableBody');
+    if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">검색 결과 없음</td></tr>';
+        return;
+    }
+    var html = '';
+    users.forEach(function(u) {
+        var statusBadge = u.is_active
+            ? '<span class="badge badge-active">유효</span>'
+            : '<span class="badge badge-expired">만료</span>';
+        var deployBtn = u.is_active
+            ? '<button class="btn btn-xs btn-outline-success" onclick="deployUser(\'' + u.vuser + '\', this)"><i class="fa fa-upload"></i> 배포</button>'
+            : '<span class="text-muted">-</span>';
+        html += '<tr' + (u.is_active ? '' : ' class="table-danger"') + '>'
+            + '<td><strong>' + u.vuser + '</strong></td>'
+            + '<td><span class="uuid-text">' + u.uuid + '</span>'
+            + ' <i class="fa fa-copy copy-btn" title="UUID 복사" onclick="copyText(\'' + u.uuid + '\')"></i></td>'
+            + '<td>' + u.lastdate + '</td>'
+            + '<td>' + u.session + '</td>'
+            + '<td>' + statusBadge + '</td>'
+            + '<td><button class="btn btn-xs btn-outline-primary" onclick="showConfig(\'' + u.vuser + '\')"><i class="fa fa-cog"></i> 설정</button></td>'
+            + '<td>' + deployBtn + '</td>'
+            + '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+var REALITY_SERVERS = ${servers};
+var _currentVuser = '';
+
+function showConfig(vuser, serverName) {
+    _currentVuser = vuser;
+    serverName = serverName || Object.keys(REALITY_SERVERS)[0];
+
+    // 서버 버튼 그룹 렌더링
+    var btnHtml = '';
+    for (var name in REALITY_SERVERS) {
+        var active = (name === serverName) ? ' active' : '';
+        btnHtml += '<button type="button" class="btn btn-sm btn-outline-primary' + active + '" onclick="switchServer(\'' + vuser + '\', \'' + name + '\')">' + name + '</button>';
+    }
+    document.getElementById('serverBtnGroup').innerHTML = btnHtml;
+
+    $.ajax({
+        url: '/api/v1/read/uto_reality_config',
+        method: 'POST',
+        data: { vuser: vuser, server: serverName },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            if (res.result !== 200) { alert(res.msg); return; }
+            var c = res.config;
+            var pw = c.passwall_config;
+            document.getElementById('modalUser').textContent = c.vuser;
+
+            // 만료 알림
+            document.getElementById('configExpiredAlert').style.display = c.is_expired ? 'block' : 'none';
+
+            // PassWall 설정 테이블
+            var fields = [
+                ['Type', pw.type],
+                ['Protocol', pw.protocol],
+                ['Address', pw.address],
+                ['Port', pw.port],
+                ['UUID (ID)', pw.uuid],
+                ['Flow', pw.flow],
+                ['Encryption', pw.encryption],
+                ['Transport', pw.transport],
+                ['TLS', pw.tls],
+                ['SNI (Domain)', pw.sni],
+                ['Fingerprint', pw.fingerprint],
+                ['Public Key', pw.public_key],
+                ['Short ID', pw.short_id],
+            ];
+            var html = '';
+            fields.forEach(function(f) {
+                html += '<tr><td class="label">' + f[0] + '</td>'
+                    + '<td class="value">' + f[1]
+                    + ' <i class="fa fa-copy copy-btn" onclick="copyText(\'' + f[1] + '\')"></i></td></tr>';
+            });
+            document.getElementById('configTableBody').innerHTML = html;
+
+            // 사용자 정보
+            var infoHtml = '<tr><td class="label">아이디</td><td>' + c.vuser + '</td></tr>'
+                + '<tr><td class="label">만료일</td><td>' + c.lastdate + (c.is_expired ? ' <span class="badge badge-expired">만료</span>' : ' <span class="badge badge-active">유효</span>') + '</td></tr>'
+                + '<tr><td class="label">동시접속</td><td>' + c.session + '</td></tr>'
+                + '<tr><td class="label">서버</td><td>' + c.server + '</td></tr>';
+            document.getElementById('userInfoBody').innerHTML = infoHtml;
+
+            // 전역 저장 (복사용)
+            window._currentConfig = pw;
+
+            // Share URL 표시
+            document.getElementById('shareUrlInput').value = c.share_url || '';
+
+            // 구독 URL 가져오기
+            fetchSubUrl(vuser);
+
+            $('#configModal').modal('show');
+        },
+        error: function() { alert('요청 실패'); }
+    });
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // 간단 피드백
+    });
+}
+
+function copyShareUrl() {
+    var url = document.getElementById('shareUrlInput').value;
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('Share URL이 클립보드에 복사되었습니다.\nPassWall → FROM SHARE URL에 붙여넣기 하세요.');
+    });
+}
+
+function fetchSubUrl(vuser) {
+    document.getElementById('subUrlInput').value = '로딩 중...';
+    $.ajax({
+        url: '/api/v1/read/uto_reality_sub_url',
+        method: 'POST',
+        data: { vuser: vuser },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            if (res.result === 200) {
+                document.getElementById('subUrlInput').value = res.sub_url;
+            } else {
+                document.getElementById('subUrlInput').value = '생성 실패: ' + res.msg;
+            }
+        },
+        error: function() { document.getElementById('subUrlInput').value = '요청 실패'; }
+    });
+}
+
+function copySubUrl() {
+    var url = document.getElementById('subUrlInput').value;
+    if (!url || url.startsWith('로딩') || url.startsWith('생성') || url.startsWith('요청')) return;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('구독 URL이 클립보드에 복사되었습니다.\nPassWall → Node Subscribe에 등록하세요.');
+    });
+}
+
+function copyAllConfig() {
+    var pw = window._currentConfig;
+    if (!pw) return;
+    var text = 'Type: ' + pw.type + '\n'
+        + 'Protocol: ' + pw.protocol + '\n'
+        + 'Address: ' + pw.address + '\n'
+        + 'Port: ' + pw.port + '\n'
+        + 'UUID: ' + pw.uuid + '\n'
+        + 'Flow: ' + pw.flow + '\n'
+        + 'Encryption: ' + pw.encryption + '\n'
+        + 'Transport: ' + pw.transport + '\n'
+        + 'TLS: ' + pw.tls + '\n'
+        + 'SNI: ' + pw.sni + '\n'
+        + 'Fingerprint: ' + pw.fingerprint + '\n'
+        + 'Public Key: ' + pw.public_key + '\n'
+        + 'Short ID: ' + pw.short_id;
+    navigator.clipboard.writeText(text).then(function() {
+        alert('전체 설정이 클립보드에 복사되었습니다.');
+    });
+}
+
+function switchServer(vuser, serverName) {
+    showConfig(vuser, serverName);
+}
+
+function checkServerStatus() {
+    document.getElementById('serverCards').innerHTML = '<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> 확인 중...</div>';
+    $.ajax({
+        url: '/api/v1/read/uto_reality_status',
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            if (res.result !== 200) { alert(res.msg); return; }
+            var html = '';
+            for (var name in res.servers) {
+                var s = res.servers[name];
+                var statusClass = s.status === 'online' ? 'online' : 'offline';
+                html += '<div class="reality-card ' + statusClass + '" style="width: 280px;">'
+                    + '<div class="d-flex align-items-center mb-1">'
+                    + '<span class="srv-status ' + statusClass + '"></span>'
+                    + '<strong>' + name + '</strong>'
+                    + '<span class="ml-auto badge badge-' + (statusClass === 'online' ? 'success' : 'danger') + '">'
+                    + s.status.toUpperCase() + '</span></div>'
+                    + '<div class="text-muted" style="font-size:12px;">'
+                    + s.domain + ':' + s.port + '<br>' + s.ip
+                    + '</div></div>';
+            }
+            document.getElementById('serverCards').innerHTML = html;
+        },
+        error: function() { document.getElementById('serverCards').innerHTML = '<div class="text-danger">확인 실패</div>'; }
+    });
+}
+
+function deployUser(vuser, btn) {
+    if (!confirm(vuser + ' 사용자를 모든 Reality 서버에 배포합니다.\n계속하시겠습니까?')) return;
+
+    var origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 배포중...';
+
+    $.ajax({
+        url: '/api/v1/update/uto_reality_deploy_user',
+        method: 'POST',
+        data: { vuser: vuser },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            btn.disabled = false;
+            if (res.result === 200) {
+                btn.innerHTML = '<i class="fa fa-check"></i> 완료';
+                btn.className = 'btn btn-xs btn-success';
+                setTimeout(function() { btn.innerHTML = origHtml; btn.className = 'btn btn-xs btn-outline-success'; }, 3000);
+            } else if (res.result === 207) {
+                btn.innerHTML = '<i class="fa fa-exclamation-triangle"></i> 부분성공';
+                btn.className = 'btn btn-xs btn-warning';
+            } else {
+                btn.innerHTML = origHtml;
+                alert('배포 실패: ' + res.msg);
+                return;
+            }
+            // 상세 결과 표시
+            if (res.details) {
+                var msg = res.msg + '\n\n';
+                res.details.forEach(function(d) {
+                    msg += (d.ok ? '✓' : '✗') + ' ' + d.server + ': ' + d.msg + '\n';
+                });
+                document.getElementById('syncOutput').textContent = msg;
+                $('#syncModal').modal('show');
+            }
+        },
+        error: function() {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            alert('배포 요청 실패');
+        }
+    });
+}
+
+function syncReality() {
+    if (!confirm('Reality 사용자 동기화를 실행합니다.\n만료된 사용자는 서버에서 제거됩니다.\n\n계속하시겠습니까?')) return;
+
+    $.ajax({
+        url: '/api/v1/update/uto_reality_sync',
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        success: function(res) {
+            document.getElementById('syncOutput').textContent = res.output || res.msg;
+            $('#syncModal').modal('show');
+            if (res.result === 200) searchUsers();
+        },
+        error: function() { alert('동기화 요청 실패'); }
+    });
+}
+
+// 페이지 로드 시 전체 유효 사용자 표시
+$(document).ready(function() {
+    searchUsers();
+});
+</script>
+</%block>

@@ -1,0 +1,447 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .stat-card {
+        display: inline-block; padding: 10px 18px; margin: 4px;
+        border-radius: 8px; background: #f8f9fa; border: 1px solid #e9ecef;
+        text-align: center; min-width: 100px;
+    }
+    .stat-card .num { font-size: 22px; font-weight: 700; color: #333; }
+    .stat-card .label { font-size: 11px; color: #888; margin-top: 2px; }
+    .stat-card.active .num { color: #28a745; }
+    .stat-card.inactive .num { color: #dc3545; }
+
+    .badge-proto {
+        padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600;
+        display: inline-block; margin: 1px;
+    }
+    .proto-PPTP { background: #e8f5e9; color: #2e7d32; }
+    .proto-OpenVPN { background: #e3f2fd; color: #1565c0; }
+    .proto-IKEV2 { background: #fff3e0; color: #e65100; }
+    .proto-V2RAY { background: #f3e5f5; color: #6a1b9a; }
+    .proto-L2TP { background: #fce4ec; color: #c62828; }
+    .proto-SSTP { background: #e0f2f1; color: #00695c; }
+    .proto-TROJAN { background: #fbe9e7; color: #bf360c; }
+
+    .badge-su { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+    .su-active { background: #d4edda; color: #155724; }
+    .su-inactive { background: #f8d7da; color: #721c24; }
+
+    tr.row-inactive td { background-color: #f9f9f9 !important; color: #bbb !important; }
+
+    .proto-stat { display: inline-block; margin: 3px 6px; padding: 4px 10px; border-radius: 4px; background: #f0f0f0; font-size: 12px; cursor: pointer; transition: all 0.2s; user-select: none; }
+    .proto-stat:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.15); transform: translateY(-1px); }
+    .proto-stat.filter-active { background: #343a40; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .proto-stat.filter-active .badge-proto { background: rgba(255,255,255,0.25) !important; color: #fff !important; }
+    .country-stat { display: inline-block; margin: 3px 6px; padding: 4px 10px; border-radius: 4px; background: #e3f2fd; font-size: 12px; cursor: pointer; transition: all 0.2s; user-select: none; }
+    .country-stat:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.15); transform: translateY(-1px); }
+    .country-stat.filter-active { background: #1565c0; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .auto-toggle { cursor: pointer; user-select: none; padding: 3px 10px; border-radius: 4px; font-weight: 600; transition: all 0.15s; }
+    .auto-toggle:hover { opacity: 0.8; }
+    .auto-toggle.on { background: #d4edda; color: #155724; }
+    .auto-toggle.off { background: #f8d7da; color: #721c24; }
+    .stat-card.clickable { cursor: pointer; transition: all 0.2s; }
+    .stat-card.clickable:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); transform: translateY(-1px); }
+    .stat-card.filter-active { border-color: #343a40; background: #343a40; }
+    .stat-card.filter-active .num, .stat-card.filter-active .label { color: #fff !important; }
+
+    /* 접속자 모달 */
+    .online-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.45); z-index: 9999; align-items: center; justify-content: center;
+    }
+    .online-modal-overlay.show { display: flex; }
+    .online-modal {
+        background: #fff; border-radius: 10px; width: 95%; max-width: 900px;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .online-modal-header {
+        padding: 14px 20px; border-bottom: 1px solid #eee;
+        font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .online-modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; }
+    .online-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .online-tbl th { background: #f8f9fa; padding: 8px 6px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 700; }
+    .online-tbl td { padding: 6px; border-bottom: 1px solid #eee; }
+</style>
+</%block>
+
+<%block name="title">
+    <span style="font-size:18px; font-weight:700; color:#333;">
+        <i class="fa fa-server" style="color:#6f42c1;"></i> UTO 서버 관리
+    </span>
+    <button class="btn btn-sm btn-success" style="margin-left:16px;" onclick="showOnlineUsers()">
+        <i class="fa fa-users"></i> 실시간 접속자
+    </button>
+</%block>
+
+<%block name="content">
+<div class="padding">
+    <!-- 통계 -->
+    <div id="stat-cards" style="margin-bottom: 12px;">
+        <div class="stat-card"><div class="num" id="stat_total">-</div><div class="label">전체 서버</div></div>
+        <div class="stat-card active clickable" onclick="filterByStatus('')" title="활성 서버만 보기"><div class="num" id="stat_active">-</div><div class="label">활성</div></div>
+        <div class="stat-card inactive clickable" onclick="filterByStatus('0')" title="비활성 서버만 보기"><div class="num" id="stat_inactive">-</div><div class="label">비활성</div></div>
+    </div>
+    <div id="proto-stats" style="margin-bottom: 8px;"></div>
+    <div id="country-stats" style="margin-bottom: 16px;"></div>
+
+    <!-- 필터 -->
+    <div class="box">
+        <div class="box-body" style="padding: 12px;">
+            <div class="row" style="align-items: flex-end;">
+                <div class="form-group col-sm-2" style="margin-bottom:0;">
+                    <label style="font-size:11px;">서버명</label>
+                    <input type="text" class="form-control form-control-sm" id="f_ipname" placeholder="서버명">
+                </div>
+                <div class="form-group col-sm-2" style="margin-bottom:0;">
+                    <label style="font-size:11px;">IP</label>
+                    <input type="text" class="form-control form-control-sm" id="f_ip" placeholder="IP">
+                </div>
+                <div class="form-group col-sm-1" style="margin-bottom:0;">
+                    <label style="font-size:11px;">상태</label>
+                    <select class="form-control form-control-sm" id="f_su">
+                        <option value="">전체</option>
+                        <option value="1">활성</option>
+                        <option value="0">비활성</option>
+                    </select>
+                </div>
+                <div class="form-group col-sm-1" style="margin-bottom:0;">
+                    <label style="font-size:11px;">국가</label>
+                    <input type="text" class="form-control form-control-sm" id="f_country" placeholder="kr,jp...">
+                </div>
+                <div class="form-group col-sm-2" style="margin-bottom:0;">
+                    <label style="font-size:11px;">프로토콜</label>
+                    <select class="form-control form-control-sm" id="f_protocol">
+                        <option value="">전체</option>
+                        <option value="PPTP">PPTP</option>
+                        <option value="OpenVPN">OpenVPN</option>
+                        <option value="IKEV2">IKEV2</option>
+                        <option value="V2RAY">V2RAY</option>
+                        <option value="L2TP">L2TP</option>
+                        <option value="SSTP">SSTP</option>
+                        <option value="TROJAN">TROJAN</option>
+                    </select>
+                </div>
+                <div class="form-group col-sm-1" style="margin-bottom:0;">
+                    <button class="btn btn-sm btn-primary" onclick="doSearch()"><i class="fa fa-search"></i> 검색</button>
+                </div>
+                <div class="form-group col-sm-1" style="margin-bottom:0;">
+                    <button class="btn btn-sm btn-secondary" onclick="doReset()"><i class="fa fa-refresh"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="box">
+        <div class="box-body" style="padding: 8px;">
+            <table id="uto_server_table" class="table table-striped table-sm" style="width:100%; font-size:12px;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>서버명</th>
+                        <th>IP</th>
+                        <th>위치</th>
+                        <th>상태</th>
+                        <th>국가</th>
+                        <th>프로토콜</th>
+                        <th>최대접속</th>
+                        <th>자동배정</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 대리점 섹션 -->
+<div class="padding" style="padding-top:0;">
+    <div class="box">
+        <div class="box-header"><h3 style="font-size:15px; font-weight:700;"><i class="fa fa-building"></i> 대리점 현황</h3></div>
+        <div class="box-body" id="dealerSection" style="padding: 12px;">
+            <p style="color:#aaa;">로딩중...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 실시간 접속자 모달 -->
+<div class="online-modal-overlay" id="onlineModal">
+    <div class="online-modal">
+        <div class="online-modal-header">
+            <span><i class="fa fa-users"></i> 실시간 접속자 — <span id="online_count">0</span>명</span>
+            <button class="close-btn" onclick="$('#onlineModal').removeClass('show')">&times;</button>
+        </div>
+        <div class="online-modal-body">
+            <table class="online-tbl">
+                <thead>
+                    <tr>
+                        <th>아이디</th>
+                        <th>서버</th>
+                        <th>서버IP</th>
+                        <th>VPN IP</th>
+                        <th>사용자IP</th>
+                        <th>프로토콜</th>
+                        <th>접속시간</th>
+                        <th>서비스</th>
+                        <th>대리점</th>
+                    </tr>
+                </thead>
+                <tbody id="onlineBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+var table;
+
+$(document).ready(function() {
+    loadStats();
+    initTable();
+    loadDealers();
+});
+
+var activeProtoFilter = '';
+var activeCountryFilter = '';
+
+function loadStats() {
+    $.ajax({
+        url: '/api/v1/read/uto_server_count',
+        type: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(res) {
+            if (res.result !== 200) return;
+            $('#stat_total').text(res.total);
+            $('#stat_active').text(res.active);
+            $('#stat_inactive').text(res.inactive);
+
+            var ph = '';
+            (res.protocols || []).forEach(function(p) {
+                var active = (activeProtoFilter === p.protocol) ? ' filter-active' : '';
+                ph += '<span class="proto-stat' + active + '" data-proto="' + p.protocol + '" onclick="filterByProto(\'' + p.protocol + '\')"><span class="badge-proto proto-' + p.protocol + '">' + p.protocol + '</span> ' + p.cnt + '</span>';
+            });
+            $('#proto-stats').html(ph);
+
+            var ch = '';
+            (res.countries || []).forEach(function(c) {
+                var cc = (c.country||'?').toLowerCase();
+                var active = (activeCountryFilter === cc) ? ' filter-active' : '';
+                ch += '<span class="country-stat' + active + '" data-country="' + cc + '" onclick="filterByCountry(\'' + cc + '\')">' + cc.toUpperCase() + ' ' + c.cnt + '</span>';
+            });
+            $('#country-stats').html(ch);
+        }
+    });
+}
+
+function filterByProto(proto) {
+    if (activeProtoFilter === proto) {
+        activeProtoFilter = '';
+        $('#f_protocol').val('');
+    } else {
+        activeProtoFilter = proto;
+        $('#f_protocol').val(proto);
+    }
+    // update badge active state
+    $('.proto-stat').removeClass('filter-active');
+    if (activeProtoFilter) {
+        $('.proto-stat[data-proto="' + activeProtoFilter + '"]').addClass('filter-active');
+    }
+    doSearch();
+}
+
+function filterByCountry(country) {
+    if (activeCountryFilter === country) {
+        activeCountryFilter = '';
+        $('#f_country').val('');
+    } else {
+        activeCountryFilter = country;
+        $('#f_country').val(country);
+    }
+    $('.country-stat').removeClass('filter-active');
+    if (activeCountryFilter) {
+        $('.country-stat[data-country="' + activeCountryFilter + '"]').addClass('filter-active');
+    }
+    doSearch();
+}
+
+function filterByStatus(val) {
+    var current = $('#f_su').val();
+    // active card: val='', means filter su=1
+    // inactive card: val='0', means filter su=0
+    var targetSu = (val === '') ? '1' : '0';
+    if (current === targetSu) {
+        // already filtering → deselect
+        $('#f_su').val('');
+        $('.stat-card.clickable').removeClass('filter-active');
+    } else {
+        $('#f_su').val(targetSu);
+        $('.stat-card.clickable').removeClass('filter-active');
+        if (targetSu === '1') $('.stat-card.active').addClass('filter-active');
+        else $('.stat-card.inactive').addClass('filter-active');
+    }
+    doSearch();
+}
+
+function initTable() {
+    table = $('#uto_server_table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/api/v1/read/uto_server_datatables',
+            type: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            data: function(d) {
+                d.ipname = $('#f_ipname').val();
+                d.ip = $('#f_ip').val();
+                d.su = $('#f_su').val();
+                d.country = $('#f_country').val();
+                d.protocol = $('#f_protocol').val();
+            }
+        },
+        columns: [
+            { data: 'id', width: '50px' },
+            { data: 'ipname' },
+            { data: 'ip' },
+            { data: 'address' },
+            { data: 'su', render: function(d) {
+                return d == 1 ? '<span class="badge-su su-active">활성</span>' : '<span class="badge-su su-inactive">비활성</span>';
+            }},
+            { data: 'country', render: function(d) { return (d||'').toUpperCase(); }},
+            { data: 'protocol', render: function(d) {
+                return '<span class="badge-proto proto-' + d + '">' + d + '</span>';
+            }},
+            { data: 'maxnum' },
+            { data: 'is_auto', render: function(d, type, row) {
+                var isOn = (d == 1);
+                var cls = isOn ? 'on' : 'off';
+                var label = isOn ? 'ON' : 'OFF';
+                return '<span class="auto-toggle ' + cls + '" data-id="' + row.id + '" data-auto="' + d + '" onclick="toggleAutoAssign(this, ' + row.id + ', ' + d + ')">' + label + '</span>';
+            }}
+        ],
+        order: [[0, 'asc']],
+        pageLength: 50,
+        lengthMenu: [20, 50, 100],
+        language: {
+            processing: "로딩중...",
+            lengthMenu: "_MENU_ 건씩",
+            info: "_START_~_END_ / _TOTAL_건",
+            paginate: { previous: "이전", next: "다음" }
+        },
+        createdRow: function(row, data) {
+            if (data.su != 1) $(row).addClass('row-inactive');
+        }
+    });
+}
+
+function doSearch() { table.ajax.reload(); }
+function doReset() {
+    $('#f_ipname, #f_ip, #f_country').val('');
+    $('#f_su, #f_protocol').val('');
+    doSearch();
+}
+
+function loadDealers() {
+    $.ajax({
+        url: '/api/v1/read/uto_dealers',
+        type: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(res) {
+            if (res.result !== 200) { $('#dealerSection').html('<p style="color:red;">로드 실패</p>'); return; }
+            var html = '<table class="table table-sm" style="font-size:12px;"><thead><tr><th>ID</th><th>아이디</th><th>잔액</th><th>할인율</th><th>회원수</th><th>최근접속</th><th>IP</th></tr></thead><tbody>';
+            (res.data || []).forEach(function(d) {
+                html += '<tr><td>' + d.id + '</td><td><b>' + d.huser + '</b></td><td>' + (d.hcash||0) + '</td><td>' + (d.zk||1) + '</td><td>' + (d.user_count||0) + '</td><td>' + (d.lasttime||'-') + '</td><td>' + (d.lastip||'-') + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            $('#dealerSection').html(html);
+        }
+    });
+}
+
+function showOnlineUsers() {
+    $.ajax({
+        url: '/api/v1/read/uto_online_users',
+        type: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        success: function(res) {
+            if (res.result !== 200) { alert('조회 실패'); return; }
+            $('#online_count').text(res.count);
+            var html = '';
+            (res.data || []).forEach(function(d) {
+                html += '<tr><td>' + d.vuser + '</td><td>' + (d.server_name||'-') + '</td><td>' + (d.nasip||'-') + '</td><td>' + (d.vpnip||'-') + '</td><td>' + (d.userip||'-') + '</td><td>' + (d.vpntype||'-') + '</td><td>' + (d.lasttime||'-') + '</td><td>' + (d.game||'-') + '</td><td>' + (d.member||'-') + '</td></tr>';
+            });
+            $('#onlineBody').html(html || '<tr><td colspan="9" style="text-align:center; color:#aaa;">접속자 없음</td></tr>');
+            $('#onlineModal').addClass('show');
+        }
+    });
+}
+
+function toggleAutoAssign(el, serverId, currentVal) {
+    var $el = $(el);
+    var newVal = (currentVal == 1) ? 0 : 1;
+    // 즉시 UI 업데이트 (optimistic)
+    if (newVal == 1) {
+        $el.removeClass('off').addClass('on').text('ON').attr('data-auto', 1);
+    } else {
+        $el.removeClass('on').addClass('off').text('OFF').attr('data-auto', 0);
+    }
+    // onclick 도 새 값으로 업데이트
+    $el.attr('onclick', 'toggleAutoAssign(this, ' + serverId + ', ' + newVal + ')');
+
+    $.ajax({
+        url: '/api/v1/update/uto_server',
+        type: 'POST',
+        headers: {'X-CSRFToken': getCookie('csrftoken')},
+        data: { server_id: serverId, field: 'is_auto', value: newVal },
+        success: function(res) {
+            if (res.result !== 200) {
+                // 실패 시 원복
+                if (currentVal == 1) {
+                    $el.removeClass('off').addClass('on').text('ON').attr('data-auto', 1);
+                    $el.attr('onclick', 'toggleAutoAssign(this, ' + serverId + ', 1)');
+                } else {
+                    $el.removeClass('on').addClass('off').text('OFF').attr('data-auto', 0);
+                    $el.attr('onclick', 'toggleAutoAssign(this, ' + serverId + ', 0)');
+                }
+                alert('변경 실패: ' + (res.msg||''));
+            }
+            // 통계 리프레시
+            loadStats();
+        },
+        error: function() {
+            // 에러 시 원복
+            if (currentVal == 1) {
+                $el.removeClass('off').addClass('on').text('ON').attr('data-auto', 1);
+                $el.attr('onclick', 'toggleAutoAssign(this, ' + serverId + ', 1)');
+            } else {
+                $el.removeClass('on').addClass('off').text('OFF').attr('data-auto', 0);
+                $el.attr('onclick', 'toggleAutoAssign(this, ' + serverId + ', 0)');
+            }
+            alert('서버 오류');
+        }
+    });
+}
+
+$('#f_ipname, #f_ip, #f_country').on('keydown', function(e) { if (e.keyCode === 13) doSearch(); });
+</script>
+</%block>

@@ -1,0 +1,29 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">무료체험 어뷰징 모니터링</%block>
+<%block name="subtitle">TITAN VPN 무료체험 기능을 악용하는 사용자를 모니터링 할 수 있습니다</%block>
+
+<%block name="content">
+<table class="table table-bordered" id="user-inform">
+  <thead class="thead-light">
+    <tr>
+      <th scope="col">순위</th>
+      <th scope="col">아이피</th>
+      <th scope="col">가입건수</th>
+      <th scope="col">상세</th>
+    </tr>
+  </thead>
+  <tbody id="add_point">
+  </tbody>
+</table>
+<div class="null-txt" id="null_txt">
+  조건에 해당하는 데이터가 존재하지 않습니다
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/chart/js/abuse_user.js"></script>
+</%block>

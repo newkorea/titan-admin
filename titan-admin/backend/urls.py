@@ -20,6 +20,7 @@ from .djangoapps.chatbot import views as ChatbotViews
 from .djangoapps.faq import views as FaqViews
 from .djangoapps.nasmonitor import views as NasMonitorViews
 from .djangoapps.infra import views as InfraViews
+from .djangoapps.uto import views as UtoViews
 #from .djangoapps.admin import views as AdminViews
 from .djangoapps.saler import views as SalerViews
 from django.urls import path
@@ -183,6 +184,9 @@ urlpatterns = [
     path('api/v1/read/user_disconnect_logs', UserViews.api_read_user_disconnect_logs, name='api_read_user_disconnect_logs'),
     path('api/v1/read/user_connection_logs', UserViews.api_read_user_connection_logs, name='api_read_user_connection_logs'),
 
+    # [api v1] 사용자 종합 진단
+    path('api/v1/read/user_diagnosis', UserViews.api_read_user_diagnosis, name='api_read_user_diagnosis'),
+
     # [api v1] 2023-05-25 Added by Zhao
     path('api/v1/read/get_notifications', NotificationViews.get_notifications, name='get_notifications'),
 
@@ -212,6 +216,9 @@ urlpatterns = [
 
     # [api v1] 사용자 비밀번호를 변경합니다
     path('api/v1/update/user_password', UserViews.api_update_user_password, name='api_update_user_password'),
+
+    # [api v1] 관리자 직접 비밀번호 변경 (앱+VPN)
+    path('api/v1/update/user_password_direct', UserViews.api_update_user_password_direct, name='api_update_user_password_direct'),
 
     # [api v1] 사용자 비밀번호를 변경합니다
     path('api/v1/read/user_password', UserViews.api_read_user_password, name='api_read_user_password'),
@@ -509,6 +516,13 @@ urlpatterns = [
     path('api/v1/update/infra_host', InfraViews.api_update_host, name='api_update_infra_host'),
     path('api/v1/delete/infra_host', InfraViews.api_delete_host, name='api_delete_infra_host'),
 
+    # [api v1] ESXi 실시간 트래픽 모니터링
+    path('api/v1/read/esxi_traffic', InfraViews.api_read_esxi_traffic, name='api_read_esxi_traffic'),
+    path('api/v1/read/esxi_traffic_detail', InfraViews.api_read_esxi_traffic_detail, name='api_read_esxi_traffic_detail'),
+
+    # [render] ESXi 트래픽 대시보드
+    path('esxi_traffic', InfraViews.esxi_traffic, name='esxi_traffic'),
+
     # [render] 유저 이슈 자동 통지 관리
     path('notification_manage', NotificationViews.UserIssueNotificationViews.page_notification_manage, name='notification_manage'),
 
@@ -518,6 +532,97 @@ urlpatterns = [
     path('api/v1/update/issue_notification_batch', NotificationViews.UserIssueNotificationViews.api_batch_notification, name='api_update_issue_notification_batch'),
     path('api/v1/create/run_analysis', NotificationViews.UserIssueNotificationViews.api_run_analysis, name='api_run_analysis'),
     path('api/v1/read/issue_notification_stats', NotificationViews.UserIssueNotificationViews.api_read_notification_stats, name='api_read_issue_notification_stats'),
+
+    # ============================================================
+    # UTO VPN 관리 (별도 DB — 기존 titan-admin에 영향 없음)
+    # ============================================================
+
+    # [render] UTO 회원 관리
+    path('uto_user', UtoViews.uto_user, name='uto_user'),
+
+    # [render] UTO 서버 관리
+    path('uto_server', UtoViews.uto_server, name='uto_server'),
+
+    # [api v1] UTO 회원 DataTables
+    path('api/v1/read/uto_user_datatables', UtoViews.api_read_uto_user_datatables, name='api_read_uto_user_datatables'),
+
+    # [api v1] UTO 회원 통계
+    path('api/v1/read/uto_user_count', UtoViews.api_read_uto_user_count, name='api_read_uto_user_count'),
+
+    # [api v1] UTO 회원 상세
+    path('api/v1/read/uto_user_detail', UtoViews.api_read_uto_user_detail, name='api_read_uto_user_detail'),
+
+    # [api v1] UTO 회원 종합 진단
+    path('api/v1/read/uto_user_diagnosis', UtoViews.api_read_uto_user_diagnosis, name='api_read_uto_user_diagnosis'),
+
+    # [api v1] UTO 회원 수정
+    path('api/v1/update/uto_user', UtoViews.api_update_uto_user, name='api_update_uto_user'),
+
+    # [api v1] UTO 회원 차단/해제
+    path('api/v1/update/uto_user_block', UtoViews.api_update_uto_user_block, name='api_update_uto_user_block'),
+
+    # [api v1] UTO 세션 강제종료
+    path('api/v1/update/uto_user_kick', UtoViews.api_update_uto_user_kick, name='api_update_uto_user_kick'),
+
+    # [api v1] UTO 세션 실제 강제종료 (SSH 킥 + radacct 정리)
+    path('api/v1/update/uto_force_disconnect', UtoViews.api_update_uto_force_disconnect, name='api_update_uto_force_disconnect'),
+
+    # [api v1] UTO 서버 DataTables
+    path('api/v1/read/uto_server_datatables', UtoViews.api_read_uto_server_datatables, name='api_read_uto_server_datatables'),
+
+    # [api v1] UTO 서버 수정
+    path('api/v1/update/uto_server', UtoViews.api_update_uto_server, name='api_update_uto_server'),
+
+    # [api v1] UTO 서버 통계
+    path('api/v1/read/uto_server_count', UtoViews.api_read_uto_server_count, name='api_read_uto_server_count'),
+
+    # [api v1] UTO 대리점 목록
+    path('api/v1/read/uto_dealers', UtoViews.api_read_uto_dealers, name='api_read_uto_dealers'),
+
+    # [api v1] UTO 실시간 접속자
+    path('api/v1/read/uto_online_users', UtoViews.api_read_uto_online_users, name='api_read_uto_online_users'),
+
+    # [render] UTO NAS 서버 현황
+    path('uto_nas_status', UtoViews.uto_nas_status, name='uto_nas_status'),
+
+    # [api v1] UTO NAS 점검 결과
+    path('api/v1/read/uto_nas_status', UtoViews.api_read_uto_nas_status, name='api_read_uto_nas_status'),
+
+    # [api v1] UTO NAS 전체 점검 시작
+    path('api/v1/update/uto_nas_check', UtoViews.api_update_uto_nas_check, name='api_update_uto_nas_check'),
+
+    # [api v1] UTO NAS 점검 진행 상태
+    path('api/v1/read/uto_nas_check_status', UtoViews.api_read_uto_nas_check_status, name='api_read_uto_nas_check_status'),
+
+    # [api v1] UTO SSH 접속 정보
+    path('api/v1/read/uto_ssh_info', UtoViews.api_read_uto_ssh_info, name='api_read_uto_ssh_info'),
+
+    # [api v1] UTO 서버 재부팅
+    path('api/v1/update/uto_reboot', UtoViews.api_update_uto_reboot, name='api_update_uto_reboot'),
+
+    # [api v1] UTO 단일 서버 점검
+    path('api/v1/update/uto_single_check', UtoViews.api_update_uto_single_check, name='api_update_uto_single_check'),
+
+    # [api v1] UTO 인증서 갱신
+    path('api/v1/update/uto_cert_renew', UtoViews.api_update_uto_cert_renew, name='api_update_uto_cert_renew'),
+    path('api/v1/read/uto_cert_renew_status', UtoViews.api_read_uto_cert_renew_status, name='api_read_uto_cert_renew_status'),
+
+    # [api v1] UTO 목표사이트 점검
+    path('api/v1/update/uto_site_check', UtoViews.api_update_uto_site_check, name='api_update_uto_site_check'),
+    path('api/v1/read/uto_site_check_status', UtoViews.api_read_uto_site_check_status, name='api_read_uto_site_check_status'),
+
+    # [api v1] UTO 디스크 정리
+    path('api/v1/read/uto_disk_analysis', UtoViews.api_read_uto_disk_analysis, name='api_read_uto_disk_analysis'),
+    path('api/v1/update/uto_disk_cleanup', UtoViews.api_update_uto_disk_cleanup, name='api_update_uto_disk_cleanup'),
+
+    # [render] UTO 서버 배정 현황
+    path('uto_assignment', UtoViews.uto_assignment, name='uto_assignment'),
+
+    # [api v1] UTO 서버 배정 현황 데이터
+    path('api/v1/read/uto_assignment', UtoViews.api_read_uto_assignment, name='api_read_uto_assignment'),
+
+    # [api v1] UTO is_auto 토글
+    path('api/v1/update/toggle_uto_is_auto', UtoViews.api_toggle_uto_is_auto, name='api_toggle_uto_is_auto'),
 
 ]
 

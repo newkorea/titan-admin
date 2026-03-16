@@ -1,0 +1,828 @@
+## -*- coding: utf-8 -*-
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .extend-container { max-width: 700px; margin: 0 auto; }
+    .form-section {
+        background: #fff; border-radius: 10px; padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    .form-section h4 {
+        font-size: 16px; font-weight: 700; color: #333;
+        border-bottom: 2px solid #28a745; padding-bottom: 8px; margin-bottom: 18px;
+    }
+    .form-row { display: flex; align-items: center; margin-bottom: 14px; gap: 12px; }
+    .form-row label {
+        min-width: 100px; font-weight: 600; font-size: 13px; color: #555;
+    }
+    .form-row input, .form-row select {
+        flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+        font-size: 14px; outline: none; transition: border 0.2s;
+    }
+    .form-row input:focus, .form-row select:focus { border-color: #28a745; }
+    .btn-extend {
+        width: 100%; padding: 12px; background: #28a745; color: #fff; border: none;
+        border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-extend:hover { background: #218838; }
+    .btn-extend:disabled { background: #adb5bd; cursor: not-allowed; }
+    .btn-search {
+        padding: 8px 16px; background: #17a2b8; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-search:hover { background: #138496; }
+    .user-info {
+        display: none; background: #f8f9fa; border-radius: 8px; padding: 16px;
+        margin-bottom: 16px; border: 1px solid #e9ecef;
+    }
+    .user-info.show { display: block; }
+    .user-info .info-row { display: flex; margin-bottom: 6px; font-size: 13px; }
+    .user-info .info-label { min-width: 80px; font-weight: 600; color: #666; }
+    .user-info .info-value { color: #333; }
+    .user-info .info-value.expired { color: #dc3545; font-weight: 700; }
+    .user-info .info-value.active { color: #28a745; font-weight: 700; }
+    .result-box {
+        display: none; padding: 16px; border-radius: 8px; margin-top: 16px; font-size: 14px;
+    }
+    .result-box.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .result-box.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* 최근 연장 내역 */
+    .recent-section { margin-top: 20px; }
+    .recent-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .recent-table th { background: #f8f9fa; padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 700; }
+    .recent-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .recent-table tr:hover { background: #f5f7fa; }
+    .type-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 700; color: #fff;
+    }
+    .type-extend { background: #28a745; }
+    .type-edit { background: #17a2b8; }
+    .type-block { background: #dc3545; }
+    .type-unblock { background: #ffc107; color: #333; }
+    .type-kick { background: #fd7e14; }
+
+    /* 가격 표시 */
+    .price-display {
+        background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px;
+        padding: 16px; margin: 14px 0; text-align: center; display: none;
+    }
+    .price-display.show { display: block; }
+    .price-amount {
+        font-size: 28px; font-weight: 800; color: #2e7d32; margin-bottom: 4px;
+    }
+    .price-amount span.currency { font-size: 16px; font-weight: 600; color: #666; }
+    .price-detail { font-size: 12px; color: #888; }
+    .price-table-wrap { margin-top: 14px; }
+    .price-ref-table {
+        width: 100%; border-collapse: collapse; font-size: 11px;
+        background: #fff; border-radius: 6px; overflow: hidden;
+    }
+    .price-ref-table th {
+        background: #28a745; color: #fff; padding: 6px 8px; text-align: center;
+        font-weight: 700; font-size: 11px;
+    }
+    .price-ref-table td { padding: 5px 8px; text-align: center; border-bottom: 1px solid #eee; }
+    .price-ref-table tr.sel { background: #e8f5e9; font-weight: 700; }
+    .price-ref-table tr:hover { background: #f5f7fa; }
+
+    /* 패키지 변경 */
+    .pkg-section h4 { border-bottom-color: #6f42c1; }
+    .btn-pkg-change {
+        width: 100%; padding: 12px; background: #6f42c1; color: #fff; border: none;
+        border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-pkg-change:hover { background: #5a32a3; }
+    .btn-pkg-change:disabled { background: #adb5bd; cursor: not-allowed; }
+    .pkg-preview {
+        display: none; background: #f3e8ff; border: 2px solid #6f42c1; border-radius: 8px;
+        padding: 16px; margin: 14px 0;
+    }
+    .pkg-preview.show { display: block; }
+    .pkg-preview .pkg-arrow {
+        text-align: center; font-size: 20px; color: #6f42c1; margin: 8px 0;
+    }
+    .pkg-preview .pkg-row {
+        display: flex; justify-content: space-between; font-size: 13px;
+        padding: 4px 0; border-bottom: 1px solid #e0d4f5;
+    }
+    .pkg-preview .pkg-row:last-child { border-bottom: none; }
+    .pkg-preview .pkg-label { font-weight: 600; color: #555; min-width: 140px; }
+    .pkg-preview .pkg-val { font-weight: 700; color: #333; }
+    .pkg-preview .pkg-val.highlight { color: #6f42c1; font-size: 15px; }
+    .pkg-preview .pkg-val.cost { color: #dc3545; font-size: 16px; }
+    .pkg-preview .pkg-divider {
+        border-top: 2px dashed #d4b8ff; margin: 10px 0; padding-top: 6px;
+    }
+    .pkg-preview .pkg-option-title {
+        font-size: 13px; font-weight: 800; color: #6f42c1; margin-bottom: 6px;
+    }
+    .pkg-warn {
+        margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 6px;
+        font-size: 12px; color: #856404;
+    }
+    .pkg-cost-box {
+        background: #fff; border: 2px solid #dc3545; border-radius: 8px;
+        padding: 14px; margin: 10px 0; text-align: center;
+    }
+    .pkg-cost-box .cost-title { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .pkg-cost-box .cost-amount { font-size: 26px; font-weight: 800; color: #dc3545; }
+    .pkg-cost-box .cost-detail { font-size: 11px; color: #999; margin-top: 4px; }
+</style>
+</%block>
+
+<%block name="title">UTO 무통장 연장</%block>
+<%block name="subtitle">UTO VPN 사용자 서비스 기간 무통장 연장</%block>
+
+<%block name="content">
+<div class="extend-container">
+    <!-- 사용자 조회 -->
+    <div class="form-section">
+        <h4><i class="fa fa-search" style="color:#17a2b8;"></i> 사용자 조회</h4>
+        <div class="form-row">
+            <label>사용자명 (vuser)</label>
+            <input type="text" id="inp-vuser" placeholder="사용자명 입력" onkeydown="if(event.key==='Enter')searchUser()">
+            <button class="btn-search" onclick="searchUser()"><i class="fa fa-search"></i> 조회</button>
+        </div>
+        <div class="user-info" id="user-info">
+            <div class="info-row"><span class="info-label">ID</span><span class="info-value" id="ui-id"></span></div>
+            <div class="info-row"><span class="info-label">사용자명</span><span class="info-value" id="ui-vuser"></span></div>
+            <div class="info-row"><span class="info-label">상태</span><span class="info-value" id="ui-status"></span></div>
+            <div class="info-row"><span class="info-label">그룹</span><span class="info-value" id="ui-groups"></span></div>
+            <div class="info-row"><span class="info-label">동시접속가능수</span><span class="info-value" id="ui-session"></span></div>
+            <div class="info-row"><span class="info-label">만료일</span><span class="info-value" id="ui-lastdate"></span></div>
+            <div class="info-row"><span class="info-label">대리점</span><span class="info-value" id="ui-dealer"></span></div>
+            <div class="info-row"><span class="info-label">회원등급</span><span class="info-value" id="ui-hyname"></span></div>
+        </div>
+    </div>
+
+    <!-- 연장 폼 -->
+    <div class="form-section">
+        <h4><i class="fa fa-credit-card" style="color:#28a745;"></i> 연장 처리</h4>
+        <div class="form-row">
+            <label>고객 유형</label>
+            <select id="inp-ctype" onchange="onFormChange()">
+                <option value="account">계정고객</option>
+                <option value="router4">라우터 4M</option>
+                <option value="router10">라우터 10M</option>
+                <option value="router20">라우터 20M</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>연장 개월수</label>
+            <select id="inp-months" onchange="onFormChange()">
+                <option value="1">1개월</option>
+                <option value="2">2개월</option>
+                <option value="3">3개월</option>
+                <option value="6">6개월</option>
+                <option value="12">12개월</option>
+            </select>
+        </div>
+        <div class="form-row" id="row-session">
+            <label>세션 수</label>
+            <select id="inp-session" onchange="onFormChange()">
+                <option value="">변경 안 함</option>
+                <option value="1">1 세션</option>
+                <option value="2">2 세션</option>
+                <option value="3">3 세션</option>
+                <option value="5">5 세션</option>
+                <option value="10">10 세션</option>
+            </select>
+        </div>
+
+        <!-- 가격 표시 -->
+        <div class="price-display" id="price-display">
+            <div class="price-amount" id="price-amount">¥ 0 <span class="currency">元</span></div>
+            <div class="price-detail" id="price-detail"></div>
+        </div>
+
+        <!-- 단가 참조 테이블 -->
+        <div class="price-table-wrap">
+            <table class="price-ref-table" id="price-ref-table">
+                <thead><tr><th>유형</th><th>1개월</th><th>6개월</th><th>12개월</th></tr></thead>
+                <tbody id="price-ref-tbody"></tbody>
+            </table>
+        </div>
+
+        <div class="form-row" style="margin-top:14px;">
+            <label>사유 <span style="color:#dc3545;">*</span></label>
+            <input type="text" id="inp-memo" placeholder="연장 사유를 입력하세요 (필수)" required>
+        </div>
+        <button class="btn-extend" id="btn-extend" onclick="doExtend()" disabled>
+            <i class="fa fa-check"></i> 연장 처리
+        </button>
+        <div class="result-box" id="result-box"></div>
+    </div>
+
+    <!-- 패키지 변경 -->
+    <div class="form-section pkg-section">
+        <h4><i class="fa fa-exchange" style="color:#6f42c1;"></i> 패키지 변경 (잔여일수 비례환산)</h4>
+        <div class="form-row">
+            <label>현재 패키지</label>
+            <select id="pkg-old" onchange="onPkgChange()">
+                <option value="">-- 선택 --</option>
+                <optgroup label="계정고객">
+                    <option value="account_1">계정 1세션</option>
+                    <option value="account_2">계정 2세션</option>
+                    <option value="account_3">계정 3세션</option>
+                    <option value="account_5">계정 5세션</option>
+                    <option value="account_10">계정 10세션</option>
+                </optgroup>
+                <optgroup label="라우터">
+                    <option value="router4">라우터 4M</option>
+                    <option value="router10">라우터 10M</option>
+                    <option value="router20">라우터 20M</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="form-row">
+            <label>변경 패키지</label>
+            <select id="pkg-new" onchange="onPkgChange()">
+                <option value="">-- 선택 --</option>
+                <optgroup label="계정고객">
+                    <option value="account_1">계정 1세션</option>
+                    <option value="account_2">계정 2세션</option>
+                    <option value="account_3">계정 3세션</option>
+                    <option value="account_5">계정 5세션</option>
+                    <option value="account_10">계정 10세션</option>
+                </optgroup>
+                <optgroup label="라우터">
+                    <option value="router4">라우터 4M</option>
+                    <option value="router10">라우터 10M</option>
+                    <option value="router20">라우터 20M</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- 미리보기 -->
+        <div class="pkg-preview" id="pkg-preview">
+            <div class="pkg-row"><span class="pkg-label">현재 만료일</span><span class="pkg-val" id="pkg-cur-expire">-</span></div>
+            <div class="pkg-row"><span class="pkg-label">남은 일수</span><span class="pkg-val" id="pkg-remain-days">-</span></div>
+            <div class="pkg-row"><span class="pkg-label">현재 패키지 (월단가)</span><span class="pkg-val" id="pkg-old-price">-</span></div>
+            <div class="pkg-row"><span class="pkg-label">변경 패키지 (월단가)</span><span class="pkg-val" id="pkg-new-price">-</span></div>
+
+            <!-- 추가 결제 금액 (업그레이드 시) -->
+            <div class="pkg-cost-box" id="pkg-cost-box" style="display:none;">
+                <div class="cost-title">만료일 유지하려면 추가 결제 금액</div>
+                <div class="cost-amount" id="pkg-extra-cost">¥ 0 元</div>
+                <div class="cost-detail" id="pkg-cost-detail"></div>
+            </div>
+
+            <div class="pkg-divider"></div>
+            <div class="pkg-option-title"><i class="fa fa-exchange"></i> 비례환산 (추가결제 없이 기간 조정)</div>
+            <div class="pkg-row"><span class="pkg-label">환산 일수</span><span class="pkg-val highlight" id="pkg-new-days">-</span></div>
+            <div class="pkg-row"><span class="pkg-label">변경 후 만료일</span><span class="pkg-val highlight" id="pkg-new-expire">-</span></div>
+            <div class="pkg-row"><span class="pkg-label">변경 세션 수</span><span class="pkg-val" id="pkg-new-session">-</span></div>
+            <div class="pkg-warn" id="pkg-warn" style="display:none;"></div>
+        </div>
+
+        <div class="form-row" style="margin-top:14px;">
+            <label>사유 <span style="color:#dc3545;">*</span></label>
+            <input type="text" id="pkg-memo" placeholder="패키지 변경 사유를 입력하세요 (필수)" required>
+        </div>
+        <button class="btn-pkg-change" id="btn-pkg-change" onclick="doPkgChange()" disabled>
+            <i class="fa fa-exchange"></i> 패키지 변경 실행
+        </button>
+        <div class="result-box" id="pkg-result-box"></div>
+    </div>
+
+    <!-- 최근 연장 내역 -->
+    <div class="form-section recent-section">
+        <h4><i class="fa fa-history" style="color:#fd7e14;"></i> 최근 변경내역 (최근 20건)</h4>
+        <table class="recent-table">
+            <thead>
+                <tr>
+                    <th>시각</th>
+                    <th>사용자</th>
+                    <th>유형</th>
+                    <th>필드</th>
+                    <th>이전 → 이후</th>
+                    <th>설명</th>
+                    <th>작업자</th>
+                </tr>
+            </thead>
+            <tbody id="recent-tbody">
+                <tr><td colspan="7" style="text-align:center;color:#aaa;">로딩 중...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+var csrfToken = getCsrf();
+var currentUser = null;
+
+// ============ 가격표 ============
+// 계정고객: {sessions: {months: price}}
+var ACCOUNT_PRICE = {
+    1: {1: 100, 6: 400, 12: 600},
+    2: {1: 180, 6: 700, 12: 1100}
+};
+var ACCOUNT_EXTRA = {1: 80, 6: 300, 12: 500};  // 추가 1세션당
+// 라우터: {type: {months: price}}
+var ROUTER_PRICE = {
+    'router4':  {1: 200, 6: 900,  12: 1200},
+    'router10': {1: 400, 6: 1800, 12: 2400},
+    'router20': {1: 800, 6: 3000, 12: 5000}
+};
+
+function getAccountPrice(sessions, months) {
+    // 정가 개월: 1, 6, 12 → 직접 조회. 그 외(2,3) → 월단가 * 개월
+    sessions = parseInt(sessions) || 1;
+    months = parseInt(months) || 1;
+    var tier = (sessions <= 2) ? sessions : 2;
+    var extra = (sessions > 2) ? (sessions - 2) : 0;
+
+    if (ACCOUNT_PRICE[tier] && ACCOUNT_PRICE[tier][months]) {
+        return ACCOUNT_PRICE[tier][months] + (extra * (ACCOUNT_EXTRA[months] || 0));
+    }
+    // 비표준 개월 → 월단가 * months
+    var baseMonthly = ACCOUNT_PRICE[tier][1] + (extra * ACCOUNT_EXTRA[1]);
+    return baseMonthly * months;
+}
+
+function getRouterPrice(rtype, months) {
+    months = parseInt(months) || 1;
+    var tbl = ROUTER_PRICE[rtype];
+    if (!tbl) return 0;
+    if (tbl[months]) return tbl[months];
+    return tbl[1] * months;  // 비표준 개월 → 월단가 * months
+}
+
+function calcPrice() {
+    var ctype = document.getElementById('inp-ctype').value;
+    var months = parseInt(document.getElementById('inp-months').value) || 1;
+    var sessionSel = document.getElementById('inp-session').value;
+    var sessions = 0;
+
+    if (ctype === 'account') {
+        // 세션 수: 선택값 > 현재유저 세션 > 1
+        if (sessionSel && parseInt(sessionSel) > 0) {
+            sessions = parseInt(sessionSel);
+        } else if (currentUser && currentUser.session) {
+            sessions = parseInt(currentUser.session) || 1;
+        } else {
+            sessions = 1;
+        }
+        return {price: getAccountPrice(sessions, months), sessions: sessions};
+    } else {
+        return {price: getRouterPrice(ctype, months), sessions: 0};
+    }
+}
+
+function onFormChange() {
+    var ctype = document.getElementById('inp-ctype').value;
+    var rowSession = document.getElementById('row-session');
+
+    // 라우터면 세션 행 숨기기
+    if (ctype === 'account') {
+        rowSession.style.display = '';
+    } else {
+        rowSession.style.display = 'none';
+        document.getElementById('inp-session').value = '';
+    }
+
+    updatePriceDisplay();
+    updatePriceRefTable();
+}
+
+function updatePriceDisplay() {
+    var box = document.getElementById('price-display');
+    var r = calcPrice();
+    document.getElementById('price-amount').innerHTML = '¥ ' + r.price.toLocaleString() + ' <span class="currency">元</span>';
+    var months = document.getElementById('inp-months').value;
+    var ctype = document.getElementById('inp-ctype').value;
+    var detail = '';
+    if (ctype === 'account') {
+        detail = r.sessions + '세션 × ' + months + '개월';
+    } else {
+        var labels = {'router4': '라우터 4M', 'router10': '라우터 10M', 'router20': '라우터 20M'};
+        detail = (labels[ctype] || ctype) + ' × ' + months + '개월';
+    }
+    document.getElementById('price-detail').textContent = detail;
+    box.classList.add('show');
+}
+
+function updatePriceRefTable() {
+    var ctype = document.getElementById('inp-ctype').value;
+    var months = parseInt(document.getElementById('inp-months').value) || 1;
+    var sessionSel = document.getElementById('inp-session').value;
+    var tbody = document.getElementById('price-ref-tbody');
+    var html = '';
+
+    if (ctype === 'account') {
+        var curSess = (sessionSel && parseInt(sessionSel) > 0) ? parseInt(sessionSel)
+                    : (currentUser && currentUser.session ? parseInt(currentUser.session) : 1);
+        // 1~5 세션 행
+        for (var s = 1; s <= 5; s++) {
+            var sel = (s === curSess) ? ' class="sel"' : '';
+            html += '<tr' + sel + '><td>계정 ' + s + '세션</td>';
+            html += '<td>' + getAccountPrice(s, 1).toLocaleString() + '</td>';
+            html += '<td>' + getAccountPrice(s, 6).toLocaleString() + '</td>';
+            html += '<td>' + getAccountPrice(s, 12).toLocaleString() + '</td>';
+            html += '</tr>';
+        }
+    } else {
+        var types = ['router4', 'router10', 'router20'];
+        var labels = {'router4': '라우터 4M', 'router10': '라우터 10M', 'router20': '라우터 20M'};
+        for (var i = 0; i < types.length; i++) {
+            var t = types[i];
+            var sel = (t === ctype) ? ' class="sel"' : '';
+            var p = ROUTER_PRICE[t];
+            html += '<tr' + sel + '><td>' + labels[t] + '</td>';
+            html += '<td>' + p[1].toLocaleString() + '</td>';
+            html += '<td>' + p[6].toLocaleString() + '</td>';
+            html += '<td>' + p[12].toLocaleString() + '</td>';
+            html += '</tr>';
+        }
+    }
+    tbody.innerHTML = html;
+}
+
+function getCsrf() {
+    var v = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+}
+
+function searchUser() {
+    var vuser = document.getElementById('inp-vuser').value.trim();
+    if (!vuser) { alert('사용자명을 입력하세요'); return; }
+
+    fetch('/api/v1/read/uto_user_detail', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: 'vuser=' + encodeURIComponent(vuser)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.result !== 200) { alert(data.msg || '조회 실패'); return; }
+        var u = data.user;
+        currentUser = u;
+        document.getElementById('ui-id').textContent = u.id;
+        document.getElementById('ui-vuser').textContent = u.vuser;
+        document.getElementById('ui-status').textContent = u.kz == 1 ? '정상' : '차단';
+        document.getElementById('ui-status').className = 'info-value ' + (u.kz == 1 ? 'active' : 'expired');
+        document.getElementById('ui-groups').textContent = u.groups || '-';
+        document.getElementById('ui-session').textContent = u.session || '1';
+        var ld = u.lastdate || 'NULL';
+        var isExpired = !u.lastdate || parseDate(u.lastdate) === null || parseDate(u.lastdate) < new Date();
+        document.getElementById('ui-lastdate').textContent = ld + (isExpired ? ' (만료)' : ' (유효)');
+        document.getElementById('ui-lastdate').className = 'info-value ' + (isExpired ? 'expired' : 'active');
+        document.getElementById('ui-dealer').textContent = u.member || '-';
+        document.getElementById('ui-hyname').textContent = u.hyname || '-';
+        document.getElementById('user-info').classList.add('show');
+        document.getElementById('btn-extend').disabled = false;
+
+        // 유저 로드 후 가격 갱신 + 패키지 자동 선택
+        onFormChange();
+        autoSelectPkg();
+    })
+    .catch(err => { alert('조회 오류: ' + err); });
+}
+
+function doExtend() {
+    if (!currentUser) { alert('먼저 사용자를 조회하세요'); return; }
+    var vuser = currentUser.vuser;
+    var months = document.getElementById('inp-months').value;
+    var session = document.getElementById('inp-session').value;
+    var memo = document.getElementById('inp-memo').value.trim();
+    var ctype = document.getElementById('inp-ctype').value;
+    var r = calcPrice();
+    var price = r.price;
+
+    if (!memo) { alert('연장 사유를 입력하세요.'); document.getElementById('inp-memo').focus(); return; }
+
+    // 고객유형 → 회원등급/서버그룹 매핑 (백엔드 CTYPE_EXTEND_CONF와 일치)
+    var CTYPE_CONF = {
+        'account':  {hyid: 2, hyLabel: '일반회원(2)', game: 'KOREA'},
+        'router4':  {hyid: 3, hyLabel: '고급회원 4M(3)', game: 'SS'},
+        'router10': {hyid: 4, hyLabel: '기업회원 10M(4)', game: 'SS'},
+        'router20': {hyid: 5, hyLabel: '전용선 20M(5)', game: 'SS'}
+    };
+    var hyidLabels = {1:'무료회원(1)', 2:'일반회원(2)', 3:'고급회원 4M(3)', 4:'기업회원 10M(4)', 5:'전용선 20M(5)', 7:'대기업 50M(7)', 8:'내부(8)'};
+    var ctypeLabels = {'account':'계정고객', 'router4':'라우터4M', 'router10':'라우터10M', 'router20':'라우터20M'};
+
+    var conf = CTYPE_CONF[ctype] || CTYPE_CONF['account'];
+    var curHyid = currentUser.hyid || 0;
+    var curGame = currentUser.game || '-';
+    var curSession = currentUser.session || 1;
+    var newSession = (ctype === 'account' && session) ? parseInt(session) : curSession;
+
+    // 변경 상세 항목 구성
+    var changes = [];
+    if (curHyid != conf.hyid) {
+        changes.push('  회원등급: ' + (hyidLabels[curHyid] || curHyid) + ' → ' + conf.hyLabel + ' ⚠️');
+    }
+    if (curGame != conf.game) {
+        changes.push('  서버그룹: ' + curGame + ' → ' + conf.game);
+    }
+    if (ctype === 'account' && newSession != curSession) {
+        changes.push('  세션: ' + curSession + ' → ' + newSession);
+    }
+
+    var msg = '━━━ 연장 확인 ━━━\n';
+    msg += '사용자: ' + vuser + '\n';
+    msg += '유형: ' + ctypeLabels[ctype] + '\n';
+    msg += '기간: ' + months + '개월\n';
+    msg += '금액: ¥' + price.toLocaleString() + '元\n';
+    if (ctype === 'account') msg += '세션: ' + r.sessions + '\n';
+    msg += '\n';
+
+    if (changes.length > 0) {
+        msg += '⚠️ 아래 항목이 자동 변경됩니다:\n';
+        msg += changes.join('\n') + '\n\n';
+    } else {
+        msg += '(변경되는 설정 없음 — 기간만 연장)\n\n';
+    }
+    msg += '진행하시겠습니까?';
+
+    if (!confirm(msg)) return;
+
+    document.getElementById('btn-extend').disabled = true;
+    document.getElementById('result-box').className = 'result-box';
+    document.getElementById('result-box').style.display = 'none';
+
+    var body = 'vuser=' + encodeURIComponent(vuser) + '&months=' + months + '&memo=' + encodeURIComponent(memo)
+             + '&customer_type=' + encodeURIComponent(ctype) + '&price=' + price;
+    if (session) body += '&session=' + session;
+
+    fetch('/api/v1/create/uto_extend', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: body
+    })
+    .then(r => r.json())
+    .then(data => {
+        var box = document.getElementById('result-box');
+        if (data.result === 200) {
+            box.className = 'result-box success';
+            box.innerHTML = '<i class="fa fa-check-circle"></i> ' + data.msg;
+            searchUser(); // refresh
+            loadRecent();
+        } else {
+            box.className = 'result-box error';
+            box.innerHTML = '<i class="fa fa-exclamation-triangle"></i> ' + (data.msg || '오류');
+        }
+        document.getElementById('btn-extend').disabled = false;
+    })
+    .catch(err => {
+        var box = document.getElementById('result-box');
+        box.className = 'result-box error';
+        box.innerHTML = '<i class="fa fa-exclamation-triangle"></i> ' + err;
+        document.getElementById('btn-extend').disabled = false;
+    });
+}
+
+function loadRecent() {
+    fetch('/api/v1/read/uto_change_history', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: 'start=0&length=20&draw=1'
+    })
+    .then(r => r.json())
+    .then(data => {
+        var tbody = document.getElementById('recent-tbody');
+        if (!data.data || data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;">변경내역 없음</td></tr>';
+            return;
+        }
+        var html = '';
+        data.data.forEach(function(r) {
+            var typeCls = 'type-' + r.change_type;
+            html += '<tr>' +
+                '<td>' + (r.created_at || '') + '</td>' +
+                '<td><b>' + (r.vuser || '') + '</b></td>' +
+                '<td><span class="type-badge ' + typeCls + '">' + (r.change_type || '') + '</span></td>' +
+                '<td>' + (r.field_name || '') + '</td>' +
+                '<td>' + (r.old_value || '-') + ' → ' + (r.new_value || '-') + '</td>' +
+                '<td>' + (r.description || '') + '</td>' +
+                '<td>' + (r.admin_user || '') + '</td>' +
+                '</tr>';
+        });
+        tbody.innerHTML = html;
+    })
+    .catch(function(){});
+}
+
+// ============ 패키지 변경 ============
+var PKG_MONTHLY = {
+    'account_1': 100, 'account_2': 180, 'account_3': 260,
+    'account_5': 420, 'account_10': 820,
+    'router4': 200, 'router10': 400, 'router20': 800
+};
+var PKG_LABELS = {
+    'account_1': '계정 1세션', 'account_2': '계정 2세션', 'account_3': '계정 3세션',
+    'account_5': '계정 5세션', 'account_10': '계정 10세션',
+    'router4': '라우터 4M', 'router10': '라우터 10M', 'router20': '라우터 20M'
+};
+
+function pkgSession(pkgVal) {
+    if (!pkgVal) return null;
+    if (pkgVal.indexOf('account_') === 0) return parseInt(pkgVal.split('_')[1]);
+    return null;
+}
+
+function parseDate(str) {
+    if (!str) return null;
+    // '2026-11-15 12:01:14' → ISO 호환 형식으로
+    var d = new Date(str.replace(' ', 'T'));
+    if (isNaN(d.getTime())) d = new Date(str);
+    if (isNaN(d.getTime())) return null;
+    return d;
+}
+
+function fmtDate(d) {
+    if (!d) return '-';
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// 패키지별 1/6/12개월 가격 조회
+function getPkgPrices(pkg) {
+    var sess = pkgSession(pkg);
+    if (sess) {
+        return {1: getAccountPrice(sess, 1), 6: getAccountPrice(sess, 6), 12: getAccountPrice(sess, 12)};
+    }
+    var rp = ROUTER_PRICE[pkg];
+    if (rp) return {1: rp[1], 6: rp[6], 12: rp[12]};
+    return {1: 0, 6: 0, 12: 0};
+}
+
+// 업그레이드 추가 결제 금액 계산 (12개월 차이 ÷ 365 × 남은일수)
+function calcUpgradeCost(oldPkg, newPkg, remainDays) {
+    var oldP = getPkgPrices(oldPkg);
+    var newP = getPkgPrices(newPkg);
+    var diff12 = newP[12] - oldP[12];  // 12개월 차이
+
+    if (diff12 <= 0) return {cost: 0, detail: '다운그레이드 (추가비용 없음)', breakdown: null};
+
+    var dailyRate = diff12 / 365;
+    var cost = Math.round(remainDays * dailyRate);
+
+    return {
+        cost: cost,
+        detail: '¥' + diff12 + ' ÷ 365일 × ' + remainDays + '일',
+        breakdown: '일단가 ¥' + dailyRate.toFixed(2) + ' (=' + diff12 + '/365) × ' + remainDays + '일 = ¥' + cost
+    };
+}
+
+function onPkgChange() {
+    var preview = document.getElementById('pkg-preview');
+    var btn = document.getElementById('btn-pkg-change');
+    var oldPkg = document.getElementById('pkg-old').value;
+    var newPkg = document.getElementById('pkg-new').value;
+
+    if (!oldPkg || !newPkg || !currentUser) {
+        preview.classList.remove('show');
+        btn.disabled = true;
+        return;
+    }
+    if (oldPkg === newPkg) {
+        preview.classList.remove('show');
+        btn.disabled = true;
+        return;
+    }
+
+    var now = new Date();
+    var expireDate = parseDate(currentUser.lastdate);
+    var remainDays = 0;
+    if (expireDate && expireDate > now) {
+        remainDays = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
+    }
+
+    var oldMonthly = PKG_MONTHLY[oldPkg] || 0;
+    var newMonthly = PKG_MONTHLY[newPkg] || 0;
+    if (oldMonthly === 0 || newMonthly === 0) {
+        preview.classList.remove('show');
+        btn.disabled = true;
+        return;
+    }
+
+    // 비례환산
+    var newDays = Math.floor(remainDays * oldMonthly / newMonthly);
+    var newExpire = new Date(now.getTime() + newDays * 24 * 60 * 60 * 1000);
+    var newSess = pkgSession(newPkg);
+
+    // 기본 정보
+    document.getElementById('pkg-cur-expire').textContent = currentUser.lastdate || 'NULL (만료)';
+    document.getElementById('pkg-remain-days').textContent = remainDays + '일';
+    document.getElementById('pkg-old-price').textContent = PKG_LABELS[oldPkg] + ' — ¥' + oldMonthly + '元/월';
+    document.getElementById('pkg-new-price').textContent = PKG_LABELS[newPkg] + ' — ¥' + newMonthly + '元/월';
+
+    // 추가 결제 금액 (업그레이드 시) — 할인 구간 적용
+    var costBox = document.getElementById('pkg-cost-box');
+    if (newMonthly > oldMonthly && remainDays > 0) {
+        var uc = calcUpgradeCost(oldPkg, newPkg, remainDays);
+        costBox.style.display = 'block';
+        document.getElementById('pkg-extra-cost').textContent = '¥ ' + uc.cost.toLocaleString() + ' 元';
+        document.getElementById('pkg-cost-detail').textContent = uc.breakdown || uc.detail;
+    } else {
+        costBox.style.display = 'none';
+    }
+
+    // 비례환산 결과
+    document.getElementById('pkg-new-days').textContent = newDays + '일 (' + remainDays + ' × ' + oldMonthly + '/' + newMonthly + ')';
+    document.getElementById('pkg-new-expire').textContent = fmtDate(newExpire);
+    document.getElementById('pkg-new-session').textContent = newSess ? newSess + '세션' : '변경 없음';
+
+    var warn = document.getElementById('pkg-warn');
+    if (newDays < remainDays) {
+        warn.style.display = 'block';
+        warn.innerHTML = '<i class="fa fa-exclamation-triangle"></i> 상위 패키지로 변경 시 남은 일수가 <b>' + remainDays + '일 → ' + newDays + '일</b>로 줄어듭니다. (차이: ' + (remainDays - newDays) + '일)';
+    } else if (newDays > remainDays) {
+        warn.style.display = 'block';
+        warn.innerHTML = '<i class="fa fa-info-circle" style="color:#28a745;"></i> 하위 패키지로 변경 시 남은 일수가 <b>' + remainDays + '일 → ' + newDays + '일</b>로 늘어납니다.';
+    } else if (remainDays === 0) {
+        warn.style.display = 'block';
+        warn.innerHTML = '<i class="fa fa-info-circle"></i> 만료된 사용자입니다. 만료일이 오늘 기준으로 설정됩니다.';
+    } else {
+        warn.style.display = 'none';
+    }
+
+    preview.classList.add('show');
+    btn.disabled = false;
+}
+
+function doPkgChange() {
+    if (!currentUser) { alert('먼저 사용자를 조회하세요'); return; }
+    var oldPkg = document.getElementById('pkg-old').value;
+    var newPkg = document.getElementById('pkg-new').value;
+    var memo = document.getElementById('pkg-memo').value;
+
+    if (!oldPkg || !newPkg) { alert('패키지를 선택하세요'); return; }
+    if (!memo.trim()) { alert('패키지 변경 사유를 입력하세요.'); document.getElementById('pkg-memo').focus(); return; }
+
+    var oldMonthly = PKG_MONTHLY[oldPkg];
+    var newMonthly = PKG_MONTHLY[newPkg];
+    var now = new Date();
+    var expireDate = parseDate(currentUser.lastdate);
+    var remainDays = 0;
+    if (expireDate && expireDate > now) {
+        remainDays = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
+    }
+    var newDays = Math.floor(remainDays * oldMonthly / newMonthly);
+    var newSess = pkgSession(newPkg);
+
+    var msg = currentUser.vuser + '\n\n';
+    msg += '패키지: ' + PKG_LABELS[oldPkg] + ' → ' + PKG_LABELS[newPkg] + '\n';
+    msg += '남은일수: ' + remainDays + '일 → ' + newDays + '일\n';
+    if (newSess) msg += '세션: ' + (currentUser.session||1) + ' → ' + newSess + '\n';
+    msg += '\n이 작업은 비례환산 방식입니다 (추가결제 없이 기간 조정).\n패키지를 변경하시겠습니까?';
+
+    if (!confirm(msg)) return;
+
+    document.getElementById('btn-pkg-change').disabled = true;
+    document.getElementById('pkg-result-box').className = 'result-box';
+    document.getElementById('pkg-result-box').style.display = 'none';
+
+    var body = 'vuser=' + encodeURIComponent(currentUser.vuser)
+        + '&old_pkg=' + encodeURIComponent(oldPkg)
+        + '&new_pkg=' + encodeURIComponent(newPkg)
+        + '&memo=' + encodeURIComponent(memo);
+
+    fetch('/api/v1/update/uto_package_change', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: body
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var box = document.getElementById('pkg-result-box');
+        if (data.result === 200) {
+            box.className = 'result-box success';
+            box.innerHTML = '<i class="fa fa-check-circle"></i> ' + data.msg;
+            searchUser();
+            loadRecent();
+        } else {
+            box.className = 'result-box error';
+            box.innerHTML = '<i class="fa fa-exclamation-triangle"></i> ' + (data.msg || '오류');
+        }
+        document.getElementById('btn-pkg-change').disabled = false;
+    })
+    .catch(function(err) {
+        var box = document.getElementById('pkg-result-box');
+        box.className = 'result-box error';
+        box.innerHTML = '<i class="fa fa-exclamation-triangle"></i> ' + err;
+        document.getElementById('btn-pkg-change').disabled = false;
+    });
+}
+
+function autoSelectPkg() {
+    if (!currentUser) return;
+    var sess = parseInt(currentUser.session) || 1;
+    var key = 'account_' + sess;
+    var sel = document.getElementById('pkg-old');
+    for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === key) { sel.value = key; return; }
+    }
+    sel.value = '';
+}
+
+$(function() { loadRecent(); onFormChange(); });
+</script>
+</%block>

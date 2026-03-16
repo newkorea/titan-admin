@@ -12,6 +12,13 @@
 | **titan-admin** | `/home/newkorea/project/titan-admin` | 관리자 대시보드 (Django 2.2, Mako 템플릿) |
 | **bot** | `/home/newkorea/project/bot` | 텔레그램 챗봇 (Flask + Ollama AI) |
 
+**외부 서버:**
+| 서버 | IP:포트 | 설명 |
+|------|--------|------|
+| **UTO API** | `218.158.57.55:2202` (SSH) | UTO VPN PHP API (Apache + PHP 5.4, 고객 앱용) |
+| **aws13** | `218.158.57.73` (SSH) | titan 프로덕션 API 서버 |
+| **UTO DB** | `218.158.57.51:3306` | vcsvpn2013 MySQL DB |
+
 ---
 
 ## titan-admin (관리자 패널) — 주 작업 대상
@@ -200,6 +207,50 @@ SSH VM: for-loop으로 vim-cmd (getallvms → power/config/guest per VM)
 
 ---
 
+## ★ UTO VPN PHP API 서버 (218.158.57.55) — 절대 기억!
+
+### 서버 접속 (중요!)
+- **IP**: 218.158.57.55 (hostname: UTOMYSQL.uto.com)
+- **SSH 포트**: **2202** (기본 22가 아님!)
+- **SSH 접속**: `ssh root@218.158.57.55 -p 2202`
+- **웹서버**: Apache 2.4.6 (CentOS) + PHP 5.4.16, MPM prefork
+
+### 웹 구조
+- **Web Root**: `/var/www/html/users/client/`
+- **api/**: 구버전 Android 앱 API (소수 사용자)
+- **api26/**: 신버전 앱 API (대부분 사용자, 2025-12-30 업데이트)
+- **api, api26 공유**: `configure.php`, `cn_isp.php` (동일 파일)
+
+### DB 연결 (configure.php)
+- **Primary**: `mysql:host=218.158.57.51`, dbname=vcsvpn2013, user=root, pass=uto6703
+- **Failover**: `mysql:host=125.132.9.241`, 동일 DB/계정
+- **PDO 클래스**: `new Connect()` — `Connect extends PDO`
+
+### 주요 API 엔드포인트
+| 엔드포인트 | 용도 | 비고 |
+|-----------|------|------|
+| `login.php` | 로그인 (GET: name, pwd, platform) | status 200=성공 |
+| `checkserver.php` | 서버 배정 (GET: username, password, address, protocol, platform) | address=빈값이면 auto, 아니면 manual |
+| `getconnectserver.php` | 서버 배정 v2 (동일 파라미터) | hyid 필터 추가, try/catch 있음 |
+| `allservers.php` | 전체 서버 목록 | |
+| `emservers.php` | EM 서버 목록 | |
+| `checkuser.php` | 사용자 상태 확인 (주기적 호출) | |
+| `checkconnect.php` | 연결 상태 확인 | |
+| `disconnect.php` | 연결 해제 | |
+
+### 서버 배정 로직 (checkserver.php / getconnectserver.php)
+- **MAX_CONN**: 50 (서버당 최대 연결 수)
+- **4단계 선택**: (1) server_health 스코어 → (2) radacct 기반 → (3) EM서버(is_auto=2) → (4) 캡 무시
+- **ISP 감지**: `cn_isp.php` — 중국 통신사별 최적 서버 선택
+- **server_health 테이블**: server_ip, cn_telecom(all/cm/ct/cu), score, conn_count, is_healthy
+- **vpnlinek 테이블**: ip(도메인), address(IP), protocol, su, is_auto, hyid
+
+### 관리자 패널
+- **경로**: `/var/www/html/users/admin/`
+- **주요**: `vpnuser/vpn_off.php` — VPN 관리
+
+---
+
 ## bot (텔레그램 챗봇)
 
 ### 기술 스택
@@ -284,6 +335,40 @@ for r in dictfetchall(cursor): print(r)
 ### 향후 계획
 - 서버 분석 결과 기반 자동 서버 할당: "통신사, 지역, OS별로 연결 안 되는 서버 제외 → 가장 빠른 서버 auto 할당"
 - 분석 페이지 개선: 실시간 갱신, 시간대별 트렌드, 알림 기능 등
+- app_new_server_list 응답 최적화: 현재 231KB JSON → gzip 압축 또는 응답 축소 검토
+
+### 2026-03-09: 세션 쿠키 문제 분석 + 수정
+
+#### 문제 현상
+- 안드로이드/iOS 앱에서 백그라운드 → 앱 재시작 시 "서버오류" + "캐시삭제 요청 팝업"
+- Session is invalid 에러 폭증: 3/6(96건) → 3/7(185건) → 3/8(968건, 피크 18-21시 710건)
+
+#### 원인 분석
+- `SESSION_EXPIRE_AT_BROWSER_CLOSE = True` 설정이 근본 원인
+- Django가 세션 쿠키를 `Expires` 없이 전송 → "세션 쿠키"(메모리 전용)
+- 모바일 앱이 백그라운드 → OS 프로세스 킬 → 쿠키 소멸 → API 호출 시 Session is invalid
+- API별 에러 분포: app_check_connection(688건), app_check_login(306건), app_get_userinfo(122건)
+
+#### 수정 내용
+1. ✅ `settings.py`: `SESSION_EXPIRE_AT_BROWSER_CLOSE = True` → `False` 변경
+   - 세션 쿠키에 `Expires: 30일 후` (SESSION_COOKIE_AGE) 포함 → 디스크에 영구 저장
+   - aws13 프로덕션 배포 완료 (3/9 07:10)
+2. ✅ 3/8 롤백 경위: 이전에 세션 폴백 코드(`_session_fallback()`, IP/UUID 기반 세션 복구) 추가했으나
+   부작용(로그아웃 안됨, 백그라운드 오류) 발생 → 3/8 11시 전체 롤백 → 에러 폭증
+   - 롤백된 파일 백업: `views.py.bak_20260308` (세션 폴백 코드 포함, 3123줄)
+   - 현재 views.py: commit 17e50e6 (2026-02-24 버전, 2952줄) — 세션 폴백 없음
+
+#### 앱 시작 성능 분석 (softcan@naver.com 추적)
+| API | 소요시간 | 응답크기 | 비고 |
+|-----|---------|---------|------|
+| `app_session_key` | **450-500ms** | 55B | bcrypt 해싱 (CPU-intensive, 불가피) |
+| `app_new_server_list` | **110-210ms** | **231KB** | JSON 풀 다운로드 (중국에서 체감 1-2초) |
+| `app_check_login` | 20-450ms | 9.6KB | 세션 있으면 20ms, 없으면 450ms |
+| `app_get_userinfo` | 35-45ms | 350B | 빠름 |
+| `app_new_check_server` | 35-650ms | 5.8KB | SSH 킥 발생 시 600ms+ |
+
+- SESSION_EXPIRE_AT_BROWSER_CLOSE=False 적용으로 앱 재시작 시 세션 유지 → app_session_key 재호출 불필요 → 500ms 절약
+- app_new_server_list 231KB는 nginx gzip 압축으로 최적화 가능 (JSON 80-90% 압축률)
 
 ### 2026-02-15: V2RAY 전체 배포 + Per-User UUID 시스템 구축
 1. ✅ Xray 1.4.2 테스트 (KT28): iOS leaf + alterId=7 조합으로 해결
@@ -367,3 +452,86 @@ for r in dictfetchall(cursor): print(r)
 - **다른 L2, 같은 물리 스위치**: `via GW dev eth0 onlink` — ARP 해석 가능 → 직접 라우팅 OK (KT35-42→KT23)
 - **다른 L2, 다른 물리 스위치**: `onlink`로 ARP INCOMPLETE → IPIP 터널 필수 (LG2→KT0)
 - **KT27-32**: ESXi 14.51.2.185에 있으나 geo=en → Gemini 차단 아님 (작업 불필요)
+
+### 2026-03-03: UTO VPN 세션 관리 시스템 구축
+1. ✅ UTO radacct stale 세션 정리 스크립트 생성 (`/home/newkorea/project/scripts/uto_cleanup_stale_radacct.py`)
+2. ✅ MikroTik RouterOS API 클라이언트 구현 (바이너리 프로토콜, W/WS/O 3대 서버)
+3. ✅ ROS 세션 동기화: API 실제 활성 vs radacct NULL 비교 → stale 종료 + 누락 105건 복구
+4. ✅ acctsessiontime unsigned int 오버플로 수정: `GREATEST(0, TIMESTAMPDIFF(...))` 5곳 적용
+5. ✅ 크론: `*/5 * * * *` + `flock -n /tmp/uto_radacct_cleanup.lock` (5분 주기, 중복실행 방지)
+6. ✅ 전 프로토콜 만료/세션초과 킥 구현 (`enforce_all_sessions`)
+   - strongSwan: SSH → `strongswan stroke down-nb <SA>` (paramiko 키 인증)
+   - openvpn: SSH → telnet 127.0.0.1:1199 → `kill <username>`
+   - ROS: MikroTik API `/ppp/active/remove`
+   - v2ray: radacct UPDATE만 (xray 실시간 킥 불가)
+7. ✅ 43건 세션초과 킥 실행 완료 (strongSwan 4, openvpn 1, v2ray 35, ROS 3)
+8. ✅ CLAUDE.md에 UTO VPN 참조 섹션 추가 (DB, NAS, 프로토콜, SSH, ROS API, 킥 명령어)
+
+### 2026-03-03: UTO API 서버 PHP 에러 수정
+1. ✅ 고객 13867646663 연결 버튼 미반응 문제 조사
+   - 원인: configure.php PHP Fatal Error (39,567건) — DB 연결 실패 시 `$this->exec()` 크래시
+   - PHP 5.4에서 `parent::__construct()` 2회 호출 시 PDO 내부 핸들 손상 가능
+2. ✅ configure.php 수정: `$this->exec()` 호출을 try/catch + @ suppression으로 보호
+   - api/, api26/ 모두 적용 — Fatal Error 0건으로 감소
+3. ✅ checkserver.php 수정: `$db = new Connect()` try/catch로 감싸서 DB 연결 실패 시 JSON 500 반환
+   - api/, api26/ 모두 적용
+4. ✅ Apache access_log 활성화 (httpd.conf → `CustomLog "logs/access_log" combined` 주석 해제)
+5. ✅ CLAUDE.md에 UTO API 서버 정보 추가 (218.158.57.55:2202, 웹 구조, DB, 엔드포인트)
+6. 참고: server selection 로직 자체는 정상 (auto selection 시 SK직통85 등 정상 반환)
+   - Connection_errors_accept=36,901 (MySQL 218.158.57.51 측 accept 실패) — 근본 원인은 MySQL 서버 측 리소스
+
+---
+
+## ★ UTO VPN (vcsvpn2013) 세션 관리 시스템
+
+### DB 연결
+- **DB**: vcsvpn2013 @ 218.158.57.51:3306 (Django DB alias: `uto`)
+- **사용자**: newkorea / new1234 (aws14 → 51 접속만 허용, 외부 불가)
+- **테이블**: `radacct` (세션), `vpnuser` (유저+세션제한+만료일)
+
+### vpnuser 테이블 주요 컬럼
+- `vuser`: 유저명 (=radacct.username)
+- `session`: 동시접속 제한 (대부분 1, 일부 2/3/10/100)
+- `lastdate`: 서비스 만료일 (datetime)
+
+### UTO NAS 서버 + 프로토콜 분포
+| 프로토콜 | 세션수 | 서버수 | 킥 방법 |
+|---------|-------|-------|--------|
+| **strongSwan** | ~320 | 26개 | SSH → `strongswan stroke down-nb <SA>` |
+| **W ros** | ~85 | 1 (27.115.70.46) | MikroTik API `/ppp/active/remove` |
+| **WS ros** | ~75 | 1 (27.115.51.226) | MikroTik API |
+| **O ros** | ~65 | 1 (58.246.240.2) | MikroTik API |
+| **v2ray** | ~45 | 11개 | radacct만 종료 (xray 실시간 킥 불가) |
+| **openvpn** | ~26 | 8개 | SSH → telnet 127.0.0.1:1199 → kill |
+| **INDIA1** | ~3 | 1 (139.84.165.217) | openvpn과 동일 |
+
+### UTO NAS SSH 접속 정보
+- **인증**: SSH 키 인증 (root@<NAS_IP>) — 대부분 OK
+- **SSH 불가 서버 4개** (radacct만 종료):
+  - 218.158.57.66: SSH denied (v2ray)
+  - 218.233.115.189: SSH denied (v2ray)
+  - 218.233.115.190: connection reset (v2ray)
+  - 10.99.0.14: 내부IP timeout (strongSwan)
+
+### ROS 서버 API 접속 정보
+| 서버 | nasipaddress | API | 유저 | 비밀번호 | 비고 |
+|------|-------------|-----|------|---------|------|
+| W ros | 27.115.70.46 | 8728 | admin | vkfksgksmf | old-style 로그인 |
+| WS ros | 27.115.51.226 | 8728 | admin | vkfksgksmf | old-style 로그인 |
+| O ros | 58.246.240.2 | 8728 | **Oserver** | vkfksgksmf | **new-style only** (v6.49.6) |
+
+### VPN 킥 상세 명령어
+- **strongSwan**: `strongswan statusall | grep "[username]"` → SA추출 → `strongswan stroke down-nb <SA>`
+- **openvpn**: telnet 127.0.0.1:1199 → 비밀번호 `mykakao9898` → `kill <username>`
+- **ROS PPP**: MikroTik API `/ppp/active/remove =.id=<id>`
+- **v2ray**: radacct UPDATE만 (xray는 config.json 기반, 실시간 킥 API 없음)
+
+### cleanup 스크립트
+- **파일**: `/home/newkorea/project/scripts/uto_cleanup_stale_radacct.py`
+- **크론**: `*/5 * * * *` (5분마다) + `flock` 중복 실행 방지
+- **로그**: `/home/newkorea/project/scripts/uto_stale_radacct.log`
+- **동작 순서**:
+  1. ROS 동기화 (API로 실제 활성 확인 → stale 종료 / 누락 복구)
+  2. 만료/세션초과 킥 (모든 프로토콜: ROS API + SSH strongSwan/openvpn + v2ray radacct)
+  3. 일반 stale 정리 (24h+ V2RAY/openvpn, 48h+ strongSwan)
+- **옵션**: `--dry-run` (미리보기), `--skip-ros` (ROS 건너뛰기), `--hours N`

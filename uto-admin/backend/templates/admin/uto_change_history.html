@@ -1,0 +1,320 @@
+## -*- coding: utf-8 -*-
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .history-container { }
+    .filter-bar {
+        display: flex; gap: 12px; align-items: center; margin-bottom: 16px;
+        padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;
+    }
+    .filter-bar label { font-size: 12px; color: #666; font-weight: 600; }
+    .filter-bar input, .filter-bar select {
+        padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;
+    }
+    .filter-bar input[type="text"] { width: 160px; }
+    .filter-bar input[type="date"] { width: 150px; }
+    .btn-filter {
+        padding: 6px 16px; background: #17a2b8; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-filter:hover { background: #138496; }
+    .btn-reset {
+        padding: 6px 16px; background: #6c757d; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+    .btn-reset:hover { background: #5a6268; }
+
+    /* 테이블 */
+    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .history-table th {
+        background: #f8f9fa; padding: 10px 8px; text-align: left;
+        border-bottom: 2px solid #dee2e6; font-weight: 700; white-space: nowrap;
+    }
+    .history-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .history-table tr:hover { background: #f5f7fa; }
+
+    .type-badge {
+        display: inline-block; padding: 2px 10px; border-radius: 12px;
+        font-size: 11px; font-weight: 700; color: #fff;
+    }
+    .type-extend { background: #28a745; }
+    .type-edit { background: #17a2b8; }
+    .type-block { background: #dc3545; }
+    .type-unblock { background: #ffc107; color: #333; }
+    .type-kick { background: #fd7e14; }
+    .type-refund { background: #6f42c1; }
+    .type-create { background: #6610f2; }
+
+    .source-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .src-uto-admin { background: #e3f2fd; color: #1565c0; }
+    .src-admin-php { background: #fff3e0; color: #e65100; }
+    .src-sales-php { background: #f3e5f5; color: #7b1fa2; }
+    .src-pospal { background: #e8f5e9; color: #2e7d32; }
+    .src-api-app { background: #fce4ec; color: #c62828; }
+    .src-script { background: #eceff1; color: #455a64; }
+
+    .change-arrow { color: #999; margin: 0 4px; }
+    .old-val { color: #dc3545; text-decoration: line-through; }
+    .new-val { color: #28a745; font-weight: 600; }
+
+    /* 통계 카드 */
+    .stats-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .stat-card {
+        flex: 1; min-width: 120px; padding: 16px; border-radius: 8px; color: #fff;
+        text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .stat-card .val { font-size: 24px; font-weight: 800; }
+    .stat-card .lbl { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+
+    /* 페이지네이션 */
+    .paging {
+        display: flex; justify-content: center; align-items: center; gap: 8px;
+        margin-top: 16px; padding: 12px 0;
+    }
+    .paging button {
+        padding: 6px 12px; border: 1px solid #dee2e6; background: #fff;
+        border-radius: 4px; cursor: pointer; font-size: 13px;
+    }
+    .paging button:hover { background: #e9ecef; }
+    .paging button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .paging .page-info { font-size: 13px; color: #666; }
+</style>
+</%block>
+
+<%block name="title">UTO 변경내역</%block>
+<%block name="subtitle">UTO VPN 사용자 변경 기록 (연장, 수정, 차단, 킥)</%block>
+
+<%block name="content">
+<div class="history-container">
+
+    <!-- 통계 -->
+    <div class="stats-row" id="stats-row">
+        <div class="stat-card" style="background:linear-gradient(135deg,#28a745,#20c997);">
+            <div class="val" id="stat-total">-</div>
+            <div class="lbl">전체</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#28a745,#218838);">
+            <div class="val" id="stat-extend">-</div>
+            <div class="lbl">연장</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#17a2b8,#138496);">
+            <div class="val" id="stat-edit">-</div>
+            <div class="lbl">수정</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#dc3545,#c82333);">
+            <div class="val" id="stat-block">-</div>
+            <div class="lbl">차단/해제</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#fd7e14,#e8590c);">
+            <div class="val" id="stat-kick">-</div>
+            <div class="lbl">킥</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#6610f2,#5a00d6);">
+            <div class="val" id="stat-create">-</div>
+            <div class="lbl">신규등록</div>
+        </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="filter-bar">
+        <label>사용자:</label>
+        <input type="text" id="f-vuser" placeholder="vuser 검색">
+        <label>유형:</label>
+        <select id="f-type">
+            <option value="">전체</option>
+            <option value="extend">연장</option>
+            <option value="edit">수정</option>
+            <option value="block">차단</option>
+            <option value="unblock">해제</option>
+            <option value="kick">킥</option>
+            <option value="refund">환불</option>
+            <option value="create">신규가입</option>
+        </select>
+        <label>출처:</label>
+        <select id="f-source">
+            <option value="">전체</option>
+            <option value="uto-admin">UTO Admin</option>
+            <option value="admin-php">관리자(PHP)</option>
+            <option value="sales-php">대리점(PHP)</option>
+            <option value="pospal">POS(Pospal)</option>
+            <option value="api-app">앱API</option>
+            <option value="script">스크립트</option>
+        </select>
+        <label>기간:</label>
+        <input type="date" id="f-from">
+        <span>~</span>
+        <input type="date" id="f-to">
+        <button class="btn-filter" onclick="currentPage=0;loadData()"><i class="fa fa-search"></i> 검색</button>
+        <button class="btn-reset" onclick="resetFilter()"><i class="fa fa-refresh"></i> 초기화</button>
+    </div>
+
+    <!-- 데이터 테이블 -->
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>시각</th>
+                <th>사용자</th>
+                <th>유형</th>
+                <th>필드</th>
+                <th>변경 내용</th>
+                <th>설명</th>
+                <th>출처</th>
+                <th>작업자</th>
+            </tr>
+        </thead>
+        <tbody id="data-tbody">
+            <tr><td colspan="9" style="text-align:center;color:#aaa;">로딩 중...</td></tr>
+        </tbody>
+    </table>
+
+    <!-- 페이지네이션 -->
+    <div class="paging">
+        <button onclick="prevPage()" id="btn-prev" disabled>&laquo; 이전</button>
+        <span class="page-info" id="page-info">-</span>
+        <button onclick="nextPage()" id="btn-next" disabled>다음 &raquo;</button>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+var csrfToken = getCsrf();
+var currentPage = 0;
+var pageSize = 50;
+var totalRecords = 0;
+
+function getCsrf() {
+    var v = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+}
+
+function loadData() {
+    var body = 'start=' + (currentPage * pageSize) + '&length=' + pageSize + '&draw=1';
+
+    var vuser = document.getElementById('f-vuser').value.trim();
+    var type = document.getElementById('f-type').value;
+    var source = document.getElementById('f-source').value;
+    var dateFrom = document.getElementById('f-from').value;
+    var dateTo = document.getElementById('f-to').value;
+
+    if (vuser) body += '&vuser=' + encodeURIComponent(vuser);
+    if (type) body += '&change_type=' + encodeURIComponent(type);
+    if (source) body += '&source=' + encodeURIComponent(source);
+    if (dateFrom) body += '&date_from=' + dateFrom;
+    if (dateTo) body += '&date_to=' + dateTo;
+
+    fetch('/api/v1/read/uto_change_history', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: body
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.result !== 200) { alert(data.msg || '오류'); return; }
+        totalRecords = data.recordsTotal;
+        renderTable(data.data);
+        updatePaging();
+    })
+    .catch(err => console.error(err));
+}
+
+function renderTable(rows) {
+    var tbody = document.getElementById('data-tbody');
+    if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;">데이터 없음</td></tr>';
+        return;
+    }
+    var html = '';
+    rows.forEach(function(r) {
+        var typeCls = 'type-' + r.change_type;
+        var changeHtml = '';
+        if (r.old_value || r.new_value) {
+            changeHtml = '<span class="old-val">' + (r.old_value || '-') + '</span>' +
+                '<span class="change-arrow">→</span>' +
+                '<span class="new-val">' + (r.new_value || '-') + '</span>';
+        }
+        html += '<tr>' +
+            '<td>' + r.id + '</td>' +
+            '<td style="white-space:nowrap;">' + (r.created_at || '') + '</td>' +
+            '<td><b>' + (r.vuser || '') + '</b></td>' +
+            '<td><span class="type-badge ' + typeCls + '">' + (r.change_type || '') + '</span></td>' +
+            '<td>' + (r.field_name || '') + '</td>' +
+            '<td>' + changeHtml + '</td>' +
+            '<td>' + (r.description || '') + '</td>' +
+            '<td>' + getSourceBadge(r.source) + '</td>' +
+            '<td>' + (r.admin_user || '') + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function updatePaging() {
+    var totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    document.getElementById('page-info').textContent =
+        (currentPage + 1) + ' / ' + totalPages + ' 페이지 (총 ' + totalRecords + '건)';
+    document.getElementById('btn-prev').disabled = (currentPage <= 0);
+    document.getElementById('btn-next').disabled = (currentPage >= totalPages - 1);
+}
+
+function prevPage() { if (currentPage > 0) { currentPage--; loadData(); } }
+function nextPage() { currentPage++; loadData(); }
+
+function getSourceBadge(src) {
+    var map = {'uto-admin':'UTO Admin','admin-php':'관리자(PHP)','sales-php':'대리점(PHP)','pospal':'POS','api-app':'앱API','script':'스크립트'};
+    var label = map[src] || src || '-';
+    var cls = src ? 'source-badge src-' + src : '';
+    return cls ? '<span class="' + cls + '">' + label + '</span>' : label;
+}
+
+function resetFilter() {
+    document.getElementById('f-vuser').value = '';
+    document.getElementById('f-type').value = '';
+    document.getElementById('f-source').value = '';
+    document.getElementById('f-from').value = '';
+    document.getElementById('f-to').value = '';
+    currentPage = 0;
+    loadData();
+}
+
+function loadStats() {
+    // 통계: 전체/유형별 카운트 (최근 30일)
+    var d = new Date();
+    d.setDate(d.getDate() - 30);
+    var from30 = d.toISOString().split('T')[0];
+
+    var types = ['', 'extend', 'edit', 'block', 'kick', 'create'];
+    var ids = ['stat-total', 'stat-extend', 'stat-edit', 'stat-block', 'stat-kick', 'stat-create'];
+
+    types.forEach(function(t, i) {
+        var body = 'start=0&length=1&draw=1&date_from=' + from30;
+        if (t) body += '&change_type=' + t;
+        // block+unblock 합산
+        if (t === 'block') {
+            // 별도 처리
+        }
+        fetch('/api/v1/read/uto_change_history', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+            body: body
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.result === 200) {
+                document.getElementById(ids[i]).textContent = data.recordsTotal;
+            }
+        })
+        .catch(function(){});
+    });
+}
+
+$(function() {
+    loadData();
+    loadStats();
+});
+</script>
+</%block>

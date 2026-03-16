@@ -35,6 +35,7 @@ import traceback
 import socket
 import random
 import string
+import threading
 
 try:
     import geoip2.database
@@ -169,6 +170,11 @@ def detect_cn_telecom(login_ip):
 SAFE_IP_CACHE = {}
 SAFE_IP_CACHE_TTL = 300  # seconds
 
+# Server list cache (shared across all users, TTL 30s)
+import copy as _copy
+_SERVER_LIST_CACHE = {'rows': None, 'ts': 0}
+_SERVER_LIST_CACHE_TTL = 30  # seconds
+
 # Short-window de-duplication for telecom org logging to reduce noise
 _TELECOM_ORG_LAST = {'org': None, 'ts': 0}
 
@@ -278,6 +284,77 @@ def strongswan_down_nb_safely(ssh, user_identifier, max_total_wait=0.8):
             ssh.exec_command(down_cmd)
     except Exception as _e:
         print('WARN -> strongswan_down_nb_safely fail:', _e)
+
+def _bg_ssh_kick(nasipaddress, ssh_user, ssh_pass, nasporttype, nasportid,
+                 sessionid, user_id, protocol, simultaneous_use, connected_count,
+                 nas_name, nas_telecom, login_ip, callingstationid):
+    """Background thread: SSH kick + tbl_disconnection INSERT.
+    radacct UPDATE is already done synchronously in the main thread."""
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            ssh.connect(nasipaddress, username=ssh_user, password=ssh_pass, timeout=1)
+            if nasporttype == 'ISDN':  # openvpn
+                print('INFO -> [bg] Openvpn Server telnet login:' + user_id)
+                channel = ssh.invoke_shell()
+                channel.send("telnet 127.0.0.1 1199\n")
+                time.sleep(0.5)
+                channel.send("mykakao9898\n")
+                time.sleep(0.2)
+                channel.send('kill ' + user_id + '\n')
+                time.sleep(0.2)
+                channel.send("exit\n")
+                time.sleep(0.2)
+                channel.send("exit\n")
+                time.sleep(0.2)
+                output = channel.recv(65535).decode('utf-8')
+                print(output)
+            elif nasportid == '443':  # softether sstp
+                print('INFO -> [bg] SSTP Force Stop:' + user_id)
+                _sid = sessionid.replace('=5BSSTP=5D', '[SSTP]')
+                command = ("/usr/local/vpnserver/vpncmd " + nasipaddress +
+                           " /SERVER /HUB:" + settings.SOFTETHER_HUB +
+                           " /PASSWORD:'" + settings.SOFTETHER_PASS +
+                           "' /CMD SessionDisconnect " + _sid)
+                print('cmd => ', command)
+                ssh.exec_command(command)
+            elif nasporttype == 'V2RAY':  # V2RAY
+                pass  # No SSH action needed
+            else:  # IKEV2
+                print('INFO -> [bg] IKEV2 Force Stop:' + user_id)
+                strongswan_down_nb_safely(ssh, user_id)
+        except socket.timeout:
+            print('INFO -> [bg] socket.timeout ' + user_id)
+        except Exception as err:
+            print('ERROR -> [bg] ssh kick err: ' + user_id, err)
+        finally:
+            try:
+                ssh.close()
+            except Exception:
+                pass
+        # INSERT tbl_disconnection using a fresh DB connection
+        try:
+            with connections['default'].cursor() as bg_cur:
+                sql = '''
+                    INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip)
+                    VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
+                '''.format(date=datetime.datetime.now(), id=user_id, connected_count=connected_count,
+                           protocol=protocol, server_name=nas_name, telecom=nas_telecom,
+                           simultaneous_use=simultaneous_use, login_ip=login_ip,
+                           callingstationid=callingstationid)
+                bg_cur.execute(sql)
+        except Exception as db_err:
+            print('ERROR -> [bg] tbl_disconnection insert fail:', db_err)
+    except Exception as e:
+        print('ERROR -> [bg] _bg_ssh_kick outer:', e)
+    finally:
+        try:
+            from django.db import close_old_connections
+            close_old_connections()
+        except Exception:
+            pass
+
 
 # 페이레터 해외 모바일 (2019.09.12 21:06 점검완료)
 @csrf_exempt
@@ -1408,40 +1485,47 @@ def app_new_server_list(request):
                     print('WARN -> app_new_server_list expiration check fail:', _exp_err)
                     return JsonResponse({'result': 300})
 
-                sql = '''                    
-                    SELECT
-                    	t1.id, 
-                    	t1.name,
-                        t1.hostdomain,
-                        t1.hostip,
-                        t1.v2_port,
-                        t1.is_active,
-                        t1.is_status,
-                        t1.is_auto,
-                        t1.country,
-                        t1.pd_name,
-                        t1.telecom,
-                        t1.protocol,
-                        t1.config,
-                        t1.v2_config
-                    FROM   titan.tbl_agent3 t1,
-                        (SELECT t1.hostip,
-                                Count(t2.nasipaddress) AS count
-                            FROM   titan.tbl_agent3 t1
-                                LEFT JOIN (SELECT *
-                                            FROM   radius.radacct
-                                            WHERE  acctstoptime IS NULL
-                                            ) t2
-                                        ON t1.hostip = t2.nasipaddress
-                            WHERE  is_active
-                                    OR is_active = 1
-                                    AND is_status = 1
-                            GROUP  BY t1.hostip)t2
-                    WHERE t1.hostip = t2.hostip AND t1.is_active = 1
-                    ORDER BY t1.country = 'KR' desc, t2.count, t1.is_auto desc
-                '''
-                cur.execute(sql)
-                rows = dictfetchall(cur)
+                # Server list cache (30s TTL) — DB query is shared across all users
+                _now = time.time()
+                if _SERVER_LIST_CACHE['rows'] is not None and (_now - _SERVER_LIST_CACHE['ts']) < _SERVER_LIST_CACHE_TTL:
+                    rows = _copy.deepcopy(_SERVER_LIST_CACHE['rows'])
+                else:
+                    sql = '''                    
+                        SELECT
+                        	t1.id, 
+                        	t1.name,
+                            t1.hostdomain,
+                            t1.hostip,
+                            t1.v2_port,
+                            t1.is_active,
+                            t1.is_status,
+                            t1.is_auto,
+                            t1.country,
+                            t1.pd_name,
+                            t1.telecom,
+                            t1.protocol,
+                            t1.config,
+                            t1.v2_config
+                        FROM   titan.tbl_agent3 t1,
+                            (SELECT t1.hostip,
+                                    Count(t2.nasipaddress) AS count
+                                FROM   titan.tbl_agent3 t1
+                                    LEFT JOIN (SELECT *
+                                                FROM   radius.radacct
+                                                WHERE  acctstoptime IS NULL
+                                                ) t2
+                                            ON t1.hostip = t2.nasipaddress
+                                WHERE  is_active
+                                        OR is_active = 1
+                                        AND is_status = 1
+                                GROUP  BY t1.hostip)t2
+                        WHERE t1.hostip = t2.hostip AND t1.is_active = 1
+                        ORDER BY t1.country = 'KR' desc, t2.count, t1.is_auto desc
+                    '''
+                    cur.execute(sql)
+                    rows = dictfetchall(cur)
+                    _SERVER_LIST_CACHE['rows'] = _copy.deepcopy(rows)
+                    _SERVER_LIST_CACHE['ts'] = _now
 
                 # Per-user V2RAY UUID: use personal UUID only if deployed to servers
                 # New users (v2ray_deployed=0) use tbl_agent3.v2_config (shared UUID)
@@ -1808,96 +1892,46 @@ def app_new_check_server(request):
                         _forced_done = True
                         # 다음 단계 계속 (서버 선택 로직) 진행
                     else:
-                        ssh = paramiko.SSHClient()
-                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                        print('INFO -> SSH Open: ' + id)
-                        try:
-                            protocol = ''
-                            # timeout 1초
-                            ssh.connect(nasipaddress,
-                                        username=ssh_info_rows[0]['username'],
-                                        password=ssh_info_rows[0]['password'],
-                                        timeout = 1)
-                        			
-                            if nasporttype == 'ISDN' : # openvpn
-                                protocol = 'OPENVPN'
-                                print('INFO -> Openvpn Server telnet login:' + id)
-                                channel = ssh.invoke_shell()
-                                channel.send("telnet 127.0.0.1 1199\n")
-                                time.sleep(0.5)
-                                channel.send("mykakao9898\n")
-                                time.sleep(0.2)
-                                command = 'kill '+id+'\n'
-                                channel.send(command)
-                                time.sleep(0.2)
-                                channel.send("exit\n")
-                                time.sleep(0.2)
-                                channel.send("exit\n")
-                                time.sleep(0.2)
-                                output = channel.recv(65535).decode("utf-8")
-                                print(output)
-                            elif nasportid == '443' : # softether sstp
-                                protocol = 'SSTP'
-                                print('INFO -> SSTP Force Stop:' + id)
-                                sessionid = sessionid.replace('=5BSSTP=5D','[SSTP]')
-                                command = "/usr/local/vpnserver/vpncmd "+nasipaddress+" /SERVER /HUB:"+settings.SOFTETHER_HUB+" /PASSWORD:'"+settings.SOFTETHER_PASS+"' /CMD SessionDisconnect "+sessionid
-                                print('cmd => ',command)
-                                ssh.exec_command(command)
-                            elif nasporttype == 'V2RAY' : # V2RAY
-                                protocol = 'V2RAY'
-                                print("No Action")
-                            else :
-                                protocol = 'IKEV2'
-                                print('INFO -> IKEV2 Force Stop:' + id)
-                                strongswan_down_nb_safely(ssh, id)
+                        # Determine protocol
+                        if nasporttype == 'ISDN':
+                            _kick_protocol = 'OPENVPN'
+                        elif nasportid == '443':
+                            _kick_protocol = 'SSTP'
+                        elif nasporttype == 'V2RAY':
+                            _kick_protocol = 'V2RAY'
+                        else:
+                            _kick_protocol = 'IKEV2'
 
-                            # 강제 종료 후 레코드 업데이트/로그 적재
-                            sql = '''
-                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                                COMMIT;
-                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                            cur.execute(sql)
-                            
-                            sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                            cur.execute(sql)
-                            _forced_done = True
-                        except socket.timeout:
-                            #timeout 걸렸을때 radius 강제 업데이트
-                            print('INFO -> socket.timeout' + id)
-                            sql = '''
-                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                                COMMIT;
-                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                            cur.execute(sql)
-                            
-                            sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                            cur.execute(sql)
+                        # Immediately update radacct (sync) — server selection sees correct conn count
+                        sql = '''
+                            UPDATE radius.radacct SET acctstoptime = '{date}' WHERE radacctid = {radacctid};
+                            COMMIT;
+                        '''.format(date=datetime.datetime.now(), radacctid=rows[0]['radacctid'])
+                        cur.execute(sql)
+                        _forced_done = True
 
-                        except BaseException as err:
-                            print('ERROR -> err : ' + id, err)
-                            sql = '''
-                                UPDATE radius.radacct set acctstoptime = '{date}' where radacctid = {radacctid};
-                                COMMIT;
-                            '''.format(date = datetime.datetime.now() , radacctid = rows[0]['radacctid'])
-                            cur.execute(sql)
-                            
-                            sql = '''
-                                INSERT INTO tbl_disconnection (username, user_session, connected_count, protocol, server_name, telecom, disconnected_time, new_ip, old_ip) 
-                                VALUES('{id}', '{simultaneous_use}', '{connected_count}', '{protocol}', '{server_name}', '{telecom}', '{date}', '{login_ip}', '{callingstationid}');
-                            '''.format(date = datetime.datetime.now() , id=id, connected_count = len(rows),protocol=protocol,server_name=_nas_name,telecom=_nas_telecom,simultaneous_use=simultaneous_use, login_ip=login_ip, callingstationid=callingstationid)
-                            cur.execute(sql)
-                        finally:
-                            try:
-                                ssh.close()
-                            except Exception:
-                                pass
-                    if _forced_done:
+                        # SSH kick + tbl_disconnection in background thread
+                        print('INFO -> SSH kick dispatch [bg]: ' + id + ' proto=' + _kick_protocol)
+                        threading.Thread(
+                            target=_bg_ssh_kick,
+                            kwargs={
+                                'nasipaddress': nasipaddress,
+                                'ssh_user': ssh_info_rows[0]['username'],
+                                'ssh_pass': ssh_info_rows[0]['password'],
+                                'nasporttype': nasporttype,
+                                'nasportid': nasportid,
+                                'sessionid': sessionid,
+                                'user_id': id,
+                                'protocol': _kick_protocol,
+                                'simultaneous_use': simultaneous_use,
+                                'connected_count': len(rows),
+                                'nas_name': _nas_name,
+                                'nas_telecom': _nas_telecom,
+                                'login_ip': login_ip,
+                                'callingstationid': callingstationid,
+                            },
+                            daemon=True
+                        ).start()
                         _log_elapsed('t3_disconnect_done')
                 
                 # ── VPN Agent 매칭 (실측 ping 기반) ──

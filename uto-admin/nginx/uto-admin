@@ -1,0 +1,40 @@
+server {
+    server_name uto.shanghai.co.kr;
+    client_max_body_size 100M;
+
+    access_log /var/log/nginx/uto-admin_access.log;
+    error_log /var/log/nginx/uto-admin_error.log;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/uto-admin.sock;
+        uwsgi_read_timeout 60;
+        uwsgi_buffers 8 16k;
+        uwsgi_buffer_size 16k;
+    }
+
+    location /static/ {
+        alias /home/newkorea/project/uto-admin/backend/static/;
+        expires 30d;
+        access_log off;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/uto.shanghai.co.kr/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/uto.shanghai.co.kr/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = uto.shanghai.co.kr) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name uto.shanghai.co.kr;
+    return 404; # managed by Certbot
+
+
+}

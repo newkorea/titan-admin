@@ -1,0 +1,350 @@
+## -*- coding: utf-8 -*-
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+    .reg-container { max-width: 700px; margin: 0 auto; }
+    .form-section {
+        background: #fff; border-radius: 10px; padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    .form-section h4 {
+        font-size: 16px; font-weight: 700; color: #333;
+        border-bottom: 2px solid #6f42c1; padding-bottom: 8px; margin-bottom: 18px;
+    }
+    .form-row { display: flex; align-items: center; margin-bottom: 14px; gap: 12px; }
+    .form-row label {
+        min-width: 100px; font-weight: 600; font-size: 13px; color: #555;
+    }
+    .form-row input, .form-row select, .form-row textarea {
+        flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+        font-size: 14px; outline: none; transition: border 0.2s;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: #6f42c1; }
+    .form-row textarea { resize: vertical; min-height: 42px; }
+    .form-row .hint { font-size: 11px; color: #999; white-space: nowrap; }
+    .btn-check {
+        padding: 8px 16px; background: #17a2b8; color: #fff; border: none;
+        border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-check:hover { background: #138496; }
+    .btn-check:disabled { background: #adb5bd; cursor: not-allowed; }
+    .btn-register {
+        width: 100%; padding: 12px; background: #6f42c1; color: #fff; border: none;
+        border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-register:hover { background: #5a32a3; }
+    .btn-register:disabled { background: #adb5bd; cursor: not-allowed; }
+    .check-result {
+        margin-top: 4px; font-size: 12px; padding: 4px 8px; border-radius: 4px; display: none;
+    }
+    .check-result.ok { display: block; color: #28a745; background: #e8f5e9; }
+    .check-result.fail { display: block; color: #dc3545; background: #ffeef0; }
+    .result-box {
+        display: none; padding: 16px; border-radius: 8px; margin-top: 16px; font-size: 14px;
+    }
+    .result-box.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .result-box.error { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .summary-box {
+        background: #f8f9fa; border-radius: 8px; padding: 14px; margin-top: 18px;
+        border: 1px solid #e9ecef;
+    }
+    .summary-box .sum-row {
+        display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;
+    }
+    .summary-box .sum-label { color: #666; font-weight: 600; }
+    .summary-box .sum-val { color: #333; font-weight: 700; }
+    .hyid-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 12px;
+        font-size: 11px; font-weight: 700; color: #fff; margin-left: 4px;
+    }
+    .hyid-1 { background: #adb5bd; }
+    .hyid-2 { background: #28a745; }
+    .hyid-3 { background: #17a2b8; }
+    .hyid-4 { background: #fd7e14; }
+    .hyid-5 { background: #dc3545; }
+    .hyid-7 { background: #6f42c1; }
+    .hyid-8 { background: #343a40; }
+    .recent-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .recent-table th { background: #f8f9fa; padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 700; }
+    .recent-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .recent-table tr:hover { background: #f5f7fa; }
+    .type-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 10px; font-weight: 700; color: #fff;
+    }
+    .type-create { background: #6f42c1; }
+</style>
+</%block>
+
+<%block name="title">UTO 신규가입</%block>
+<%block name="subtitle">UTO VPN 신규 사용자 계정 생성</%block>
+
+<%block name="content">
+<div class="reg-container">
+    <div class="form-section">
+        <h4><i class="fa fa-user-plus" style="color:#6f42c1;"></i> 신규 계정 생성</h4>
+
+        <div class="form-row">
+            <label>사용자명</label>
+            <input type="text" id="inp-vuser" placeholder="영문/숫자 사용자명" autocomplete="off"
+                   oninput="vuserChecked=false;updateForm();" onkeydown="if(event.key==='Enter')checkVuser()">
+            <button class="btn-check" onclick="checkVuser()"><i class="fa fa-check"></i> 중복확인</button>
+        </div>
+        <div class="check-result" id="check-result"></div>
+
+        <div class="form-row">
+            <label>비밀번호</label>
+            <input type="text" id="inp-vpass" placeholder="비밀번호 (2~20자)" autocomplete="off" oninput="updateForm()">
+        </div>
+
+        <div class="form-row">
+            <label>회원등급</label>
+            <select id="inp-hyid" onchange="onHyidChange()">
+                <option value="1">무료회원</option>
+                <option value="2" selected>일반회원</option>
+                <option value="3">고급회원 (라우터 4M)</option>
+                <option value="4">기업회원 (라우터 10M)</option>
+                <option value="5">전용선회원 (라우터 20M)</option>
+                <option value="7">대기업회원 (라우터 50M)</option>
+                <option value="8">내부사용</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>전화번호</label>
+            <input type="text" id="inp-phone" placeholder="전화번호 (선택)">
+        </div>
+
+        <div class="form-row">
+            <label>메모</label>
+            <textarea id="inp-memo" placeholder="메모 (선택)" rows="1"></textarea>
+        </div>
+
+        <!-- 요약 -->
+        <div class="summary-box" id="summary-box" style="display:none;">
+            <div class="sum-row"><span class="sum-label">사용자명</span><span class="sum-val" id="sum-vuser">-</span></div>
+            <div class="sum-row"><span class="sum-label">회원등급</span><span class="sum-val" id="sum-hyid">-</span></div>
+            <div class="sum-row"><span class="sum-label">속도제한</span><span class="sum-val" id="sum-speed" style="color:#e83e8c;">-</span></div>
+            <div class="sum-row"><span class="sum-label">서버그룹</span><span class="sum-val" id="sum-game" style="color:#17a2b8;">-</span></div>
+            <div class="sum-row"><span class="sum-label">만료일</span><span class="sum-val" id="sum-lastdate" style="color:#dc3545;">즉시 만료 (POS 연동 필요)</span></div>
+        </div>
+
+        <div style="margin-top: 18px;">
+            <button class="btn-register" id="btn-register" onclick="doRegister()" disabled>
+                <i class="fa fa-user-plus"></i> 계정 생성
+            </button>
+        </div>
+        <div class="result-box" id="result-box"></div>
+    </div>
+
+    <!-- 최근 가입 내역 -->
+    <div class="form-section">
+        <h4><i class="fa fa-clock-o" style="color:#fd7e14;"></i> 최근 가입 내역</h4>
+        <table class="recent-table">
+            <thead><tr><th>시각</th><th>사용자</th><th>유형</th><th>필드</th><th>변경내용</th><th>설명</th><th>작업자</th></tr></thead>
+            <tbody id="recent-tbody">
+                <tr><td colspan="7" style="text-align:center;color:#aaa;">로딩 중...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</%block>
+
+<%block name="js">
+<script>
+var csrfToken = (function(){
+    var v = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+})();
+
+var vuserChecked = false;
+
+// hyid별 회원등급 정보: 속도(K), 서버그룹 자동설정
+var HYID_INFO = {
+    '1': {label: '무료회원', speed: 0, game: 'KOREA', router: false},
+    '2': {label: '일반회원', speed: 2048, game: 'KOREA', router: false},
+    '3': {label: '고급회원 (4M)', speed: 4096, game: 'SS', router: true},
+    '4': {label: '기업회원 (10M)', speed: 10240, game: 'SS', router: true},
+    '5': {label: '전용선회원 (20M)', speed: 20480, game: 'SS', router: true},
+    '7': {label: '대기업회원 (50M)', speed: 51200, game: 'SS', router: true},
+    '8': {label: '내부사용', speed: 102400, game: 'SS', router: false},
+};
+
+function onHyidChange() {
+    updateForm();
+}
+
+function updateForm() {
+    var vuser = document.getElementById('inp-vuser').value.trim();
+    var vpass = document.getElementById('inp-vpass').value.trim();
+    var hyid = document.getElementById('inp-hyid').value;
+    var info = HYID_INFO[hyid] || HYID_INFO['2'];
+
+    var box = document.getElementById('summary-box');
+    if (!vuser) { box.style.display = 'none'; } else {
+        box.style.display = 'block';
+        document.getElementById('sum-vuser').textContent = vuser;
+        document.getElementById('sum-hyid').innerHTML = '<span class="hyid-badge hyid-' + hyid + '">' + info.label + '</span>';
+        var speedLabel = info.speed > 0 ? (info.speed >= 1024 ? (info.speed/1024) + 'M' : info.speed + 'K') : '제한없음';
+        document.getElementById('sum-speed').textContent = 'Up/Down ' + info.speed + 'K (' + speedLabel + ')';
+        document.getElementById('sum-game').textContent = info.game + (info.router ? ' (라우터 자동)' : '');
+        document.getElementById('sum-lastdate').textContent = '즉시 만료 (POS 연동 필요)';
+    }
+
+    // 버튼 활성화
+    document.getElementById('btn-register').disabled = !(vuserChecked && vuser && vpass);
+}
+
+function checkVuser() {
+    var vuser = document.getElementById('inp-vuser').value.trim();
+    var result = document.getElementById('check-result');
+    if (!vuser) {
+        result.className = 'check-result fail';
+        result.textContent = '사용자명을 입력하세요.';
+        return;
+    }
+    result.className = 'check-result';
+    result.style.display = 'block';
+    result.textContent = '확인 중...';
+    result.style.color = '#888';
+    result.style.background = '#f5f5f5';
+
+    fetch('/api/v1/read/uto_check_vuser?vuser=' + encodeURIComponent(vuser))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result === 200) {
+                result.className = 'check-result ok';
+                result.textContent = '\u2713 ' + data.msg;
+                vuserChecked = true;
+            } else {
+                result.className = 'check-result fail';
+                result.textContent = '\u2717 ' + data.msg;
+                vuserChecked = false;
+            }
+            updateForm();
+        })
+        .catch(function(err) {
+            result.className = 'check-result fail';
+            result.textContent = '오류: ' + err.message;
+            vuserChecked = false;
+            updateForm();
+        });
+}
+
+function doRegister() {
+    var vuser = document.getElementById('inp-vuser').value.trim();
+    var vpass = document.getElementById('inp-vpass').value.trim();
+    var hyid = document.getElementById('inp-hyid').value;
+    var info = HYID_INFO[hyid] || HYID_INFO['2'];
+    var phone = document.getElementById('inp-phone').value.trim();
+    var memo = document.getElementById('inp-memo').value.trim();
+    var speedLabel = info.speed >= 1024 ? (info.speed/1024) + 'M' : info.speed + 'K';
+
+    if (!vuser || !vpass) { alert('사용자명과 비밀번호를 입력하세요.'); return; }
+    if (!vuserChecked) { alert('중복확인을 먼저 해주세요.'); return; }
+
+    if (!confirm('계정을 생성하시겠습니까?\n\n사용자: ' + vuser +
+        '\n회원등급: ' + info.label +
+        '\n속도: ' + speedLabel +
+        '\n※ 만료일: 즉시 만료 (POS 연동 필요)')) return;
+
+    var btn = document.getElementById('btn-register');
+    var resultBox = document.getElementById('result-box');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 처리 중...';
+    resultBox.className = 'result-box';
+
+    var formData = new FormData();
+    formData.append('vuser', vuser);
+    formData.append('vpass', vpass);
+    formData.append('hyid', hyid);
+    formData.append('phone', phone);
+    formData.append('memo', memo);
+
+    fetch('/api/v1/create/uto_register', {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.result === 200) {
+            resultBox.className = 'result-box success';
+            resultBox.innerHTML = '<i class="fa fa-check-circle"></i> ' + data.msg;
+            btn.innerHTML = '<i class="fa fa-check"></i> 완료';
+            btn.style.background = '#28a745';
+            document.getElementById('inp-vuser').value = '';
+            document.getElementById('inp-vpass').value = '';
+            document.getElementById('inp-phone').value = '';
+            document.getElementById('inp-memo').value = '';
+            vuserChecked = false;
+            document.getElementById('check-result').className = 'check-result';
+            document.getElementById('summary-box').style.display = 'none';
+            loadRecent();
+            setTimeout(function() {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-user-plus"></i> 계정 생성';
+                btn.style.background = '';
+            }, 3000);
+        } else {
+            resultBox.className = 'result-box error';
+            resultBox.innerHTML = '<i class="fa fa-exclamation-circle"></i> ' + (data.msg || '생성 실패');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa fa-user-plus"></i> 계정 생성';
+        }
+    })
+    .catch(function(err) {
+        resultBox.className = 'result-box error';
+        resultBox.innerHTML = '<i class="fa fa-exclamation-circle"></i> 네트워크 오류: ' + err.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-user-plus"></i> 계정 생성';
+    });
+}
+
+function loadRecent() {
+    fetch('/api/v1/read/uto_change_history', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken},
+        body: 'start=0&length=10&draw=1&change_type=create'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var tbody = document.getElementById('recent-tbody');
+        if (!data.data || !data.data.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;">가입 내역 없음</td></tr>';
+            return;
+        }
+        var html = '';
+        data.data.forEach(function(r) {
+            var changeHtml = '';
+            if (r.old_value || r.new_value) {
+                changeHtml = '<span style="color:#999;text-decoration:line-through;">' + (r.old_value || '-') + '</span>' +
+                    ' &rarr; <span style="color:#28a745;font-weight:600;">' + (r.new_value || '-') + '</span>';
+            }
+            html += '<tr>' +
+                '<td style="white-space:nowrap;">' + (r.created_at || '') + '</td>' +
+                '<td><b>' + (r.vuser || '') + '</b></td>' +
+                '<td><span class="type-badge type-create">' + (r.change_type || '') + '</span></td>' +
+                '<td>' + (r.field_name || '') + '</td>' +
+                '<td>' + changeHtml + '</td>' +
+                '<td>' + (r.description || '') + '</td>' +
+                '<td>' + (r.admin_user || '') + '</td>' +
+                '</tr>';
+        });
+        tbody.innerHTML = html;
+    })
+    .catch(function() {
+        document.getElementById('recent-tbody').innerHTML =
+            '<tr><td colspan="7" style="text-align:center;color:#dc3545;">로딩 실패</td></tr>';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    onHyidChange();
+    loadRecent();
+});
+</script>
+</%block>

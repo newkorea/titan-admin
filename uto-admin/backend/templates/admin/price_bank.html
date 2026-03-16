@@ -1,0 +1,204 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="css">
+</%block>
+
+<%block name="title">무통장 내역</%block>
+<%block name="subtitle">사용자가 신청한 결제요청을 처리할 수 있습니다</%block>
+
+<%block name="content">
+<div>
+  <!-- 결제 방식 활성화 관리 -->
+  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <h4 style="margin-bottom: 15px; color: #333;">국제 결제 방식 활성화</h4>
+    <div style="margin-bottom: 15px; display: flex; align-items: center;">
+      <input type="checkbox" id="wechat_payment_enabled" checked style="width: 20px; height: 20px; cursor: pointer; margin-right: 10px;">
+      <label for="wechat_payment_enabled" style="margin: 0; cursor: pointer; font-size: 16px; font-weight: bold;">
+        위챗 페이 (WeChat Pay)
+      </label>
+    </div>
+    <div style="margin-bottom: 20px; display: flex; align-items: center;">
+      <input type="checkbox" id="alipay_payment_enabled" checked style="width: 20px; height: 20px; cursor: pointer; margin-right: 10px;">
+      <label for="alipay_payment_enabled" style="margin: 0; cursor: pointer; font-size: 16px; font-weight: bold;">
+        알리페이 (Alipay)
+      </label>
+    </div>
+    <button class="btn btn-fw primary" onclick='update_payment_methods()'>설정 저장</button>
+  </div>
+
+  <!-- 검색필터 -->
+  <div class="row">
+    <div class="form-group col-sm-2">
+      <label>번호[=]</label>
+      <input class="form-control" id="filter_number">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>이메일[like]</label>
+      <input class="form-control" id="filter_email">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>사용자명[like]</label>
+      <input class="form-control" id="filter_username">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>세션</label>
+      <select class="form-control" id="filter_session" name="filter_session">
+        <option value="0">선택하세요</option>
+        <option value="1">1 세션</option>
+        <option value="2">2 세션</option>
+        <option value="3">3 세션</option>
+        <option value="4">4 세션</option>
+        <option value="5">5 세션</option>
+		<option value="6">6 세션</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>개월수</label>
+      <select class="form-control" id="filter_month" name="filter_month">
+        <option value="0">선택하세요</option>
+        <option value="1">1 개월</option>
+        <option value="2">2 개월</option>
+        <option value="3">3 개월</option>
+        <option value="6">6 개월</option>
+        <option value="12">12 개월</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>상태</label>
+      <select class="form-control" id="filter_status" name="filter_status">
+        <option value="0">전체</option>
+        <option value="R">대기</option>
+        <option value="A">승인</option>
+        <option value="C">관리자취소</option>
+        <option value="U">사용자취소</option>
+        <option value="Z">환불</option>
+      </select>
+    </div>
+    <div class="form-group col-sm-2">
+      <label>요청(시작) [<=]</label>
+      <input id="filter_regist_start" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <div class="form-group col-sm-2">
+      <label>요청(종료) [<]</label>
+      <input id="filter_regist_end" type="text" class="form-control datepicker dp-re" data-plugin="datepicker" placeholder="yyyy-mm-dd">
+    </div>
+    <!-- 요청구분(type) 필터: 클릭으로만 설정하므로 숨김 입력 -->
+    <input type="hidden" id="filter_type" value="">
+  </div>
+
+  <!-- 버튼 -->
+ <div class='btn-store'>
+  <button class="btn btn-fw accent" onclick="ready_list()">
+    <i class="fa fa-question mr5"></i>
+    처리되지 않은 일감
+  </button>
+  <button class="btn btn-fw success" onclick="enroll_ready()">
+    <i class="fa fa-plus mr5"></i>
+    등록하기
+  </button>
+  <button class="btn btn-fw primary" onclick="reload_data()">
+    <i class="fa fa-search mr5"></i>
+    검색하기
+  </button>
+
+  <!-- ✅ 추가 버튼 -->
+  <button class="btn btn-fw danger" onclick="deleteByStatus('R')">
+    요청삭제
+  </button>
+  <button class="btn btn-fw warning" onclick="deleteByStatus('C')">
+    관리자취소삭제
+  </button>
+  <button class="btn btn-fw info" onclick="deleteByStatus('U')">
+    사용자취소삭제
+  </button>
+</div>
+
+
+  <!-- 데이터테이블즈 -->
+  <div class="user-table">
+    <table id="price-inform" class="display table">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이메일</th>
+          <th>사용자명</th>
+          <th>지불번호</th>
+          <th>세션</th>
+          <th>개월수</th>
+          <th>금액</th>
+          <th>상태</th>
+          <th>요청시간</th>
+          <th>취소</th>
+          <th>취소시간</th>
+          <th>승인</th>
+          <th>승인시간</th>
+          <th>환불</th>
+          <th>환불시간</th>
+          <th>요청구분</th>
+          <th>인보이스</th>
+          <th>인보이스발송</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+<script src="/static/admin/js/bank.js"></script>
+<script>
+// 결제 방식 활성화 상태 불러오기
+function read_payment_methods(){
+  var csrf_token = $('#csrf_token').html();
+  $.post( "/api/v1/read/payment_methods", {
+      csrfmiddlewaretoken: csrf_token
+  })
+  .done(function( data ) {
+      if(data.result == 200){
+          $('#wechat_payment_enabled').prop('checked', data.wechat_enabled);
+          $('#alipay_payment_enabled').prop('checked', data.alipay_enabled);
+      } else {
+          $('#wechat_payment_enabled').prop('checked', true);
+          $('#alipay_payment_enabled').prop('checked', true);
+      }
+  });
+}
+
+// 결제 방식 활성화 상태 저장
+function update_payment_methods(){
+    var csrf_token = $('#csrf_token').html();
+    var wechat_enabled = $('#wechat_payment_enabled').is(':checked');
+    var alipay_enabled = $('#alipay_payment_enabled').is(':checked');
+    $.post( "/api/v1/update/payment_methods", {
+        csrfmiddlewaretoken: csrf_token,
+        wechat_enabled: wechat_enabled,
+        alipay_enabled: alipay_enabled
+    })
+    .done(function( data ) {
+        if (data.result == 200) {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'success',
+                confirmButtonColor: swalColor('success')
+            }).then(function (result) {
+                read_payment_methods();
+            })
+        }
+        else {
+            Swal.fire({
+                title: data.title,
+                text: data.text,
+                type: 'error',
+                confirmButtonColor: swalColor('error')
+            })
+        }
+    });
+}
+
+// 페이지 로드시 결제 방식 상태 불러오기
+read_payment_methods();
+</script>
+</%block>

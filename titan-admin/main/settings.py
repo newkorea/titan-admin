@@ -153,7 +153,34 @@ DATABASES = {
             'connect_timeout': int(os.environ.get('RADIUS_DB_CONNECT_TIMEOUT', os.environ.get('DB_CONNECT_TIMEOUT', '5'))),
             'charset': 'utf8'
         }
-    }
+    },
+    # UTO VPN 관리 DB (별도 서버)
+    'uto': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('UTO_DB_NAME', 'vcsvpn2013'),
+        'USER': os.environ.get('UTO_DB_USER', 'root'),
+        'PASSWORD': os.environ.get('UTO_DB_PASSWORD', 'uto6703'),
+        'HOST': os.environ.get('UTO_DB_HOST', '218.158.57.51'),
+        'PORT': os.environ.get('UTO_DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('UTO_DB_CONN_MAX_AGE', '60')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('UTO_DB_CONNECT_TIMEOUT', '5')),
+            'charset': 'utf8',
+        }
+    },
+    'uto_radius': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('UTO_RADIUS_DB_NAME', 'radius'),
+        'USER': os.environ.get('UTO_RADIUS_DB_USER', 'root'),
+        'PASSWORD': os.environ.get('UTO_RADIUS_DB_PASSWORD', 'uto6703'),
+        'HOST': os.environ.get('UTO_RADIUS_DB_HOST', '218.158.57.51'),
+        'PORT': os.environ.get('UTO_RADIUS_DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('UTO_RADIUS_DB_CONN_MAX_AGE', '60')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('UTO_RADIUS_DB_CONNECT_TIMEOUT', '5')),
+            'charset': 'utf8',
+        }
+    },
 }
 
 

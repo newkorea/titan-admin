@@ -52,6 +52,7 @@ var datatable = $('#user-inform').DataTable({
         {data: "id"},
         {data: "id"},
         {data: "id"},
+        {data: "id"},
 	    {data: "id"},
         {data: "id"}
     ],
@@ -178,11 +179,19 @@ var datatable = $('#user-inform').DataTable({
             visible: true,
             orderable: false,
             render: function (data) {
+                return '<button onclick="show_user_diagnosis('+ data +')" class="btn btn-outline b-success text-success btn-sm" style="font-size:11px;padding:2px 8px;"><i class="fa fa-stethoscope"></i> 분석</button>';
+            }
+        },
+        {
+            targets: 16,
+            visible: true,
+            orderable: false,
+            render: function (data) {
                 return '<button onclick="delete_user('+ data +')" class="btn btn-outline b-danger text-danger btn-sm" style="font-size:11px;padding:2px 8px;">탈퇴</button>';
             },
         },
 	          {
-           targets: 16,
+           targets: 17,
            visible: true,
            orderable: false,
            render: function (data) {
@@ -880,10 +889,16 @@ function open_manage_modal(user_id) {
                 '<option value="6"' + (data.session == '6' ? ' selected' : '') + '>6</option>' +
                 '</select>' +
                 '</div>' +
-                // 비밀번호
+                // 비밀번호 (기존 — 앱 로그인만)
                 '<div class="form-group" style="margin-bottom:12px;">' +
                 '<label style="font-weight:700;font-size:12px;">🔑 비밀번호 변경 (현재: ' + data.password + ')</label>' +
                 '<input id="mng_password" type="text" class="form-control" placeholder="변경할 비밀번호 (빈칸이면 변경 안함)">' +
+                '</div>' +
+                // 비밀번호 직접 변경 (앱+VPN 동시)
+                '<div class="form-group" style="margin-bottom:12px;background:#fff8e1;padding:10px;border-radius:6px;border:1px solid #ffe082;">' +
+                '<label style="font-weight:700;font-size:12px;color:#e65100;">🔐 비밀번호 직접 변경 (앱+VPN 동시적용)</label>' +
+                '<div style="font-size:11px;color:#888;margin-bottom:4px;">이메일 인증 없이 관리자가 직접 변경합니다. 앱 로그인 + VPN 접속 비밀번호 모두 변경됩니다.</div>' +
+                '<input id="mng_password_direct" type="text" class="form-control" placeholder="새 비밀번호 입력 (8자 이상, 영문+숫자 등 2종 조합)">' +
                 '</div>' +
                 // 활성
                 '<div class="form-group" style="margin-bottom:12px;">' +
@@ -926,12 +941,21 @@ function open_manage_modal(user_id) {
                     change_reason: reason
                 }));
             }
-            // 비밀번호 변경
+            // 비밀번호 변경 (기존 — 앱 로그인만)
             if ($('#mng_password').val()) {
                 promises.push($.post("/api/v1/update/user_password", {
                     csrfmiddlewaretoken: csrf_token,
                     user_id: user_id,
                     change_password: $('#mng_password').val(),
+                    change_reason: reason
+                }));
+            }
+            // 비밀번호 직접 변경 (앱+VPN 동시)
+            if ($('#mng_password_direct').val()) {
+                promises.push($.post("/api/v1/update/user_password_direct", {
+                    csrfmiddlewaretoken: csrf_token,
+                    user_id: user_id,
+                    new_password: $('#mng_password_direct').val(),
                     change_reason: reason
                 }));
             }
@@ -1231,6 +1255,244 @@ function unban_device(ban_id, email) {
                 show_ban_history(email);
             } else {
                 Swal.fire('오류', res.msg || '해제 실패', 'error');
+            }
+        });
+    });
+}
+
+// ========================================================
+// ===== 사용자 종합 진단 (분석 버튼) =====
+// ========================================================
+function show_user_diagnosis(user_id) {
+    openLogModal('고객 종합 진단');
+    $.post("/api/v1/read/user_diagnosis", {
+        csrfmiddlewaretoken: csrf_token,
+        user_id: user_id
+    }).done(function (res) {
+        if (res.result !== 200) {
+            $('#log-modal-body').html('<div style="text-align:center;padding:40px;color:#dc3545;">' + (res.msg || '데이터 로드 실패') + '</div>');
+            return;
+        }
+        var d = res.data;
+        var acct = d.account;
+        var sub = d.subscription;
+        var smap = d.server_map || {};
+        var html = '';
+
+        // ── 서버 이름 조회 헬퍼 ──
+        function sname(ip) { return smap[ip] ? smap[ip] : ip; }
+
+        // ── 1. 계정 + 구독 요약 카드 ──
+        var expBadge = '';
+        if (sub.expired === true) expBadge = '<span style="background:#dc3545;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">만료</span>';
+        else if (sub.expired === false) expBadge = '<span style="background:#28a745;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">유효 (' + sub.days_left + '일)</span>';
+        else expBadge = '<span style="background:#ffc107;color:#333;padding:2px 8px;border-radius:10px;font-size:11px;">미확인</span>';
+
+        var deployBadge = acct.v2ray_deployed == 1
+            ? '<span style="color:#28a745;font-weight:700;">배포됨</span>'
+            : '<span style="color:#999;">미배포</span>';
+
+        html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">';
+        // 계정 카드
+        html += '<div style="flex:1;min-width:280px;background:#f8f9fa;border-radius:8px;padding:14px;border:1px solid #e9ecef;">';
+        html += '<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#495057;"><i class="fa fa-user"></i> 계정 정보</div>';
+        html += '<table style="width:100%;font-size:12px;">';
+        html += '<tr><td style="color:#888;width:90px;padding:3px 0;">이메일</td><td style="font-weight:600;">' + acct.email + '</td></tr>';
+        html += '<tr><td style="color:#888;padding:3px 0;">사용자명</td><td>' + acct.username + '</td></tr>';
+        html += '<tr><td style="color:#888;padding:3px 0;">구독만료</td><td>' + (sub.expiry || '-') + ' ' + expBadge + '</td></tr>';
+        html += '<tr><td style="color:#888;padding:3px 0;">동시접속</td><td><b>' + (sub.max_sessions || '-') + '</b>개</td></tr>';
+        html += '<tr><td style="color:#888;padding:3px 0;">V2RAY UUID</td><td style="font-size:10px;word-break:break-all;">' + (acct.v2ray_uuid || '-') + ' ' + deployBadge + '</td></tr>';
+        html += '</table></div>';
+
+        // 현재 상태 카드
+        var activeCount = d.active_sessions.length;
+        var statusColor = activeCount > 0 ? '#28a745' : '#dc3545';
+        var statusText = activeCount > 0 ? '접속 중 (' + activeCount + '세션)' : '미접속';
+        html += '<div style="flex:1;min-width:280px;background:#f8f9fa;border-radius:8px;padding:14px;border:1px solid #e9ecef;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;margin-bottom:8px;color:#495057;">';
+        html += '<span><i class="fa fa-signal"></i> 현재 상태</span>';
+        if (activeCount > 0) {
+            html += '<button id="btn-kick-all" onclick="kickAllSessions(\'' + acct.email + '\')" style="background:#dc3545;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;"><i class="fa fa-power-off"></i> 전체 강제종료</button>';
+        }
+        html += '</div>';
+        html += '<div style="font-size:24px;font-weight:700;color:' + statusColor + ';margin:8px 0;">' + statusText + '</div>';
+        if (activeCount > 0) {
+            d.active_sessions.forEach(function(s) {
+                var sessMin = Math.floor(s.session_sec / 60);
+                html += '<div id="sess-card-' + s.radacctid + '" style="background:#fff;border-radius:6px;padding:8px 10px;margin-top:6px;border:1px solid #dee2e6;font-size:11px;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                html += '<span><b>' + s.protocol + '</b> → ' + sname(s.nas_ip) + '</span>';
+                html += '<span style="display:flex;align-items:center;gap:6px;">';
+                html += '<span style="color:#888;">' + sessMin + '분</span>';
+                html += '<button onclick="kickOneSession(' + s.radacctid + ',\'' + (acct.email || '') + '\',this)" style="background:#ff5252;color:#fff;border:none;padding:1px 6px;border-radius:3px;font-size:9px;cursor:pointer;" title="이 세션 강제종료"><i class="fa fa-times"></i></button>';
+                html += '</span>';
+                html += '</div>';
+                html += '<div style="color:#666;margin-top:3px;">IP: ' + s.client_ip + ' → ' + s.private_ip;
+                html += ' | ↓' + formatBytes(s.input_bytes) + ' ↑' + formatBytes(s.output_bytes) + '</div>';
+                html += '</div>';
+            });
+        }
+        // 최근 기기 정보
+        if (d.device_history.length > 0) {
+            var dev = d.device_history[0];
+            html += '<div style="margin-top:10px;font-size:11px;color:#666;">';
+            html += '<i class="fa fa-mobile"></i> 최근 기기: <b>' + dev.type + '</b> | ' + dev.isp + ' | ' + dev.city + ', ' + dev.country;
+            html += ' <span style="color:#aaa;">(' + dev.time + ')</span>';
+            html += '</div>';
+        }
+        html += '</div>';
+        html += '</div>';
+
+        // ── 2. 최근 접속 실패 ──
+        if (d.recent_failures.length > 0) {
+            html += '<div style="margin-bottom:16px;">';
+            html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#dc3545;"><i class="fa fa-exclamation-triangle"></i> 최근 접속 실패 (' + d.recent_failures.length + '건)</div>';
+            html += '<table class="log-tbl"><thead><tr>';
+            html += '<th>시간</th><th>프로토콜</th><th>서버</th><th>플랫폼</th><th>기기</th><th>IP</th><th>위치</th><th>앱버전</th>';
+            html += '</tr></thead><tbody>';
+            d.recent_failures.forEach(function(f) {
+                // 오늘 실패는 빨간 배경
+                var today = new Date().toISOString().substring(0, 10);
+                var isToday = f.time.substring(0, 10) === today;
+                var trStyle = isToday ? ' style="background:#fff5f5;"' : '';
+                html += '<tr' + trStyle + '>';
+                html += '<td>' + f.time + '</td>';
+                html += '<td><b>' + f.protocol + '</b></td>';
+                html += '<td>' + f.server_name + '</td>';
+                html += '<td>' + f.platform + '</td>';
+                html += '<td class="wrap">' + f.device + '</td>';
+                html += '<td>' + f.ip + '</td>';
+                html += '<td class="wrap">' + f.location + '</td>';
+                html += '<td>' + f.app_version + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+        // ── 3. 최근 세션 이력 ──
+        if (d.recent_sessions.length > 0) {
+            html += '<div style="margin-bottom:16px;">';
+            html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#495057;"><i class="fa fa-history"></i> 최근 세션 이력 (' + d.recent_sessions.length + '건)</div>';
+            html += '<table class="log-tbl"><thead><tr>';
+            html += '<th>상태</th><th>시작</th><th>종료</th><th>프로토콜</th><th>서버</th><th>시간</th><th>클라이언트IP</th><th>수신</th><th>송신</th><th>종료사유</th>';
+            html += '</tr></thead><tbody>';
+            d.recent_sessions.forEach(function(s) {
+                var statusBadge = '';
+                if (s.status === 'active') statusBadge = '<span style="background:#28a745;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;">접속중</span>';
+                else if (s.status === 'success') statusBadge = '<span style="background:#17a2b8;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;">성공</span>';
+                else statusBadge = '<span style="background:#dc3545;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;">실패</span>';
+
+                var duration = '';
+                if (s.session_sec > 0) {
+                    if (s.session_sec >= 3600) duration = Math.floor(s.session_sec / 3600) + '시간 ' + Math.floor((s.session_sec % 3600) / 60) + '분';
+                    else if (s.session_sec >= 60) duration = Math.floor(s.session_sec / 60) + '분';
+                    else duration = s.session_sec + '초';
+                }
+
+                html += '<tr>';
+                html += '<td>' + statusBadge + '</td>';
+                html += '<td>' + s.start_time + '</td>';
+                html += '<td>' + (s.stop_time || '-') + '</td>';
+                html += '<td><b>' + s.protocol + '</b></td>';
+                html += '<td>' + sname(s.nas_ip) + ' <span style="color:#aaa;font-size:10px;">(' + s.nas_ip + ')</span></td>';
+                html += '<td>' + duration + '</td>';
+                html += '<td>' + s.client_ip + '</td>';
+                html += '<td>' + formatBytes(s.input_bytes) + '</td>';
+                html += '<td>' + formatBytes(s.output_bytes) + '</td>';
+                html += '<td>' + s.terminate_cause + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+        // ── 4. 기기 이력 ──
+        if (d.device_history.length > 1) {
+            html += '<div style="margin-bottom:16px;">';
+            html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#495057;"><i class="fa fa-mobile"></i> 기기 이력 (최근 ' + d.device_history.length + '건)</div>';
+            html += '<table class="log-tbl"><thead><tr>';
+            html += '<th>시간</th><th>기기</th><th>ISP</th><th>도시</th><th>국가</th>';
+            html += '</tr></thead><tbody>';
+            d.device_history.forEach(function(dev) {
+                html += '<tr>';
+                html += '<td>' + dev.time + '</td>';
+                html += '<td>' + dev.type + '</td>';
+                html += '<td class="wrap">' + dev.isp + '</td>';
+                html += '<td>' + dev.city + '</td>';
+                html += '<td>' + dev.country + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+        // ── 결과 없으면 안내 ──
+        if (!d.active_sessions.length && !d.recent_sessions.length && !d.recent_failures.length) {
+            html += '<div style="text-align:center;padding:30px;color:#888;">접속 기록이 없습니다.</div>';
+        }
+
+        $('#log-modal-body').html(html);
+    }).fail(function() {
+        $('#log-modal-body').html('<div style="text-align:center;padding:40px;color:#dc3545;">데이터 로드 실패</div>');
+    });
+}
+
+// ── 개별 세션 강제종료 ──
+function kickOneSession(radacctid, email, btn) {
+    if (!confirm('이 세션을 강제종료하시겠습니까?')) return;
+    var $btn = $(btn);
+    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+    $.ajax({
+        url: '/api/v1/delete/disconnect_nas',
+        type: 'POST',
+        data: { radacctid: radacctid, email: email, csrfmiddlewaretoken: csrf_token },
+        success: function(res) {
+            if (res.result === 200) {
+                $('#sess-card-' + radacctid).css({opacity: '0.3', pointerEvents: 'none'});
+                $btn.html('<i class="fa fa-check"></i>').css('background', '#28a745');
+            } else {
+                alert(res.message || '실패');
+                $btn.prop('disabled', false).html('<i class="fa fa-times"></i>');
+            }
+        },
+        error: function() {
+            alert('서버 오류');
+            $btn.prop('disabled', false).html('<i class="fa fa-times"></i>');
+        }
+    });
+}
+
+// ── 전체 세션 강제종료 ──
+function kickAllSessions(email) {
+    if (!confirm('이 사용자의 모든 활성 세션을 강제종료하시겠습니까?\n(실제 VPN 서버에서 연결을 끊습니다)')) return;
+    var $btn = $('#btn-kick-all');
+    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 처리중...');
+
+    // 모든 활성 세션의 radacctid를 수집
+    var cards = $('[id^="sess-card-"]');
+    var ids = [];
+    cards.each(function() {
+        var id = $(this).attr('id').replace('sess-card-', '');
+        ids.push(id);
+    });
+
+    var done = 0, success = 0, total = ids.length;
+    if (total === 0) { $btn.html('완료'); return; }
+
+    ids.forEach(function(rid) {
+        $.ajax({
+            url: '/api/v1/delete/disconnect_nas',
+            type: 'POST',
+            data: { radacctid: rid, email: email, csrfmiddlewaretoken: csrf_token },
+            success: function(res) {
+                if (res.result === 200) {
+                    success++;
+                    $('#sess-card-' + rid).css({opacity: '0.3', pointerEvents: 'none'});
+                }
+            },
+            complete: function() {
+                done++;
+                if (done >= total) {
+                    $btn.html('<i class="fa fa-check"></i> ' + success + '/' + total + '건 완료').css('background', '#28a745');
+                }
             }
         });
     });

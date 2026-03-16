@@ -1,0 +1,606 @@
+<%inherit file="../admin/admin_frame.html"/>
+
+<%block name="css">
+<style>
+/* ===== 글로벌 ===== */
+.nm-page { padding: 20px; max-width: 1600px; margin: 0 auto; }
+.nm-page h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.nm-page .subtitle { color: #888; font-size: 13px; margin-bottom: 16px; }
+
+/* ===== 통계 카드 ===== */
+.nm-stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.nm-stat-card { flex: 1; min-width: 140px; padding: 16px; border-radius: 10px; background: #fff; border: 1px solid #e5e7eb; text-align: center; }
+.nm-stat-card .num { font-size: 28px; font-weight: 800; line-height: 1.2; }
+.nm-stat-card .label { font-size: 12px; color: #6b7280; margin-top: 4px; font-weight: 600; }
+.nm-stat-card.pending .num { color: #f59e0b; }
+.nm-stat-card.critical .num { color: #ef4444; }
+.nm-stat-card.approved .num { color: #3b82f6; }
+.nm-stat-card.sent .num { color: #10b981; }
+.nm-stat-card.dismissed .num { color: #9ca3af; }
+
+/* ===== 툴바 ===== */
+.nm-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.nm-toolbar .btn { padding: 7px 16px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; cursor: pointer; font-weight: 600; transition: all .2s; background: #fff; }
+.nm-toolbar .btn:hover { border-color: #3b82f6; color: #3b82f6; }
+.nm-toolbar .btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.nm-toolbar .btn-run { background: #8b5cf6; color: #fff; border-color: #8b5cf6; }
+.nm-toolbar .btn-run:hover { background: #7c3aed; }
+.nm-toolbar .btn-batch { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+.nm-toolbar .btn-batch:hover { background: #d97706; }
+.nm-toolbar select { padding: 6px 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; }
+
+/* ===== 탭 필터 ===== */
+.nm-tabs { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 16px; }
+.nm-tab { padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; color: #6b7280; transition: all .2s; }
+.nm-tab:hover { color: #3b82f6; }
+.nm-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.nm-tab .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.nm-tab .badge-red { background: #ef4444; color: #fff; }
+.nm-tab .badge-blue { background: #3b82f6; color: #fff; }
+.nm-tab .badge-green { background: #10b981; color: #fff; }
+.nm-tab .badge-gray { background: #9ca3af; color: #fff; }
+
+/* ===== 알림 카드 ===== */
+.nm-list { display: flex; flex-direction: column; gap: 8px; }
+.nm-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start; transition: all .15s; }
+.nm-card:hover { border-color: #93c5fd; box-shadow: 0 1px 4px rgba(59,130,246,.08); }
+.nm-card .check-col { display: flex; align-items: center; padding-top: 2px; }
+.nm-card .check-col input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+.nm-card .main-col { flex: 1; min-width: 0; }
+.nm-card .top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.nm-card .username { font-weight: 700; font-size: 14px; color: #1f2937; }
+.nm-card .sev { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.nm-card .sev-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.nm-card .sev-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.nm-card .sev-info { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.nm-card .type-badge { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f3f4f6; color: #374151; }
+.nm-card .time { font-size: 11px; color: #9ca3af; margin-left: auto; }
+.nm-card .title-text { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 2px; }
+.nm-card .msg { font-size: 12px; color: #6b7280; line-height: 1.4; }
+.nm-card .recommend { font-size: 12px; color: #059669; margin-top: 4px; padding: 4px 8px; background: #ecfdf5; border-radius: 4px; }
+.nm-card .action-col { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.nm-card .btn-sm { padding: 4px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid; transition: all .15s; white-space: nowrap; }
+.btn-approve { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.btn-approve:hover { background: #3b82f6; color: #fff; }
+.btn-send { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+.btn-send:hover { background: #10b981; color: #fff; }
+.btn-dismiss { background: #f9fafb; color: #6b7280; border-color: #e5e7eb; }
+.btn-dismiss:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.btn-detail { background: #faf5ff; color: #7c3aed; border-color: #ddd6fe; }
+.btn-detail:hover { background: #7c3aed; color: #fff; }
+
+/* ===== 모달 ===== */
+.nm-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9000; display: none; align-items: center; justify-content: center; }
+.nm-modal-bg.show { display: flex; }
+.nm-modal { background: #fff; border-radius: 12px; width: 700px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.nm-modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.nm-modal .field { margin-bottom: 12px; }
+.nm-modal .field label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
+.nm-modal .field .val { font-size: 13px; color: #1f2937; line-height: 1.5; }
+.nm-modal textarea { width: 100%; min-height: 80px; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; font-size: 13px; }
+.nm-modal .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+.nm-modal .modal-actions .btn { padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; }
+
+/* ===== 분석 상세 ===== */
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.analysis-item { padding: 8px 10px; background: #f9fafb; border-radius: 6px; font-size: 12px; }
+.analysis-item .k { color: #6b7280; font-weight: 600; }
+.analysis-item .v { color: #1f2937; font-weight: 700; }
+
+/* ===== 빈 상태 ===== */
+.nm-empty { text-align: center; padding: 60px 20px; color: #9ca3af; font-size: 14px; }
+.nm-empty i { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* ===== 페이징 ===== */
+.nm-paging { display: flex; justify-content: center; gap: 4px; margin-top: 16px; }
+.nm-paging .pg { padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 13px; cursor: pointer; }
+.nm-paging .pg.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* ===== 로딩 ===== */
+.nm-loading { text-align: center; padding: 40px; color: #9ca3af; }
+.nm-loading i { animation: spin 1s linear infinite; font-size: 24px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== 배치 ===== */
+.nm-batch-bar { display: none; align-items: center; gap: 10px; padding: 10px 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; margin-bottom: 12px; }
+.nm-batch-bar.show { display: flex; }
+.nm-batch-bar .count { font-weight: 700; font-size: 14px; color: #92400e; }
+</style>
+</%block>
+
+<%block name="title">이슈 자동통지</%block>
+<%block name="subtitle">자동 분석된 유저 이슈를 관리하고 앱 통지를 발송합니다</%block>
+
+<%block name="content">
+<div class="nm-page">
+
+    <!-- 통계 카드 -->
+    <div class="nm-stats" id="statsRow">
+        <div class="nm-stat-card pending"><div class="num" id="statPending">-</div><div class="label">대기중</div></div>
+        <div class="nm-stat-card critical"><div class="num" id="statCritical">-</div><div class="label">긴급 대기</div></div>
+        <div class="nm-stat-card approved"><div class="num" id="statApproved">-</div><div class="label">승인됨</div></div>
+        <div class="nm-stat-card sent"><div class="num" id="statSent">-</div><div class="label">발송됨</div></div>
+        <div class="nm-stat-card dismissed"><div class="num" id="statDismissed">-</div><div class="label">무시됨</div></div>
+    </div>
+
+    <!-- 툴바 -->
+    <div class="nm-toolbar">
+        <button class="btn btn-run" onclick="runAnalysis()"><i class="fa fa-play"></i> 수동 분석 실행</button>
+        <select id="analysisHours">
+            <option value="2">최근 2시간</option>
+            <option value="6">최근 6시간</option>
+            <option value="12">최근 12시간</option>
+            <option value="24">최근 24시간</option>
+        </select>
+        <div style="flex:1"></div>
+        <button class="btn" style="background:#ef4444;color:#fff;border-color:#ef4444" onclick="deleteAll()"><i class="fa fa-trash"></i> 전체 삭제</button>
+        <select id="typeFilter" onchange="loadNotifications()">
+            <option value="">전체 유형</option>
+            <option value="fail_rate">실패율 이상</option>
+            <option value="disconnect">빈번한 강제종료</option>
+            <option value="isp_anomaly">ISP 이상</option>
+            <option value="win_ikev2_miniport">Windows IKEv2 미니포트</option>
+        </select>
+    </div>
+
+    <!-- 배치 액션바 -->
+    <div class="nm-batch-bar" id="batchBar">
+        <span class="count"><span id="batchCount">0</span>건 선택</span>
+        <button class="btn-sm btn-approve" onclick="batchAction('approve')">일괄 승인</button>
+        <button class="btn-sm btn-send" onclick="batchAction('approve_send')">일괄 승인+발송</button>
+        <button class="btn-sm btn-dismiss" onclick="batchAction('dismiss')">일괄 무시</button>
+        <button class="btn-sm" style="margin-left:auto; border:1px solid #d1d5db; background:#fff; cursor:pointer;" onclick="clearSelection()">선택 해제</button>
+    </div>
+
+    <!-- 상태 탭 -->
+    <div class="nm-tabs">
+        <div class="nm-tab active" data-status="pending" onclick="switchTab(this)">
+            대기중 <span class="badge badge-red" id="tabBadgePending">0</span>
+        </div>
+        <div class="nm-tab" data-status="approved" onclick="switchTab(this)">
+            승인됨 <span class="badge badge-blue" id="tabBadgeApproved">0</span>
+        </div>
+        <div class="nm-tab" data-status="sent" onclick="switchTab(this)">
+            발송됨 <span class="badge badge-green" id="tabBadgeSent">0</span>
+        </div>
+        <div class="nm-tab" data-status="dismissed" onclick="switchTab(this)">
+            무시됨 <span class="badge badge-gray" id="tabBadgeDismissed">0</span>
+        </div>
+        <div class="nm-tab" data-status="all" onclick="switchTab(this)">전체</div>
+    </div>
+
+    <!-- 알림 목록 -->
+    <div id="notiList" class="nm-list">
+        <div class="nm-loading"><i class="fa fa-spinner"></i> 로딩중...</div>
+    </div>
+
+    <!-- 페이징 -->
+    <div class="nm-paging" id="paging"></div>
+</div>
+
+<!-- 상세 모달 -->
+<div class="nm-modal-bg" id="detailModal">
+    <div class="nm-modal">
+        <h3><i class="fa fa-exclamation-triangle" style="color:#f59e0b"></i> 통지 상세</h3>
+        <div class="field">
+            <label>유저</label>
+            <div class="val" id="mdUser">-</div>
+        </div>
+        <div class="field">
+            <label>유형 / 심각도</label>
+            <div class="val" id="mdMeta">-</div>
+        </div>
+        <div class="field">
+            <label>생성일시</label>
+            <div class="val" id="mdCreated">-</div>
+        </div>
+        <div class="field">
+            <label>제목</label>
+            <div class="val" id="mdTitle" style="font-weight:700">-</div>
+        </div>
+        <div class="field">
+            <label>메시지</label>
+            <div class="val" id="mdMessage" style="white-space:pre-wrap">-</div>
+        </div>
+        <div class="field">
+            <label>권장 조치</label>
+            <textarea id="mdRecommend"></textarea>
+        </div>
+        <div class="field">
+            <label>분석 데이터</label>
+            <div class="analysis-grid" id="mdAnalysis"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="saveRecommend()" style="background:#8b5cf6;color:#fff;border-color:#8b5cf6">권장사항 저장</button>
+            <button class="btn btn-approve" onclick="modalAction('approve')">승인</button>
+            <button class="btn btn-send" onclick="modalAction('approve_send')">승인+발송</button>
+            <button class="btn btn-dismiss" onclick="modalAction('dismiss')">무시</button>
+            <button class="btn" onclick="closeModal()">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 분석 실행 모달 -->
+<div class="nm-modal-bg" id="analysisModal">
+    <div class="nm-modal" style="width:500px;">
+        <h3><i class="fa fa-cog fa-spin" id="analysisSpinner" style="display:none;color:#8b5cf6"></i> 분석 실행</h3>
+        <div id="analysisStatus" style="font-size:13px;color:#6b7280;margin-bottom:12px;">분석을 실행하면 최근 N시간의 유저 이슈를 자동 감지합니다.</div>
+        <pre id="analysisOutput" style="background:#f1f5f9;padding:12px;border-radius:8px;font-size:12px;max-height:300px;overflow-y:auto;display:none;white-space:pre-wrap;"></pre>
+        <div class="modal-actions">
+            <button class="btn" id="btnRunConfirm" onclick="confirmRunAnalysis()" style="background:#8b5cf6;color:#fff;border-color:#8b5cf6">실행</button>
+            <button class="btn" onclick="closeAnalysisModal()">닫기</button>
+        </div>
+    </div>
+</div>
+
+</%block>
+
+<%block name="js">
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+var currentStatus = 'pending';
+var currentPage = 1;
+var currentModalId = null;
+var selectedIds = new Set();
+
+// ===== 초기 로드 =====
+window.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    loadNotifications();
+});
+
+// ===== 통계 =====
+function loadStats() {
+    fetch('/api/v1/read/issue_notification_stats')
+    .then(r => r.json())
+    .then(d => {
+        if (d.result !== 200) return;
+        var s = d.stats;
+        document.getElementById('statPending').textContent = s.pending || 0;
+        document.getElementById('statCritical').textContent = s.critical_pending || 0;
+        document.getElementById('statApproved').textContent = s.approved || 0;
+        document.getElementById('statSent').textContent = s.sent || 0;
+        document.getElementById('statDismissed').textContent = s.dismissed || 0;
+        document.getElementById('tabBadgePending').textContent = s.pending || 0;
+        document.getElementById('tabBadgeApproved').textContent = s.approved || 0;
+        document.getElementById('tabBadgeSent').textContent = s.sent || 0;
+        document.getElementById('tabBadgeDismissed').textContent = s.dismissed || 0;
+    });
+}
+
+// ===== 탭 전환 =====
+function switchTab(el) {
+    document.querySelectorAll('.nm-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentStatus = el.dataset.status;
+    currentPage = 1;
+    clearSelection();
+    loadNotifications();
+}
+
+// ===== 통지 목록 =====
+function loadNotifications() {
+    var list = document.getElementById('notiList');
+    list.innerHTML = '<div class="nm-loading"><i class="fa fa-spinner"></i> 로딩중...</div>';
+
+    var typeFilter = document.getElementById('typeFilter').value;
+    var url = '/api/v1/read/issue_notifications?status=' + currentStatus + '&page=' + currentPage;
+    if (typeFilter) url += '&type=' + typeFilter;
+
+    fetch(url)
+    .then(r => r.json())
+    .then(d => {
+        if (d.result !== 200) { list.innerHTML = '<div class="nm-empty"><i class="fa fa-warning"></i>오류 발생</div>'; return; }
+        if (!d.notifications || d.notifications.length === 0) {
+            list.innerHTML = '<div class="nm-empty"><i class="fa fa-check-circle"></i>해당 상태 통지 없음</div>';
+            document.getElementById('paging').innerHTML = '';
+            return;
+        }
+        var html = '';
+        d.notifications.forEach(function(n) {
+            var sevClass = 'sev-' + n.severity;
+            var typeLabel = {'fail_rate':'실패율','disconnect':'강제종료','isp_anomaly':'ISP이상','win_ikev2_miniport':'Win IKEv2'}[n.noti_type] || n.noti_type;
+            var checked = selectedIds.has(n.id) ? 'checked' : '';
+            var canAct = (n.status === 'pending' || n.status === 'approved');
+
+            html += '<div class="nm-card" data-id="' + n.id + '">';
+            if (canAct) {
+                html += '<div class="check-col"><input type="checkbox" ' + checked + ' onchange="toggleSelect(' + n.id + ', this.checked)"></div>';
+            } else {
+                html += '<div class="check-col" style="width:16px"></div>';
+            }
+            html += '<div class="main-col">';
+            html += '<div class="top-row">';
+            html += '<span class="username">' + escHtml(n.username) + '</span>';
+            html += '<span class="sev ' + sevClass + '">' + n.severity + '</span>';
+            html += '<span class="type-badge">' + typeLabel + '</span>';
+            var isAdminOnly = n.analysis && n.analysis.admin_only;
+            if (isAdminOnly) html += '<span class="type-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">관리자전용</span>';
+            if (n.batch_id) html += '<span class="type-badge" style="background:#e0e7ff;color:#4338ca">배치 ' + escHtml(n.batch_id) + '</span>';
+            html += '<span class="time">' + (n.created_at || '') + '</span>';
+            html += '</div>';
+            html += '<div class="title-text">' + escHtml(n.title) + '</div>';
+            html += '<div class="msg">' + escHtml(n.message).substring(0, 200) + (n.message && n.message.length > 200 ? '...' : '') + '</div>';
+            if (n.recommendation) html += '<div class="recommend">💡 ' + escHtml(n.recommendation).substring(0, 150) + '</div>';
+            html += '</div>';
+
+            html += '<div class="action-col">';
+            html += '<button class="btn-sm btn-detail" onclick="showDetail(' + n.id + ')">상세</button>';
+            if (n.status === 'pending') {
+                html += '<button class="btn-sm btn-approve" onclick="quickAction(' + n.id + ',\'approve\')">승인</button>';
+                if (!isAdminOnly) html += '<button class="btn-sm btn-send" onclick="quickAction(' + n.id + ',\'approve_send\')">발송</button>';
+                html += '<button class="btn-sm btn-dismiss" onclick="quickAction(' + n.id + ',\'dismiss\')">무시</button>';
+            } else if (n.status === 'approved') {
+                if (!isAdminOnly) html += '<button class="btn-sm btn-send" onclick="quickAction(' + n.id + ',\'approve_send\')">발송</button>';
+                html += '<button class="btn-sm btn-dismiss" onclick="quickAction(' + n.id + ',\'dismiss\')">무시</button>';
+            }
+            html += '</div>';
+            html += '</div>';
+        });
+        list.innerHTML = html;
+
+        // 페이징
+        var totalPages = Math.ceil(d.total / d.page_size);
+        var pgHtml = '';
+        for (var p = 1; p <= totalPages && p <= 10; p++) {
+            pgHtml += '<div class="pg' + (p === d.page ? ' active' : '') + '" onclick="goPage(' + p + ')">' + p + '</div>';
+        }
+        document.getElementById('paging').innerHTML = pgHtml;
+
+        // status_counts 업데이트
+        if (d.status_counts) {
+            var sc = d.status_counts;
+            document.getElementById('tabBadgePending').textContent = sc.pending || 0;
+            document.getElementById('tabBadgeApproved').textContent = sc.approved || 0;
+            document.getElementById('tabBadgeSent').textContent = sc.sent || 0;
+            document.getElementById('tabBadgeDismissed').textContent = sc.dismissed || 0;
+        }
+    });
+}
+
+function goPage(p) { currentPage = p; loadNotifications(); }
+
+// ===== 선택 관리 =====
+function toggleSelect(id, checked) {
+    if (checked) selectedIds.add(id); else selectedIds.delete(id);
+    updateBatchBar();
+}
+function clearSelection() {
+    selectedIds.clear();
+    document.querySelectorAll('.nm-card input[type=checkbox]').forEach(c => c.checked = false);
+    updateBatchBar();
+}
+function updateBatchBar() {
+    var bar = document.getElementById('batchBar');
+    if (selectedIds.size > 0) {
+        bar.classList.add('show');
+        document.getElementById('batchCount').textContent = selectedIds.size;
+    } else {
+        bar.classList.remove('show');
+    }
+}
+
+// ===== 개별 액션 =====
+function quickAction(id, action) {
+    var fd = new FormData();
+    fd.append('id', id);
+    fd.append('action', action);
+    fetch('/api/v1/update/issue_notification', {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.result === 200) {
+            loadNotifications();
+            loadStats();
+        } else {
+            alert('오류: ' + (d.msg || ''));
+        }
+    });
+}
+
+// ===== 배치 액션 =====
+function batchAction(action) {
+    if (selectedIds.size === 0) return;
+    if (!confirm(selectedIds.size + '건을 ' + {'approve':'승인','approve_send':'승인+발송','dismiss':'무시'}[action] + ' 하시겠습니까?')) return;
+
+    var fd = new FormData();
+    fd.append('ids', Array.from(selectedIds).join(','));
+    fd.append('action', action);
+    fetch('/api/v1/update/issue_notification_batch', {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.result === 200) {
+            clearSelection();
+            loadNotifications();
+            loadStats();
+        } else {
+            alert('오류: ' + (d.msg || ''));
+        }
+    });
+}
+
+// ===== 상세 모달 =====
+var _notifications = {};
+function showDetail(id) {
+    fetch('/api/v1/read/issue_notifications?status=all&page=1&page_size=1000')
+    .then(r => r.json())
+    .then(d => {
+        var n = (d.notifications || []).find(x => x.id === id);
+        if (!n) { alert('통지를 찾을 수 없습니다'); return; }
+        currentModalId = id;
+        _notifications[id] = n;
+        document.getElementById('mdUser').textContent = n.username;
+        document.getElementById('mdMeta').innerHTML = '<span class="sev sev-' + n.severity + '">' + n.severity + '</span> ' +
+            '<span class="type-badge">' + ({'fail_rate':'실패율','disconnect':'강제종료','isp_anomaly':'ISP이상','win_ikev2_miniport':'Win IKEv2'}[n.noti_type] || n.noti_type) + '</span>' +
+            (n.approved_by ? ' · 승인: ' + escHtml(n.approved_by) : '') +
+            (n.sent_at ? ' · 발송: ' + n.sent_at : '');
+        document.getElementById('mdCreated').textContent = n.created_at || '-';
+        document.getElementById('mdTitle').textContent = n.title;
+        document.getElementById('mdMessage').textContent = n.message;
+        document.getElementById('mdRecommend').value = n.recommendation || '';
+
+        // 분석 데이터
+        var ag = document.getElementById('mdAnalysis');
+        ag.innerHTML = '';
+        if (n.analysis && typeof n.analysis === 'object') {
+            var keys = Object.keys(n.analysis);
+            keys.forEach(function(k) {
+                var item = document.createElement('div');
+                item.className = 'analysis-item';
+                item.innerHTML = '<span class="k">' + escHtml(k) + '</span><br><span class="v">' + escHtml(String(n.analysis[k])) + '</span>';
+                ag.appendChild(item);
+            });
+        }
+        document.getElementById('detailModal').classList.add('show');
+    });
+}
+
+function closeModal() {
+    document.getElementById('detailModal').classList.remove('show');
+    currentModalId = null;
+}
+
+function saveRecommend() {
+    if (!currentModalId) return;
+    var fd = new FormData();
+    fd.append('id', currentModalId);
+    fd.append('action', 'edit');
+    fd.append('recommendation', document.getElementById('mdRecommend').value);
+    fetch('/api/v1/update/issue_notification', {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.result === 200) alert('저장 완료');
+        else alert('오류: ' + (d.msg || ''));
+    });
+}
+
+function modalAction(action) {
+    if (!currentModalId) return;
+    quickAction(currentModalId, action);
+    closeModal();
+}
+
+// ===== 분석 실행 =====
+function runAnalysis() {
+    document.getElementById('analysisOutput').style.display = 'none';
+    document.getElementById('analysisOutput').textContent = '';
+    document.getElementById('analysisStatus').textContent = '분석을 실행하면 최근 N시간의 유저 이슈를 자동 감지합니다.';
+    document.getElementById('analysisSpinner').style.display = 'none';
+    document.getElementById('btnRunConfirm').disabled = false;
+    document.getElementById('analysisModal').classList.add('show');
+}
+
+function closeAnalysisModal() {
+    document.getElementById('analysisModal').classList.remove('show');
+}
+
+function confirmRunAnalysis() {
+    var hours = document.getElementById('analysisHours').value;
+    var btn = document.getElementById('btnRunConfirm');
+    btn.disabled = true;
+    document.getElementById('analysisSpinner').style.display = 'inline';
+    document.getElementById('analysisStatus').textContent = '분석 실행중... (최대 120초 소요)';
+    document.getElementById('analysisOutput').style.display = 'block';
+    document.getElementById('analysisOutput').textContent = '분석 시작...\n';
+
+    var fd = new FormData();
+    fd.append('hours', hours);
+    fetch('/api/v1/create/run_analysis', {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(d => {
+        document.getElementById('analysisSpinner').style.display = 'none';
+        btn.disabled = false;
+        if (d.result === 200) {
+            document.getElementById('analysisStatus').textContent = '분석 완료! ' + d.created + '건 생성됨';
+            document.getElementById('analysisOutput').textContent = d.output || '(출력 없음)';
+            loadNotifications();
+            loadStats();
+        } else {
+            document.getElementById('analysisStatus').textContent = '오류: ' + (d.msg || '');
+            document.getElementById('analysisOutput').textContent = d.output || d.msg || '';
+        }
+    })
+    .catch(function(e) {
+        document.getElementById('analysisSpinner').style.display = 'none';
+        btn.disabled = false;
+        document.getElementById('analysisStatus').textContent = '네트워크 오류';
+    });
+}
+
+// ===== 유틸 =====
+function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeAnalysisModal();
+    }
+});
+
+// ===== 전체 삭제 =====
+function deleteAll() {
+    var statusLabel = {'pending':'대기중','approved':'승인됨','sent':'발송됨','dismissed':'무시됨','all':'전체'}[currentStatus] || currentStatus;
+    var msg = currentStatus === 'all'
+        ? '⚠️ 모든 통지를 삭제합니다. 이 작업은 되돌릴 수 없습니다.\n\n정말 전체 삭제하시겠습니까?'
+        : '⚠️ "' + statusLabel + '" 상태의 통지를 모두 삭제합니다.\n\n정말 삭제하시겠습니까?';
+    if (!confirm(msg)) return;
+
+    var fd = new FormData();
+    fd.append('ids', '0');
+    fd.append('action', 'delete_all');
+    fd.append('status', currentStatus);
+    fetch('/api/v1/update/issue_notification_batch', {
+        method: 'POST', body: fd,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.result === 200) {
+            alert(d.affected + '건 삭제 완료');
+            clearSelection();
+            loadNotifications();
+            loadStats();
+        } else {
+            alert('오류: ' + (d.msg || ''));
+        }
+    });
+}
+
+// 모달 배경 클릭으로 닫기
+document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+document.getElementById('analysisModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAnalysisModal();
+});
+</script>
+</%block>

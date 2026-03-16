@@ -1,0 +1,290 @@
+<%inherit file="admin_frame.html"/>
+
+<%block name="title">시작하기</%block>
+<%block name="subtitle">타이탄 관리자 사이트에 오신걸 환영합니다</%block>
+
+<%block name="css">
+<style>
+.summary-card { text-align:center; padding:15px 10px; }
+.summary-card .num { font-size:28px; font-weight:700; }
+.summary-card .label { font-size:13px; color:#666; margin-top:4px; }
+.badge-ok { background:#28a745; color:#fff; }
+.badge-warning { background:#ffc107; color:#333; }
+.badge-critical { background:#dc3545; color:#fff; }
+.conn-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:13px; margin-right:6px; }
+</style>
+</%block>
+
+<%block name="content">
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div>안녕하세요. 관리자 대시보드입니다.</div>
+        <div>최근 24시간 운영 현황을 요약해서 보여드립니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 현재 접속자 + 서버 상태 요약 카드 -->
+<div class="row mt-3">
+  <!-- 현재 접속자 -->
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body summary-card">
+        <div class="num" style="color:#007bff;">${conn_summary.get('total', 0) or 0}</div>
+        <div class="label">현재 접속자</div>
+        <div class="mt-2" style="font-size:12px;">
+          <span class="conn-badge" style="background:#e3f2fd;">IKEv2 <b>${conn_summary.get('ikev2', 0) or 0}</b></span>
+          <span class="conn-badge" style="background:#e8f5e9;">VPN <b>${conn_summary.get('openvpn', 0) or 0}</b></span><br class="d-md-none">
+          <span class="conn-badge" style="background:#f3e5f5;">V2RAY <b>${conn_summary.get('v2ray', 0) or 0}</b></span>
+          <span class="conn-badge" style="background:#fff3e0;">SE <b>${conn_summary.get('softether', 0) or 0}</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 서버 상태 -->
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body summary-card">
+        <div class="num" style="color:#28a745;">${health_summary.get('ok', 0)}
+          <span style="font-size:14px; color:#999;">/ ${health_summary.get('total', 0)}</span>
+        </div>
+        <div class="label">서버 정상</div>
+        <div class="mt-2" style="font-size:12px;">
+          % if health_summary.get('warning', 0):
+          <span class="badge badge-warning">경고 ${health_summary['warning']}</span>
+          % endif
+          % if health_summary.get('critical', 0):
+          <span class="badge badge-critical">위험 ${health_summary['critical']}</span>
+          % endif
+          % if not health_summary.get('warning', 0) and not health_summary.get('critical', 0):
+          <span class="badge badge-ok">전체 정상</span>
+          % endif
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- VPN 서비스 -->
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body summary-card">
+        <div class="num" style="color:#17a2b8;">${service_summary.get('ok', 0)}
+          <span style="font-size:14px; color:#999;">/ ${service_summary.get('total', 0)}</span>
+        </div>
+        <div class="label">서비스 정상</div>
+        <div class="mt-2" style="font-size:12px;">
+          % if service_summary.get('critical', 0):
+          <span class="badge badge-critical">장애 ${service_summary['critical']}</span>
+          % else:
+          <span class="badge badge-ok">전체 정상</span>
+          % endif
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 점검 시간 -->
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body summary-card">
+        <div style="font-size:14px; margin-top:8px;">
+          <div><i class="fa fa-server"></i> 서버:
+            % if health_check_time:
+            ${health_check_time.strftime('%m/%d %H:%M') if hasattr(health_check_time, 'strftime') else health_check_time}
+            % else:
+            <span class="text-muted">미측정</span>
+            % endif
+          </div>
+          <div class="mt-1"><i class="fa fa-plug"></i> 서비스:
+            % if service_check_time:
+            ${service_check_time.strftime('%m/%d %H:%M') if hasattr(service_check_time, 'strftime') else service_check_time}
+            % else:
+            <span class="text-muted">미측정</span>
+            % endif
+          </div>
+        </div>
+        <div class="label mt-2">마지막 점검</div>
+        <a href="/nas_status" class="btn btn-sm btn-outline-primary mt-1">상세 보기</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 이슈 서버 목록 (health 점검 결과) -->
+% if issue_servers:
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><b><i class="fa fa-exclamation-triangle text-warning"></i> 이슈 서버 (최근 점검 기준)</b>
+        <a href="/nas_status" class="btn btn-sm btn-outline-secondary float-right">NAS 서버현황</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>서버명</th>
+              <th>IP</th>
+              <th>상태</th>
+              <th>디스크</th>
+              <th>메모리</th>
+              <th>Ping</th>
+              <th>접속자</th>
+              <th>이슈 내용</th>
+            </tr>
+          </thead>
+          <tbody>
+            % for s in issue_servers:
+            <tr>
+              <td>${s.get('name','')}</td>
+              <td>${s.get('ip','')}</td>
+              <td>
+                % if s.get('status') == 'critical':
+                <span class="badge badge-critical">위험</span>
+                % else:
+                <span class="badge badge-warning">경고</span>
+                % endif
+              </td>
+              <td>${s.get('disk', '-')}</td>
+              <td>${s.get('mem', '-')}</td>
+              <td>${s.get('ping', '-')}</td>
+              <td>${s.get('connections', 0)}</td>
+              <td><small>${s.get('issues','')}</small></td>
+            </tr>
+            % endfor
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+% endif
+
+<!-- VPN 서비스 장애 서버 -->
+% if service_issues:
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><b><i class="fa fa-times-circle text-danger"></i> VPN 서비스 장애</b></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>서버명</th>
+              <th>IP</th>
+              <th>장애 서비스</th>
+            </tr>
+          </thead>
+          <tbody>
+            % for s in service_issues:
+            <tr>
+              <td>${s.get('name','')}</td>
+              <td>${s.get('ip','')}</td>
+              <td><span class="badge badge-danger">${s.get('failed','')}</span></td>
+            </tr>
+            % endfor
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+% endif
+<!-- 결제 요약 섹션 제거 (요구사항에 따라 비활성화) -->
+
+<!-- 최근 24시간 Top 10 통계 -->
+<div class="row mt-3">
+  <!-- 로그인 시도 Top 10 -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><b>최근 24시간 로그인 시도 Top 10</b></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width: 50px;">순위</th>
+              <th>이메일</th>
+              <th style="width: 90px;" class="text-right">건수</th>
+            </tr>
+          </thead>
+          <tbody>
+            % for i, r in enumerate(top_login_24h or [], start=1):
+            <tr>
+              <td>${i}</td>
+              <td><a href="/device_info" target="_blank">${r['email']}</a></td>
+              <td class="text-right">${r['cnt']}</td>
+            </tr>
+            % endfor
+            % if not top_login_24h:
+            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
+            % endif
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 서버 접속 실패 Top 10 -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><b>최근 24시간 서버 접속 실패 Top 10</b></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width: 50px;">순위</th>
+              <th>이메일</th>
+              <th style="width: 90px;" class="text-right">건수</th>
+            </tr>
+          </thead>
+          <tbody>
+            % for i, r in enumerate(top_failed_24h or [], start=1):
+            <tr>
+              <td>${i}</td>
+              <td><a href="/failed_info" target="_blank">${r['email']}</a></td>
+              <td class="text-right">${r['cnt']}</td>
+            </tr>
+            % endfor
+            % if not top_failed_24h:
+            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
+            % endif
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 강제 종료 Top 10 -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><b>최근 24시간 강제 종료 Top 10</b></div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width: 50px;">순위</th>
+              <th>이메일</th>
+              <th style="width: 90px;" class="text-right">건수</th>
+            </tr>
+          </thead>
+          <tbody>
+            % for i, r in enumerate(top_force_24h or [], start=1):
+            <tr>
+              <td>${i}</td>
+              <td><a href="/disconnection_info" target="_blank">${r['email']}</a></td>
+              <td class="text-right">${r['cnt']}</td>
+            </tr>
+            % endfor
+            % if not top_force_24h:
+            <tr><td colspan="3" class="text-center">데이터가 없습니다</td></tr>
+            % endif
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</%block>
+
+<%block name="js">
+</%block>

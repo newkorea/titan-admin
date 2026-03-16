@@ -127,6 +127,7 @@ class ServerHealth:
     criticals: List[str] = field(default_factory=list)
     # 자동 복구
     actions_taken: List[str] = field(default_factory=list)
+    is_overseas: bool = False
 
 
 # ───────────── DB 헬퍼 ─────────────
@@ -136,7 +137,7 @@ def get_active_servers():
     db = MySQLdb.connect(host=DB_HOST, user=DB_USER, passwd=DB_PASS, db=DB_NAME, charset='utf8')
     cur = db.cursor()
     cur.execute("""
-        SELECT id, name, hostip, username, password, protocol
+        SELECT id, name, hostip, username, password, protocol, IFNULL(esxi_host,'') as esxi_host
         FROM tbl_agent3 WHERE is_active=1
         ORDER BY hostip
     """)
@@ -425,10 +426,11 @@ def evaluate_health(health: ServerHealth):
     elif health.disk_pct >= DISK_WARN:
         health.warnings.append(f"디스크 {health.disk_pct}% (남은공간: {health.disk_avail})")
 
-    # 메모리
+    # 메모리 (해외 서버는 95% 이상에서만 경고)
+    mem_warn = 95 if health.is_overseas else MEM_WARN
     if health.mem_pct >= MEM_CRIT:
         health.criticals.append(f"메모리 {health.mem_pct}% ({health.mem_used_mb}/{health.mem_total_mb}MB)")
-    elif health.mem_pct >= MEM_WARN:
+    elif health.mem_pct >= mem_warn:
         health.warnings.append(f"메모리 {health.mem_pct}% ({health.mem_used_mb}/{health.mem_total_mb}MB)")
 
     # CPU 로드
@@ -566,8 +568,9 @@ def auto_heal(health: ServerHealth, ssh_user: str, ssh_pass: str):
             else:
                 actions.append("StrongSwan 재시작 실패!")
 
-        # 3) 메모리 부족 시 캐시 해제 + 좀비 프로세스 정리 (80% 이상)
-        if health.mem_pct >= MEM_WARN:
+        # 3) 메모리 부족 시 캐시 해제 + 좀비 프로세스 정리
+        mem_warn_threshold = 95 if health.is_overseas else MEM_WARN
+        if health.mem_pct >= mem_warn_threshold:
             log.info(f"[{health.ip}] 메모리 {health.mem_pct}% → 캐시 해제 + 좀비 정리")
             # 캐시 해제
             ssh.exec_command("sync && echo 3 > /proc/sys/vm/drop_caches")
@@ -641,8 +644,9 @@ def auto_heal(health: ServerHealth, ssh_user: str, ssh_pass: str):
 # ───────────── 메인 점검 ─────────────
 def _do_single_check(srv, ping_results, db_sessions, do_fix=False):
     """단일 서버 점검 (재시도 로직 포함)"""
-    sid, name, ip, ssh_user, ssh_pass, proto = srv
-    h = ServerHealth(ip=ip, name=name, server_id=sid, protocol=proto or '')
+    sid, name, ip, ssh_user, ssh_pass, proto = srv[:6]
+    esxi_host = srv[6] if len(srv) > 6 else ''
+    h = ServerHealth(ip=ip, name=name, server_id=sid, protocol=proto or '', is_overseas=(esxi_host == 'overseas'))
     h.ping_ok = ping_results.get(ip, False)
 
     # ping 실패 시 추가 재시도 (3회 → 5회로 재확인)
